@@ -1,0 +1,95 @@
+# Example Agent Framework Configuration
+# Copy this to your-project.config.yaml and customize
+
+project:
+  name: "example-project"
+  type: "web-app"  # Options: web-app, api, cli, library, microservice
+  description: "Example project using Agent Framework"
+  version: "0.1.0"
+
+# Git workflow configuration
+git:
+  enabled: true
+  default_branch: "main"
+  branch_naming:
+    feature: "feature/{ticket_id}-{title}"
+    bugfix: "bugfix/{ticket_id}-{title}"
+    hotfix: "hotfix/{ticket_id}-{title}"
+  commit_prefix:
+    feat: "New feature"
+    fix: "Bug fix"
+    docs: "Documentation"
+    style: "Formatting"
+    refactor: "Code refactoring"
+    test: "Testing"
+    chore: "Maintenance"
+
+# Testing configuration
+testing:
+  framework: "pytest"
+  test_directory: "tests"
+  coverage_threshold: 80
+  coverage_enabled: true
+  tdd_enforced: true
+  test_types:
+    - unit
+    - integration
+    - e2e
+  auto_generate_tests: true
+  test_on_commit: true
+
+# Sprint configuration
+sprints:
+  sprint_duration: 14  # days
+  ticket_prefix: "PROJ"
+  auto_assign: true
+  quality_gates:
+    code_review_required: true
+    tests_must_pass: true
+    coverage_threshold_enforced: true
+
+# Agent configuration
+agents:
+  lead_agent: "product_owner"
+  
+  core_agents:
+    product_owner:
+      responsibilities:
+        - "Define user stories"
+        - "Prioritize backlog"
+        - "Sprint planning"
+    tech_lead:
+      responsibilities:
+        - "Technical architecture"
+        - "Code review"
+        - "Technical decisions"
+    developer:
+      responsibilities:
+        - "Implementation"
+        - "Testing"
+        - "Documentation"
+  
+  flex_agents:
+    qa_engineer:
+      activation_threshold: 0.7
+      responsibilities:
+        - "Test planning"
+        - "Quality assurance"
+    devops:
+      activation_threshold: 0.5
+      responsibilities:
+        - "CI/CD setup"
+        - "Deployment"
+    ux_designer:
+      activation_threshold: 0.6
+      responsibilities:
+        - "UI/UX design"
+        - "User research"
+
+# Workflow automation
+workflow:
+  auto_create_branches: true
+  auto_generate_tickets: true
+  auto_update_status: true
+  parallel_development: true
+  max_parallel_tickets: 3

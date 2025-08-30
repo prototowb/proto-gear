@@ -1,0 +1,128 @@
+# Example Configuration for a Web Application
+# This shows how to configure the Agent Framework for a typical web app
+
+project:
+  name: "E-Commerce Platform"
+  description: "Modern e-commerce platform with React frontend and Node.js backend"
+  type: "web-app"
+  repository: "https://github.com/example/ecommerce"
+  
+git:
+  main_branch: "main"
+  dev_branch: "develop"
+  branch_prefix:
+    feature: "feature/"
+    bugfix: "fix/"
+    hotfix: "hotfix/"
+    release: "release/"
+  
+tickets:
+  prefix: "EC"
+  agent_suffix: "/A"
+  human_suffix: ""
+  
+sprints:
+  duration: 14
+  velocity_target: 30
+  planning_day: "monday"
+  review_day: "friday"
+  
+agents:
+  core:
+    - id: "backend"
+      name: "Backend API Agent"
+      description: "Node.js API development, database operations, business logic"
+      responsibilities:
+        - "RESTful API development"
+        - "Database schema design (PostgreSQL)"
+        - "Authentication & authorization"
+        - "Payment processing integration"
+        - "Order management logic"
+        
+    - id: "frontend"
+      name: "Frontend React Agent"
+      description: "React UI, Redux state management, UX implementation"
+      responsibilities:
+        - "React component development"
+        - "Redux state management"
+        - "Responsive design with Tailwind"
+        - "Shopping cart functionality"
+        - "Product catalog UI"
+        
+    - id: "testing"
+      name: "QA & Testing Agent"
+      description: "Jest, Cypress, API testing, quality assurance"
+      responsibilities:
+        - "Unit tests with Jest"
+        - "E2E tests with Cypress"
+        - "API integration tests"
+        - "Performance testing"
+        - "Cross-browser testing"
+        
+    - id: "devops"
+      name: "DevOps & Infrastructure Agent"
+      description: "AWS deployment, Docker, CI/CD, monitoring"
+      responsibilities:
+        - "AWS infrastructure management"
+        - "Docker containerization"
+        - "GitHub Actions CI/CD"
+        - "Performance monitoring"
+        - "Security scanning"
+  
+  flex_pool:
+    - id: "documentation"
+      name: "Documentation Specialist"
+      when_needed: "API documentation, user guides"
+      
+    - id: "performance"
+      name: "Performance Engineer"
+      when_needed: "Database optimization, caching strategies"
+      
+    - id: "seo"
+      name: "SEO Specialist"
+      when_needed: "Search engine optimization features"
+      
+    - id: "analytics"
+      name: "Analytics Engineer"
+      when_needed: "User analytics, conversion tracking"
+      
+    - id: "payment"
+      name: "Payment Systems Expert"
+      when_needed: "Payment gateway integration"
+  
+  sprint_configs:
+    feature_development:
+      flex_agents: ["documentation", "analytics"]
+      focus: "New feature implementation"
+      
+    performance_optimization:
+      flex_agents: ["performance", "seo"]
+      focus: "Speed and SEO improvements"
+      
+    payment_integration:
+      flex_agents: ["payment", "documentation"]
+      focus: "Payment system implementation"
+
+quality:
+  test_coverage_minimum: 85
+  documentation_required: true
+  linting_required: true
+  security_scan_required: true
+  review_required: true
+  
+tech_stack:
+  languages:
+    - "javascript"
+    - "typescript"
+  frameworks:
+    - "react"
+    - "express"
+    - "tailwind"
+  databases:
+    - "postgresql"
+    - "redis"
+  tools:
+    - "docker"
+    - "webpack"
+    - "jest"
+    - "cypress"
