@@ -385,7 +385,7 @@ class WorkflowOrchestrator:
         
         # Additional check: if config file exists but no project files
         # This might be a partially initialized project
-        if os.path.exists("mcas-agents.config.yaml"):
+        if os.path.exists("agent-framework.config.yaml"):
             # Config exists, but no status file - likely first run after config creation
             return not os.path.exists("PROJECT_STATUS.md")
         

@@ -1,6 +1,7 @@
 """
 Setup Wizard for Agent Framework
 Interactive project initialization with TDD support
+Enhanced with modern web framework support
 """
 
 import os
@@ -12,6 +13,27 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
 import re
+
+# Try to import enhanced version, fall back to basic if not available
+try:
+    from .enhanced_setup_wizard import EnhancedSetupWizard
+    ENHANCED_AVAILABLE = True
+except ImportError:
+    ENHANCED_AVAILABLE = False
+
+# Try to import ultimate version for 100% coverage
+try:
+    from .ultimate_setup_wizard import UltimateSetupWizard
+    ULTIMATE_AVAILABLE = True
+except ImportError:
+    ULTIMATE_AVAILABLE = False
+
+# Try to import multi-platform version
+try:
+    from .multiplatform_wizard import MultiPlatformSetupWizard
+    MULTIPLATFORM_AVAILABLE = True
+except ImportError:
+    MULTIPLATFORM_AVAILABLE = False
 
 
 class WizardStep:
@@ -679,15 +701,72 @@ pytest-asyncio>=0.21.0
         return self.create_project()
 
 
+# Create wizard factory function
+def create_wizard(enhanced: bool = True, ultimate: bool = False, multiplatform: bool = False, **kwargs):
+    """
+    Create a setup wizard instance
+    
+    Args:
+        enhanced: If True and available, use enhanced wizard
+        ultimate: If True and available, use ultimate wizard (100% coverage)
+        multiplatform: If True and available, use multi-platform wizard
+        **kwargs: Arguments to pass to wizard constructor
+    
+    Returns:
+        SetupWizard, EnhancedSetupWizard, UltimateSetupWizard, or MultiPlatformSetupWizard instance
+    """
+    if multiplatform and MULTIPLATFORM_AVAILABLE:
+        print("🌐 Using Multi-Platform Setup Wizard for mobile/desktop development!")
+        return MultiPlatformSetupWizard(**kwargs)
+    elif ultimate and ULTIMATE_AVAILABLE:
+        print("🌟 Using Ultimate Setup Wizard with 100% feature coverage!")
+        return UltimateSetupWizard(**kwargs)
+    elif enhanced and ENHANCED_AVAILABLE:
+        print("🚀 Using Enhanced Setup Wizard with modern framework support!")
+        return EnhancedSetupWizard(**kwargs)
+    else:
+        if multiplatform and not MULTIPLATFORM_AVAILABLE:
+            print("⚠️  Multi-platform wizard requested but not available")
+        if ultimate and not ULTIMATE_AVAILABLE:
+            print("⚠️  Ultimate wizard requested but not available")
+        if enhanced and not ENHANCED_AVAILABLE:
+            print("⚠️  Enhanced wizard requested but not available")
+        print("📦 Using Basic Setup Wizard")
+        return SetupWizard(**kwargs)
+
+
 # CLI entry point
 if __name__ == "__main__":
     import sys
     
-    # Check if running in interactive mode
-    if len(sys.argv) > 1 and sys.argv[1] == '--dry-run':
-        wizard = SetupWizard(dry_run=True)
+    # Parse arguments
+    dry_run = '--dry-run' in sys.argv
+    basic_mode = '--basic' in sys.argv
+    ultimate_mode = '--ultimate' in sys.argv
+    multiplatform_mode = '--multiplatform' in sys.argv
+    
+    # Show help if requested
+    if '--help' in sys.argv or '-h' in sys.argv:
+        print("Agent Framework Setup Wizard")
+        print("\nUsage: python setup_wizard.py [options]")
+        print("\nOptions:")
+        print("  --basic         Use basic wizard")
+        print("  --ultimate      Use ultimate wizard (100% coverage)")
+        print("  --multiplatform Use multi-platform wizard (mobile/desktop)")
+        print("  --dry-run       Simulate without creating files")
+        print("  --help, -h      Show this help message")
+        sys.exit(0)
+    
+    # Create appropriate wizard
+    if basic_mode:
+        print("📦 Using Basic Setup Wizard")
+        wizard = SetupWizard(dry_run=dry_run)
+    elif multiplatform_mode:
+        wizard = create_wizard(enhanced=True, ultimate=False, multiplatform=True, dry_run=dry_run)
+    elif ultimate_mode:
+        wizard = create_wizard(enhanced=True, ultimate=True, dry_run=dry_run)
     else:
-        wizard = SetupWizard()
+        wizard = create_wizard(enhanced=True, ultimate=False, dry_run=dry_run)
     
     # Run interactive wizard
     result = wizard.run_interactive()

@@ -1,5 +1,6 @@
 """
-Setup configuration for Agent Framework
+Setup configuration for Proto Gear (formerly Agent Framework)
+The Ultimate Project Framework Generator
 """
 
 from setuptools import setup, find_packages
@@ -15,24 +16,26 @@ def read_requirements(filename):
         return [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
 setup(
-    name="agent-framework",
-    version="1.0.0",
-    author="Agent Framework Team",
-    author_email="team@agent-framework.dev",
-    description="Adaptive AI agent orchestration framework for autonomous project management",
+    name="proto-gear",
+    version="3.0.0",
+    author="Proto Gear Team",
+    author_email="team@protogear.dev",
+    description="Proto Gear - The Ultimate Project Framework Generator with AI-powered configuration",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/agent-framework/agent-framework",
+    url="https://github.com/proto-gear/proto-gear",
     project_urls={
-        "Bug Tracker": "https://github.com/agent-framework/agent-framework/issues",
-        "Documentation": "https://agent-framework.dev/docs",
-        "Source Code": "https://github.com/agent-framework/agent-framework",
+        "Bug Tracker": "https://github.com/proto-gear/proto-gear/issues",
+        "Documentation": "https://protogear.dev/docs",
+        "Source Code": "https://github.com/proto-gear/proto-gear",
+        "Discord": "https://discord.gg/protogear",
     },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
         "Topic :: Software Development :: Build Tools",
+        "Topic :: Software Development :: Code Generators",
         "Topic :: System :: Software Distribution",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
@@ -40,7 +43,9 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
+        "Environment :: Console",
     ],
     packages=find_packages(where="core"),
     package_dir={"": "core"},
@@ -63,21 +68,36 @@ setup(
             "sphinx>=6.0",
             "sphinx-rtd-theme>=1.0",
         ],
+        "full": [
+            "requests>=2.31.0",
+            "jinja2>=3.1.0",
+            "colorama>=0.4.6",
+        ],
     },
     entry_points={
         "console_scripts": [
-            "agent-framework=agent_framework.cli:main",
+            "proto-gear=core.proto_gear:main",
+            "protogear=core.proto_gear:main",
+            "pg=core.proto_gear:main",  # Short alias
+            "agent-framework=core.agent_framework:main",  # Legacy support
         ],
     },
     include_package_data=True,
     package_data={
-        "agent_framework": [
+        "core": [
             "templates/*.md",
             "templates/*.yaml",
             "examples/*.yaml",
         ],
     },
     keywords=[
+        "proto gear",
+        "protogear",
+        "project generator",
+        "framework generator",
+        "scaffolding",
+        "boilerplate",
+        "starter kit",
         "ai",
         "agents", 
         "automation",
@@ -87,5 +107,12 @@ setup(
         "development workflow",
         "sprint planning",
         "agile",
+        "mobile development",
+        "desktop development",
+        "cross-platform",
+        "react native",
+        "flutter",
+        "electron",
+        "tauri",
     ],
 )

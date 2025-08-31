@@ -663,7 +663,7 @@ class GitWorkflowIntegration:
 
 
 # Convenience function for standalone usage
-def setup_git_workflow(config_path: str = "mcas-agents.config.yaml"):
+def setup_git_workflow(config_path: str = "agent-framework.config.yaml"):
     """
     Setup Git workflow for a project
     """
