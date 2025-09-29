@@ -3,8 +3,12 @@ Multi-Platform Development Wizard Extension
 Adds support for mobile, desktop, and cross-platform development
 """
 
-from .ultimate_setup_wizard import UltimateSetupWizard, UltimateProjectConfig
-from .enhanced_setup_wizard import ProjectType
+try:
+    from .ultimate_setup_wizard import UltimateSetupWizard, UltimateProjectConfig
+    from .enhanced_setup_wizard import ProjectType
+except ImportError:
+    from ultimate_setup_wizard import UltimateSetupWizard, UltimateProjectConfig
+    from enhanced_setup_wizard import ProjectType
 from enum import Enum
 from typing import Dict, List, Optional, Any
 from pathlib import Path

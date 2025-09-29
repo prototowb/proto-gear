@@ -3,7 +3,10 @@ Ultimate Setup Wizard for Agent Framework - 100% Coverage Edition
 Includes all modern web development features including medical, auth, analytics, etc.
 """
 
-from .enhanced_setup_wizard import *
+try:
+    from .enhanced_setup_wizard import *
+except ImportError:
+    from enhanced_setup_wizard import *
 from enum import Enum
 from typing import Dict, List, Optional, Any, Callable
 from pathlib import Path
