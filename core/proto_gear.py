@@ -843,6 +843,7 @@ def create_project_from_config(config, dry_run=False):
     """Create project based on wizard configuration"""
     from datetime import datetime
     import json
+    from version_config import create_package_json_with_versions, VersionManager
     
     if dry_run:
         print(f"\n{Colors.YELLOW}=== DRY RUN - Files that would be created ==={Colors.ENDC}")
@@ -851,10 +852,10 @@ def create_project_from_config(config, dry_run=False):
         print("  tests/")
         print("  docs/")
         print("  package.json")
-        print("  README.md") 
+        print("  README.md")
         print("  AGENTS.md")
         print("  PROJECT_STATUS.md")
-        
+
         if 'typescript' in config['features']:
             print("  tsconfig.json")
         if 'docker' in config['features']:
@@ -863,7 +864,28 @@ def create_project_from_config(config, dry_run=False):
         if 'linting' in config['features']:
             print("  .eslintrc.js")
             print("  .prettierrc")
-        
+
+        # Show Python requirements if applicable
+        if config.get('backend_framework') in ['fastapi', 'django']:
+            print("  requirements.txt")
+
+        # Show dependency versions
+        vm = VersionManager()
+        deps = vm.get_dependencies_for_config(config)
+
+        if deps['dependencies'] or deps['devDependencies']:
+            print(f"\n{Colors.CYAN}=== Dependencies that would be installed ==={Colors.ENDC}")
+
+            if deps['dependencies']:
+                print(f"{Colors.GREEN}Dependencies:{Colors.ENDC}")
+                for pkg, version in sorted(deps['dependencies'].items()):
+                    print(f"  {pkg}: {version}")
+
+            if deps['devDependencies']:
+                print(f"{Colors.GREEN}Dev Dependencies:{Colors.ENDC}")
+                for pkg, version in sorted(deps['devDependencies'].items()):
+                    print(f"  {pkg}: {version}")
+
         return {
             'status': 'success',
             'dry_run': True,
@@ -885,39 +907,18 @@ def create_project_from_config(config, dry_run=False):
         (project_path / "tests").mkdir()
         (project_path / "docs").mkdir()
         
-        # Create package.json
-        package_json = {
-            "name": config['name'],
-            "version": "0.1.0",
-            "description": config['description'],
-            "main": "src/index.js",
-            "scripts": {
-                "dev": "echo 'Add your dev script here'",
-                "build": "echo 'Add your build script here'",
-                "start": "echo 'Add your start script here'",
-                "test": "echo 'Add your test script here'"
-            },
-            "keywords": ["protogear"],
-            "author": "",
-            "license": "MIT"
-        }
-        
-        # Add framework-specific scripts
-        if config['frontend_framework'] == 'nextjs':
-            package_json['scripts'].update({
-                "dev": "next dev",
-                "build": "next build", 
-                "start": "next start"
-            })
-        elif config['frontend_framework'] == 'nuxt':
-            package_json['scripts'].update({
-                "dev": "nuxt dev",
-                "build": "nuxt build",
-                "start": "nuxt preview"
-            })
+        # Create package.json with proper dependency versions
+        package_json = create_package_json_with_versions(config)
         
         with open(project_path / "package.json", 'w') as f:
             json.dump(package_json, f, indent=2)
+
+        # Create requirements.txt for Python projects
+        if config.get('backend_framework') in ['fastapi', 'django']:
+            vm = VersionManager()
+            requirements = vm.get_python_requirements(config)
+            if requirements:
+                (project_path / "requirements.txt").write_text('\n'.join(requirements) + '\n')
         
         # Create README
         readme_content = f"""# {config['name']}
