@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Proto Gear is a Python-based project framework generator that creates production-ready projects with AI-powered configuration. It supports 200+ frameworks across web, mobile, and desktop platforms with integrated AI agent workflow systems.
+Proto Gear is a Python-based AI Agent Framework that integrates intelligent development workflows into existing projects. It provides adaptive agent orchestration, sprint management, ticket generation, and Git workflow automation - completely tech stack agnostic and designed to work with any programming language or framework.
 
 ## Development Commands
 
@@ -15,18 +15,19 @@ Proto Gear is a Python-based project framework generator that creates production
 - **Development test suite**: `bash dev-test.sh`
 
 ### Main Commands
-- **Primary command**: `pg init` - The unified entry point for all functionality
-- **Legacy commands**: `proto-gear`, `protogear`, `agent-framework` (all redirect to main interface)
+- **Primary command**: `pg init` - Initialize AI agent framework in current project
+- **Workflow command**: `pg workflow` - Run the agent workflow orchestrator
+- **Help command**: `pg help` - Show detailed documentation
 - **Dry run testing**: `pg init --dry-run`
 - **Direct Python execution**: `cd core && python proto_gear.py init --dry-run`
 
 ### Testing Specific Scenarios
 ```bash
-# Test Agent Framework Only
-echo "1" | pg init --dry-run
+# Test Agent Framework Initialization
+pg init --dry-run
 
-# Test Full Project Scaffolding
-echo -e "2\ntest-project" | pg init --dry-run
+# Test Workflow Orchestrator
+cd core && python agent_framework.py
 ```
 
 ## Architecture Overview
@@ -39,21 +40,27 @@ echo -e "2\ntest-project" | pg init --dry-run
 
 ### Core Components
 
-#### Wizard System
-- **`main_setup_wizard.py`** - Core setup wizard logic
-- **`grouped_setup_wizard.py`** - Advanced grouped configuration wizard
-- **`enhanced_setup_wizard.py`** - Enhanced wizard with additional features
-- **`multiplatform_wizard.py`** - Cross-platform project setup
-
 #### Agent Framework System
-- **`agent_framework.py`** - Core agent system implementation with sprint management
-- **`agent_framework_wizard.py`** - Agent setup wizard
+- **`agent_framework.py`** - Core agent system implementation with adaptive hybrid orchestration
+  - `AdaptiveHybridSystem`: 4 core + 2 flex agent slots
+  - `SprintType`: Defines sprint types (Feature, Bug Fix, Performance, etc.)
+  - `WorkflowOrchestrator`: Main execution loop for Lead AI
+  - `TicketGenerator`: Creates and manages development tickets
 - **`AGENTS.template.md`** - Template for AI agent integration guides
 - **`PROJECT_STATUS.template.md`** - Template for project state tracking
 
 #### Workflow Systems
 - **`git_workflow.py`** - Git integration and branch management
+  - Automatic branch creation for tickets
+  - Branch naming conventions
+  - Git workflow status tracking
 - **`testing_workflow.py`** - Testing framework integration
+
+#### CLI Interface
+- **`proto_gear.py`** - Main CLI entry point
+  - Commands: `init`, `workflow`, `help`
+  - Project detection and auto-configuration
+  - Beautiful terminal UI with rich formatting
 
 ### Key Templates
 - **AGENTS.md** - AI agent activation guide with project-specific context
@@ -62,14 +69,20 @@ echo -e "2\ntest-project" | pg init --dry-run
 
 ## Development Workflow
 
-### Two Main Operation Modes
-1. **Agent Framework Only** - Adds ProtoGear's AI workflow to existing projects (creates AGENTS.md and PROJECT_STATUS.md)
-2. **Full Project Scaffolding** - Complete project generation with 7-step wizard process
+### Operation Mode
+Proto Gear focuses exclusively on adding AI agent workflows to existing projects. It does NOT scaffold new projects or make tech stack decisions.
+
+**Agent Framework Integration**:
+1. Run `pg init` in any existing project directory
+2. ProtoGear detects the existing technology stack (Node.js, Python, etc.)
+3. Creates AGENTS.md and PROJECT_STATUS.md files
+4. Integrates adaptive agent system without modifying existing code
+5. Ready to use `pg workflow` for orchestration
 
 ### Testing and Validation
 - Use `dev-test.sh` for comprehensive testing during development
 - All commands support `--dry-run` for safe testing
-- Test suite covers help commands, agent framework, project scaffolding, and technology detection
+- Test suite covers initialization, workflow orchestration, and technology detection
 
 ### Package Management
 - Uses setuptools with entry points for multiple CLI aliases
@@ -78,7 +91,9 @@ echo -e "2\ntest-project" | pg init --dry-run
 
 ## Important Implementation Details
 - Main executable is `proto_gear.py` in the `core/` directory
-- CLI uses rich library for beautiful terminal interfaces with ASCII art logos
-- Supports automatic technology stack detection for existing projects  
-- Generates context-aware documentation based on detected frameworks
-- All wizards support both interactive and programmatic (piped input) usage
+- CLI uses ANSI escape codes for beautiful terminal interfaces with ASCII art logos
+- Supports automatic technology stack detection for existing projects
+- Generates context-aware AGENTS.md and PROJECT_STATUS.md based on detected frameworks
+- Completely tech stack agnostic - works with any programming language or framework
+- Does NOT modify existing code - only adds workflow documentation and tracking
+- Agent system is adaptive: 4 core agents + 2 flex agents that change based on sprint type
