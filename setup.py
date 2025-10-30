@@ -1,6 +1,6 @@
 """
-Setup configuration for Proto Gear (formerly Agent Framework)
-The Ultimate Project Framework Generator
+Setup configuration for Proto Gear
+AI Agent Framework for Development Workflows
 """
 
 from setuptools import setup, find_packages
@@ -20,7 +20,7 @@ setup(
     version="3.0.0",
     author="Proto Gear Team",
     author_email="team@protogear.dev",
-    description="Proto Gear - The Ultimate Project Framework Generator with AI-powered configuration",
+    description="Proto Gear - AI Agent Framework for intelligent development workflows",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/proto-gear/proto-gear",
@@ -34,9 +34,9 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
-        "Topic :: Software Development :: Build Tools",
-        "Topic :: Software Development :: Code Generators",
-        "Topic :: System :: Software Distribution",
+        "Topic :: Software Development :: Quality Assurance",
+        "Topic :: Software Development :: Testing",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
@@ -76,10 +76,9 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "proto-gear=core.proto_gear:main",
-            "protogear=core.proto_gear:main",
-            "pg=core.proto_gear:main",  # Short alias
-            "agent-framework=core.agent_framework:main",  # Legacy support
+            "proto-gear=proto_gear:main",
+            "protogear=proto_gear:main",
+            "pg=proto_gear:main",  # Primary CLI command
         ],
     },
     include_package_data=True,
@@ -93,26 +92,21 @@ setup(
     keywords=[
         "proto gear",
         "protogear",
-        "project generator",
-        "framework generator",
-        "scaffolding",
-        "boilerplate",
-        "starter kit",
+        "ai agents",
+        "agent framework",
         "ai",
-        "agents", 
+        "agents",
         "automation",
         "project management",
         "orchestration",
-        "framework",
         "development workflow",
         "sprint planning",
         "agile",
-        "mobile development",
-        "desktop development",
-        "cross-platform",
-        "react native",
-        "flutter",
-        "electron",
-        "tauri",
+        "ticket management",
+        "git workflow",
+        "continuous integration",
+        "software development",
+        "productivity",
+        "developer tools",
     ],
 )

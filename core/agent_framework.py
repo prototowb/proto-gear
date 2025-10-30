@@ -407,26 +407,13 @@ class WorkflowOrchestrator:
     def execute_workflow(self):
         """Main execution loop for Lead AI"""
         print("🤖 Lead AI Activated - Acting as Product Owner & Tech Lead")
-        
-        # Check if this is a first-time initialization
+
+        # Check if ProtoGear has been initialized
         if self._is_first_time_init():
-            print("\n🆕 New project detected - Starting setup wizard...")
-            from .setup_wizard import SetupWizard
-            
-            wizard = SetupWizard(base_path=".")
-            result = wizard.run_interactive()
-            
-            if result['status'] == 'success':
-                print("\n✅ Project initialized successfully!")
-                print("📝 Creating initial PROJECT_STATUS.md...")
-                self.state_manager._create_initial_state()
-                self.state_manager.save_state()
-                print("🎯 Ready to start development!")
-            else:
-                print(f"\n❌ Setup failed: {result.get('error', 'Unknown error')}")
-                print("Please run the setup wizard again or initialize manually.")
-                return
-        
+            print("\n⚠️  ProtoGear not initialized in this project.")
+            print("Please run 'pg init' first to set up the AI agent framework.")
+            return {'status': 'error', 'error': 'Not initialized'}
+
         # Step 1: Read project state
         print("📊 Reading PROJECT_STATUS.md...")
         state = self.state_manager.state

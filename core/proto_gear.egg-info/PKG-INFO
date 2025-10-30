@@ -1,0 +1,392 @@
+Metadata-Version: 2.4
+Name: proto-gear
+Version: 3.0.0
+Summary: Proto Gear - The Ultimate Project Framework Generator with AI-powered configuration
+Home-page: https://github.com/proto-gear/proto-gear
+Author: Proto Gear Team
+Author-email: team@protogear.dev
+Project-URL: Bug Tracker, https://github.com/proto-gear/proto-gear/issues
+Project-URL: Documentation, https://protogear.dev/docs
+Project-URL: Source Code, https://github.com/proto-gear/proto-gear
+Project-URL: Discord, https://discord.gg/protogear
+Keywords: proto gear,protogear,project generator,framework generator,scaffolding,boilerplate,starter kit,ai,agents,automation,project management,orchestration,framework,development workflow,sprint planning,agile,mobile development,desktop development,cross-platform,react native,flutter,electron,tauri
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Software Development :: Code Generators
+Classifier: Topic :: System :: Software Distribution
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Operating System :: OS Independent
+Classifier: Environment :: Console
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: click>=8.0
+Requires-Dist: rich>=13.0
+Requires-Dist: pathlib>=1.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: flake8>=6.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: sphinx>=6.0; extra == "docs"
+Requires-Dist: sphinx-rtd-theme>=1.0; extra == "docs"
+Provides-Extra: full
+Requires-Dist: requests>=2.31.0; extra == "full"
+Requires-Dist: jinja2>=3.1.0; extra == "full"
+Requires-Dist: colorama>=0.4.6; extra == "full"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license-file
+Dynamic: project-url
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# 🚀 Proto Gear
+
+> The Ultimate Project Framework Generator - Powered by AI
+> Testing Claude Code IDE integration
+
+[![Version](https://img.shields.io/badge/version-3.0.0-blue)](https://github.com/proto-gear/proto-gear)
+[![Python](https://img.shields.io/badge/python-3.8%2B-green)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-purple)](LICENSE)
+[![Coverage](https://img.shields.io/badge/features-200%2B-orange)](docs/features.md)
+
+## ⚡ What is Proto Gear?
+
+Proto Gear (formerly Agent Framework) is an advanced project framework generator that helps you bootstrap any type of application with production-ready configurations. With support for **200+ frameworks** and **40+ platforms**, Proto Gear eliminates hours of setup time.
+
+## ✨ Features
+
+- 🎯 **Interactive CLI** with beautiful UI and splash screens
+- 🤖 **AI Assistant** to recommend the best setup
+- 📱 **Multi-Platform Support**: Web, Mobile (iOS/Android), Desktop (Windows/macOS/Linux)
+- 🏥 **Medical/Healthcare Compliance**: HIPAA, GDPR, DiGA, ICD-10-GM
+- 🚀 **200+ Frameworks**: React, Vue, Angular, Flutter, React Native, Electron, and more
+- 📦 **19 Project Templates**: SaaS, E-commerce, Blog, Healthcare, Fintech, and more
+- 🧪 **Testing Configured**: Unit, E2E, and platform-specific testing
+- 🔐 **Authentication**: 8+ providers pre-configured
+- 📊 **Analytics & Monitoring**: Privacy-first and enterprise options
+- 🌍 **i18n Ready**: Multi-language support out of the box
+
+## 🎬 Quick Start
+
+### Installation
+
+```bash
+# Install Proto Gear globally
+pip install proto-gear
+
+# Or install from source
+git clone https://github.com/proto-gear/proto-gear.git
+cd proto-gear
+pip install -e .
+```
+
+### Usage
+
+**New Unified Command - One Simple Way:**
+
+```bash
+# Initialize any project - the only command you need!
+pg init
+```
+
+**What happens next?**
+1. Choose your setup type:
+   - **Agent Framework Only**: Add ProtoGear's AI workflow to existing projects
+   - **Full Project Scaffolding**: Create complete projects from scratch
+2. Follow the guided setup process
+3. Get a production-ready project with AI integration
+
+**Legacy Commands (still supported):**
+
+```bash
+# Interactive menu with multiple wizards
+proto-gear
+pg
+agent-framework
+```
+
+### Examples
+
+**Add AI Agent Framework to Existing Project:**
+```bash
+cd my-existing-project
+pg init
+# Choose option 1: Agent Framework Only
+# Creates AGENTS.md and PROJECT_STATUS.md
+```
+
+**Create New Project from Scratch:**
+```bash
+cd my-workspace
+pg init
+# Choose option 2: Full Project Scaffolding  
+# Follow the guided setup wizard
+# Get complete project with AI integration
+```
+
+**Dry Run (Test Without Creating Files):**
+```bash
+pg init --dry-run
+```
+
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║   ██████╗ ██████╗  ██████╗ ████████╗ ██████╗                ║
+║   ██╔══██╗██╔══██╗██╔═══██╗╚══██╔══╝██╔═══██╗               ║
+║   ██████╔╝██████╔╝██║   ██║   ██║   ██║   ██║               ║
+║   ██╔═══╝ ██╔══██╗██║   ██║   ██║   ██║   ██║               ║
+║   ██║     ██║  ██║╚██████╔╝   ██║   ╚██████╔╝               ║
+║   ╚═╝     ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝                ║
+║                                                               ║
+║    ██████╗ ███████╗ █████╗ ██████╗                          ║
+║   ██╔════╝ ██╔════╝██╔══██╗██╔══██╗                         ║
+║   ██║  ███╗█████╗  ███████║██████╔╝                         ║
+║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
+║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
+║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+⚡ The Ultimate Project Framework Generator ⚡
+
+🎯 Choose Your Adventure
+
+1. ⚡ Quick Start      - Simple and fast
+2. 🌐 Modern Web      - Full-stack web apps
+3. 🏢 Enterprise      - Complete with compliance
+4. 📱 Multi-Platform  - Mobile & Desktop apps
+5. 🤖 AI Assistant    - Get recommendations
+6. 📚 Browse Templates
+7. ❓ Help
+
+Enter your choice: 
+```
+
+## 🧙 Setup Options
+
+### 🤖 Agent Framework Only
+**Perfect for existing projects**
+- Adds ProtoGear's AI workflow system to any project
+- Creates `AGENTS.md` - AI agent integration guide
+- Creates `PROJECT_STATUS.md` - Project state tracking
+- Detects your current tech stack automatically
+- Setup time: ~2 minutes
+
+### 🏗️ Full Project Scaffolding  
+**Complete project creation with 7-step wizard**
+
+**Step 1: Project Basics** 📝
+- Project name, type, description
+
+**Step 2: Frontend Stack** ⚛️  
+- Framework (Next.js, Nuxt, Astro, SvelteKit, etc.)
+- UI Library (React, Vue, Svelte)
+- CSS Solution (Tailwind, Bootstrap, etc.)
+
+**Step 3: Backend & Data** 🗄️
+- Backend Framework (Express, FastAPI, Django, Next.js API, etc.)
+- Database (PostgreSQL, MySQL, MongoDB, etc.)
+- ORM/Query Builder (Prisma, Drizzle, TypeORM, etc.)
+
+**Step 4: Development Tools** 🛠️
+- Package manager (npm, pnpm, yarn, bun)  
+- Testing framework (Vitest, Jest, Playwright)
+- Code quality tools (ESLint, Prettier, Husky)
+
+**Step 5: Features & Services** 🚀
+- Additional features (i18n, PWA, Analytics, etc.)
+- CMS integration (Contentful, Strapi, Sanity, etc.)
+- Service providers
+
+**Step 6: Deployment** 🌐
+- Target platform (Vercel, Netlify, Cloudflare, etc.)
+- CI/CD setup (GitHub Actions, GitLab CI, etc.)
+
+**Step 7: ProtoGear Agent Framework** 🤖
+- AI agent workflow integration
+- Orchestration configuration  
+- Agent roles and responsibilities
+- Generates context-aware documentation
+
+## 📚 Project Templates
+
+### General
+- Blog, E-commerce, SaaS
+- Landing Page, Documentation
+- Portfolio, Dashboard
+- Social Network
+
+### Healthcare
+- Patient Portal (HIPAA-compliant)
+- Medical Practice Management
+- Telehealth Platform
+- Health Tracker
+- Clinical Trials
+
+### Industry
+- Fintech, EdTech
+- PropTech, LegalTech
+
+## 🛠️ Supported Technologies
+
+### Web Frameworks
+- React, Vue, Angular, Svelte
+- Nuxt, Next.js, SvelteKit, Remix
+- Astro, Gatsby, Vite
+
+### Mobile Frameworks
+- Quasar, React Native, Flutter
+- Ionic, Expo, NativeScript
+- Capacitor, Kotlin Multiplatform
+
+### Desktop Frameworks
+- Electron, Tauri
+- Flutter Desktop, Wails
+- PyQt, GTK, WPF
+
+### Backend
+- Node.js, Python, Go, Rust
+- Express, FastAPI, Django
+- GraphQL, REST, gRPC
+
+### Databases
+- PostgreSQL, MySQL, MongoDB
+- Redis, SQLite, Supabase
+
+### Testing
+- Jest, Vitest, Playwright
+- Cypress, Detox, Appium
+
+## 🤖 AI Assistant
+
+Let Proto Gear's AI assistant help you choose the perfect setup:
+
+1. Answer a few questions about your project
+2. Get personalized recommendations
+3. Automatic configuration based on best practices
+
+## 📦 What Gets Generated?
+
+### 🤖 AI Agent Integration Files
+
+**Every project gets ProtoGear's AI workflow system:**
+
+- **`AGENTS.md`** - AI agent activation guide with project-specific context
+- **`PROJECT_STATUS.md`** - Single source of truth for project state tracking
+- **Auto-detection** of your technology stack and project structure
+- **Context-aware** agent instructions based on detected frameworks
+
+### 🏗️ Complete Project Structure (Full Scaffolding)
+
+When creating new projects, Proto Gear generates:
+
+- ✅ **Source code scaffolding** with best practices
+- ✅ **Configuration files** for all selected technologies
+- ✅ **Package dependencies** with proper versions
+- ✅ **Testing setup** with your chosen framework
+- ✅ **CI/CD pipelines** for your deployment target
+- ✅ **Docker configuration** (when selected)
+- ✅ **Comprehensive documentation** including README
+- ✅ **Git repository** with proper .gitignore
+- ✅ **Environment variables** template
+- ✅ **VS Code settings** for optimal development
+- ✅ **Framework-specific configs** (Next.js, Nuxt, Astro, etc.)
+- ✅ **ORM schemas and migrations** (Prisma, Drizzle, etc.)
+- ✅ **Deployment configurations** (Vercel, Netlify, etc.)
+
+### 🎯 Example Generated Structure
+
+```
+my-project/
+├── AGENTS.md              # AI agent integration guide
+├── PROJECT_STATUS.md      # Project state tracking
+├── README.md              # Comprehensive project documentation
+├── package.json           # Dependencies and scripts
+├── src/
+│   └── index.js          # Main application file
+├── tests/                # Testing setup
+├── docs/                 # Documentation
+├── .gitignore           # Git ignore rules
+├── .eslintrc.json       # Code linting rules
+├── .prettierrc          # Code formatting rules
+└── next.config.js       # Framework-specific config (example)
+```
+
+
+## 🧪 Development & Testing
+
+### Testing During Development
+
+For developers working on ProtoGear, here are quick ways to test changes:
+
+```bash
+# Install in editable mode (changes reflect immediately)
+cd proto-gear
+pip install -e .
+
+# Test the main command
+pg init --dry-run
+
+# Test specific scenarios
+echo "1" | pg init --dry-run  # Agent Framework Only
+echo -e "2\ntest-project" | pg init --dry-run  # Full Scaffolding
+
+# Run the development test suite
+bash dev-test.sh
+```
+
+### Direct Python Testing (without installation)
+```bash
+cd proto-gear/core
+python proto_gear.py init --dry-run
+```
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## 🔗 Links
+
+- [Documentation](https://protogear.dev/docs)
+- [GitHub](https://github.com/proto-gear/proto-gear)
+- [Discord Community](https://discord.gg/protogear)
+- [Twitter](https://twitter.com/protogear)
+
+## 🙏 Credits
+
+Proto Gear evolved from the Agent Framework project, incorporating years of development experience and community feedback into the ultimate project generator.
+
+---
+
+<p align="center">
+  Made with ❤️ by the Proto Gear Team
+</p>
+
+<p align="center">
+  <i>May your builds be swift and your bugs be few!</i>
+</p>

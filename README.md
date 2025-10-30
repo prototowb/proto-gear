@@ -1,28 +1,28 @@
-# 🚀 Proto Gear
+# 🤖 Proto Gear
 
-> The Ultimate Project Framework Generator - Powered by AI
+> AI Agent Framework for Intelligent Development Workflows
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue)](https://github.com/proto-gear/proto-gear)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-purple)](LICENSE)
-[![Coverage](https://img.shields.io/badge/features-200%2B-orange)](docs/features.md)
+[![Tech Stack Agnostic](https://img.shields.io/badge/stack-agnostic-orange)](docs/features.md)
 
 ## ⚡ What is Proto Gear?
 
-Proto Gear (formerly Agent Framework) is an advanced project framework generator that helps you bootstrap any type of application with production-ready configurations. With support for **200+ frameworks** and **40+ platforms**, Proto Gear eliminates hours of setup time.
+Proto Gear is an AI-powered development workflow framework that integrates intelligent agents into your existing projects. It provides **adaptive agent orchestration**, **sprint management**, **ticket generation**, and **Git workflow automation** - completely tech stack agnostic and designed to work with any programming language or framework.
 
-## ✨ Features
+**Key Philosophy**: Proto Gear doesn't make tech stack decisions for you. It focuses purely on adding AI-powered development workflows to YOUR existing projects.
 
-- 🎯 **Interactive CLI** with beautiful UI and splash screens
-- 🤖 **AI Assistant** to recommend the best setup
-- 📱 **Multi-Platform Support**: Web, Mobile (iOS/Android), Desktop (Windows/macOS/Linux)
-- 🏥 **Medical/Healthcare Compliance**: HIPAA, GDPR, DiGA, ICD-10-GM
-- 🚀 **200+ Frameworks**: React, Vue, Angular, Flutter, React Native, Electron, and more
-- 📦 **19 Project Templates**: SaaS, E-commerce, Blog, Healthcare, Fintech, and more
-- 🧪 **Testing Configured**: Unit, E2E, and platform-specific testing
-- 🔐 **Authentication**: 8+ providers pre-configured
-- 📊 **Analytics & Monitoring**: Privacy-first and enterprise options
-- 🌍 **i18n Ready**: Multi-language support out of the box
+## ✨ Core Features
+
+- 🤖 **Adaptive Hybrid Agent System**: 4 permanent core agents + 2 flexible sprint-based agents
+- 📊 **Project State Management**: Single source of truth via PROJECT_STATUS.md
+- 🎯 **Sprint-Based Configuration**: Agents adapt to Feature Development, Bug Fixing, Performance, etc.
+- 🎫 **Intelligent Ticket Generation**: Automated ticket creation and tracking
+- 🌿 **Git Workflow Integration**: Automatic branch management for tickets and features
+- 📋 **Documentation Consistency**: Ensures AGENTS.md hierarchy stays synchronized
+- 🔍 **Auto-Detection**: Recognizes your existing tech stack (Node.js, Python, etc.)
+- 🎨 **Beautiful CLI**: Rich terminal interface with ANSI art and colors
 
 ## 🎬 Quick Start
 
@@ -40,189 +40,226 @@ pip install -e .
 
 ### Usage
 
-Simply run Proto Gear - no flags needed!
+```bash
+# Navigate to your existing project
+cd my-project
+
+# Initialize AI Agent Framework
+pg init
+
+# Run the agent workflow orchestrator
+pg workflow
+
+# Get help
+pg help
+```
+
+### What Gets Created?
+
+When you run `pg init`, Proto Gear creates two key files:
+
+1. **`AGENTS.md`** - AI agent integration guide with:
+   - Detected project type and framework
+   - Agent configuration (core + flex agents)
+   - Workflow commands
+   - Context-aware instructions for AI assistants
+
+2. **`PROJECT_STATUS.md`** - Single source of truth containing:
+   - Current project phase and sprint
+   - Active and completed tickets
+   - Project analysis and component status
+   - Recent updates and changes
+
+## 🏗️ Architecture
+
+### Adaptive Hybrid Agent System
+
+Proto Gear uses a **4 + 2 agent model**:
+
+#### Core Agents (Always Active)
+- **Backend Agent**: Server-side logic, APIs, database integration
+- **Frontend Agent**: UI/UX, component development, styling
+- **Testing Agent**: Test creation, coverage analysis, quality assurance
+- **DevOps Agent**: CI/CD, deployment, infrastructure management
+
+#### Flex Agents (Sprint-Based)
+Two slots that automatically configure based on sprint type:
+- **Documentation Agent**: For feature development and refactoring sprints
+- **Performance Agent**: For performance optimization sprints
+- **Security Agent**: For security-focused sprints
+- **Refactoring Agent**: For code quality improvement sprints
+
+### Sprint Types
+
+Proto Gear adapts to different development phases:
+- `FEATURE_DEVELOPMENT` - Building new functionality
+- `BUG_FIXING` - Resolving issues
+- `PERFORMANCE_OPTIMIZATION` - Speed and efficiency improvements
+- `DEPLOYMENT_PREP` - Preparing for release
+- `REFACTORING` - Code quality improvements
+- `RESEARCH_INTEGRATION` - Exploring new technologies
+
+## 📋 Workflow Commands
 
 ```bash
-# Start Proto Gear with interactive menu
-proto-gear
+# Initialize AI agents in current project
+pg init
 
-# Or use the short alias
-pg
+# Preview what will be created (dry run)
+pg init --dry-run
 
-# Legacy command still works
-agent-framework
+# Run agent workflow orchestrator
+pg workflow
+
+# Show detailed documentation
+pg help
 ```
 
-You'll be greeted with a beautiful splash screen and interactive menu:
+## 🤖 How It Works
 
-```
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   ██████╗ ██████╗  ██████╗ ████████╗ ██████╗                ║
-║   ██╔══██╗██╔══██╗██╔═══██╗╚══██╔══╝██╔═══██╗               ║
-║   ██████╔╝██████╔╝██║   ██║   ██║   ██║   ██║               ║
-║   ██╔═══╝ ██╔══██╗██║   ██║   ██║   ██║   ██║               ║
-║   ██║     ██║  ██║╚██████╔╝   ██║   ╚██████╔╝               ║
-║   ╚═╝     ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝                ║
-║                                                               ║
-║    ██████╗ ███████╗ █████╗ ██████╗                          ║
-║   ██╔════╝ ██╔════╝██╔══██╗██╔══██╗                         ║
-║   ██║  ███╗█████╗  ███████║██████╔╝                         ║
-║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
-║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
-║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
+1. **Detection Phase**
+   - Proto Gear scans your project directory
+   - Detects package.json, requirements.txt, etc.
+   - Identifies your tech stack (Node.js, Python, etc.)
 
-⚡ The Ultimate Project Framework Generator ⚡
+2. **Integration Phase**
+   - Creates AGENTS.md with project-specific context
+   - Creates PROJECT_STATUS.md for state tracking
+   - Does NOT modify your existing code
 
-🎯 Choose Your Adventure
+3. **Orchestration Phase**
+   - Run `pg workflow` to activate the orchestrator
+   - Agents analyze project state
+   - Tickets are generated and tracked
+   - Git branches created automatically
+   - Documentation consistency checked
 
-1. ⚡ Quick Start      - Simple and fast
-2. 🌐 Modern Web      - Full-stack web apps
-3. 🏢 Enterprise      - Complete with compliance
-4. 📱 Multi-Platform  - Mobile & Desktop apps
-5. 🤖 AI Assistant    - Get recommendations
-6. 📚 Browse Templates
-7. ❓ Help
+## 📊 PROJECT_STATUS.md Structure
 
-Enter your choice: 
+```yaml
+project_phase: "Development"
+protogear_enabled: true
+framework: "Next.js"
+project_type: "Node.js Project"
+current_sprint: 1
 ```
 
-## 🧙 Wizard Types
+**Sections**:
+- 🎫 Active Tickets
+- ✅ Completed Tickets
+- 📊 Project Analysis
+- 🔄 Recent Updates
 
-### ⚡ Quick Start (17% coverage)
-- Basic project setup
-- 5 core features
-- Perfect for prototypes
-- Setup time: ~5 minutes
+## 🎫 Ticket Management
 
-### 🌐 Modern Web (71% coverage)
-- Full-stack web applications
-- 20 modern features
-- All major frameworks
-- Setup time: ~10 minutes
+Proto Gear automatically generates tickets with:
+- Unique IDs (e.g., `PROJ/A-001` for agent-generated tickets)
+- Type classification (feature, bugfix, refactor, etc.)
+- Status tracking (pending, in_progress, completed, blocked)
+- Git branch association
+- Test file tracking
 
-### 🏢 Enterprise (100% coverage)
-- Complete enterprise setup
-- 28+ feature categories
-- Compliance & monitoring
-- Setup time: ~15 minutes
+## 🌿 Git Workflow Integration
 
-### 📱 Multi-Platform (100%+ coverage)
-- Mobile apps (iOS/Android)
-- Desktop apps (Windows/macOS/Linux)
-- Cross-platform development
-- 40+ feature categories
-- Setup time: ~20 minutes
+When tickets are created, Proto Gear:
+- Creates properly named feature branches
+- Follows convention: `feature/proj-a-001-implement-auth`
+- Tracks branch status in PROJECT_STATUS.md
+- Supports bugfix, hotfix, and feature branch types
 
-## 📚 Project Templates
+## 🔧 Technology Detection
 
-### General
-- Blog, E-commerce, SaaS
-- Landing Page, Documentation
-- Portfolio, Dashboard
-- Social Network
+Proto Gear automatically detects:
 
-### Healthcare
-- Patient Portal (HIPAA-compliant)
-- Medical Practice Management
-- Telehealth Platform
-- Health Tracker
-- Clinical Trials
+### Node.js Projects
+- package.json presence
+- Frameworks: Next.js, React, Vue.js, Express.js
+- Dependencies analysis
 
-### Industry
-- Fintech, EdTech
-- PropTech, LegalTech
+### Python Projects
+- requirements.txt, setup.py, pyproject.toml
+- Frameworks: Django, FastAPI, Flask
+- manage.py for Django projects
 
-## 🛠️ Supported Technologies
+### Future Support
+- Ruby (Gemfile)
+- Java (pom.xml, build.gradle)
+- Go (go.mod)
+- Rust (Cargo.toml)
+- PHP (composer.json)
 
-### Web Frameworks
-- React, Vue, Angular, Svelte
-- Next.js, Nuxt, SvelteKit, Remix
-- Astro, Gatsby, Vite
+## 🧪 Development & Testing
 
-### Mobile Frameworks
-- React Native, Flutter
-- Ionic, Expo, NativeScript
-- Capacitor, Kotlin Multiplatform
-
-### Desktop Frameworks
-- Electron, Tauri
-- Flutter Desktop, Wails
-- PyQt, GTK, WPF
-
-### Backend
-- Node.js, Python, Go, Rust
-- Express, FastAPI, Django
-- GraphQL, REST, gRPC
-
-### Databases
-- PostgreSQL, MySQL, MongoDB
-- Redis, SQLite, Supabase
-
-### Testing
-- Jest, Vitest, Playwright
-- Cypress, Detox, Appium
-
-## 🤖 AI Assistant
-
-Let Proto Gear's AI assistant help you choose the perfect setup:
-
-1. Answer a few questions about your project
-2. Get personalized recommendations
-3. Automatic configuration based on best practices
-
-## 📦 What Gets Generated?
-
-Proto Gear creates a complete project structure with:
-
-- ✅ Source code scaffolding
-- ✅ Configuration files
-- ✅ Package dependencies
-- ✅ Testing setup
-- ✅ CI/CD pipelines
-- ✅ Docker configuration
-- ✅ Documentation
-- ✅ Git repository
-- ✅ Environment variables
-- ✅ VS Code settings
-- ✅ And much more!
-
-## 🚀 Example Commands
+### For Proto Gear Developers
 
 ```bash
-# Create a React Native mobile app
-pg
-> Choose: Multi-Platform
-> Select: Mobile
-> Framework: React Native
-> Platforms: iOS, Android
+# Install in editable mode
+pip install -e .
 
-# Create a healthcare web app
-pg
-> Choose: Browse Templates
-> Select: Patient Portal
-> Configure as needed
+# Run development tests
+bash dev-test.sh
 
-# Get AI recommendations
-pg
-> Choose: AI Assistant
-> Answer questions
-> Get perfect setup
+# Test agent framework initialization
+pg init --dry-run
+
+# Test workflow orchestrator
+cd core && python agent_framework.py
+
+# Run linting
+python -m flake8 core/
+
+# Run tests
+python -m pytest
 ```
 
-## 📊 Performance
+### Direct Python Testing
 
-- **Setup Time Saved**: 4-15 hours per project
-- **Configuration Options**: 200+
-- **Supported Platforms**: 40+
-- **Project Templates**: 19
-- **Success Rate**: 99.9%
+```bash
+cd proto-gear/core
+python proto_gear.py init --dry-run
+python proto_gear.py workflow
+python proto_gear.py help
+```
+
+## 📖 Example: Adding to Existing Project
+
+```bash
+# Navigate to your project
+cd my-nextjs-app
+
+# Initialize Proto Gear
+$ pg init
+
+╔═════════════════════════════════════════════════════════════╗
+║   PROTO GEAR - AI Agent Framework v3.0                     ║
+╚═════════════════════════════════════════════════════════════╝
+
+⚡ AI-Powered Development Workflow Framework ⚡
+
+Agent Framework Setup
+------------------------------
+Current directory: /Users/dev/my-nextjs-app
+Detected: Node.js Project
+Framework: Next.js
+
+✅ SUCCESS: ProtoGear AI Agent Framework integrated!
+
+📄 Files created:
+  + AGENTS.md
+  + PROJECT_STATUS.md
+
+🚀 Next steps:
+  1. Review AGENTS.md to understand AI agent capabilities
+  2. Check PROJECT_STATUS.md for project state tracking
+  3. Start development with AI-powered assistance
+  4. Run 'pg workflow' to activate the agent workflow orchestrator
+```
 
 ## 🤝 Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Proto Gear is focused on being the best AI agent framework for development workflows.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
 
@@ -233,11 +270,11 @@ MIT License - see [LICENSE](LICENSE) for details.
 - [Documentation](https://protogear.dev/docs)
 - [GitHub](https://github.com/proto-gear/proto-gear)
 - [Discord Community](https://discord.gg/protogear)
-- [Twitter](https://twitter.com/protogear)
+- [Issues](https://github.com/proto-gear/proto-gear/issues)
 
 ## 🙏 Credits
 
-Proto Gear evolved from the Agent Framework project, incorporating years of development experience and community feedback into the ultimate project generator.
+Proto Gear evolved from the Agent Framework project, now focused exclusively on providing intelligent AI-powered development workflows for any project, regardless of tech stack.
 
 ---
 
@@ -246,5 +283,5 @@ Proto Gear evolved from the Agent Framework project, incorporating years of deve
 </p>
 
 <p align="center">
-  <i>May your builds be swift and your bugs be few!</i>
+  <i>May your sprints be productive and your agents be intelligent!</i>
 </p>
