@@ -97,3 +97,59 @@ Proto Gear focuses exclusively on adding AI agent workflows to existing projects
 - Completely tech stack agnostic - works with any programming language or framework
 - Does NOT modify existing code - only adds workflow documentation and tracking
 - Agent system is adaptive: 4 core agents + 2 flex agents that change based on sprint type
+
+## Branching and Commit Strategy
+
+**IMPORTANT**: All contributors (human and AI) MUST follow the branching and commit conventions defined in `docs/BRANCHING_STRATEGY.md`.
+
+### Quick Reference for AI Agents
+
+#### Branch Naming
+- **Feature**: `feature/PROTO-XXX-description`
+- **Bugfix**: `bugfix/PROTO-XXX-description`
+- **Hotfix**: `hotfix/vX.Y.Z-issue`
+- **Docs**: `docs/topic`
+- **Refactor**: `refactor/component-description`
+
+#### Commit Message Format
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+
+**Scopes**: `cli`, `agent`, `git`, `test`, `state`, `config`, `docs`, `setup`
+
+#### Before Starting Work
+1. Verify on `development` branch: `git checkout development`
+2. Pull latest: `git pull origin development`
+3. Create feature branch: `git checkout -b feature/PROTO-XXX-description`
+4. Verify branch name follows convention
+
+#### Making Commits
+1. **DO**: Make atomic commits (one logical change)
+2. **DO**: Write clear commit messages following convention
+3. **DO**: Reference issue numbers: `Closes PROTO-XXX`
+4. **DO**: Test before committing (minimum: `pg init --dry-run`)
+5. **DON'T**: Commit directly to `main` or `development`
+6. **DON'T**: Use vague messages like "fix stuff" or "updates"
+
+#### Creating Pull Requests
+- **Title**: Same format as commit message (e.g., `feat(cli): add --version flag`)
+- **Description**: Include summary, changes made, testing done, checklist
+- **Reference**: Always reference related issue (e.g., `Closes PROTO-XXX`)
+
+### Current Issue Tracking
+- **Format**: `PROTO-{number}` (e.g., PROTO-001, PROTO-002)
+- **Starting from**: PROTO-001
+- **Track in**: GitHub Issues or PROJECT_STATUS.md
+
+### Protected Branches
+- **`main`**: Production-ready code, no direct commits, requires PR + review
+- **`development`**: Integration branch, no direct commits for features, merge via PR
+
+**For complete details, see**: `docs/BRANCHING_STRATEGY.md`
