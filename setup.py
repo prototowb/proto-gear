@@ -17,7 +17,7 @@ def read_requirements(filename):
 
 setup(
     name="proto-gear",
-    version="3.0.0",
+    version="0.3.0",
     author="Proto Gear Team",
     author_email="team@protogear.dev",
     description="Proto Gear - AI Agent Framework for intelligent development workflows",
@@ -31,7 +31,7 @@ setup(
         "Discord": "https://discord.gg/protogear",
     },
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
         "Topic :: Software Development :: Quality Assurance",
