@@ -1,0 +1,322 @@
+# Proto Gear Agent Framework Configuration
+# Complete example with all available options
+# See docs/CONFIGURATION.md for detailed documentation
+
+# Agent Configuration
+agents:
+  # Core agents (always active) - 4 slots
+  core:
+    - id: backend
+      name: "Backend Agent"
+      description: "Server-side logic, APIs, database integration"
+      responsibilities:
+        - "API development and maintenance"
+        - "Database schema and queries"
+        - "Server-side business logic"
+        - "Authentication and authorization"
+        - "Performance optimization"
+
+    - id: frontend
+      name: "Frontend Agent"
+      description: "UI/UX, component development, styling"
+      responsibilities:
+        - "UI component development"
+        - "Styling and responsive design"
+        - "Client-side state management"
+        - "Accessibility compliance"
+        - "User experience optimization"
+
+    - id: testing
+      name: "Testing Agent"
+      description: "Test creation, coverage analysis, quality assurance"
+      responsibilities:
+        - "Unit test creation"
+        - "Integration test development"
+        - "Test coverage analysis"
+        - "E2E test automation"
+        - "Quality assurance"
+
+    - id: devops
+      name: "DevOps Agent"
+      description: "CI/CD, deployment, infrastructure management"
+      responsibilities:
+        - "CI/CD pipeline maintenance"
+        - "Deployment automation"
+        - "Infrastructure as code"
+        - "Monitoring and logging"
+        - "Performance tuning"
+
+  # Flex agent pool (dynamically assigned based on sprint type) - 2 slots
+  flex_pool:
+    - id: documentation
+      name: "Documentation Agent"
+      description: "Documentation creation and maintenance"
+      responsibilities:
+        - "API documentation"
+        - "User guides and tutorials"
+        - "Code documentation"
+        - "README maintenance"
+        - "Changelog management"
+
+    - id: performance
+      name: "Performance Agent"
+      description: "Performance optimization and monitoring"
+      responsibilities:
+        - "Performance profiling"
+        - "Optimization implementation"
+        - "Load testing"
+        - "Resource usage analysis"
+        - "Caching strategies"
+
+    - id: security
+      name: "Security Agent"
+      description: "Security auditing and hardening"
+      responsibilities:
+        - "Security vulnerability scanning"
+        - "Dependency auditing"
+        - "Access control review"
+        - "Encryption implementation"
+        - "Security best practices"
+
+    - id: refactoring
+      name: "Refactoring Agent"
+      description: "Code quality improvement and refactoring"
+      responsibilities:
+        - "Code smell identification"
+        - "Refactoring implementation"
+        - "Technical debt reduction"
+        - "Code style enforcement"
+        - "Architecture improvements"
+
+  # Sprint-specific flex agent configurations
+  sprint_configs:
+    feature_development:
+      flex_agents:
+        - documentation
+        - security
+      description: "Building new features"
+
+    bug_fixing:
+      flex_agents:
+        - testing
+        - security
+      description: "Resolving bugs and issues"
+
+    performance_optimization:
+      flex_agents:
+        - performance
+        - testing
+      description: "Optimizing performance"
+
+    deployment_prep:
+      flex_agents:
+        - devops
+        - security
+      description: "Preparing for deployment"
+
+    refactoring:
+      flex_agents:
+        - refactoring
+        - testing
+      description: "Code quality improvements"
+
+    research_integration:
+      flex_agents:
+        - documentation
+        - testing
+      description: "Researching and integrating new technologies"
+
+# Git Workflow Configuration
+git:
+  # Main branches
+  main_branch: "main"
+  dev_branch: "development"
+
+  # Branch prefixes
+  branch_prefix:
+    feature: "feature/"
+    bugfix: "bugfix/"
+    hotfix: "hotfix/"
+    release: "release/"
+    experimental: "experimental/"
+
+  # Commit conventions
+  commit_convention: "conventional"  # Options: conventional, angular, custom
+
+  # Git hooks
+  hooks:
+    pre_commit:
+      enabled: true
+      run_linting: true
+      run_tests: true
+
+    commit_msg:
+      enabled: true
+      validate_format: true
+
+    pre_push:
+      enabled: false
+      run_tests: false
+
+# Testing Configuration
+testing:
+  # Test framework
+  framework: "pytest"  # Options: pytest, unittest, nose2
+
+  # Test directories
+  test_directory: "tests"
+  test_pattern: "test_*.py"
+
+  # Coverage
+  coverage_enabled: true
+  coverage_threshold: 80  # Minimum coverage percentage
+  coverage_report_format: "html"  # Options: html, xml, term, json
+
+  # Test types
+  test_types:
+    unit:
+      enabled: true
+      marker: "unit"
+      timeout: 60
+
+    integration:
+      enabled: true
+      marker: "integration"
+      timeout: 300
+
+    e2e:
+      enabled: true
+      marker: "e2e"
+      timeout: 600
+
+    performance:
+      enabled: false
+      marker: "performance"
+      timeout: 900
+
+  # TDD workflow
+  tdd:
+    enforce: true
+    verify_tests_first: true
+
+# Ticket Management
+tickets:
+  # Ticket ID format
+  prefix: "PROTO"  # e.g., PROTO-001, PROTO/A-001
+  start_number: 1
+  zero_padding: 3  # Number of digits (001, 002, etc.)
+
+  # Agent-generated tickets
+  agent_suffix: "/A"  # e.g., PROTO/A-001
+
+  # Ticket types
+  types:
+    - feature
+    - bugfix
+    - hotfix
+    - refactor
+    - docs
+    - test
+    - chore
+
+  # Status workflow
+  statuses:
+    - pending
+    - in_progress
+    - review
+    - testing
+    - completed
+    - blocked
+    - cancelled
+
+# Project State Management
+project_state:
+  # Status file
+  status_file: "PROJECT_STATUS.md"
+
+  # Update frequency
+  auto_update: true
+  update_on_commit: true
+
+  # State validation
+  validate_schema: true
+  schema_version: "1.0"
+
+# Documentation
+documentation:
+  # AGENTS.md files
+  agents_file: "AGENTS.md"
+  enforce_hierarchy: true
+  check_duplicates: true
+
+  # Auto-generation
+  auto_generate: true
+  template_path: "core/AGENTS.template.md"
+
+# Workflow Orchestration
+workflow:
+  # Orchestrator behavior
+  auto_detect_sprint: true
+  auto_configure_agents: true
+
+  # Consistency checks
+  run_consistency_checks: true
+  enforce_documentation: true
+
+  # Git integration
+  auto_create_branches: true
+  auto_update_status: true
+
+  # Quality checks
+  run_quality_checks: true
+  quality_gates:
+    - linting
+    - testing
+    - coverage
+    - documentation
+
+# Logging and Monitoring (Future)
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR
+  format: "json"  # Options: json, text
+  output: "proto-gear.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# Notifications (Future)
+notifications:
+  enabled: false
+  channels:
+    - slack
+    - email
+  events:
+    - workflow_complete
+    - test_failure
+    - coverage_below_threshold
+
+# Performance
+performance:
+  # Caching
+  cache_enabled: true
+  cache_dir: ".proto-gear/cache"
+
+  # Parallelization
+  parallel_execution: true
+  max_workers: 4
+
+# Advanced Settings
+advanced:
+  # Plugin system (Future)
+  plugins_enabled: false
+  plugins_dir: "plugins"
+
+  # Custom scripts
+  custom_scripts:
+    pre_workflow: null
+    post_workflow: null
+
+  # Experimental features
+  experimental:
+    multi_project: false
+    ai_suggestions: false
+    auto_ticketing: false
