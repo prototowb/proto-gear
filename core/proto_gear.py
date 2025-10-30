@@ -29,7 +29,7 @@ LOGO_V1 = """
     ║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
     ║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
     ║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-    ║                          🤖 AI Agent Framework v3.0 🤖     ║
+    ║                        🤖 AI Agent Framework v0.3 🤖       ║
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
 """
@@ -93,7 +93,7 @@ def show_splash_screen():
     except UnicodeEncodeError:
         # Fallback for terminals that don't support Unicode
         print("=" * 60)
-        print(" PROTO GEAR - AI Agent Framework v3.0")
+        print(" PROTO GEAR - AI Agent Framework v0.3")
         print("=" * 60)
     print(Colors.ENDC)
 
@@ -340,7 +340,7 @@ pg help
 4. Start development with AI-powered assistance
 
 ---
-*Powered by ProtoGear Agent Framework v3.0*
+*Powered by ProtoGear Agent Framework v0.3 (Alpha)*
 """
             agents_file.write_text(agents_content)
             files_created.append('AGENTS.md')
