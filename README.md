@@ -234,7 +234,7 @@ cd my-nextjs-app
 $ pg init
 
 ╔═════════════════════════════════════════════════════════════╗
-║   PROTO GEAR - AI Agent Framework v3.0                     ║
+║   PROTO GEAR - AI Agent Framework v0.3                     ║
 ╚═════════════════════════════════════════════════════════════╝
 
 ⚡ AI-Powered Development Workflow Framework ⚡
