@@ -269,7 +269,7 @@ Co-authored-by: Claude <noreply@anthropic.com>
 ### Before Starting Work
 
 1. **Check current branch**: Verify you're on `development`
-2. **Pull latest changes**: `git pull origin development`
+2. **Pull latest changes**: `git pull origin development` (if remote configured)
 3. **Create feature branch**: `git checkout -b feature/PROTO-XXX-description`
 4. **Verify branch name**: Follows convention exactly
 
@@ -279,13 +279,15 @@ Co-authored-by: Claude <noreply@anthropic.com>
 2. **Write good commit messages**: Follow convention above
 3. **Test before committing**: Ensure code works
 4. **Commit frequently**: Small commits are better than large ones
+5. **Push to remote (optional)**: `git push -u origin feature/PROTO-XXX-description` (if remote configured, enables backup and collaboration)
 
 ### Before Creating PR
 
 1. **Review all changes**: `git diff development`
 2. **Ensure tests pass**: Run test suite if available
 3. **Rebase if needed**: `git rebase development` (if behind)
-4. **Push branch**: `git push -u origin feature/PROTO-XXX-description`
+4. **Push branch to remote**: `git push -u origin feature/PROTO-XXX-description` (required for PR)
+5. **Verify remote**: `git branch -vv` (check tracking branch is set)
 
 ### Creating Pull Request
 
@@ -355,6 +357,8 @@ PROTO-005: Create configuration examples
 - **Test your changes** before committing (at minimum, run `pg init --dry-run`)
 - **Update documentation** when changing behavior
 - **Add comments** for complex logic
+- **Push to remote regularly** if remote is configured (enables backup and team visibility)
+- **Check remote status** before creating PR (`git branch -vv`)
 
 #### DON'T ❌
 
@@ -376,9 +380,34 @@ I'm going to:
 1. Create branch: feature/PROTO-XXX-add-test-suite
 2. Add test files for core modules
 3. Commit with message: "test(agent): add unit tests for sprint configuration"
-4. Push and create PR
+4. Push to remote (if configured): git push -u origin feature/PROTO-XXX-add-test-suite
+5. Create PR (if remote exists)
 
 Does this approach work for you?
+```
+
+#### Handling Remote Repositories
+
+**If remote is configured**:
+- Push regularly during development for backup
+- Push before creating PR (required)
+- Use `-u` flag on first push to set tracking branch
+
+**If no remote configured** (local-only development):
+- Work normally with local commits
+- Merge to `development` locally
+- No PR process needed
+
+**Check remote status**:
+```bash
+# Check if remote exists
+git remote -v
+
+# Check tracking branch status
+git branch -vv
+
+# Check if branch is pushed
+git status
 ```
 
 ---
@@ -496,12 +525,16 @@ git commit -m "test(cli): add tests for pg init command"
 git add tests/test_agent_framework.py
 git commit -m "test(agent): add tests for sprint configuration"
 
-# 5. Push branch
+# 5. Push branch to remote (if remote configured)
 git push -u origin feature/PROTO-001-add-test-suite
 
-# 6. Create PR on GitHub
+# 6. Create PR on GitHub (if remote exists)
 # Title: "test(all): add comprehensive test suite"
 # Description: Reference PROTO-001, explain coverage
+
+# OR if no remote: Merge locally
+# git checkout development
+# git merge feature/PROTO-001-add-test-suite --no-ff
 ```
 
 ### Example 2: Fixing Bug (Bugfix)
@@ -595,18 +628,21 @@ ALWAYS:
 ✅ Use descriptive names
 ✅ Write clear commits
 ✅ Test before pushing
-✅ Create PR for review
+✅ Push to remote (if configured)
+✅ Create PR for review (if remote)
 
 NEVER:
 ❌ Commit to main directly
 ❌ Use vague messages
 ❌ Skip testing
 ❌ Force push shared branches
+❌ Forget to push to remote before PR
 ```
 
 ---
 
 **Document Status**: Active
 **Last Updated**: 2025-10-30
+**Version**: 1.1 (Added remote repository handling)
 **Maintained By**: Proto Gear Team
 **Enforced By**: All contributors (human and AI)
