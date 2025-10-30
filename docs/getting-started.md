@@ -1,77 +1,167 @@
-# Getting Started with Agent Framework
+# Getting Started with Proto Gear
 
-Welcome to the Agent Framework - an adaptive AI orchestration system for autonomous project management.
+**Version**: 0.3.0 (Alpha)
+**Status**: Development/Experimentation Use
 
-## What is Agent Framework?
+> ⚠️ **Alpha Software**: Proto Gear is currently in alpha development. Use for experimentation and development projects. Not recommended for production without thorough testing.
 
-Agent Framework is a reusable system that provides:
-- **Hybrid Agent Management**: 4 core agents + 2 flexible agents that adapt per sprint
-- **Automated Workflows**: Sprint planning, ticket generation, branch management
-- **Documentation Consistency**: Hierarchical AGENTS.md system with DRY principles
-- **Quality Enforcement**: Test-driven development, coverage requirements
-- **Project State Management**: Single source of truth tracking
+## What is Proto Gear?
 
-## Quick Start (5 minutes)
+Proto Gear is a **Python-based AI Agent Framework** that provides infrastructure ("rails") for external AI services to work consistently with development projects. Think of it as the organizational backbone that AI assistants like Claude, GPT, or custom agents use to maintain structure and consistency across development sessions.
 
-### 1. Initialize Your Project
+### Core Philosophy
+
+Proto Gear is **NOT** an AI system itself. It's the **framework** that external AI services use to:
+- Maintain consistent project state
+- Organize development workflows
+- Track progress across sessions
+- Coordinate multiple specialized agents
+- Enforce development conventions
+
+### Key Features
+
+- 🤖 **Adaptive Hybrid Agent System**: 4 permanent core agents + 2 flexible sprint-based slots
+- 📊 **Project State Management**: Single source of truth via PROJECT_STATUS.md
+- 🎯 **Sprint-Based Configuration**: Agents adapt to sprint type (Feature Development, Bug Fixing, etc.)
+- 🎫 **Ticket Generation**: Structured ticket creation with proper ID management
+- 🌿 **Git Workflow Integration**: Automatic branch management for tickets
+- 📋 **Documentation Consistency**: Ensures AGENTS.md hierarchy stays synchronized
+- 🔍 **Auto-Detection**: Recognizes existing tech stack (Node.js, Python, etc.)
+- 🎨 **Beautiful CLI**: Rich terminal interface with ANSI art
+
+---
+
+## Quick Start (5 Minutes)
+
+### Prerequisites
+
+- **Python**: 3.8 or higher
+- **Git**: For branch management features
+- **pip**: Python package manager
+
+### Installation
+
+#### Option 1: Install from PyPI (Recommended)
 
 ```bash
-# Clone the framework
-git clone https://github.com/your-org/agent-framework
-cd your-project
-
-# Run the initializer
-./agent-framework/scripts/init-project.sh
+pip install proto-gear
 ```
 
-The initializer will:
-- Create AGENTS.md hierarchy
-- Set up PROJECT_STATUS.md
-- Generate configuration file
-- Create project structure
+#### Option 2: Install from Source (Development)
 
-### 2. Configure Your Agents
-
-Edit `agent-framework.config.yaml`:
-
-```yaml
-project:
-  name: "My Awesome App"
-  type: "web-app"
-  
-agents:
-  core:
-    - id: "backend"
-      name: "Backend API Developer"
-      responsibilities:
-        - "API development"
-        - "Database design"
-    # ... configure 4 core agents
+```bash
+git clone https://github.com/proto-gear/proto-gear.git
+cd proto-gear
+pip install -e .
 ```
 
-### 3. Activate the Framework
+### Verify Installation
 
-Have an AI agent read the root `AGENTS.md` file:
+```bash
+# Check that pg command is available
+pg --help
 
-```markdown
-"Please read and execute AGENTS.md"
+# Should display:
+# Proto Gear - AI Agent Framework for Development Workflows
 ```
 
-The Lead AI will:
-1. Initialize the agent system
-2. Configure agents for current sprint
-3. Check documentation consistency
-4. Generate development plan
-5. Create tickets and branches
+---
+
+## Initialize Your First Project
+
+### 1. Navigate to Your Project
+
+```bash
+cd /path/to/your-existing-project
+```
+
+**Important**: Proto Gear works with **existing projects**. It does not scaffold new projects or make tech stack decisions. It adds AI workflow infrastructure to YOUR project.
+
+### 2. Run Initialization
+
+```bash
+pg init
+```
+
+You'll see the Proto Gear splash screen and initialization process:
+
+```
+╔═════════════════════════════════════════════════════════════╗
+║                                                             ║
+║                  PROTO GEAR                                 ║
+║                  🤖 AI Agent Framework v0.3 🤖              ║
+║                                                             ║
+╚═════════════════════════════════════════════════════════════╝
+
+⚡ AI-Powered Development Workflow Framework ⚡
+
+Agent Framework Setup
+------------------------------
+Current directory: /path/to/your-project
+Detected: Node.js Project
+Framework: Next.js
+
+✅ SUCCESS: ProtoGear AI Agent Framework integrated!
+
+📄 Files created:
+  + AGENTS.md
+  + PROJECT_STATUS.md
+```
+
+### 3. Review Generated Files
+
+#### AGENTS.md
+This file provides context to AI assistants about your project:
+- Detected project type and framework
+- Agent configuration (4 core + 2 flex)
+- Workflow commands
+- Instructions for AI assistants
+
+#### PROJECT_STATUS.md
+Single source of truth for project state:
+- Current project phase
+- Active and completed tickets
+- Project analysis
+- Recent updates
+
+### 4. Preview First (Optional)
+
+Test with dry-run mode to see what will be created:
+
+```bash
+pg init --dry-run
+```
+
+---
+
+## Using Proto Gear with AI Assistants
+
+### With Claude (Recommended)
+
+1. **Share AGENTS.md**: Provide the AGENTS.md file to Claude
+2. **Reference PROJECT_STATUS.md**: Claude will read current state
+3. **Work naturally**: Claude uses Proto Gear conventions automatically
+4. **Tickets & Branches**: Claude creates tickets and branches following Proto Gear structure
+
+### With GPT/Custom AI
+
+1. **Read AGENTS.md**: Have your AI assistant read the file
+2. **Follow conventions**: AI should respect AGENTS.md instructions
+3. **Update PROJECT_STATUS.md**: AI updates state as work progresses
+4. **Use workflow commands**: `pg workflow` to check consistency
+
+---
 
 ## Core Concepts
 
 ### 1. Adaptive Hybrid Agent System
 
+Proto Gear uses a **4 + 2 agent model**:
+
 ```
 ┌─────────────────────────────────────┐
-│         Lead AI (Orchestrator)       │
-│    Product Owner + Tech Lead         │
+│    Workflow Orchestrator            │
+│    (Lead AI Coordination)           │
 └──────────────┬──────────────────────┘
                │
     ┌──────────┴──────────┐
@@ -84,85 +174,321 @@ The Lead AI will:
 Always Active        Sprint-Specific
 ```
 
-### 2. AGENTS.md Hierarchy
+#### Core Agents (Always Active)
+- **Backend Agent**: Server logic, APIs, databases
+- **Frontend Agent**: UI/UX, components, styling
+- **Testing Agent**: Test creation, coverage, QA
+- **DevOps Agent**: CI/CD, deployment, infrastructure
 
-```
-/ (root AGENTS.md - master orchestrator)
-├── /frontend/AGENTS.md (inherits from root)
-├── /backend/AGENTS.md (inherits from root)
-└── /docs/AGENTS.md (inherits from root)
-```
+#### Flex Agents (Sprint-Based)
+Two slots that adapt based on sprint type:
+- **Documentation Agent**: For feature development
+- **Performance Agent**: For optimization sprints
+- **Security Agent**: For security-focused work
+- **Refactoring Agent**: For code quality improvements
 
-**DRY Principle**: Child files only contain LOCAL context, never duplicate parent info.
+### 2. Sprint Types
+
+Proto Gear adapts to different development phases:
+
+- `FEATURE_DEVELOPMENT` - Building new functionality
+- `BUG_FIXING` - Resolving issues
+- `PERFORMANCE_OPTIMIZATION` - Speed improvements
+- `DEPLOYMENT_PREP` - Release preparation
+- `REFACTORING` - Code quality
+- `RESEARCH_INTEGRATION` - New technologies
 
 ### 3. Project State Management
 
-`PROJECT_STATUS.md` is the single source of truth:
+**PROJECT_STATUS.md** is the single source of truth:
 
 ```yaml
 project_phase: "Development"
+protogear_enabled: true
+framework: "Next.js"
 current_sprint: 1
-active_tickets: [...]
 ```
 
-### 4. Workflow Automation
+Contains:
+- 🎫 Active Tickets
+- ✅ Completed Tickets
+- 📊 Project Analysis
+- 🔄 Recent Updates
 
-When AGENTS.md is read:
+### 4. Ticket Management
+
+Tickets are automatically assigned IDs:
+
+- **Format**: `PROJ/A-001` (agent-generated)
+- **Format**: `PROJ-001` (human-created)
+- **Types**: feature, bugfix, refactor, docs, test, chore
+- **Status**: pending, in_progress, completed, blocked
+
+### 5. Git Workflow Integration
+
+When tickets are created, Proto Gear can:
+- Create properly named branches
+- Follow convention: `feature/proj-a-001-implement-auth`
+- Track branch status in PROJECT_STATUS.md
+- Support bugfix, hotfix, and feature types
+
+---
+
+## Workflow Commands
+
+### Initialize Agent Framework
+
+```bash
+# Initialize in current project
+pg init
+
+# Preview without creating files
+pg init --dry-run
 ```
-1. Initialize agents
-2. Check documentation
-3. Update status
-4. Generate tickets
-5. Create branches
-6. Run tests
-7. Request approval
+
+### Run Workflow Orchestrator
+
+```bash
+# Execute Lead AI workflow
+pg workflow
 ```
 
-## Common Use Cases
+The orchestrator will:
+1. Read PROJECT_STATUS.md
+2. Detect sprint type
+3. Configure agent slots
+4. Check documentation consistency
+5. Create Git branches for tickets
+6. Report workflow status
 
-### Web Application Development
+### Show Help
 
+```bash
+# Display comprehensive help
+pg help
+```
+
+---
+
+## Configuration
+
+### Basic Configuration
+
+Proto Gear works with sensible defaults, but you can customize behavior with a config file:
+
+**Create**: `agent-framework.config.yaml` in your project root
+
+**Minimal Example**:
 ```yaml
-# Configure for web app
 agents:
   core:
-    - backend: "API Development"
-    - frontend: "UI Development"
-    - testing: "Quality Assurance"
-    - devops: "Infrastructure"
-  
-  sprint_configs:
-    feature_development:
-      flex_agents: ["documentation", "performance"]
+    - id: backend
+      name: "Backend Agent"
+    - id: frontend
+      name: "Frontend Agent"
+    - id: testing
+      name: "Testing Agent"
+    - id: devops
+      name: "DevOps Agent"
+
+git:
+  main_branch: "main"
+  dev_branch: "development"
+
+testing:
+  framework: "pytest"
+  coverage_threshold: 80
+
+tickets:
+  prefix: "MYPROJ"
 ```
 
-### API Service
+### Complete Configuration
 
-```yaml
-# Configure for API
-agents:
-  core:
-    - api: "API Development"
-    - database: "Data Management"
-    - testing: "API Testing"
-    - security: "Security & Auth"
+See comprehensive example:
+```bash
+examples/agent-framework.config.yaml
 ```
 
-### Mobile App
+For detailed configuration options, see: [CONFIGURATION.md](CONFIGURATION.md)
 
-```yaml
-# Configure for mobile
-agents:
-  core:
-    - ios: "iOS Development"
-    - android: "Android Development"
-    - testing: "Mobile Testing"
-    - backend: "API Backend"
+---
+
+## Working with AI Agents
+
+### Before Starting Development
+
+1. **Initialize Proto Gear**: Run `pg init` once
+2. **Share AGENTS.md**: Provide to your AI assistant
+3. **Reference PROJECT_STATUS.md**: AI reads current state
+4. **Start Working**: AI follows Proto Gear conventions
+
+### During Development
+
+AI assistants should:
+- ✅ Update PROJECT_STATUS.md as work progresses
+- ✅ Create tickets with proper IDs
+- ✅ Follow branch naming conventions
+- ✅ Maintain documentation consistency
+- ✅ Run `pg workflow` periodically to check state
+
+### After Development Sessions
+
+```bash
+# Check workflow status
+pg workflow
+
+# Review PROJECT_STATUS.md
+# Verify all tickets and branches are tracked
 ```
 
-## Customization
+---
+
+## Project Detection
+
+Proto Gear automatically detects:
+
+### Node.js Projects
+- **Indicators**: package.json presence
+- **Frameworks**: Next.js, React, Vue.js, Express.js
+- **Action**: Analyzes dependencies
+
+### Python Projects
+- **Indicators**: requirements.txt, setup.py, pyproject.toml
+- **Frameworks**: Django, FastAPI, Flask
+- **Action**: Checks for manage.py (Django)
+
+### Other Languages
+Future support planned for:
+- Ruby (Gemfile)
+- Java (pom.xml, build.gradle)
+- Go (go.mod)
+- Rust (Cargo.toml)
+- PHP (composer.json)
+
+---
+
+## Examples & Use Cases
+
+### Example 1: Solo Developer with Claude
+
+**Scenario**: Building a Next.js app with Claude's assistance
+
+```bash
+cd my-nextjs-app
+pg init
+
+# AGENTS.md now contains project context
+# Share with Claude and start development
+# Claude creates tickets, branches, and maintains PROJECT_STATUS.md
+```
+
+### Example 2: Small Team (2-4 Developers)
+
+**Scenario**: Team using AI assistants for various features
+
+```bash
+pg init
+
+# Each developer:
+# 1. Reads AGENTS.md for project context
+# 2. Uses AI assistant following Proto Gear conventions
+# 3. Updates PROJECT_STATUS.md with tickets
+# 4. Runs `pg workflow` to check consistency
+```
+
+### Example 3: Adding Tests to Existing Project
+
+**Scenario**: Using Proto Gear to organize test coverage improvements
+
+```bash
+pg init
+# Create tickets in PROJECT_STATUS.md for test coverage
+# AI assistant generates tests following ticket structure
+# Proto Gear creates branches automatically
+# Track progress in PROJECT_STATUS.md
+```
+
+---
+
+## Best Practices
+
+### 1. Project Organization
+- ✅ Run `pg init` once per project
+- ✅ Keep AGENTS.md and PROJECT_STATUS.md in repo root
+- ✅ Commit both files to version control
+- ✅ Update PROJECT_STATUS.md regularly
+
+### 2. Working with AI
+- ✅ Always share AGENTS.md with AI assistants
+- ✅ Reference PROJECT_STATUS.md for current state
+- ✅ Let AI create tickets and branches
+- ✅ Run `pg workflow` to verify consistency
+
+### 3. Configuration
+- ✅ Start with defaults
+- ✅ Customize only what you need
+- ✅ Use examples/ folder for reference
+- ✅ Document custom configurations
+
+### 4. Team Coordination
+- ✅ Establish PROJECT_STATUS.md update cadence
+- ✅ Use Git for conflict resolution
+- ✅ Run `pg workflow` before major changes
+- ✅ Keep AGENTS.md synchronized
+
+---
+
+## Troubleshooting
+
+### "Command not found: pg"
+
+**Solution**: Ensure Proto Gear is installed and in PATH
+
+```bash
+pip install --upgrade proto-gear
+# or
+pip install -e . # if installing from source
+```
+
+### "Not a Git repository"
+
+**Solution**: Git workflow features require a Git repo
+
+```bash
+git init
+# or work in an existing Git repository
+```
+
+### "Files already exist"
+
+**Solution**: AGENTS.md or PROJECT_STATUS.md already present
+
+```bash
+# Backup existing files
+mv AGENTS.md AGENTS.md.backup
+mv PROJECT_STATUS.md PROJECT_STATUS.md.backup
+
+# Re-run init
+pg init
+```
+
+### AI Assistant Not Following Conventions
+
+**Solution**: Ensure AI reads AGENTS.md at session start
+
+```
+"Please read AGENTS.md and follow the Proto Gear conventions
+defined there for all development work in this project."
+```
+
+---
+
+## Advanced Topics
 
 ### Custom Agent Behaviors
+
+Future: Extend agent classes for custom logic
 
 ```python
 from agent_framework import Agent
@@ -171,136 +497,115 @@ class CustomAgent(Agent):
     def execute(self, context):
         # Your custom logic
         return results
-
-# Register custom agent
-orchestrator.register_agent('custom', CustomAgent)
 ```
 
-### Sprint Type Detection
+### Multi-Project Workspaces
 
-```python
-def custom_sprint_detector(state):
-    if has_many_bugs(state):
-        return SprintType.BUG_FIXING
-    return SprintType.FEATURE_DEVELOPMENT
-```
+Coming in future versions:
+- Manage multiple projects
+- Shared agent configurations
+- Cross-project dependencies
 
-### Workflow Extensions
+### CI/CD Integration
 
-```python
-class ExtendedOrchestrator(WorkflowOrchestrator):
-    def execute_workflow(self):
-        super().execute_workflow()
-        # Add custom steps
-        self.run_custom_checks()
-```
-
-## Best Practices
-
-### 1. Configuration
-
-- **Define all 4 core agents**: Cover your main development areas
-- **List flex agents**: Include specialists for different sprint types
-- **Set quality gates**: Define minimum test coverage, etc.
-
-### 2. Documentation
-
-- **Keep DRY**: Never duplicate between parent/child AGENTS.md
-- **Update regularly**: Keep PROJECT_STATUS.md current
-- **Link, don't copy**: Reference other docs instead of duplicating
-
-### 3. Workflow
-
-- **Let agents create branches**: Automatic branch creation per ticket
-- **Enforce tests**: Every ticket gets test files
-- **Regular sprints**: Consistent sprint duration (e.g., 14 days)
-
-## Advanced Features
-
-### Multi-Project Management
-
-```yaml
-# Configure for multiple projects
-projects:
-  - name: "Frontend"
-    agents: [...]
-  - name: "Backend"  
-    agents: [...]
-```
-
-### Custom Quality Gates
-
-```python
-def custom_quality_check():
-    return {
-        'performance': check_performance_metrics(),
-        'accessibility': check_wcag_compliance(),
-        'security': run_security_scan()
-    }
-```
-
-### Integration with CI/CD
-
-```yaml
-# GitHub Actions integration
-on:
-  push:
-    branches: [main]
-  
-jobs:
-  agent-framework:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: agent-framework/action@v1
-```
-
-## Troubleshooting
-
-### Framework not activating?
-- Check AGENTS.md has the trigger notice
-- Verify configuration file exists
-- Ensure Python/Node dependencies installed
-
-### Agents not configured correctly?
-- Verify exactly 4 core agents defined
-- Check agent IDs are unique
-- Confirm responsibilities are listed
-
-### Documentation inconsistencies?
-- Run consistency check manually
-- Look for duplicate content
-- Verify inheritance declarations
-
-## Examples
-
-### Example 1: E-Commerce Platform
-See [examples/web-app-example.yaml](../examples/web-app-example.yaml)
-
-### Example 2: SaaS API
-See [examples/api-example.yaml](../examples/api-example.yaml)
-
-### Example 3: Open Source Library
-See [examples/library-example.yaml](../examples/library-example.yaml)
-
-## Next Steps
-
-1. **Initialize your project** with the framework
-2. **Configure agents** for your specific needs
-3. **Read AGENTS.md** to trigger the workflow
-4. **Create tickets** in PROJECT_STATUS.md
-5. **Let agents orchestrate** development
-
-## Getting Help
-
-- 📚 [Full Documentation](https://agent-framework.dev/docs)
-- 💬 [Discord Community](https://discord.gg/agent-framework)
-- 🐛 [Report Issues](https://github.com/your-org/agent-framework/issues)
-- 🤝 [Contributing Guide](../CONTRIBUTING.md)
-
-## License
-
-MIT License - See [LICENSE](../LICENSE) for details.
+Future: GitHub Actions and GitLab CI templates for Proto Gear workflows
 
 ---
 
-Ready to start? Run `./agent-framework/scripts/init-project.sh` and let the agents handle the rest! 🚀
+## Getting Help
+
+### Documentation
+- 📘 [Branching Strategy](BRANCHING_STRATEGY.md) - Git workflow conventions
+- 📘 [Configuration Reference](CONFIGURATION.md) - All config options
+- 📘 [Readiness Assessment](READINESS_ASSESSMENT.md) - Current project status
+- 📘 [Contributing Guide](../CONTRIBUTING.md) - How to contribute
+
+### Support
+- 🐛 [Report Issues](https://github.com/proto-gear/proto-gear/issues)
+- 💬 [Discussions](https://github.com/proto-gear/proto-gear/discussions)
+- 📧 Email: team@protogear.dev
+
+### Community
+- 💬 Discord: (Coming soon)
+- 🐦 Twitter: @protogear (Coming soon)
+
+---
+
+## What's Next?
+
+### Current Version (v0.3.0 Alpha)
+- ✅ Core CLI functionality
+- ✅ Agent system implementation
+- ✅ Git workflow integration
+- ✅ Project state management
+- ⚠️ Alpha quality - use for development
+
+### Roadmap to v0.4.0
+- 🔄 Comprehensive test suite
+- 🔄 Structured logging
+- 🔄 Configuration validation
+- 🔄 Improved error handling
+
+### Roadmap to v1.0.0
+- 🔄 Multi-project support
+- 🔄 Plugin system
+- 🔄 CI/CD templates
+- 🔄 Monitoring dashboard
+- 🔄 Production-ready stability
+
+---
+
+## Contributing
+
+Proto Gear is open source and welcomes contributions!
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
+- Branching strategy
+- Commit message conventions
+- Development workflow
+- Testing guidelines
+
+---
+
+## License
+
+MIT License - see [LICENSE](../LICENSE) for details.
+
+---
+
+## Quick Command Reference
+
+```bash
+# Installation
+pip install proto-gear
+
+# Initialize project
+pg init
+
+# Preview initialization
+pg init --dry-run
+
+# Run workflow orchestrator
+pg workflow
+
+# Show help
+pg help
+
+# Check version
+pip show proto-gear
+```
+
+---
+
+**Ready to get started?**
+
+```bash
+cd your-project
+pg init
+```
+
+Let Proto Gear provide the structure while your AI assistants do the work! 🚀
+
+---
+
+*Proto Gear v0.3.0 (Alpha) - Infrastructure for AI-Assisted Development*
