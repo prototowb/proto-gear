@@ -2,10 +2,13 @@
 
 > AI Agent Framework for Intelligent Development Workflows
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue)](https://github.com/proto-gear/proto-gear)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue)](https://github.com/proto-gear/proto-gear)
+[![Status](https://img.shields.io/badge/status-alpha-orange)](docs/READINESS_ASSESSMENT.md)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-purple)](LICENSE)
 [![Tech Stack Agnostic](https://img.shields.io/badge/stack-agnostic-orange)](docs/features.md)
+
+> ⚠️ **Alpha Software**: Proto Gear v0.3.0 is alpha-quality software suitable for development and experimentation. Not recommended for production use without thorough testing. See [Readiness Assessment](docs/READINESS_ASSESSMENT.md) for details.
 
 ## ⚡ What is Proto Gear?
 
