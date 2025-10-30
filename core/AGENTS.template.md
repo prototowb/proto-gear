@@ -340,6 +340,8 @@ SPRINT_PLANNING:
 
 ### Git Flow & Merging Strategy
 
+{{BRANCHING_REFERENCE}}
+
 #### Branch Hierarchy
 ```
 {{MAIN_BRANCH}} (production)
@@ -359,7 +361,7 @@ SPRINT_PLANNING:
   - No direct commits
 
 {{DEV_BRANCH}}:
-  - Protected branch  
+  - Protected branch
   - Requires PR from feature/bugfix branches
   - All tests must pass
   - Auto-merge allowed if tests pass

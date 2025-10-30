@@ -256,7 +256,154 @@ def detect_project_structure(project_path):
     return info
 
 
-def setup_agent_framework_only(dry_run=False):
+def detect_git_config():
+    """Detect Git configuration"""
+    import subprocess
+
+    config = {
+        'is_git_repo': False,
+        'has_remote': False,
+        'remote_name': None,
+        'main_branch': 'main',
+        'dev_branch': 'development'
+    }
+
+    try:
+        # Check if it's a Git repo
+        result = subprocess.run(['git', 'rev-parse', '--git-dir'],
+                              capture_output=True, text=True, timeout=5)
+        config['is_git_repo'] = result.returncode == 0
+
+        if config['is_git_repo']:
+            # Check for remote
+            result = subprocess.run(['git', 'remote'],
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0 and result.stdout.strip():
+                config['has_remote'] = True
+                config['remote_name'] = result.stdout.strip().split()[0]
+    except:
+        pass
+
+    return config
+
+
+def generate_branching_doc(project_name, ticket_prefix, git_config, generation_date):
+    """Generate BRANCHING.md from template"""
+    template_path = Path(__file__).parent / 'BRANCHING.template.md'
+
+    if not template_path.exists():
+        return None
+
+    try:
+        template = template_path.read_text(encoding='utf-8')
+
+        # Determine values based on Git configuration
+        if git_config['has_remote']:
+            remote_requires_pr = "\n- **Pull Requests**: Required for merging"
+            remote_requires_tests = " and pass tests"
+            remote_via_pr = " (via pull request)"
+            merge_method = " (via pull request)"
+            remote_origin = f" origin"
+            if_remote = ""
+            remote_push_during = "5. **Push to remote**: `git push -u origin your-branch-name` (enables backup)"
+            remote_push_before_pr = "\n4. **Push to remote**: `git push -u origin feature-branch`\n5. **Create pull request**: On GitHub/GitLab"
+            local_merge_steps = ""
+            remote_push_step = "\n5. Push to remote: git push -u origin feature/branch"
+            remote_create_pr_or_local_merge = "\n6. Create pull request on GitHub/GitLab"
+            remote_handling_section = f"""## Working with Remote Repository
+
+This project has a remote repository configured ({git_config['remote_name']}).
+
+### Push Regularly
+```bash
+# Push your branch to backup work
+git push -u origin feature/{{{{TICKET_PREFIX}}}}-XXX-description
+
+# Check remote status
+git branch -vv
+```
+
+### Creating Pull Requests
+1. Push your branch to remote
+2. Go to your repository on GitHub/GitLab
+3. Create pull request from your branch to `{{{{DEV_BRANCH}}}}`
+4. Request review if required
+5. Merge after approval"""
+            remote_push_reminder = "\n✅ Push to remote regularly"
+            remote_create_pr_reminder = "\n✅ Create PR for review"
+            remote_force_push_reminder = "\n❌ Force push to shared branches"
+            ticket_tracking = "GitHub Issues or PROJECT_STATUS.md"
+        else:
+            # Local-only development
+            remote_requires_pr = ""
+            remote_requires_tests = ""
+            remote_via_pr = ""
+            merge_method = " (locally)"
+            remote_origin = ""
+            if_remote = " (if remote configured)"
+            remote_push_during = ""
+            remote_push_before_pr = ""
+            local_merge_steps = "\n4. **Merge locally**: `git checkout {{DEV_BRANCH}} && git merge feature-branch --no-ff`"
+            remote_push_step = ""
+            remote_create_pr_or_local_merge = "\n6. Merge locally to {{DEV_BRANCH}}"
+            remote_handling_section = """## Local Development (No Remote)
+
+This project does not have a remote repository configured.
+
+### Local Workflow
+```bash
+# Work on your branch
+git checkout -b feature/{{TICKET_PREFIX}}-XXX-description
+
+# When done, merge to development
+git checkout {{DEV_BRANCH}}
+git merge feature/{{TICKET_PREFIX}}-XXX-description --no-ff
+
+# Delete feature branch
+git branch -d feature/{{TICKET_PREFIX}}-XXX-description
+```
+
+### Adding a Remote Later
+If you want to add a remote repository:
+```bash
+git remote add origin <repository-url>
+git push -u origin {{DEV_BRANCH}}
+```"""
+            remote_push_reminder = ""
+            remote_create_pr_reminder = ""
+            remote_force_push_reminder = ""
+            ticket_tracking = "PROJECT_STATUS.md"
+
+        # Replace all placeholders
+        content = template.replace('{{PROJECT_NAME}}', project_name)
+        content = content.replace('{{TICKET_PREFIX}}', ticket_prefix)
+        content = content.replace('{{MAIN_BRANCH}}', git_config['main_branch'])
+        content = content.replace('{{DEV_BRANCH}}', git_config['dev_branch'])
+        content = content.replace('{{GENERATION_DATE}}', generation_date)
+        content = content.replace('{{REMOTE_REQUIRES_PR}}', remote_requires_pr)
+        content = content.replace('{{REMOTE_REQUIRES_TESTS}}', remote_requires_tests)
+        content = content.replace('{{REMOTE_VIA_PR}}', remote_via_pr)
+        content = content.replace('{{MERGE_METHOD}}', merge_method)
+        content = content.replace('{{REMOTE_ORIGIN}}', remote_origin)
+        content = content.replace('{{IF_REMOTE}}', if_remote)
+        content = content.replace('{{REMOTE_PUSH_DURING}}', remote_push_during)
+        content = content.replace('{{REMOTE_PUSH_BEFORE_PR}}', remote_push_before_pr)
+        content = content.replace('{{LOCAL_MERGE_STEPS}}', local_merge_steps)
+        content = content.replace('{{REMOTE_PUSH_STEP}}', remote_push_step)
+        content = content.replace('{{REMOTE_CREATE_PR_OR_LOCAL_MERGE}}', remote_create_pr_or_local_merge)
+        content = content.replace('{{REMOTE_HANDLING_SECTION}}', remote_handling_section)
+        content = content.replace('{{REMOTE_PUSH_REMINDER}}', remote_push_reminder)
+        content = content.replace('{{REMOTE_CREATE_PR_REMINDER}}', remote_create_pr_reminder)
+        content = content.replace('{{REMOTE_FORCE_PUSH_REMINDER}}', remote_force_push_reminder)
+        content = content.replace('{{TICKET_TRACKING}}', ticket_tracking)
+
+        return content
+    except Exception as e:
+        print(f"Error generating branching doc: {e}")
+        return None
+
+
+def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -278,6 +425,29 @@ def setup_agent_framework_only(dry_run=False):
         try:
             files_created = []
 
+            # Determine ticket prefix
+            if not ticket_prefix:
+                # Try to derive from project name
+                project_name = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+                ticket_prefix = project_name if project_name else 'PROJ'
+
+            # Optionally create BRANCHING.md
+            branching_reference = ""
+            if with_branching:
+                git_config = detect_git_config()
+                branching_content = generate_branching_doc(
+                    current_dir.name,
+                    ticket_prefix,
+                    git_config,
+                    datetime.now().strftime('%Y-%m-%d')
+                )
+
+                if branching_content:
+                    branching_file = current_dir / 'BRANCHING.md'
+                    branching_file.write_text(branching_content)
+                    files_created.append('BRANCHING.md')
+                    branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
+
             # Create AGENTS.md
             agents_file = current_dir / 'AGENTS.md'
             agents_content = f"""# AGENTS.md - {current_dir.name}
@@ -285,7 +455,7 @@ def setup_agent_framework_only(dry_run=False):
 > **ProtoGear Agent Framework Integration**
 > **Project Type**: {project_info.get('type', 'Unknown')}
 > **Framework**: {project_info.get('framework', 'Unknown')}
-
+{branching_reference}
 ## Framework Activation
 
 This project is now integrated with ProtoGear's AI agent workflow system.
@@ -295,7 +465,7 @@ When this file is read by an AI agent, it should:
 1. Analyze the current project structure
 2. Understand the technology stack in use
 3. Provide context-aware development assistance
-4. Follow the project's established patterns
+4. Follow the project's established patterns{'5. Follow branching and commit conventions in BRANCHING.md' if with_branching else ''}
 
 ## Project Structure
 
@@ -335,9 +505,9 @@ pg help
 ## Next Steps
 
 1. Review this file to understand agent capabilities
-2. Check PROJECT_STATUS.md for current project state
-3. Run 'pg workflow' to activate the orchestrator
-4. Start development with AI-powered assistance
+2. Check PROJECT_STATUS.md for current project state{'3. Review BRANCHING.md for Git workflow conventions' if with_branching else '3. Run \'pg workflow\' to activate the orchestrator'}
+{'4. Run \'pg workflow\' to activate the orchestrator' if with_branching else '4. Start development with AI-powered assistance'}
+{'5. Start development with AI-powered assistance' if with_branching else ''}
 
 ---
 *Powered by ProtoGear Agent Framework v0.3 (Alpha)*
@@ -396,11 +566,13 @@ current_sprint: null
         print(f"\n{Colors.YELLOW}Dry run - files that would be created:{Colors.ENDC}")
         print("  - AGENTS.md (AI agent integration guide)")
         print("  - PROJECT_STATUS.md (project state tracker)")
+        if with_branching:
+            print("  - BRANCHING.md (Git workflow and commit conventions)")
 
         return {'status': 'success', 'dry_run': True}
 
 
-def run_simple_protogear_init(dry_run=False):
+def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
 
@@ -411,7 +583,11 @@ def run_simple_protogear_init(dry_run=False):
 
     # Directly run agent framework setup (no menu)
     try:
-        result = setup_agent_framework_only(dry_run=dry_run)
+        result = setup_agent_framework_only(
+            dry_run=dry_run,
+            with_branching=with_branching,
+            ticket_prefix=ticket_prefix
+        )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
 
@@ -466,6 +642,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         action='store_true',
         help='Simulate without creating files'
     )
+    init_parser.add_argument(
+        '--with-branching',
+        action='store_true',
+        help='Generate BRANCHING.md with Git workflow conventions'
+    )
+    init_parser.add_argument(
+        '--ticket-prefix',
+        type=str,
+        default=None,
+        help='Ticket ID prefix (e.g., PROJ, MYAPP). Defaults to project name.'
+    )
 
     # 'workflow' command to run the orchestrator
     workflow_parser = subparsers.add_parser(
@@ -485,7 +672,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         # Handle 'init' command
         if args.command == 'init':
             show_splash_screen()
-            result = run_simple_protogear_init(dry_run=args.dry_run)
+            result = run_simple_protogear_init(
+                dry_run=args.dry_run,
+                with_branching=args.with_branching,
+                ticket_prefix=args.ticket_prefix
+            )
 
             if result['status'] == 'success':
                 print(f"\n{Colors.GREEN}ProtoGear AI Agent Framework initialized!{Colors.ENDC}")
