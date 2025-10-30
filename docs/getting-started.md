@@ -77,13 +77,13 @@ cd /path/to/your-existing-project
 
 **Important**: Proto Gear works with **existing projects**. It does not scaffold new projects or make tech stack decisions. It adds AI workflow infrastructure to YOUR project.
 
-### 2. Run Initialization
+### 2. Run Interactive Setup Wizard
 
 ```bash
 pg init
 ```
 
-You'll see the Proto Gear splash screen and initialization process:
+Proto Gear will launch an **interactive wizard** that guides you through setup:
 
 ```
 ╔═════════════════════════════════════════════════════════════╗
@@ -95,17 +95,85 @@ You'll see the Proto Gear splash screen and initialization process:
 
 ⚡ AI-Powered Development Workflow Framework ⚡
 
-Agent Framework Setup
+ProtoGear Interactive Setup Wizard
+==========================================================
+
+📊 Project Detection
 ------------------------------
-Current directory: /path/to/your-project
-Detected: Node.js Project
+Directory: my-nextjs-app
+Type: Node.js Project
 Framework: Next.js
+Git: Initialized
+Remote: origin
+
+📋 Branching & Git Workflow
+------------------------------
+Proto Gear can generate a comprehensive branching strategy document
+that defines Git workflow conventions and commit message standards.
+
+This includes:
+  • Branch naming conventions (feature/*, bugfix/*, hotfix/*)
+  • Conventional commit message format
+  • Workflow examples for AI agents
+  • PR templates and merge strategies
+
+✓ Git repository detected - branching strategy recommended
+
+Generate BRANCHING.md? (y/n): y
+
+🎫 Ticket Prefix Configuration
+------------------------------
+Tickets and branches use a prefix for identification.
+Examples: PROJ-001, APP-042, MYAPP-123
+
+Suggested prefix: MYNEXT
+
+Enter ticket prefix (press Enter for 'MYNEXT'): APP
+Using prefix: APP
+
+📝 Configuration Summary
+==========================================================
+Project: my-nextjs-app
+Type: Node.js Project
+Framework: Next.js
+
+Files to be created:
+  ✓ AGENTS.md (AI agent integration guide)
+  ✓ PROJECT_STATUS.md (Project state tracking)
+  ✓ BRANCHING.md (Git workflow conventions)
+
+Ticket Prefix: APP
+
+Proceed with setup? (y/n): y
 
 ✅ SUCCESS: ProtoGear AI Agent Framework integrated!
 
 📄 Files created:
   + AGENTS.md
   + PROJECT_STATUS.md
+  + BRANCHING.md
+```
+
+**What just happened?**
+
+1. **Project Detection**: Proto Gear analyzed your directory structure and detected your tech stack
+2. **Branching Strategy**: You chose to generate BRANCHING.md with Git workflow conventions
+3. **Ticket Configuration**: You set a custom prefix (APP) for ticket IDs like APP-001, APP-002
+4. **File Generation**: Three files were created with project-specific content
+
+### Alternative: Non-Interactive Setup
+
+For automation or CI/CD environments, use command-line flags:
+
+```bash
+# Skip wizard, use defaults
+pg init --no-interactive
+
+# Skip wizard with custom configuration
+pg init --no-interactive --with-branching --ticket-prefix MYAPP
+
+# Preview without creating files
+pg init --dry-run
 ```
 
 ### 3. Review Generated Files
@@ -116,6 +184,7 @@ This file provides context to AI assistants about your project:
 - Agent configuration (4 core + 2 flex)
 - Workflow commands
 - Instructions for AI assistants
+- Reference to branching strategy (if enabled)
 
 #### PROJECT_STATUS.md
 Single source of truth for project state:
@@ -124,13 +193,18 @@ Single source of truth for project state:
 - Project analysis
 - Recent updates
 
-### 4. Preview First (Optional)
+#### BRANCHING.md (Optional)
+Generated if you chose branching strategy during setup:
+- Branch naming conventions (feature/PREFIX-XXX-description)
+- Conventional commit format (type(scope): subject)
+- Workflow examples for AI agents
+- Remote vs. local Git workflows
+- PR templates and merge strategies
 
-Test with dry-run mode to see what will be created:
-
-```bash
-pg init --dry-run
-```
+**Important**: This document is customized for YOUR project with:
+- Your chosen ticket prefix
+- Your Git configuration (remote vs local-only)
+- Your main and development branch names
 
 ---
 

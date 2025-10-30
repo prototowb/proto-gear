@@ -572,6 +572,132 @@ current_sprint: null
         return {'status': 'success', 'dry_run': True}
 
 
+def interactive_setup_wizard():
+    """Interactive wizard for configuring ProtoGear setup"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}ProtoGear Interactive Setup Wizard{Colors.ENDC}")
+    print("=" * 60)
+    print(f"{Colors.GRAY}Let's configure AI-powered development workflow for your project{Colors.ENDC}")
+    print("=" * 60)
+
+    config = {}
+
+    # Detect current project
+    current_dir = Path(".")
+    project_info = detect_project_structure(current_dir)
+
+    print(f"\n{Colors.CYAN}📊 Project Detection{Colors.ENDC}")
+    print("-" * 30)
+    print(f"Directory: {Colors.BOLD}{current_dir.absolute()}{Colors.ENDC}")
+
+    if project_info['detected']:
+        print(f"Type: {Colors.GREEN}{project_info['type']}{Colors.ENDC}")
+        if project_info.get('framework'):
+            print(f"Framework: {Colors.GREEN}{project_info['framework']}{Colors.ENDC}")
+    else:
+        print(f"Type: {Colors.YELLOW}Generic Project{Colors.ENDC}")
+
+    # Check Git configuration
+    git_config = detect_git_config()
+    if git_config['is_git_repo']:
+        print(f"Git: {Colors.GREEN}Initialized{Colors.ENDC}")
+        if git_config['has_remote']:
+            print(f"Remote: {Colors.GREEN}{git_config['remote_name']}{Colors.ENDC}")
+        else:
+            print(f"Remote: {Colors.YELLOW}None (local-only){Colors.ENDC}")
+    else:
+        print(f"Git: {Colors.YELLOW}Not initialized{Colors.ENDC}")
+
+    # Question 1: Branching Strategy
+    print(f"\n{Colors.CYAN}📋 Branching & Git Workflow{Colors.ENDC}")
+    print("-" * 30)
+    print("Proto Gear can generate a comprehensive branching strategy document")
+    print("that defines Git workflow conventions and commit message standards.")
+    print(f"\n{Colors.GRAY}This includes:{Colors.ENDC}")
+    print("  • Branch naming conventions (feature/*, bugfix/*, hotfix/*)")
+    print("  • Conventional commit message format")
+    print("  • Workflow examples for AI agents")
+    print("  • PR templates and merge strategies")
+
+    if git_config['is_git_repo']:
+        print(f"\n{Colors.GREEN}✓ Git repository detected - branching strategy recommended{Colors.ENDC}")
+    else:
+        print(f"\n{Colors.YELLOW}⚠ No Git repository - you can still generate the strategy for future use{Colors.ENDC}")
+
+    while True:
+        response = safe_input(f"\n{Colors.BOLD}Generate BRANCHING.md? (y/n): {Colors.ENDC}").lower()
+        if response in ['y', 'yes']:
+            config['with_branching'] = True
+            break
+        elif response in ['n', 'no']:
+            config['with_branching'] = False
+            break
+        else:
+            print(f"{Colors.YELLOW}Please enter 'y' or 'n'{Colors.ENDC}")
+
+    # Question 2: Ticket Prefix (only if branching enabled)
+    if config['with_branching']:
+        print(f"\n{Colors.CYAN}🎫 Ticket Prefix Configuration{Colors.ENDC}")
+        print("-" * 30)
+        print("Tickets and branches use a prefix for identification.")
+        print(f"{Colors.GRAY}Examples: PROJ-001, APP-042, MYAPP-123{Colors.ENDC}")
+
+        # Suggest a prefix based on project name
+        suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+        if not suggested_prefix or len(suggested_prefix) < 2:
+            suggested_prefix = 'PROJ'
+
+        print(f"\nSuggested prefix: {Colors.GREEN}{suggested_prefix}{Colors.ENDC}")
+
+        response = safe_input(f"{Colors.BOLD}Enter ticket prefix (press Enter for '{suggested_prefix}'): {Colors.ENDC}").strip().upper()
+
+        if response:
+            # Validate prefix (alphanumeric, 2-10 chars)
+            if response.isalnum() and 2 <= len(response) <= 10:
+                config['ticket_prefix'] = response
+            else:
+                print(f"{Colors.YELLOW}Invalid prefix. Using suggested: {suggested_prefix}{Colors.ENDC}")
+                config['ticket_prefix'] = suggested_prefix
+        else:
+            config['ticket_prefix'] = suggested_prefix
+
+        print(f"Using prefix: {Colors.GREEN}{config['ticket_prefix']}{Colors.ENDC}")
+    else:
+        config['ticket_prefix'] = None
+
+    # Summary
+    print(f"\n{Colors.BOLD}{Colors.CYAN}📝 Configuration Summary{Colors.ENDC}")
+    print("=" * 60)
+    print(f"Project: {Colors.BOLD}{current_dir.name}{Colors.ENDC}")
+    print(f"Type: {project_info.get('type', 'Generic')}")
+    if project_info.get('framework'):
+        print(f"Framework: {project_info['framework']}")
+
+    print(f"\n{Colors.CYAN}Files to be created:{Colors.ENDC}")
+    print(f"  {Colors.GREEN}✓{Colors.ENDC} AGENTS.md (AI agent integration guide)")
+    print(f"  {Colors.GREEN}✓{Colors.ENDC} PROJECT_STATUS.md (Project state tracking)")
+
+    if config['with_branching']:
+        print(f"  {Colors.GREEN}✓{Colors.ENDC} BRANCHING.md (Git workflow conventions)")
+        print(f"\nTicket Prefix: {Colors.BOLD}{config['ticket_prefix']}{Colors.ENDC}")
+    else:
+        print(f"  {Colors.GRAY}⊘ BRANCHING.md (not selected){Colors.ENDC}")
+
+    # Confirmation
+    print()
+    while True:
+        response = safe_input(f"{Colors.BOLD}Proceed with setup? (y/n): {Colors.ENDC}").lower()
+        if response in ['y', 'yes']:
+            config['confirmed'] = True
+            break
+        elif response in ['n', 'no']:
+            config['confirmed'] = False
+            break
+        else:
+            print(f"{Colors.YELLOW}Please enter 'y' or 'n'{Colors.ENDC}")
+
+    return config
+
+
 def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
@@ -653,6 +779,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         default=None,
         help='Ticket ID prefix (e.g., PROJ, MYAPP). Defaults to project name.'
     )
+    init_parser.add_argument(
+        '--no-interactive',
+        action='store_true',
+        help='Skip interactive wizard (use for automated/scripted setup)'
+    )
 
     # 'workflow' command to run the orchestrator
     workflow_parser = subparsers.add_parser(
@@ -672,11 +803,36 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         # Handle 'init' command
         if args.command == 'init':
             show_splash_screen()
-            result = run_simple_protogear_init(
-                dry_run=args.dry_run,
-                with_branching=args.with_branching,
-                ticket_prefix=args.ticket_prefix
-            )
+
+            # Determine if we should use interactive wizard
+            # Use interactive if no flags provided (except --dry-run)
+            use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None
+
+            if use_interactive:
+                # Run interactive wizard
+                try:
+                    wizard_config = interactive_setup_wizard()
+
+                    if not wizard_config.get('confirmed'):
+                        print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
+                        sys.exit(0)
+
+                    # Run setup with wizard configuration
+                    result = run_simple_protogear_init(
+                        dry_run=args.dry_run,
+                        with_branching=wizard_config.get('with_branching', False),
+                        ticket_prefix=wizard_config.get('ticket_prefix')
+                    )
+                except KeyboardInterrupt:
+                    print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
+                    sys.exit(0)
+            else:
+                # Run with CLI flags (non-interactive)
+                result = run_simple_protogear_init(
+                    dry_run=args.dry_run,
+                    with_branching=args.with_branching,
+                    ticket_prefix=args.ticket_prefix
+                )
 
             if result['status'] == 'success':
                 print(f"\n{Colors.GREEN}ProtoGear AI Agent Framework initialized!{Colors.ENDC}")

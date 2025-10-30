@@ -47,8 +47,11 @@ pip install -e .
 # Navigate to your existing project
 cd my-project
 
-# Initialize AI Agent Framework
+# Initialize AI Agent Framework (interactive wizard)
 pg init
+
+# Or use non-interactive mode with flags
+pg init --with-branching --ticket-prefix MYAPP
 
 # Run the agent workflow orchestrator
 pg workflow
@@ -57,9 +60,48 @@ pg workflow
 pg help
 ```
 
+### Interactive Setup Wizard
+
+When you run `pg init`, Proto Gear launches an **interactive wizard** that:
+
+1. **Detects your project** - Automatically identifies your tech stack and framework
+2. **Asks about branching strategy** - Choose whether to generate BRANCHING.md
+3. **Configures ticket prefix** - Set your custom ticket ID format (e.g., MYAPP-001)
+4. **Shows confirmation summary** - Review what will be created before proceeding
+
+**Example:**
+```
+📊 Project Detection
+------------------------------
+Directory: my-nextjs-app
+Type: Node.js Project
+Framework: Next.js
+Git: Initialized
+Remote: origin
+
+📋 Branching & Git Workflow
+------------------------------
+Generate BRANCHING.md? (y/n): y
+
+🎫 Ticket Prefix Configuration
+------------------------------
+Enter ticket prefix (press Enter for 'MYNEXT'): APP
+
+📝 Configuration Summary
+==========================================================
+Files to be created:
+  ✓ AGENTS.md (AI agent integration guide)
+  ✓ PROJECT_STATUS.md (Project state tracking)
+  ✓ BRANCHING.md (Git workflow conventions)
+
+Ticket Prefix: APP
+
+Proceed with setup? (y/n): y
+```
+
 ### What Gets Created?
 
-When you run `pg init`, Proto Gear creates two key files:
+Proto Gear creates 2-3 key files depending on your configuration:
 
 1. **`AGENTS.md`** - AI agent integration guide with:
    - Detected project type and framework
@@ -72,6 +114,12 @@ When you run `pg init`, Proto Gear creates two key files:
    - Active and completed tickets
    - Project analysis and component status
    - Recent updates and changes
+
+3. **`BRANCHING.md`** (optional) - Git workflow conventions including:
+   - Branch naming patterns (feature/*, bugfix/*, hotfix/*)
+   - Conventional commit format
+   - Workflow examples for AI agents
+   - PR templates and merge strategies
 
 ## 🏗️ Architecture
 
@@ -105,8 +153,11 @@ Proto Gear adapts to different development phases:
 ## 📋 Workflow Commands
 
 ```bash
-# Initialize AI agents in current project
+# Initialize AI agents (interactive wizard)
 pg init
+
+# Initialize with non-interactive mode (for automation)
+pg init --no-interactive --with-branching --ticket-prefix MYAPP
 
 # Preview what will be created (dry run)
 pg init --dry-run
@@ -117,6 +168,14 @@ pg workflow
 # Show detailed documentation
 pg help
 ```
+
+### Command Line Options
+
+**`pg init` options:**
+- `--dry-run` - Preview files without creating them
+- `--with-branching` - Generate BRANCHING.md (skips interactive wizard)
+- `--ticket-prefix PREFIX` - Set custom ticket prefix (skips interactive wizard)
+- `--no-interactive` - Skip wizard completely (use defaults)
 
 ## 🤖 How It Works
 
