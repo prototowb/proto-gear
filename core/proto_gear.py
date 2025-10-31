@@ -12,6 +12,15 @@ from pathlib import Path
 from typing import Optional
 import argparse
 
+# Try to import enhanced wizard module
+try:
+    from interactive_wizard import run_enhanced_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
+    ENHANCED_WIZARD_AVAILABLE = True
+except ImportError:
+    ENHANCED_WIZARD_AVAILABLE = False
+    QUESTIONARY_AVAILABLE = False
+    RICH_AVAILABLE = False
+
 # ASCII Art for Proto Gear
 LOGO_V1 = """
     ╔═════════════════════════════════════════════════════════════╗
@@ -811,11 +820,25 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             if use_interactive:
                 # Run interactive wizard
                 try:
-                    wizard_config = interactive_setup_wizard()
+                    # Try to use enhanced wizard if available
+                    if ENHANCED_WIZARD_AVAILABLE and QUESTIONARY_AVAILABLE:
+                        # Get project info for enhanced wizard
+                        current_dir = Path(".")
+                        project_info = detect_project_structure(current_dir)
+                        git_config = detect_git_config()
 
-                    if not wizard_config.get('confirmed'):
-                        print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
-                        sys.exit(0)
+                        wizard_config = run_enhanced_wizard(project_info, git_config, current_dir)
+
+                        if wizard_config is None or not wizard_config.get('confirmed'):
+                            print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
+                            sys.exit(0)
+                    else:
+                        # Fallback to simple wizard
+                        wizard_config = interactive_setup_wizard()
+
+                        if not wizard_config.get('confirmed'):
+                            print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
+                            sys.exit(0)
 
                     # Run setup with wizard configuration
                     result = run_simple_protogear_init(

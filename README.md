@@ -62,42 +62,70 @@ pg help
 
 ### Interactive Setup Wizard
 
-When you run `pg init`, Proto Gear launches an **interactive wizard** that:
+When you run `pg init`, Proto Gear launches an **enhanced interactive wizard** with:
 
-1. **Detects your project** - Automatically identifies your tech stack and framework
-2. **Asks about branching strategy** - Choose whether to generate BRANCHING.md
-3. **Configures ticket prefix** - Set your custom ticket ID format (e.g., MYAPP-001)
-4. **Shows confirmation summary** - Review what will be created before proceeding
+1. **Beautiful visual panels** - Rich formatted displays with colors and borders
+2. **Arrow key navigation** - Use ↑↓ keys to select options (no more typing y/n!)
+3. **Auto-detection** - Automatically identifies your tech stack and framework
+4. **Input validation** - Real-time feedback on ticket prefix format
+5. **Styled summary table** - Professional configuration overview
 
-**Example:**
+**Enhanced Visual Experience:**
 ```
-📊 Project Detection
-------------------------------
-Directory: my-nextjs-app
-Type: Node.js Project
-Framework: Next.js
-Git: Initialized
-Remote: origin
+╭─ 📊 Project Detection ────────────────────────────╮
+│                                                   │
+│  Directory    my-nextjs-app                       │
+│  Type         Node.js Project                     │
+│  Framework    Next.js                             │
+│  Git          ✓ Initialized                       │
+│  Remote       ✓ origin                            │
+│                                                   │
+╰───────────────────────────────────────────────────╯
 
-📋 Branching & Git Workflow
-------------------------------
-Generate BRANCHING.md? (y/n): y
+╭─ 📋 Branching & Git Workflow ─────────────────────╮
+│                                                   │
+│  Proto Gear can generate a comprehensive          │
+│  branching strategy document...                   │
+│                                                   │
+│  ✓ Git repository detected - recommended          │
+│                                                   │
+╰───────────────────────────────────────────────────╯
 
-🎫 Ticket Prefix Configuration
-------------------------------
-Enter ticket prefix (press Enter for 'MYNEXT'): APP
+? Generate BRANCHING.md?
+  ❯ ✓ Yes - Generate branching strategy
+    ✗ No - Skip this step
+  (Use arrow keys ↑↓, Enter to select)
 
-📝 Configuration Summary
-==========================================================
-Files to be created:
-  ✓ AGENTS.md (AI agent integration guide)
-  ✓ PROJECT_STATUS.md (Project state tracking)
-  ✓ BRANCHING.md (Git workflow conventions)
+╭─ 🎫 Ticket Prefix Configuration ──────────────────╮
+│  Suggested prefix: MYNEXT                         │
+╰───────────────────────────────────────────────────╯
 
-Ticket Prefix: APP
+? Enter ticket prefix: APP_
+✓ Using prefix: APP
 
-Proceed with setup? (y/n): y
+╭─ 📝 Configuration Summary ────────────────────────╮
+│  ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓      │
+│  ┃ Setting       ┃ Value                 ┃      │
+│  ┃ Project       ┃ my-nextjs-app         ┃      │
+│  ┃ Branching     ┃ ✓ Enabled             ┃      │
+│  ┃ Ticket Prefix ┃ APP                   ┃      │
+│  └───────────────┴───────────────────────┘      │
+│                                                   │
+│  Files to create:                                 │
+│    ✓ AGENTS.md                                    │
+│    ✓ PROJECT_STATUS.md                            │
+│    ✓ BRANCHING.md                                 │
+╰───────────────────────────────────────────────────╯
+
+? Proceed with setup? (Y/n)
 ```
+
+**Features:**
+- ✨ **Arrow key selection** - Navigate ↑↓, select with Enter
+- 🎨 **Rich panels & tables** - Beautiful formatted output
+- ✅ **Input validation** - Real-time feedback
+- 🎯 **Smart defaults** - Suggested values
+- 🔄 **Graceful fallback** - Works in any terminal
 
 ### What Gets Created?
 

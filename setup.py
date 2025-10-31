@@ -54,6 +54,7 @@ setup(
         "pyyaml>=6.0",
         "click>=8.0",
         "rich>=13.0",
+        "questionary>=2.0",
         "pathlib>=1.0",
     ],
     extras_require={
