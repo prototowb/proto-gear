@@ -153,3 +153,74 @@ Proto Gear focuses exclusively on adding AI agent workflows to existing projects
 - **`development`**: Integration branch, no direct commits for features, merge via PR
 
 **For complete details, see**: `docs/BRANCHING_STRATEGY.md`
+
+## Regular Assessment Practice
+
+**IMPORTANT**: AI agents working on Proto Gear should perform regular readiness assessments to track progress and identify gaps.
+
+### Assessment Guidelines
+
+#### When to Perform Assessments
+- **After major feature implementations** (3+ PRs merged)
+- **After significant refactoring or architectural changes**
+- **Monthly** (if active development continues)
+- **Before release milestones** (v0.4.0, v0.5.0, v1.0.0, etc.)
+- **On request** from project maintainers
+
+#### Assessment Process
+1. **Review Current State**: Examine all completed work since last assessment
+2. **Update READINESS_ASSESSMENT.md**: Located in `docs/READINESS_ASSESSMENT.md`
+3. **Document Changes**: List all improvements, new features, and fixes
+4. **Update Scores**: Recalculate readiness scores across all categories
+5. **Identify Gaps**: Highlight critical blockers and remaining work
+6. **Provide Recommendations**: Clear next steps for reaching production readiness
+
+#### Assessment Structure
+The readiness assessment should include:
+- **Executive Summary**: Current status and key improvements
+- **Feature Assessment**: What's working, what's missing
+- **Architecture Evaluation**: Strengths and weaknesses
+- **Readiness Score**: Numerical scores (0-10) for each category
+- **Before/After Comparison**: Show progress since last assessment
+- **Critical Gaps**: What blocks production use
+- **Path to v1.0.0**: Clear roadmap with timeline
+- **Recommendations**: For maintainers and users
+
+#### Key Metrics to Track
+```
+| Category              | Score | Target |
+|-----------------------|-------|--------|
+| Core Functionality    | X/10  | 9/10   |
+| Test Coverage         | X/10  | 9/10   |
+| Documentation         | X/10  | 8/10   |
+| Security              | X/10  | 8/10   |
+| Performance           | X/10  | 7/10   |
+| Error Handling        | X/10  | 8/10   |
+| Deployment            | X/10  | 7/10   |
+| Monitoring            | X/10  | 7/10   |
+| Configuration         | X/10  | 8/10   |
+| State Management      | X/10  | 8/10   |
+| User Experience       | X/10  | 8/10   |
+```
+
+#### Critical Blocker Tracking
+Always highlight the #1 critical blocker preventing production use:
+- **Current**: Lack of automated test coverage (0% → target 70%+)
+- **Priority**: CRITICAL - Blocks v1.0.0 release
+
+#### Assessment Example
+See `docs/READINESS_ASSESSMENT.md` for the current comprehensive assessment. This file should be treated as a living document that evolves with the project.
+
+**Last Assessment**: 2025-10-31
+**Next Assessment Due**: After test suite implementation OR significant feature work
+**Assessment History**: Track progress over time to show velocity and improvement
+
+### Benefits of Regular Assessments
+1. **Transparency**: Honest evaluation of project state
+2. **Progress Tracking**: Measure improvements over time
+3. **Gap Identification**: Highlight what needs work
+4. **User Guidance**: Help users make informed decisions
+5. **Contributor Focus**: Clear priorities for next work
+6. **Release Planning**: Know when ready for production
+
+By performing regular assessments, we ensure Proto Gear maintains honest positioning and provides clear value to users while working toward production readiness.
