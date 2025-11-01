@@ -238,7 +238,7 @@ echo "✅ Pre-commit checks passed!"
 """
         
         pre_commit_path = hooks_dir / "pre-commit"
-        with open(pre_commit_path, 'w') as f:
+        with open(pre_commit_path, 'w', encoding='utf-8') as f:
             f.write(pre_commit_hook)
         
         # Make hook executable
@@ -287,7 +287,7 @@ Add any other context about the pull request here
         
         # Write PR template
         pr_template_path = github_dir / "pull_request_template.md"
-        with open(pr_template_path, 'w') as f:
+        with open(pr_template_path, 'w', encoding='utf-8') as f:
             f.write(pr_template)
         
         print("  ✅ Pull request template created")

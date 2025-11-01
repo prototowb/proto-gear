@@ -18,6 +18,8 @@ try:
     GIT_WORKFLOW_AVAILABLE = True
 except ImportError:
     GIT_WORKFLOW_AVAILABLE = False
+    GitWorkflowIntegration = None  # Fallback type
+    BranchType = None  # Fallback type
     print("Warning: Git workflow module not available")
 
 
