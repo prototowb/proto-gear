@@ -40,7 +40,10 @@
       "Bash(git commit:*)",
       "Bash(bash:*)",
       "Bash(/c/Users/tobia/.local/bin/claude.exe config:*)",
-      "Bash(claude config set:*)"
+      "Bash(claude config set:*)",
+      "Bash(for file in proto_gear.py agent_framework.py git_workflow.py testing_workflow.py interactive_wizard.py)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

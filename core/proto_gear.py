@@ -145,36 +145,35 @@ def show_help():
 
     sections = [
         ("What is Proto Gear?", [
-            "Proto Gear is an AI-powered development workflow framework that integrates",
-            "intelligent agents into your existing projects. It provides sprint management,",
-            "ticket generation, Git workflow integration, and adaptive agent orchestration."
+            "Proto Gear is a template generator that creates collaboration environments",
+            "for human and AI agents. It generates markdown templates that define patterns",
+            "for workflows, testing (TDD), branching strategies, and agent coordination."
         ]),
-        ("Core Components", [
-            "- Adaptive Hybrid Agent System: 4 core + 2 flexible sprint-based agents",
-            "- Project State Management: Single source of truth via PROJECT_STATUS.md",
-            "- Workflow Orchestrator: Automated sprint planning and task distribution",
-            "- Git Integration: Automatic branch management for tickets and features",
-            "- Documentation Engine: Ensures consistency across AGENTS.md files"
+        ("Core Templates Generated", [
+            "- AGENTS.md: Agent patterns, roles, and collaboration workflows",
+            "- PROJECT_STATUS.md: Single source of truth for project state",
+            "- BRANCHING.md: Git workflow and commit conventions",
+            "- TESTING.md: TDD methodology and testing patterns",
+            "- .github/pull_request_template.md: PR template"
         ]),
         ("Key Features", [
             "+ Auto-detection of existing tech stack and frameworks",
-            "+ Sprint-based agent configuration (Feature, Bug Fix, Performance, etc.)",
-            "+ Intelligent ticket generation and tracking",
-            "+ Git workflow automation with branch management",
-            "+ Documentation consistency checking",
-            "+ Supports any programming language or framework"
+            "+ Tech stack agnostic - works with any language or framework",
+            "+ Natural language collaboration patterns for AI agents",
+            "+ Beautiful interactive CLI wizard with arrow key navigation",
+            "+ Comprehensive TDD workflow documentation",
+            "+ Git branching strategy templates"
         ]),
         ("Getting Started", [
             "1. Navigate to your project directory",
-            "2. Run 'pg init' to initialize the agent framework",
-            "3. Review the generated AGENTS.md and PROJECT_STATUS.md",
-            "4. Run 'pg workflow' to activate the orchestrator",
-            "5. Let AI agents manage your development workflow"
+            "2. Run 'pg init' to initialize agent templates",
+            "3. Review the generated AGENTS.md, PROJECT_STATUS.md, and TESTING.md",
+            "4. AI agents read templates and collaborate via natural language",
+            "5. Update PROJECT_STATUS.md as work progresses"
         ]),
         ("Commands", [
-            "pg init           - Initialize AI agents in current project",
+            "pg init           - Initialize AI agent templates in current project",
             "pg init --dry-run - Preview what will be created",
-            "pg workflow       - Run the agent workflow orchestrator",
             "pg help           - Show this help documentation"
         ])
     ]
@@ -501,11 +500,8 @@ Automatically configured based on sprint type:
 ## Workflow Commands
 
 ```bash
-# Initialize agent framework (already done)
+# Initialize agent templates (already done)
 pg init
-
-# Run agent workflow orchestrator
-pg workflow
 
 # Show help and documentation
 pg help
@@ -513,10 +509,10 @@ pg help
 
 ## Next Steps
 
-1. Review this file to understand agent capabilities
-2. Check PROJECT_STATUS.md for current project state{'3. Review BRANCHING.md for Git workflow conventions' if with_branching else '3. Run \'pg workflow\' to activate the orchestrator'}
-{'4. Run \'pg workflow\' to activate the orchestrator' if with_branching else '4. Start development with AI-powered assistance'}
-{'5. Start development with AI-powered assistance' if with_branching else ''}
+1. Review this file to understand agent patterns and workflows
+2. Check PROJECT_STATUS.md for current project state{'3. Review BRANCHING.md for Git workflow conventions' if with_branching else '3. Review TESTING.md for TDD patterns'}
+{'4. Review TESTING.md for TDD patterns' if with_branching else '4. Start development with AI agents reading templates'}
+{'5. Start development with AI agents reading templates' if with_branching else ''}
 
 ---
 *Powered by ProtoGear Agent Framework v0.3 (Alpha)*
@@ -739,10 +735,10 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
                     print(f"  + {file}")
 
             print(f"\n{Colors.YELLOW}Next steps:{Colors.ENDC}")
-            print("  1. Review AGENTS.md to understand AI agent capabilities")
+            print("  1. Review AGENTS.md to understand AI agent patterns and workflows")
             print("  2. Check PROJECT_STATUS.md for project state tracking")
-            print("  3. Start development with AI-powered assistance")
-            print("  4. Run 'pg workflow' to activate the agent workflow orchestrator")
+            print("  3. Review TESTING.md for TDD methodology")
+            print("  4. AI agents will read these templates and collaborate naturally")
 
     return result
 
@@ -755,9 +751,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  pg init              Initialize AI agents in current project
+  pg init              Initialize AI agent templates in current project
   pg init --dry-run    Preview what will be created
-  pg workflow          Run agent workflow orchestrator
   pg help              Show detailed help information
 
 For more information, visit: https://github.com/proto-gear/proto-gear
@@ -794,11 +789,6 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Skip interactive wizard (use for automated/scripted setup)'
     )
 
-    # 'workflow' command to run the orchestrator
-    workflow_parser = subparsers.add_parser(
-        'workflow',
-        help='Run AI Agent workflow orchestrator'
-    )
 
     # 'help' command for detailed documentation
     help_parser = subparsers.add_parser(
@@ -867,14 +857,6 @@ For more information, visit: https://github.com/proto-gear/proto-gear
 
             sys.exit(0)
 
-        # Handle 'workflow' command
-        elif args.command == 'workflow':
-            from agent_framework import WorkflowOrchestrator
-            print(f"{Colors.CYAN}🤖 Starting AI Agent Workflow Orchestrator...{Colors.ENDC}\n")
-            orchestrator = WorkflowOrchestrator()
-            result = orchestrator.execute_workflow()
-            sys.exit(0)
-
         # Handle 'help' command
         elif args.command == 'help':
             show_help()
@@ -884,10 +866,9 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         else:
             show_splash_screen()
             print(f"{Colors.GREEN}Welcome to Proto Gear AI Agent Framework!{Colors.ENDC}")
-            print(f"{Colors.GRAY}Intelligent development workflows powered by adaptive AI agents{Colors.ENDC}\n")
+            print(f"{Colors.GRAY}Template generator for AI-powered development collaboration{Colors.ENDC}\n")
             print(f"{Colors.CYAN}Available Commands:{Colors.ENDC}")
-            print(f"  {Colors.BOLD}pg init{Colors.ENDC}         - Initialize AI agents in your project")
-            print(f"  {Colors.BOLD}pg workflow{Colors.ENDC}    - Run agent workflow orchestrator")
+            print(f"  {Colors.BOLD}pg init{Colors.ENDC}         - Initialize AI agent templates in your project")
             print(f"  {Colors.BOLD}pg help{Colors.ENDC}        - Show detailed documentation")
             print(f"\n{Colors.GRAY}Run 'pg --help' for more options{Colors.ENDC}\n")
             print_farewell()
