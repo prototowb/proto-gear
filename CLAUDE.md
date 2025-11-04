@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Proto Gear is a Python-based AI Agent Framework that integrates intelligent development workflows into existing projects. It provides adaptive agent orchestration, sprint management, ticket generation, and Git workflow automation - completely tech stack agnostic and designed to work with any programming language or framework.
+Proto Gear is a Python-based template generator that creates collaboration environments for human and AI agents working together via natural language. It generates structured templates (AGENTS.md, PROJECT_STATUS.md, BRANCHING.md, TESTING.md) that provide workflow patterns, sprint management, and development conventions - completely tech stack agnostic and designed to work with any programming language or framework.
 
 ## Development Commands
 
@@ -15,19 +15,21 @@ Proto Gear is a Python-based AI Agent Framework that integrates intelligent deve
 - **Development test suite**: `bash dev-test.sh`
 
 ### Main Commands
-- **Primary command**: `pg init` - Initialize AI agent framework in current project
-- **Workflow command**: `pg workflow` - Run the agent workflow orchestrator
+- **Primary command**: `pg init` - Initialize AI agent templates in current project
 - **Help command**: `pg help` - Show detailed documentation
 - **Dry run testing**: `pg init --dry-run`
 - **Direct Python execution**: `cd core && python proto_gear.py init --dry-run`
 
 ### Testing Specific Scenarios
 ```bash
-# Test Agent Framework Initialization
+# Test Template Generation
 pg init --dry-run
 
-# Test Workflow Orchestrator
-cd core && python agent_framework.py
+# Test with all options
+pg init --dry-run --with-branching --with-testing --ticket-prefix TEST
+
+# Run test suite
+python -m pytest --cov=core --cov-report=term-missing
 ```
 
 ## Architecture Overview
@@ -40,49 +42,63 @@ cd core && python agent_framework.py
 
 ### Core Components
 
-#### Agent Framework System
-- **`agent_framework.py`** - Core agent system implementation with adaptive hybrid orchestration
-  - `AdaptiveHybridSystem`: 4 core + 2 flex agent slots
-  - `SprintType`: Defines sprint types (Feature, Bug Fix, Performance, etc.)
-  - `WorkflowOrchestrator`: Main execution loop for Lead AI
-  - `TicketGenerator`: Creates and manages development tickets
-- **`AGENTS.template.md`** - Template for AI agent integration guides
-- **`PROJECT_STATUS.template.md`** - Template for project state tracking
-
-#### Workflow Systems
-- **`git_workflow.py`** - Git integration and branch management
-  - Automatic branch creation for tickets
-  - Branch naming conventions
-  - Git workflow status tracking
-- **`testing_workflow.py`** - Testing framework integration
-
 #### CLI Interface
 - **`proto_gear.py`** - Main CLI entry point
-  - Commands: `init`, `workflow`, `help`
+  - Commands: `init`, `help`
   - Project detection and auto-configuration
-  - Beautiful terminal UI with rich formatting
+  - Beautiful terminal UI with rich formatting via `ui_helper.py`
+- **`interactive_wizard.py`** - Interactive setup wizard with arrow key navigation
+- **`ui_helper.py`** - Centralized UI/UX methods for consistent terminal output
 
-### Key Templates
-- **AGENTS.md** - AI agent activation guide with project-specific context
-- **PROJECT_STATUS.md** - Single source of truth for project state tracking
-- Generated files include auto-detection of technology stack and framework-specific configurations
+#### Template System
+- **`AGENTS.template.md`** - Template for AI agent collaboration guides
+  - Contains patterns for 4 core + 2 flex agent roles
+  - Describes decision-making workflows as natural language patterns
+  - Code blocks are illustrative, not executable
+- **`PROJECT_STATUS.template.md`** - Template for project state tracking
+  - Ticket status workflow (PENDING → IN_PROGRESS → COMPLETED)
+  - Sprint type configuration
+  - State management rules for agents
+- **`BRANCHING.template.md`** - Git workflow conventions
+  - Branch naming patterns
+  - Conventional commit format
+  - Workflow examples
+- **`TESTING.template.md`** - TDD workflow guide
+  - Red-Green-Refactor cycle
+  - Test pyramid structure
+  - Coverage targets and best practices
+
+### Generated Files
+When users run `pg init`, these templates are customized with:
+- **AGENTS.md** - Project-specific agent collaboration guide
+- **PROJECT_STATUS.md** - Initialized project state tracker
+- **BRANCHING.md** (optional) - Git workflow conventions
+- **TESTING.md** (optional) - TDD patterns and practices
 
 ## Development Workflow
 
 ### Operation Mode
-Proto Gear focuses exclusively on adding AI agent workflows to existing projects. It does NOT scaffold new projects or make tech stack decisions.
+Proto Gear focuses exclusively on generating collaboration templates for existing projects. It does NOT scaffold new projects, make tech stack decisions, or execute code automatically.
 
-**Agent Framework Integration**:
+**Template Generation Process**:
 1. Run `pg init` in any existing project directory
-2. ProtoGear detects the existing technology stack (Node.js, Python, etc.)
-3. Creates AGENTS.md and PROJECT_STATUS.md files
-4. Integrates adaptive agent system without modifying existing code
-5. Ready to use `pg workflow` for orchestration
+2. Proto Gear detects the existing technology stack (Node.js, Python, etc.)
+3. Creates customized template files (AGENTS.md, PROJECT_STATUS.md, etc.)
+4. Templates provide patterns for AI agents to follow using native tools
+5. Does NOT modify existing code - only adds documentation templates
+
+**How AI Agents Use Templates**:
+1. **Read Context**: AI agents read AGENTS.md and PROJECT_STATUS.md for project context
+2. **Follow Patterns**: Code blocks in templates describe decision-making processes, not executable code
+3. **Use Native Tools**: Agents execute git, pytest, npm, etc. using their own judgment
+4. **Update State**: Agents modify PROJECT_STATUS.md as work progresses
+5. **Natural Collaboration**: Humans and AI work together through shared documentation
 
 ### Testing and Validation
 - Use `dev-test.sh` for comprehensive testing during development
 - All commands support `--dry-run` for safe testing
-- Test suite covers initialization, workflow orchestration, and technology detection
+- Test suite covers initialization, template generation, and technology detection
+- Current coverage: 38% (30 tests passing)
 
 ### Package Management
 - Uses setuptools with entry points for multiple CLI aliases
@@ -91,12 +107,14 @@ Proto Gear focuses exclusively on adding AI agent workflows to existing projects
 
 ## Important Implementation Details
 - Main executable is `proto_gear.py` in the `core/` directory
-- CLI uses ANSI escape codes for beautiful terminal interfaces with ASCII art logos
+- CLI uses `ui_helper.py` for consistent ANSI terminal formatting
 - Supports automatic technology stack detection for existing projects
-- Generates context-aware AGENTS.md and PROJECT_STATUS.md based on detected frameworks
+- Generates context-aware templates based on detected frameworks
 - Completely tech stack agnostic - works with any programming language or framework
-- Does NOT modify existing code - only adds workflow documentation and tracking
-- Agent system is adaptive: 4 core agents + 2 flex agents that change based on sprint type
+- Does NOT modify existing code - only generates template documentation
+- Does NOT execute workflows automatically - templates guide AI agents to use native tools
+- Agent patterns are adaptive: 4 core + 2 flex slots that change based on sprint type
+- Template code blocks are illustrative patterns, not executable Python
 
 ## Branching and Commit Strategy
 
