@@ -13,9 +13,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
 from proto_gear import (
     detect_project_structure,
     detect_git_config,
-    Colors,
     safe_input
 )
+from ui_helper import Colors
 
 
 class TestProjectDetection:

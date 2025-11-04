@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import Optional
 import argparse
 
+# Import UI helper for consistent terminal output
+from ui_helper import UIHelper, Colors
+ui = UIHelper()
+
 # Try to import enhanced wizard module
 try:
     from interactive_wizard import run_enhanced_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
@@ -44,21 +48,6 @@ LOGO_V1 = """
 """
 
 PROTO_GEAR_LOGOS = [LOGO_V1]
-
-# Colorful ANSI escape codes
-class Colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    GRAY = '\033[90m'
-    YELLOW = '\033[93m'
-    MAGENTA = '\033[95m'
 
 
 def clear_screen():
@@ -199,7 +188,7 @@ def show_help():
 def print_farewell():
     """Print farewell message"""
     print(f"\n{Colors.CYAN}👋 Thank you for using Proto Gear!{Colors.ENDC}")
-    print(f"{Colors.GRAY}Happy coding! May your builds be swift and your bugs be few.{Colors.ENDC}\n")
+    ui.farewell()
 
 
 def detect_project_structure(project_path):
