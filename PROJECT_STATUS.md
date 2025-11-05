@@ -12,9 +12,9 @@ protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-05"
-current_sprint: 1
-sprint_type: "refactoring"
-last_ticket_id: 16
+current_sprint: 3
+sprint_type: "feature"
+last_ticket_id: 22
 ticket_prefix: "PROTO"
 ```
 
@@ -22,7 +22,249 @@ ticket_prefix: "PROTO"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-003 | Implement Universal Capabilities System (v0.4.0) | feature | IN_PROGRESS | - | Lead AI |
+| PROTO-003 | [EPIC] Implement Universal Capabilities System (v0.4.0) | epic | IN_PROGRESS | - | Lead AI |
+| PROTO-017 | └─ Research: Validate capability system design decisions | task | PENDING | - | Research Agent |
+| PROTO-018 | └─ Add --with-capabilities CLI option to proto_gear.py | feature | PENDING | worktree/proto-018 | Backend Agent |
+| PROTO-019 | └─ Create capability deployment logic | feature | PENDING | worktree/proto-019 | Backend Agent |
+| PROTO-020 | └─ Update AGENTS.template.md with capability references | feature | PENDING | worktree/proto-020 | Documentation Agent |
+| PROTO-021 | └─ Update PROJECT_STATUS.template.md with capability commands | feature | PENDING | worktree/proto-021 | Documentation Agent |
+| PROTO-022 | └─ Write tests for capability generation | task | PENDING | worktree/proto-022 | Testing Agent |
+
+### PROTO-003: Universal Capabilities System (Epic Details)
+
+**Description**: Implement Phase 1 of Universal Capabilities System as defined in `docs/dev/universal-capabilities-design.md`
+
+**Status**: Templates created in `core/capabilities/`. Now breaking into parallel sub-tickets.
+
+**Completed Work**:
+- ✅ Created `core/capabilities/` directory structure
+- ✅ Created master INDEX.template.md
+- ✅ Created category INDEX templates (skills, workflows, commands, agents)
+- ✅ Created example skill: testing/SKILL.template.md
+- ✅ Created example workflow: feature-development.template.md
+- ✅ Created example command: create-ticket.template.md
+
+**Remaining Work**: See sub-tickets PROTO-017 through PROTO-022
+
+---
+
+### PROTO-017: Research Agent - Validate Design Decisions
+
+**Assignee**: Research Agent
+**Priority**: HIGH (blocking other work)
+**Estimated**: 30-60 minutes
+
+**Objectives**:
+1. Review `docs/dev/universal-capabilities-design.md`
+2. Research best practices for:
+   - Markdown-based capability systems
+   - YAML frontmatter standards
+   - AI agent discovery mechanisms
+   - File structure conventions
+3. Validate our design choices against industry standards
+4. Identify potential issues or improvements
+5. Check for security concerns (file permissions, path traversal, etc.)
+6. Research if other AI frameworks use similar approaches
+
+**Deliverables**:
+- Research report in `dev/analysis/capability-system-research-2025-11-05.md`
+- List of recommendations or design changes (if any)
+- Security checklist for file operations
+
+**Questions to Answer**:
+- Is YAML frontmatter the best metadata format for AI agents?
+- Should we validate capability files on generation?
+- Are there existing standards we should follow?
+- What security risks exist when copying template files?
+
+---
+
+### PROTO-018: Add --with-capabilities CLI Option
+
+**Assignee**: Backend Agent
+**Branch**: `worktree/proto-018`
+**Dependencies**: None
+**Estimated**: 1-2 hours
+
+**Objectives**:
+1. Add `--with-capabilities` argument to argparse in `proto_gear.py`
+2. Pass argument through to `setup_agent_framework_only()`
+3. Update interactive wizard to ask about capabilities
+4. Update help text and examples
+
+**Acceptance Criteria**:
+- [ ] `pg init --with-capabilities` accepted as valid command
+- [ ] `pg init --dry-run --with-capabilities` shows capability files
+- [ ] Interactive wizard includes capability question
+- [ ] Help text documents new option
+- [ ] Non-interactive mode works: `pg init --no-interactive --with-capabilities`
+
+**Files to Modify**:
+- `core/proto_gear.py` (argparse section ~line 836-851)
+- `core/proto_gear.py` (main() function ~line 860-920)
+- `core/interactive_wizard.py` (if adding to wizard)
+
+**Code Pattern**:
+```python
+init_parser.add_argument(
+    '--with-capabilities',
+    action='store_true',
+    help='Generate .proto-gear/ capability system'
+)
+```
+
+---
+
+### PROTO-019: Create Capability Deployment Logic
+
+**Assignee**: Backend Agent
+**Branch**: `worktree/proto-019`
+**Dependencies**: PROTO-018 (needs CLI arg defined)
+**Estimated**: 2-3 hours
+
+**Objectives**:
+1. Create function `copy_capability_templates()` to deploy `.proto-gear/`
+2. Handle directory creation
+3. Copy template files with placeholder replacement
+4. Support `--dry-run` mode
+5. Handle existing `.proto-gear/` directory (merge or skip)
+
+**Acceptance Criteria**:
+- [ ] Function copies all templates from `core/capabilities/` to `.proto-gear/`
+- [ ] Replaces `{{VERSION}}`, `{{PROJECT_NAME}}` placeholders
+- [ ] Creates directory structure correctly
+- [ ] Dry run shows files that would be created
+- [ ] Existing `.proto-gear/` handled gracefully (prompt user)
+- [ ] File permissions set correctly
+- [ ] UTF-8 encoding used consistently
+
+**Files to Modify**:
+- `core/proto_gear.py` (new function ~300 lines)
+- `core/proto_gear.py` (integrate into `setup_agent_framework_only()`)
+
+**Security Considerations**:
+- Validate destination paths (no path traversal)
+- Check file permissions
+- Handle symlinks safely
+- Use secure file operations
+
+**Code Structure**:
+```python
+def copy_capability_templates(target_dir: Path, project_name: str, dry_run: bool = False):
+    """Copy capability templates to .proto-gear/ directory"""
+    # Implementation
+    pass
+```
+
+---
+
+### PROTO-020: Update AGENTS.template.md
+
+**Assignee**: Documentation Agent
+**Branch**: `worktree/proto-020`
+**Dependencies**: PROTO-017 (research findings)
+**Estimated**: 1 hour
+
+**Objectives**:
+1. Add capability system reference section to `core/AGENTS.template.md`
+2. Explain how capabilities extend core agents
+3. Add discovery workflow for AI agents
+4. Update examples to reference capabilities
+
+**Acceptance Criteria**:
+- [ ] Section added explaining capability system
+- [ ] Links to `.proto-gear/INDEX.md` included
+- [ ] Clear instructions for AI agents on discovery
+- [ ] Integration examples provided
+- [ ] Maintains existing content (additive only)
+
+**Files to Modify**:
+- `core/AGENTS.template.md`
+
+**Content to Add** (based on design doc lines 2149-2190):
+- "Enhanced with Universal Capabilities" section
+- Capability discovery workflow
+- Integration with core agents
+- How to use capabilities
+
+---
+
+### PROTO-021: Update PROJECT_STATUS.template.md
+
+**Assignee**: Documentation Agent
+**Branch**: `worktree/proto-021`
+**Dependencies**: PROTO-017 (research findings)
+**Estimated**: 30 minutes
+
+**Objectives**:
+1. Add reference to capability commands in `core/PROJECT_STATUS.template.md`
+2. Link to `.proto-gear/commands/` for status updates
+3. Add note about create-ticket command
+
+**Acceptance Criteria**:
+- [ ] Comment added referencing capability commands
+- [ ] Links to commands/ directory included
+- [ ] Maintains existing format
+- [ ] Clear for AI agents to understand
+
+**Files to Modify**:
+- `core/PROJECT_STATUS.template.md`
+
+**Content to Add** (based on design doc lines 2193-2206):
+```markdown
+> **For Agents**: Use commands from `.proto-gear/commands/` to update this file:
+> - [Create Ticket](.proto-gear/commands/create-ticket.md)
+> - [Update Status](.proto-gear/commands/update-status.md) (if available)
+```
+
+---
+
+### PROTO-022: Write Tests for Capability Generation
+
+**Assignee**: Testing Agent
+**Branch**: `worktree/proto-022`
+**Dependencies**: PROTO-018, PROTO-019 (implementation complete)
+**Estimated**: 2-3 hours
+
+**Objectives**:
+1. Write unit tests for capability template copying
+2. Write integration tests for `pg init --with-capabilities`
+3. Test dry-run mode
+4. Test placeholder replacement
+5. Test error handling (permissions, existing files)
+6. Ensure coverage stays above 70%
+
+**Acceptance Criteria**:
+- [ ] Test: capability files copied correctly
+- [ ] Test: directory structure created
+- [ ] Test: placeholders replaced
+- [ ] Test: dry-run doesn't create files
+- [ ] Test: existing .proto-gear/ handled
+- [ ] Test: UTF-8 encoding preserved
+- [ ] Test coverage: 70%+ maintained
+- [ ] All tests passing
+
+**Files to Create/Modify**:
+- `tests/test_capabilities.py` (new file)
+- `tests/test_proto_gear.py` (add capability tests)
+
+**Test Structure**:
+```python
+class TestCapabilitySystem(unittest.TestCase):
+    def test_capability_templates_exist(self):
+        """Verify capability templates exist in core/"""
+        pass
+
+    def test_copy_capabilities_creates_structure(self):
+        """Test .proto-gear/ structure created correctly"""
+        pass
+
+    def test_dry_run_no_files_created(self):
+        """Dry run should not create files"""
+        pass
+```
+
+---
 
 ## ✅ Completed Tickets
 
