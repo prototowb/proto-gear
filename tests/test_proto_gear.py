@@ -17,7 +17,9 @@ from proto_gear import (
     generate_branching_doc,
     setup_agent_framework_only,
     show_splash_screen,
-    print_farewell
+    print_farewell,
+    show_help,
+    run_simple_protogear_init
 )
 from ui_helper import Colors
 
@@ -423,6 +425,122 @@ class TestUIFunctions:
 
         # Verify farewell methods were called
         assert mock_print.called or mock_ui_farewell.called
+
+    @patch('builtins.input', return_value='')
+    @patch('builtins.print')
+    def test_show_help(self, mock_print, mock_input):
+        """Test help display function"""
+        show_help()
+
+        # Verify print was called for help text
+        assert mock_print.called
+        # Should print multiple lines of help
+        assert mock_print.call_count > 10
+        # Should wait for user input at the end
+        mock_input.assert_called_once()
+
+
+class TestRunSimpleProtoGearInit:
+    """Test simple ProtoGear initialization"""
+
+    @patch('proto_gear.setup_agent_framework_only')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_run_simple_init_dry_run(self, mock_detect_project, mock_detect_git, mock_setup):
+        """Test simple init in dry-run mode"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': True,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'local_only'
+        }
+        mock_setup.return_value = {'status': 'success', 'dry_run': True}
+
+        result = run_simple_protogear_init(
+            dry_run=True,
+            with_branching=False,
+            ticket_prefix='TEST'
+        )
+
+        assert result['status'] == 'success'
+        mock_setup.assert_called_once()
+
+    @patch('proto_gear.setup_agent_framework_only')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_run_simple_init_with_branching(self, mock_detect_project, mock_detect_git, mock_setup):
+        """Test simple init with branching enabled"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Node.js Project',
+            'framework': 'React',
+            'directories': ['src'],
+            'structure_summary': 'React project'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': True,
+            'has_remote': True,
+            'remote_name': 'origin',
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': True,
+            'workflow_mode': 'remote_automated'
+        }
+        mock_setup.return_value = {'status': 'success'}
+
+        result = run_simple_protogear_init(
+            dry_run=False,
+            with_branching=True,
+            ticket_prefix='APP'
+        )
+
+        assert result['status'] == 'success'
+        # Verify setup was called with correct parameters
+        call_args = mock_setup.call_args
+        assert call_args[1]['with_branching'] is True
+        assert call_args[1]['ticket_prefix'] == 'APP'
+
+    @patch('proto_gear.setup_agent_framework_only')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_run_simple_init_no_git(self, mock_detect_project, mock_detect_git, mock_setup):
+        """Test simple init without Git repository"""
+        mock_detect_project.return_value = {
+            'detected': False,
+            'type': None,
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'No project detected'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': False,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'no_git'
+        }
+        mock_setup.return_value = {'status': 'success'}
+
+        result = run_simple_protogear_init(
+            dry_run=False,
+            with_branching=False,
+            ticket_prefix='PROJ'
+        )
+
+        assert result['status'] == 'success'
+        mock_setup.assert_called_once()
 
 
 if __name__ == '__main__':
