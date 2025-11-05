@@ -254,7 +254,7 @@ def detect_project_structure(project_path):
 
 
 def detect_git_config():
-    """Detect Git configuration"""
+    """Detect Git configuration and workflow capabilities"""
     import subprocess
 
     config = {
@@ -262,7 +262,9 @@ def detect_git_config():
         'has_remote': False,
         'remote_name': None,
         'main_branch': 'main',
-        'dev_branch': 'development'
+        'dev_branch': 'development',
+        'has_gh_cli': False,
+        'workflow_mode': 'local_only'  # local_only, remote_manual, remote_automated
     }
 
     try:
@@ -278,6 +280,24 @@ def detect_git_config():
             if result.returncode == 0 and result.stdout.strip():
                 config['has_remote'] = True
                 config['remote_name'] = result.stdout.strip().split()[0]
+
+        # Check for GitHub CLI (gh)
+        try:
+            result = subprocess.run(['gh', '--version'],
+                                  capture_output=True, text=True, timeout=5)
+            config['has_gh_cli'] = result.returncode == 0
+        except FileNotFoundError:
+            config['has_gh_cli'] = False
+
+        # Determine workflow mode
+        if not config['is_git_repo']:
+            config['workflow_mode'] = 'no_git'
+        elif not config['has_remote']:
+            config['workflow_mode'] = 'local_only'
+        elif config['has_remote'] and config['has_gh_cli']:
+            config['workflow_mode'] = 'remote_automated'
+        elif config['has_remote'] and not config['has_gh_cli']:
+            config['workflow_mode'] = 'remote_manual'
     except:
         pass
 
@@ -293,6 +313,39 @@ def generate_branching_doc(project_name, ticket_prefix, git_config, generation_d
 
     try:
         template = template_path.read_text(encoding='utf-8')
+
+        # Generate workflow mode description
+        workflow_mode_descriptions = {
+            'no_git': '**No Git Repository** - Consider initializing Git for version control',
+            'local_only': '**Local-Only Workflow** - No remote repository configured',
+            'remote_manual': '**Remote Workflow (Manual PRs)** - Remote configured, GitHub CLI not detected',
+            'remote_automated': '**Remote Workflow (Automated)** - Remote configured, GitHub CLI available'
+        }
+
+        workflow_mode_desc = workflow_mode_descriptions.get(
+            git_config.get('workflow_mode', 'local_only'),
+            'Local-Only Workflow'
+        )
+
+        # Add workflow recommendations based on mode
+        workflow_recommendations = ""
+        if git_config.get('workflow_mode') == 'remote_manual':
+            workflow_recommendations = f"""
+> **💡 Tip**: GitHub CLI (`gh`) is not detected. You can:
+> - Install `gh` CLI for automated PR creation: https://cli.github.com
+> - Continue using manual PR creation via web interface
+> - Use local merges if you prefer
+"""
+        elif git_config.get('workflow_mode') == 'remote_automated':
+            workflow_recommendations = f"""
+> **✅ GitHub CLI detected**: You can create PRs automatically with `gh pr create`
+"""
+        elif git_config.get('workflow_mode') == 'local_only':
+            workflow_recommendations = f"""
+> **💡 Tip**: No remote repository detected. You can:
+> - Continue with local-only development
+> - Add a remote later with: `git remote add origin <url>`
+"""
 
         # Determine values based on Git configuration
         if git_config['has_remote']:
@@ -377,6 +430,8 @@ git push -u origin {{DEV_BRANCH}}
         content = content.replace('{{MAIN_BRANCH}}', git_config['main_branch'])
         content = content.replace('{{DEV_BRANCH}}', git_config['dev_branch'])
         content = content.replace('{{GENERATION_DATE}}', generation_date)
+        content = content.replace('{{WORKFLOW_MODE}}', workflow_mode_desc)
+        content = content.replace('{{WORKFLOW_RECOMMENDATIONS}}', workflow_recommendations)
         content = content.replace('{{REMOTE_REQUIRES_PR}}', remote_requires_pr)
         content = content.replace('{{REMOTE_REQUIRES_TESTS}}', remote_requires_tests)
         content = content.replace('{{REMOTE_VIA_PR}}', remote_via_pr)
@@ -596,8 +651,25 @@ def interactive_setup_wizard():
         print(f"Git: {Colors.GREEN}Initialized{Colors.ENDC}")
         if git_config['has_remote']:
             print(f"Remote: {Colors.GREEN}{git_config['remote_name']}{Colors.ENDC}")
+            # Show GitHub CLI status
+            if git_config['has_gh_cli']:
+                print(f"GitHub CLI: {Colors.GREEN}Installed{Colors.ENDC} (automated PRs available)")
+            else:
+                print(f"GitHub CLI: {Colors.YELLOW}Not detected{Colors.ENDC} (manual PRs via web)")
         else:
             print(f"Remote: {Colors.YELLOW}None (local-only){Colors.ENDC}")
+
+        # Display workflow mode
+        workflow_modes = {
+            'local_only': (Colors.YELLOW, 'Local-Only Workflow'),
+            'remote_manual': (Colors.CYAN, 'Remote Workflow (Manual PRs)'),
+            'remote_automated': (Colors.GREEN, 'Remote Workflow (Automated PRs)')
+        }
+        mode_color, mode_desc = workflow_modes.get(
+            git_config.get('workflow_mode', 'local_only'),
+            (Colors.GRAY, 'Unknown')
+        )
+        print(f"Workflow Mode: {mode_color}{mode_desc}{Colors.ENDC}")
     else:
         print(f"Git: {Colors.YELLOW}Not initialized{Colors.ENDC}")
 
