@@ -14,6 +14,37 @@ This document defines **patterns and workflows** for natural language collaborat
 **For Humans:**
 This provides the framework for how AI agents should think about and approach the project. Review and customize the agent configurations and workflows to match your project needs.
 
+## 🚀 Enhanced with Universal Capabilities
+
+This project uses Proto Gear's **Universal Capabilities System** for modular, discoverable patterns.
+
+### Capability Discovery
+
+AI agents can explore available capabilities:
+
+**Capability Index**: [.proto-gear/INDEX.md](.proto-gear/INDEX.md)
+
+- **Skills** - Modular expertise (testing, git-workflow, debugging, etc.)
+- **Workflows** - Multi-step processes (feature-development, bug-fix, etc.)
+- **Commands** - Single actions (create-ticket, run-tests, etc.)
+- **Agents** - Specialized patterns (backend, frontend, testing, etc.)
+
+### How to Use Capabilities
+
+1. **Read Index**: Start with `.proto-gear/INDEX.md`
+2. **Match Task**: Find relevant capabilities for your current task
+3. **Load Details**: Read specific capability files
+4. **Follow Patterns**: Use native tools (git, pytest, npm) as described
+
+### Integration with Core Agents
+
+Core agents defined below are **extended** by specialized agent patterns in `.proto-gear/agents/`:
+
+- **Backend Agent** → Extended by `.proto-gear/agents/backend/AGENT.md` (if available)
+- **Frontend Agent** → Extended by `.proto-gear/agents/frontend/AGENT.md` (if available)
+- **Testing Agent** → Extended by `.proto-gear/agents/testing/AGENT.md` (if available)
+- **DevOps Agent** → Extended by `.proto-gear/agents/devops/AGENT.md` (if available)
+
 ## 🚨 CRITICAL: PROJECT STATE MANAGEMENT
 
 ### 📊 PROJECT STATE LOCATION
