@@ -27,6 +27,34 @@ except ImportError:
     RICH_AVAILABLE = False
 
 
+# Encoding-safe characters with fallbacks
+def get_safe_chars():
+    """Get encoding-safe characters for console output"""
+    try:
+        # Test if console supports Unicode
+        sys.stdout.write("\u2713")
+        sys.stdout.flush()
+        # If successful, use Unicode characters
+        return {
+            'check': '✓',
+            'cross': '✗',
+            'bullet': '•',
+            'line': '─',
+        }
+    except (UnicodeEncodeError, AttributeError):
+        # Fallback to ASCII
+        return {
+            'check': '[Y]',
+            'cross': '[N]',
+            'bullet': '*',
+            'line': '-',
+        }
+
+
+# Get encoding-safe characters once at module load
+CHARS = get_safe_chars()
+
+
 # Custom style for questionary prompts
 PROTO_GEAR_STYLE = Style([
     ('qmark', 'fg:#5f87d7 bold'),           # Question mark color
@@ -82,13 +110,13 @@ class RichWizard:
                 lines.append("Type: Generic Project")
 
             if git_config['is_git_repo']:
-                lines.append("Git: ✓ Initialized")
+                lines.append(f"Git: {CHARS['check']} Initialized")
                 if git_config['has_remote']:
-                    lines.append(f"Remote: ✓ {git_config['remote_name']}")
+                    lines.append(f"Remote: {CHARS['check']} {git_config['remote_name']}")
                 else:
-                    lines.append("Remote: ✗ None (local-only)")
+                    lines.append(f"Remote: {CHARS['cross']} None (local-only)")
             else:
-                lines.append("Git: ✗ Not initialized")
+                lines.append(f"Git: {CHARS['cross']} Not initialized")
 
             return "\n".join(lines)
 
@@ -107,13 +135,13 @@ class RichWizard:
             table.add_row("Type", "[yellow]Generic Project[/yellow]")
 
         if git_config['is_git_repo']:
-            table.add_row("Git", "✓ Initialized")
+            table.add_row("Git", f"{CHARS['check']} Initialized")
             if git_config['has_remote']:
-                table.add_row("Remote", f"✓ {git_config['remote_name']}")
+                table.add_row("Remote", f"{CHARS['check']} {git_config['remote_name']}")
             else:
-                table.add_row("Remote", "[yellow]✗ None (local-only)[/yellow]")
+                table.add_row("Remote", f"[yellow]{CHARS['cross']} None (local-only)[/yellow]")
         else:
-            table.add_row("Git", "[yellow]✗ Not initialized[/yellow]")
+            table.add_row("Git", f"[yellow]{CHARS['cross']} Not initialized[/yellow]")
 
         return table
 
@@ -140,17 +168,17 @@ class RichWizard:
             "that defines Git workflow conventions and commit message standards.",
             "",
             "[dim]This includes:[/dim]",
-            "  • Branch naming conventions (feature/*, bugfix/*, hotfix/*)",
-            "  • Conventional commit message format",
-            "  • Workflow examples for AI agents",
-            "  • PR templates and merge strategies",
+            f"  {CHARS['bullet']} Branch naming conventions (feature/*, bugfix/*, hotfix/*)",
+            f"  {CHARS['bullet']} Conventional commit message format",
+            f"  {CHARS['bullet']} Workflow examples for AI agents",
+            f"  {CHARS['bullet']} PR templates and merge strategies",
             ""
         ]
 
         if git_config['is_git_repo']:
-            description.append("[green]✓ Git repository detected - branching strategy recommended[/green]")
+            description.append(f"[green]{CHARS['check']} Git repository detected - branching strategy recommended[/green]")
         else:
-            description.append("[yellow]⚠ No Git repository - you can still generate the strategy for future use[/yellow]")
+            description.append("[yellow]! No Git repository - you can still generate the strategy for future use[/yellow]")
 
         if self.console:
             self.print_panel(
@@ -162,11 +190,11 @@ class RichWizard:
         answer = questionary.select(
             "Generate BRANCHING.md?",
             choices=[
-                questionary.Choice("✓ Yes - Generate branching strategy", value=True),
-                questionary.Choice("✗ No - Skip this step", value=False)
+                questionary.Choice(f"{CHARS['check']} Yes - Generate branching strategy", value=True),
+                questionary.Choice(f"{CHARS['cross']} No - Skip this step", value=False)
             ],
             style=PROTO_GEAR_STYLE,
-            instruction="(Use arrow keys ↑↓ to navigate, Enter to select)"
+            instruction="(Use arrow keys to navigate, Enter to select)"
         ).ask()
 
         return answer if answer is not None else False
@@ -223,11 +251,11 @@ class RichWizard:
         if answer and answer.strip():
             result = answer.strip().upper()
             if self.console:
-                self.console.print(f"[green]✓ Using prefix: {result}[/green]\n")
+                self.console.print(f"[green]{CHARS['check']} Using prefix: {result}[/green]\n")
             return result
         else:
             if self.console:
-                self.console.print(f"[green]✓ Using suggested prefix: {suggested_prefix}[/green]\n")
+                self.console.print(f"[green]{CHARS['check']} Using suggested prefix: {suggested_prefix}[/green]\n")
             return suggested_prefix
 
     def show_configuration_summary(self, config: Dict, project_info: Dict, current_dir: Path) -> bool:
@@ -242,14 +270,14 @@ class RichWizard:
                 print(f"Framework: {project_info['framework']}")
 
             print("\nFiles to be created:")
-            print("  ✓ AGENTS.md (AI agent integration guide)")
-            print("  ✓ PROJECT_STATUS.md (Project state tracking)")
+            print(f"  {CHARS['check']} AGENTS.md (AI agent integration guide)")
+            print(f"  {CHARS['check']} PROJECT_STATUS.md (Project state tracking)")
 
             if config.get('with_branching'):
-                print("  ✓ BRANCHING.md (Git workflow conventions)")
+                print(f"  {CHARS['check']} BRANCHING.md (Git workflow conventions)")
                 print(f"\nTicket Prefix: {config['ticket_prefix']}")
             else:
-                print("  ✗ BRANCHING.md (not selected)")
+                print(f"  {CHARS['cross']} BRANCHING.md (not selected)")
 
             while True:
                 response = input("\nProceed with setup? (y/n): ").lower()
@@ -268,19 +296,19 @@ class RichWizard:
         table.add_row("Type", project_info.get('type', 'Generic'))
         if project_info.get('framework'):
             table.add_row("Framework", project_info['framework'])
-        table.add_row("Branching", "✓ Enabled" if config.get('with_branching') else "✗ Disabled")
+        table.add_row("Branching", f"{CHARS['check']} Enabled" if config.get('with_branching') else f"{CHARS['cross']} Disabled")
         if config.get('with_branching'):
             table.add_row("Ticket Prefix", config.get('ticket_prefix', 'N/A'))
 
         files_list = [
-            "✓ AGENTS.md (AI agent integration guide)",
-            "✓ PROJECT_STATUS.md (Project state tracking)"
+            f"{CHARS['check']} AGENTS.md (AI agent integration guide)",
+            f"{CHARS['check']} PROJECT_STATUS.md (Project state tracking)"
         ]
 
         if config.get('with_branching'):
-            files_list.append("✓ BRANCHING.md (Git workflow conventions)")
+            files_list.append(f"{CHARS['check']} BRANCHING.md (Git workflow conventions)")
         else:
-            files_list.append("[dim]✗ BRANCHING.md (not selected)[/dim]")
+            files_list.append(f"[dim]{CHARS['cross']} BRANCHING.md (not selected)[/dim]")
 
         files_text = "\n".join(files_list)
 
