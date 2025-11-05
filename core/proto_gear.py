@@ -603,6 +603,30 @@ current_sprint: null
             status_file.write_text(status_content, encoding="utf-8")
             files_created.append('PROJECT_STATUS.md')
 
+            # Create capabilities if requested
+            if with_capabilities:
+                capability_result = copy_capability_templates(
+                    current_dir,
+                    current_dir.name,
+                    version="0.3.0",
+                    dry_run=False
+                )
+
+                if capability_result['status'] == 'success':
+                    files_created.extend(capability_result['files_created'])
+                    print(f"{Colors.GREEN}[OK] Capability system created in .proto-gear/{Colors.ENDC}")
+                elif capability_result['status'] == 'warning':
+                    print(f"{Colors.YELLOW}[WARNING] {capability_result['errors'][0]}{Colors.ENDC}")
+                elif capability_result['status'] == 'partial':
+                    files_created.extend(capability_result['files_created'])
+                    print(f"{Colors.YELLOW}[WARNING] Capability creation had issues:{Colors.ENDC}")
+                    for error in capability_result['errors']:
+                        print(f"  - {error}")
+                else:
+                    print(f"{Colors.RED}[ERROR] Capability creation failed:{Colors.ENDC}")
+                    for error in capability_result['errors']:
+                        print(f"  - {error}")
+
             return {
                 'status': 'success',
                 'files_created': files_created,
@@ -621,6 +645,15 @@ current_sprint: null
             print("  - .proto-gear/ (Universal Capabilities System)")
             print("    - .proto-gear/capabilities/ (Agent capability modules)")
             print("    - .proto-gear/config.yaml (Capability configuration)")
+
+        # Show capability files in dry run
+        if with_capabilities:
+            capability_result = copy_capability_templates(
+                current_dir,
+                current_dir.name,
+                version="0.3.0",
+                dry_run=True
+            )
 
         return {'status': 'success', 'dry_run': True}
 
