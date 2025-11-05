@@ -46,11 +46,13 @@ ticket_prefix: "PROTO"
 | Unicode/UTF-8 Support | Complete | 100% | Windows encoding fixed |
 | Project Organization | Complete | 100% | Clear dev/package separation |
 | Dogfooding | Active | 95% | Using Proto Gear on itself |
-| Test Coverage | Needs Work | 38% | Target: 70%+ |
+| Workflow Detection | Complete | 100% | Local/remote/automated modes |
+| Test Coverage | Good | 61% | Was 38%, target: 70%+ |
 | Universal Capabilities | Design | 5% | Design doc created |
 
 ## 🔄 Recent Updates
 
+- **2025-11-05**: Test coverage improved from 38% to 61% (+23%)! 70 tests passing
 - **2025-11-05**: Completed PROTO-004 - encoding-safe wizard for Windows!
 - **2025-11-05**: Completed PROTO-016 - workflow mode detection (local/remote/automated)!
 - **2025-11-05**: Merged PROTO-015 to development - major refactoring complete!
@@ -82,7 +84,8 @@ ticket_prefix: "PROTO"
 ## 📊 Metrics
 
 ```yaml
-test_coverage: 38%
+test_coverage: 61%
+total_tests: 70
 target_coverage: 70%
 documentation: 90%
 open_tickets: 1
