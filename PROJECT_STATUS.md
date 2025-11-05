@@ -22,13 +22,13 @@ ticket_prefix: "PROTO"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-004 | Fix interactive wizard encoding on Windows | bugfix | IN_PROGRESS | - | Lead AI |
-| PROTO-003 | Implement Universal Capabilities System (v0.4.0) | feature | PENDING | - | Lead AI |
+| PROTO-003 | Implement Universal Capabilities System (v0.4.0) | feature | IN_PROGRESS | - | Lead AI |
 
 ## ✅ Completed Tickets
 
 | ID | Title | Completed | Notes |
 |----|-------|-----------|-------|
+| PROTO-004 | Fix interactive wizard encoding on Windows | 2025-11-05 | Encoding-safe characters with ASCII fallback |
 | PROTO-016 | Add local vs remote workflow detection | 2025-11-05 | Detects gh CLI, workflow mode in BRANCHING.md |
 | PROTO-015 | Remove workflow execution modules, reorganize project | 2025-11-05 | Major refactoring: -1840 lines, +7520 net |
 | PROTO-002 | Update README with new documentation paths | 2025-11-05 | Added Documentation section, fixed all links |
@@ -51,6 +51,7 @@ ticket_prefix: "PROTO"
 
 ## 🔄 Recent Updates
 
+- **2025-11-05**: Completed PROTO-004 - encoding-safe wizard for Windows!
 - **2025-11-05**: Completed PROTO-016 - workflow mode detection (local/remote/automated)!
 - **2025-11-05**: Merged PROTO-015 to development - major refactoring complete!
 - **2025-11-05**: Updated README.md with comprehensive documentation section (PROTO-002)
@@ -84,8 +85,8 @@ ticket_prefix: "PROTO"
 test_coverage: 38%
 target_coverage: 70%
 documentation: 90%
-open_tickets: 2
-completed_tickets: 6
+open_tickets: 1
+completed_tickets: 7
 ```
 
 ## 📝 Dogfooding Notes
