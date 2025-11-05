@@ -13,7 +13,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
 from proto_gear import (
     detect_project_structure,
     detect_git_config,
-    safe_input
+    safe_input,
+    generate_branching_doc,
+    setup_agent_framework_only,
+    show_splash_screen,
+    print_farewell
 )
 from ui_helper import Colors
 
@@ -208,6 +212,217 @@ class TestMainCLI:
 
             assert exc_info.value.code == 0
             mock_help.assert_called_once()
+
+
+class TestGenerateBranchingDoc:
+    """Test branching document generation"""
+
+    def test_generate_branching_with_remote(self):
+        """Test generating BRANCHING.md with remote configured"""
+        git_config = {
+            'is_git_repo': True,
+            'has_remote': True,
+            'remote_name': 'origin',
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'remote_manual'
+        }
+
+        result = generate_branching_doc('test-project', 'TEST', git_config, '2025-11-05')
+
+        assert result is not None
+        assert 'test-project' in result
+        assert 'TEST' in result
+        assert 'Remote Workflow (Manual PRs)' in result
+        assert 'origin' in result
+        assert 'Pull Requests' in result
+
+    def test_generate_branching_local_only(self):
+        """Test generating BRANCHING.md for local-only workflow"""
+        git_config = {
+            'is_git_repo': True,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'local_only'
+        }
+
+        result = generate_branching_doc('test-project', 'TEST', git_config, '2025-11-05')
+
+        assert result is not None
+        assert 'Local-Only Workflow' in result
+        assert 'local merge' in result.lower() or 'local-only' in result.lower()
+
+    def test_generate_branching_with_gh_cli(self):
+        """Test generating BRANCHING.md with GitHub CLI available"""
+        git_config = {
+            'is_git_repo': True,
+            'has_remote': True,
+            'remote_name': 'origin',
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': True,
+            'workflow_mode': 'remote_automated'
+        }
+
+        result = generate_branching_doc('test-project', 'TEST', git_config, '2025-11-05')
+
+        assert result is not None
+        assert 'Remote Workflow (Automated)' in result
+        assert 'gh pr create' in result or 'GitHub CLI' in result
+
+
+class TestSetupAgentFramework:
+    """Test agent framework setup"""
+
+    def test_setup_dry_run(self, tmp_path):
+        """Test setup in dry-run mode"""
+        with patch('proto_gear.detect_project_structure') as mock_detect:
+            mock_detect.return_value = {
+                'detected': True,
+                'type': 'Python Project',
+                'framework': 'Django',
+                'directories': ['src', 'tests'],
+                'structure_summary': 'Project contains: src, tests'
+            }
+
+            result = setup_agent_framework_only(dry_run=True)
+
+            assert result['status'] == 'success'
+            assert result.get('dry_run') is True
+
+    def test_setup_creates_agents_md(self, tmp_path, monkeypatch):
+        """Test that setup creates AGENTS.md"""
+        # Change to tmp_path directory
+        monkeypatch.chdir(tmp_path)
+
+        with patch('proto_gear.detect_project_structure') as mock_detect:
+            mock_detect.return_value = {
+                'detected': True,
+                'type': 'Python Project',
+                'framework': None,
+                'directories': ['src'],
+                'structure_summary': 'Project contains: src'
+            }
+
+            result = setup_agent_framework_only(dry_run=False, with_branching=False)
+
+            assert result['status'] == 'success'
+            assert 'AGENTS.md' in result.get('files_created', [])
+
+            # Check that AGENTS.md was created
+            agents_file = tmp_path / 'AGENTS.md'
+            assert agents_file.exists()
+            content = agents_file.read_text(encoding='utf-8')
+            assert 'ProtoGear Agent Framework' in content
+
+    def test_setup_with_branching(self, tmp_path, monkeypatch):
+        """Test setup with branching strategy enabled"""
+        # Change to tmp_path directory
+        monkeypatch.chdir(tmp_path)
+
+        with patch('proto_gear.detect_project_structure') as mock_detect:
+            with patch('proto_gear.detect_git_config') as mock_git:
+                mock_detect.return_value = {
+                    'detected': True,
+                    'type': 'Python Project',
+                    'framework': None,
+                    'directories': [],
+                    'structure_summary': 'Basic project'
+                }
+                mock_git.return_value = {
+                    'is_git_repo': True,
+                    'has_remote': False,
+                    'remote_name': None,
+                    'main_branch': 'main',
+                    'dev_branch': 'development',
+                    'has_gh_cli': False,
+                    'workflow_mode': 'local_only'
+                }
+
+                result = setup_agent_framework_only(
+                    dry_run=False,
+                    with_branching=True,
+                    ticket_prefix='TEST'
+                )
+
+                assert result['status'] == 'success'
+                assert 'BRANCHING.md' in result.get('files_created', [])
+
+
+class TestWorkflowModeDetection:
+    """Test workflow mode detection (PROTO-016)"""
+
+    @patch('subprocess.run')
+    def test_detect_remote_automated_mode(self, mock_run):
+        """Test detection of remote_automated workflow mode"""
+        with patch('subprocess.run', side_effect=[
+            Mock(returncode=0, stdout='', stderr=''),  # git rev-parse
+            Mock(returncode=0, stdout='origin\n', stderr=''),  # git remote
+            Mock(returncode=0, stdout='', stderr=''),  # gh --version (success)
+        ]):
+            result = detect_git_config()
+
+            assert result['is_git_repo'] is True
+            assert result['has_remote'] is True
+            assert result['has_gh_cli'] is True
+            assert result['workflow_mode'] == 'remote_automated'
+
+    @patch('subprocess.run')
+    def test_detect_remote_manual_mode(self, mock_run):
+        """Test detection of remote_manual workflow mode"""
+        with patch('subprocess.run', side_effect=[
+            Mock(returncode=0, stdout='', stderr=''),  # git rev-parse
+            Mock(returncode=0, stdout='origin\n', stderr=''),  # git remote
+            Mock(returncode=1, stdout='', stderr=''),  # gh --version (fail)
+        ]):
+            result = detect_git_config()
+
+            assert result['is_git_repo'] is True
+            assert result['has_remote'] is True
+            assert result['has_gh_cli'] is False
+            assert result['workflow_mode'] == 'remote_manual'
+
+    @patch('subprocess.run')
+    def test_detect_local_only_mode(self, mock_run):
+        """Test detection of local_only workflow mode"""
+        with patch('subprocess.run', side_effect=[
+            Mock(returncode=0, stdout='', stderr=''),  # git rev-parse
+            Mock(returncode=0, stdout='', stderr=''),  # git remote (empty)
+        ]):
+            result = detect_git_config()
+
+            assert result['is_git_repo'] is True
+            assert result['has_remote'] is False
+            assert result['workflow_mode'] == 'local_only'
+
+
+class TestUIFunctions:
+    """Test UI functions"""
+
+    @patch('proto_gear.time.sleep')
+    @patch('proto_gear.print')
+    @patch('proto_gear.clear_screen')
+    def test_show_splash_screen(self, mock_clear, mock_print, mock_sleep):
+        """Test splash screen display"""
+        show_splash_screen()
+
+        # Verify clear_screen was called
+        mock_clear.assert_called_once()
+        # Verify print was called (for logo and tagline)
+        assert mock_print.called
+
+    @patch('proto_gear.ui.farewell')
+    @patch('builtins.print')
+    def test_print_farewell(self, mock_print, mock_ui_farewell):
+        """Test farewell message"""
+        print_farewell()
+
+        # Verify farewell methods were called
+        assert mock_print.called or mock_ui_farewell.called
 
 
 if __name__ == '__main__':
