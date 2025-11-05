@@ -455,29 +455,141 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
-def copy_capability_templates(project_path, project_name, version="0.3.0", dry_run=False):
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.3.0", dry_run: bool = False) -> dict:
     """
-    Copy capability templates to .proto-gear/ directory
+    Copy capability templates to .proto-gear/ directory with security hardening
 
     Args:
-        project_path: Path to project directory
-        project_name: Name of the project
-        version: Proto Gear version (default: 0.3.0)
-        dry_run: If True, don't actually copy files
+        target_dir: Project directory (where .proto-gear/ will be created)
+        project_name: Project name for placeholder replacement
+        version: Proto Gear version for placeholder replacement
+        dry_run: If True, don't create files, just report what would be done
 
     Returns:
-        dict: Result with status and files_created list
+        dict with 'status', 'files_created', 'errors'
+
+    Security Features:
+        - Path traversal prevention via normpath validation
+        - Symlink detection and rejection
+        - UTF-8 encoding enforcement
+        - File permission management
     """
-    # TODO: Implementation for PROTO-019
-    # This is a stub for PROTO-022 testing
-    return {
-        'status': 'error',
-        'error': 'copy_capability_templates not yet implemented (PROTO-019)',
-        'files_created': []
+    import stat
+
+    result = {
+        'status': 'success',
+        'files_created': [],
+        'errors': []
     }
 
+    # Define source and destination
+    source_dir = Path(__file__).parent / 'capabilities'
+    dest_dir = target_dir / '.proto-gear'
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None):
+    # Security check: Ensure source directory exists and is not a symlink
+    if not source_dir.exists():
+        result['status'] = 'error'
+        result['errors'].append(f"Source directory not found: {source_dir}")
+        return result
+
+    if source_dir.is_symlink():
+        result['status'] = 'error'
+        result['errors'].append(f"Security: Source directory is a symlink: {source_dir}")
+        return result
+
+    # Check if .proto-gear already exists
+    if dest_dir.exists() and not dry_run:
+        result['status'] = 'warning'
+        result['errors'].append(f".proto-gear directory already exists at {dest_dir}")
+        return result
+
+    if dry_run:
+        print(f"\n{Colors.YELLOW}Dry run - capability files that would be created:{Colors.ENDC}")
+        print(f"  Directory: .proto-gear/")
+
+    try:
+        # Walk through source directory
+        for source_path in source_dir.rglob('*'):
+            # Skip directories and symlinks
+            if source_path.is_dir():
+                continue
+
+            # Security check: Reject symlinks
+            if source_path.is_symlink():
+                result['errors'].append(f"Skipped symlink: {source_path}")
+                continue
+
+            # Calculate relative path from source directory
+            rel_path = source_path.relative_to(source_dir)
+
+            # Security check: Validate path doesn't contain traversal attempts
+            normalized_rel_path = Path(os.path.normpath(rel_path))
+            if '..' in normalized_rel_path.parts or normalized_rel_path.is_absolute():
+                result['errors'].append(f"Security: Invalid path detected: {rel_path}")
+                continue
+
+            # Determine destination path
+            dest_path = dest_dir / normalized_rel_path
+
+            # Handle .template.md extension (rename to .md)
+            if dest_path.suffix == '.md' and dest_path.stem.endswith('.template'):
+                dest_path = dest_path.parent / (dest_path.stem.replace('.template', '') + '.md')
+
+            # Security check: Ensure destination stays within .proto-gear/
+            try:
+                dest_path.resolve().relative_to(dest_dir.resolve())
+            except ValueError:
+                result['errors'].append(f"Security: Destination path escapes .proto-gear/: {dest_path}")
+                continue
+
+            if dry_run:
+                print(f"    - {dest_path.relative_to(target_dir)}")
+                result['files_created'].append(str(dest_path.relative_to(target_dir)))
+            else:
+                # Create parent directories
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Set directory permissions (755)
+                try:
+                    dest_path.parent.chmod(stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                except (OSError, NotImplementedError):
+                    # Some platforms don't support chmod
+                    pass
+
+                # Read source file with UTF-8 encoding
+                try:
+                    content = source_path.read_text(encoding='utf-8')
+                except UnicodeDecodeError as e:
+                    result['errors'].append(f"Encoding error in {source_path}: {e}")
+                    continue
+
+                # Replace placeholders
+                content = content.replace('{{VERSION}}', version)
+                content = content.replace('{{PROJECT_NAME}}', project_name)
+
+                # Write to destination with UTF-8 encoding
+                dest_path.write_text(content, encoding='utf-8')
+
+                # Set file permissions (644)
+                try:
+                    dest_path.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
+                except (OSError, NotImplementedError):
+                    # Some platforms don't support chmod
+                    pass
+
+                result['files_created'].append(str(dest_path.relative_to(target_dir)))
+
+        if result['errors']:
+            result['status'] = 'partial'
+
+    except Exception as e:
+        result['status'] = 'error'
+        result['errors'].append(f"Unexpected error: {str(e)}")
+
+    return result
+
+
+def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -625,6 +737,23 @@ current_sprint: null
             status_file.write_text(status_content, encoding="utf-8")
             files_created.append('PROJECT_STATUS.md')
 
+            # Create capabilities if requested
+            if with_capabilities:
+                capability_result = copy_capability_templates(
+                    current_dir,
+                    current_dir.name,
+                    version="0.3.0",
+                    dry_run=False
+                )
+
+                if capability_result['status'] == 'success':
+                    files_created.extend(capability_result['files_created'])
+                    print(f"{Colors.GREEN}+ Capability system created in .proto-gear/{Colors.ENDC}")
+                elif capability_result['status'] == 'warning':
+                    print(f"{Colors.YELLOW}! {capability_result['errors'][0]}{Colors.ENDC}")
+                else:
+                    print(f"{Colors.YELLOW}! Capability creation had issues: {capability_result.get('errors')}{Colors.ENDC}")
+
             return {
                 'status': 'success',
                 'files_created': files_created,
@@ -639,6 +768,15 @@ current_sprint: null
         print("  - PROJECT_STATUS.md (project state tracker)")
         if with_branching:
             print("  - BRANCHING.md (Git workflow and commit conventions)")
+
+        # Show capability files if requested
+        if with_capabilities:
+            capability_result = copy_capability_templates(
+                current_dir,
+                current_dir.name,
+                version="0.3.0",
+                dry_run=True
+            )
 
         return {'status': 'success', 'dry_run': True}
 
@@ -786,7 +924,7 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None):
+def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
 
@@ -800,7 +938,8 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
         result = setup_agent_framework_only(
             dry_run=dry_run,
             with_branching=with_branching,
-            ticket_prefix=ticket_prefix
+            ticket_prefix=ticket_prefix,
+            with_capabilities=with_capabilities
         )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
