@@ -3,6 +3,47 @@
 > **For Agents**: This is the ONLY source of project state. All examples and test data should be ignored.
 > **For Humans**: Current development status and progress tracking.
 
+## 📖 State Management Guide
+
+### Ticket Status Workflow
+
+```
+PENDING → IN_PROGRESS → COMPLETED
+   ↓           ↓
+BLOCKED ←──────┘
+   ↓
+CANCELLED
+```
+
+**Status Definitions:**
+- **PENDING**: Ticket created, not started (in backlog)
+- **IN_PROGRESS**: Actively being worked on (has branch)
+- **COMPLETED**: Work finished, tests passing, merged
+- **BLOCKED**: Cannot proceed due to dependency/blocker
+- **CANCELLED**: No longer needed or  deprioritized
+
+### Sprint Types
+
+Your project may be in different sprint types that affect agent focus:
+
+| Sprint Type | Focus | Flex Agents Suggested |
+|-------------|-------|----------------------|
+| **feature_development** | Building new features | UI/UX, Integration |
+| **bug_fixing** | Resolving defects | Testing, Debug |
+| **performance_optimization** | Speed/efficiency | Performance, Profiling |
+| **deployment_prep** | Release readiness | DevOps, Documentation |
+| **refactoring** | Code quality | Architecture, Testing |
+| **research_integration** | New tech/libraries | Research, Prototyping |
+
+### State Update Rules
+
+**Agents should:**
+1. **Always read** this file before making decisions
+2. **Update immediately** when ticket status changes
+3. **Never cache** state - always read fresh
+4. **Verify branch exists** for IN_PROGRESS tickets
+5. **Check blockers** before starting work
+
 ## 📊 Current State
 
 ```yaml
@@ -15,9 +56,16 @@ ticket_prefix: "{{TICKET_PREFIX}}"  # e.g., "PROJ", "MCP", etc.
 
 ## 🎫 Active Tickets
 
+> **Ticket Structure**: Each ticket should have a unique ID, clear title, type (feature/bugfix/hotfix), current status, associated branch name, and optional assignee.
+
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 {{ACTIVE_TICKETS}}
+
+**Example**:
+```markdown
+| {{TICKET_PREFIX}}-001 | Add user authentication | feature | IN_PROGRESS | feature/{{TICKET_PREFIX}}-001-add-user-auth | Lead AI |
+```
 
 ## ✅ Completed Tickets
 

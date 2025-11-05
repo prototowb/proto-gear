@@ -3,6 +3,17 @@
 
 > **TRIGGER NOTICE**: When this file is read by an agent, it MUST execute the [Automatic Workflow](#automatic-workflow) section immediately.
 
+## 📖 How to Use This Document
+
+**For AI Agents:**
+This document defines **patterns and workflows** for natural language collaboration. The code blocks are **illustrative patterns**, not executable code. When you see:
+- `def function_name():` → This describes a **decision-making pattern**
+- `execute_command()` → Use native tools (git, pytest, npm, etc.)
+- `workflow:` blocks → Follow these steps using your judgment and available tools
+
+**For Humans:**
+This provides the framework for how AI agents should think about and approach the project. Review and customize the agent configurations and workflows to match your project needs.
+
 ## 🚨 CRITICAL: PROJECT STATE MANAGEMENT
 
 ### 📊 PROJECT STATE LOCATION
