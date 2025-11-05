@@ -3,12 +3,12 @@
 > AI Agent Framework for Intelligent Development Workflows
 
 [![Version](https://img.shields.io/badge/version-0.3.0-blue)](https://github.com/proto-gear/proto-gear)
-[![Status](https://img.shields.io/badge/status-alpha-orange)](docs/READINESS_ASSESSMENT.md)
+[![Status](https://img.shields.io/badge/status-alpha-orange)](docs/dev/readiness-assessment.md)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-purple)](LICENSE)
-[![Tech Stack Agnostic](https://img.shields.io/badge/stack-agnostic-orange)](docs/features.md)
+[![Tech Stack Agnostic](https://img.shields.io/badge/stack-agnostic-orange)](#-technology-detection)
 
-> ⚠️ **Alpha Software**: Proto Gear v0.3.0 is alpha-quality software suitable for development and experimentation. Not recommended for production use without thorough testing. See [Readiness Assessment](docs/READINESS_ASSESSMENT.md) for details.
+> ⚠️ **Alpha Software**: Proto Gear v0.3.0 is alpha-quality software suitable for development and experimentation. Not recommended for production use without thorough testing. See [Readiness Assessment](docs/dev/readiness-assessment.md) for details.
 
 ## ⚡ What is Proto Gear?
 
@@ -361,11 +361,30 @@ Framework: Next.js
   5. Update PROJECT_STATUS.md as work progresses
 ```
 
+## 📚 Documentation
+
+### For Users
+- **[Getting Started Guide](docs/user/getting-started.md)** - First-time setup and usage
+- **[Template Guide](docs/user/template-guide.md)** - Understanding Proto Gear templates
+- **[Usage Guides](docs/user/guides/)** - Detailed tutorials:
+  - [Template Basics](docs/user/guides/01-template-basics.md)
+  - [AI Agent Usage](docs/user/guides/02-ai-agent-usage.md)
+  - [Human Usage](docs/user/guides/03-human-usage.md)
+  - [Workflow Examples](docs/user/guides/04-workflow-examples.md)
+  - [Troubleshooting](docs/user/guides/05-troubleshooting.md)
+
+### For Contributors
+- **[Project Structure](docs/dev/project-structure.md)** - File organization and architecture
+- **[Branching Strategy](docs/dev/branching-strategy.md)** - Git workflow conventions
+- **[Readiness Assessment](docs/dev/readiness-assessment.md)** - Project status and roadmap
+- **[Universal Capabilities Design](docs/dev/universal-capabilities-design.md)** - Future v0.4.0 features
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
+
 ## 🤝 Contributing
 
 We welcome contributions! Proto Gear is focused on being the best AI agent framework for development workflows.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and [docs/dev/branching-strategy.md](docs/dev/branching-strategy.md) for Git workflow conventions.
 
 ## 📄 License
 
@@ -373,10 +392,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 
-- [Documentation](https://protogear.dev/docs)
-- [GitHub](https://github.com/proto-gear/proto-gear)
-- [Discord Community](https://discord.gg/protogear)
-- [Issues](https://github.com/proto-gear/proto-gear/issues)
+- **GitHub**: [github.com/proto-gear/proto-gear](https://github.com/proto-gear/proto-gear)
+- **Issues**: [Report bugs or request features](https://github.com/proto-gear/proto-gear/issues)
+- **Discussions**: [Join the conversation](https://github.com/proto-gear/proto-gear/discussions)
 
 ## 🙏 Credits
 

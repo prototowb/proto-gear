@@ -5,6 +5,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 Proto Gear is a Python-based template generator that creates collaboration environments for human and AI agents working together via natural language. It generates structured templates (AGENTS.md, PROJECT_STATUS.md, BRANCHING.md, TESTING.md) that provide workflow patterns, sprint management, and development conventions - completely tech stack agnostic and designed to work with any programming language or framework.
 
+## Project Structure
+
+**IMPORTANT**: We maintain a clear separation between package files (distributed to users) and development files (contributors only).
+
+### Directory Organization
+- **`core/`** - PACKAGE: Main package (distributed via pip)
+- **`tests/`** - DEVELOPMENT: Test suite
+- **`docs/user/`** - DOCUMENTATION: End-user guides and tutorials
+- **`docs/dev/`** - DOCUMENTATION: Contributor and design documents
+- **`dev/analysis/`** - DEVELOPMENT: Archived code analysis and reports
+- **`dev/scripts/`** - DEVELOPMENT: Development automation scripts
+- **`examples/`** - EXAMPLES: Sample projects showing Proto Gear usage
+- **`.github/`** - GITHUB: CI/CD workflows and templates
+- **`.claude/`** - DEVELOPMENT: Claude Code configuration
+
+**Complete Structure**: See `docs/dev/project-structure.md` for detailed breakdown
+
 ## Development Commands
 
 ### Core Development
@@ -12,7 +29,7 @@ Proto Gear is a Python-based template generator that creates collaboration envir
 - **Build**: `python setup.py build`
 - **Test**: `python -m pytest`
 - **Lint**: `python -m flake8 core/`
-- **Development test suite**: `bash dev-test.sh`
+- **Coverage**: `python -m pytest --cov=core --cov-report=term-missing`
 
 ### Main Commands
 - **Primary command**: `pg init` - Initialize AI agent templates in current project
@@ -26,15 +43,49 @@ Proto Gear is a Python-based template generator that creates collaboration envir
 pg init --dry-run
 
 # Test with all options
-pg init --dry-run --with-branching --with-testing --ticket-prefix TEST
+pg init --dry-run --with-branching --ticket-prefix TEST
 
-# Run test suite
+# Run test suite with coverage
 python -m pytest --cov=core --cov-report=term-missing
 ```
 
+### Dogfooding Workflow
+
+**IMPORTANT**: We use Proto Gear to develop Proto Gear itself!
+
+Since Proto Gear is installed in editable mode (`pip install -e .`), we can use it on our own project:
+
+```bash
+# Initialize Proto Gear templates in this project
+pg init --with-branching --ticket-prefix PROTO
+
+# This creates (if they don't exist):
+# - AGENTS.md (AI agent coordination for Proto Gear development)
+# - PROJECT_STATUS.md (Track PROTO-XXX tickets and sprints)
+# - BRANCHING.md (Git workflow for contributors)
+# - TESTING.md (TDD patterns for developing Proto Gear)
+```
+
+**Benefits**:
+1. **Test in real time** - See changes immediately as we develop
+2. **Self-documenting** - We use the templates we tell others to use
+3. **Catch issues early** - Experience the user workflow firsthand
+4. **Better design** - Feel pain points ourselves and fix them
+
+**Development Cycle**:
+1. Make changes to `core/proto_gear.py` or templates
+2. Test immediately: `pg init --dry-run` (editable install means changes are live)
+3. Run tests: `pytest`
+4. Use Proto Gear templates to track our own work:
+   - Create tickets in PROJECT_STATUS.md
+   - Follow BRANCHING.md conventions
+   - Apply TESTING.md TDD patterns
+   - Coordinate via AGENTS.md
+5. When shipping new version: bump `setup.py` version, reinstall: `pip install -e .`
+
 ## Architecture Overview
 
-### Code Structure
+### Code Structure (Package)
 - **`core/`** - Main package directory containing all Python modules
 - **`proto_gear.py`** - Main entry point with CLI interface and wizard orchestration
 - **`setup.py`** - Package configuration and dependencies
@@ -95,15 +146,16 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 5. **Natural Collaboration**: Humans and AI work together through shared documentation
 
 ### Testing and Validation
-- Use `dev-test.sh` for comprehensive testing during development
 - All commands support `--dry-run` for safe testing
 - Test suite covers initialization, template generation, and technology detection
-- Current coverage: 38% (30 tests passing)
+- Current coverage: 38% (target: 70%+)
+- Run tests: `pytest --cov=core --cov-report=term-missing`
 
 ### Package Management
 - Uses setuptools with entry points for multiple CLI aliases
 - Supports Python 3.8+ with core dependencies: pyyaml, click, rich
 - Development dependencies include pytest, flake8, black, mypy
+- Installed in editable mode: `pip install -e .`
 
 ## Important Implementation Details
 - Main executable is `proto_gear.py` in the `core/` directory
@@ -118,7 +170,7 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 
 ## Branching and Commit Strategy
 
-**IMPORTANT**: All contributors (human and AI) MUST follow the branching and commit conventions defined in `docs/BRANCHING_STRATEGY.md`.
+**IMPORTANT**: All contributors (human and AI) MUST follow the branching and commit conventions defined in `docs/dev/branching-strategy.md`.
 
 ### Quick Reference for AI Agents
 
@@ -140,7 +192,7 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 
 **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 
-**Scopes**: `cli`, `agent`, `git`, `test`, `state`, `config`, `docs`, `setup`
+**Scopes**: `cli`, `agent`, `git`, `test`, `state`, `config`, `docs`, `setup`, `structure`
 
 #### Before Starting Work
 1. Verify on `development` branch: `git checkout development`
@@ -164,13 +216,13 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 ### Current Issue Tracking
 - **Format**: `PROTO-{number}` (e.g., PROTO-001, PROTO-002)
 - **Starting from**: PROTO-001
-- **Track in**: GitHub Issues or PROJECT_STATUS.md
+- **Track in**: PROJECT_STATUS.md (once we initialize dogfooding) or GitHub Issues
 
 ### Protected Branches
 - **`main`**: Production-ready code, no direct commits, requires PR + review
 - **`development`**: Integration branch, no direct commits for features, merge via PR
 
-**For complete details, see**: `docs/BRANCHING_STRATEGY.md`
+**For complete details, see**: `docs/dev/branching-strategy.md`
 
 ## Regular Assessment Practice
 
@@ -187,7 +239,7 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 
 #### Assessment Process
 1. **Review Current State**: Examine all completed work since last assessment
-2. **Update READINESS_ASSESSMENT.md**: Located in `docs/READINESS_ASSESSMENT.md`
+2. **Update READINESS_ASSESSMENT.md**: Located in `docs/dev/readiness-assessment.md`
 3. **Document Changes**: List all improvements, new features, and fixes
 4. **Update Scores**: Recalculate readiness scores across all categories
 5. **Identify Gaps**: Highlight critical blockers and remaining work
@@ -223,14 +275,14 @@ The readiness assessment should include:
 
 #### Critical Blocker Tracking
 Always highlight the #1 critical blocker preventing production use:
-- **Current**: Lack of automated test coverage (0% → target 70%+)
+- **Current**: Lack of automated test coverage (38% → target 70%+)
 - **Priority**: CRITICAL - Blocks v1.0.0 release
 
 #### Assessment Example
-See `docs/READINESS_ASSESSMENT.md` for the current comprehensive assessment. This file should be treated as a living document that evolves with the project.
+See `docs/dev/readiness-assessment.md` for the current comprehensive assessment. This file should be treated as a living document that evolves with the project.
 
 **Last Assessment**: 2025-10-31
-**Next Assessment Due**: After test suite implementation OR significant feature work
+**Next Assessment Due**: After project restructuring OR significant feature work
 **Assessment History**: Track progress over time to show velocity and improvement
 
 ### Benefits of Regular Assessments
@@ -242,3 +294,36 @@ See `docs/READINESS_ASSESSMENT.md` for the current comprehensive assessment. Thi
 6. **Release Planning**: Know when ready for production
 
 By performing regular assessments, we ensure Proto Gear maintains honest positioning and provides clear value to users while working toward production readiness.
+
+## Key Documentation
+
+### For Users
+- **Getting Started**: `docs/user/getting-started.md` - First-time setup guide
+- **Template Guide**: `docs/user/template-guide.md` - Understanding templates
+- **Guides**: `docs/user/guides/` - Detailed usage tutorials
+
+### For Contributors
+- **Project Structure**: `docs/dev/project-structure.md` - File organization
+- **Branching Strategy**: `docs/dev/branching-strategy.md` - Git workflow
+- **Configuration**: `docs/dev/configuration.md` - Setup and configuration
+- **Readiness Assessment**: `docs/dev/readiness-assessment.md` - Project status
+- **Universal Capabilities Design**: `docs/dev/universal-capabilities-design.md` - Future features
+
+### For Development
+- **Analysis Archive**: `dev/analysis/` - Historical code analysis reports
+- **Scripts**: `dev/scripts/` - Development automation (when created)
+
+## Next Steps for New Contributors
+
+1. **Install**: `pip install -e .`
+2. **Run tests**: `pytest`
+3. **Try it out**: `pg init --dry-run`
+4. **Initialize dogfooding**: `pg init --with-branching --ticket-prefix PROTO`
+5. **Read**: `docs/dev/branching-strategy.md` for Git workflow
+6. **Review**: `docs/dev/project-structure.md` for organization
+7. **Check**: `PROJECT_STATUS.md` for current tickets (once created)
+8. **Start contributing**: Follow AGENTS.md patterns
+
+---
+
+*Proto Gear Development Guide - Updated 2025-11-04*

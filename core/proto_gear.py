@@ -441,7 +441,7 @@ def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefi
 
                 if branching_content:
                     branching_file = current_dir / 'BRANCHING.md'
-                    branching_file.write_text(branching_content)
+                    branching_file.write_text(branching_content, encoding="utf-8")
                     files_created.append('BRANCHING.md')
                     branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
 
@@ -506,7 +506,7 @@ pg help
 ---
 *Powered by ProtoGear Agent Framework v0.3 (Alpha)*
 """
-            agents_file.write_text(agents_content)
+            agents_file.write_text(agents_content, encoding="utf-8")
             files_created.append('AGENTS.md')
 
             # Create PROJECT_STATUS.md
@@ -545,7 +545,7 @@ current_sprint: null
 ---
 *Maintained by ProtoGear Agent Framework*
 """
-            status_file.write_text(status_content)
+            status_file.write_text(status_content, encoding="utf-8")
             files_created.append('PROJECT_STATUS.md')
 
             return {

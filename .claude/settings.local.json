@@ -43,7 +43,8 @@
       "Bash(claude config set:*)",
       "Bash(for file in proto_gear.py agent_framework.py git_workflow.py testing_workflow.py interactive_wizard.py)",
       "Bash(do echo \"=== $file ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
