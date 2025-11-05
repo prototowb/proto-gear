@@ -14,7 +14,7 @@ project_type: "Python Package"
 initialization_date: "2025-11-05"
 current_sprint: 1
 sprint_type: "refactoring"
-last_ticket_id: 3
+last_ticket_id: 4
 ticket_prefix: "PROTO"
 ```
 
@@ -22,6 +22,7 @@ ticket_prefix: "PROTO"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-004 | Fix interactive wizard encoding on Windows | bugfix | PENDING | - | Lead AI |
 | PROTO-003 | Implement Universal Capabilities System (v0.4.0) | feature | PENDING | - | Lead AI |
 
 ## ✅ Completed Tickets
@@ -79,7 +80,7 @@ ticket_prefix: "PROTO"
 test_coverage: 38%
 target_coverage: 70%
 documentation: 90%
-open_tickets: 1
+open_tickets: 2
 completed_tickets: 4
 ```
 

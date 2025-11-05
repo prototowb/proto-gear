@@ -7,7 +7,5 @@ core/proto_gear.egg-info/dependency_links.txt
 core/proto_gear.egg-info/entry_points.txt
 core/proto_gear.egg-info/requires.txt
 core/proto_gear.egg-info/top_level.txt
-tests/test_comprehensive_scaffolding.py
-tests/test_integration_scenarios.py
-tests/test_setup_wizard.py
-tests/test_wizard_types.py
+tests/test_interactive_wizard.py
+tests/test_proto_gear.py

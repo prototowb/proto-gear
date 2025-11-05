@@ -55,6 +55,7 @@ python -m pytest --cov=core --cov-report=term-missing
 
 Since Proto Gear is installed in editable mode (`pip install -e .`), we can use it on our own project:
 
+#### Initial Setup (Already Done)
 ```bash
 # Initialize Proto Gear templates in this project
 pg init --with-branching --ticket-prefix PROTO
@@ -63,7 +64,72 @@ pg init --with-branching --ticket-prefix PROTO
 # - AGENTS.md (AI agent coordination for Proto Gear development)
 # - PROJECT_STATUS.md (Track PROTO-XXX tickets and sprints)
 # - BRANCHING.md (Git workflow for contributors)
-# - TESTING.md (TDD patterns for developing Proto Gear)
+```
+
+#### Using Interactive Mode
+```bash
+# Launch interactive wizard (beautiful UI with arrow key navigation)
+pg init
+
+# On Windows, if interactive fails with encoding error, use:
+pg init --no-interactive --with-branching --ticket-prefix PROTO
+```
+
+**Interactive Features**:
+- ✨ Arrow key navigation (↑↓ to select)
+- 🎨 Rich formatted panels and tables
+- ✅ Real-time input validation
+- 🎯 Smart defaults based on project detection
+- 🔄 Graceful fallback if rich/questionary unavailable
+
+#### Agent Workflow: Keeping Dogfooding Updated
+
+**When to Update Templates** (AI Agents should do this):
+1. **After template changes** - If you modify `*.template.md` files
+2. **When PROJECT_STATUS.md gets stale** - Templates might have new fields
+3. **When starting a new sprint** - Ensure current format
+4. **After major refactoring** - Templates might have improved
+
+**How to Update**:
+```bash
+# Option 1: Regenerate (will show diff if files exist)
+pg init --with-branching --ticket-prefix PROTO
+
+# Option 2: Manual sync
+# - Compare core/*.template.md with root AGENTS.md, etc.
+# - Manually update sections that improved
+# - Keep custom content (our tickets, status, etc.)
+```
+
+**Agent Checklist for Template Updates**:
+1. Check if `core/*.template.md` files were modified recently
+2. Read current `AGENTS.md`, `PROJECT_STATUS.md`, `BRANCHING.md`
+3. Compare with templates to see what's new
+4. Either:
+   - Regenerate and merge (preserving our data)
+   - Manually copy new sections
+5. Update `PROJECT_STATUS.md` with a note about template sync
+
+**Example Update Flow**:
+```bash
+# 1. Check what changed in templates
+git log --oneline core/*.template.md
+
+# 2. If templates improved, backup current files
+cp AGENTS.md AGENTS.md.backup
+cp PROJECT_STATUS.md PROJECT_STATUS.md.backup
+
+# 3. Regenerate (answer 'yes' to overwrite)
+pg init --with-branching --ticket-prefix PROTO
+
+# 4. Manually restore our custom sections:
+#    - Our tickets from PROJECT_STATUS.md.backup
+#    - Our sprint status
+#    - Our recent updates
+#    - Any custom agent configurations
+
+# 5. Clean up backups
+rm *.backup
 ```
 
 **Benefits**:
@@ -71,17 +137,19 @@ pg init --with-branching --ticket-prefix PROTO
 2. **Self-documenting** - We use the templates we tell others to use
 3. **Catch issues early** - Experience the user workflow firsthand
 4. **Better design** - Feel pain points ourselves and fix them
+5. **Templates stay current** - Our dogfooding files reflect latest improvements
 
 **Development Cycle**:
 1. Make changes to `core/proto_gear.py` or templates
 2. Test immediately: `pg init --dry-run` (editable install means changes are live)
 3. Run tests: `pytest`
-4. Use Proto Gear templates to track our own work:
+4. **If templates changed**: Update our dogfooding files (see above)
+5. Use Proto Gear templates to track our own work:
    - Create tickets in PROJECT_STATUS.md
    - Follow BRANCHING.md conventions
    - Apply TESTING.md TDD patterns
    - Coordinate via AGENTS.md
-5. When shipping new version: bump `setup.py` version, reinstall: `pip install -e .`
+6. When shipping new version: bump version in `pyproject.toml`, reinstall: `pip install -e .`
 
 ## Architecture Overview
 

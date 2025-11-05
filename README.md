@@ -51,10 +51,18 @@ cd my-project
 pg init
 
 # Or use non-interactive mode with flags
-pg init --with-branching --with-testing --ticket-prefix MYAPP
+pg init --no-interactive --with-branching --ticket-prefix MYAPP
+
+# Preview what will be created (dry run)
+pg init --dry-run
 
 # Get help
 pg help
+```
+
+**Note for Windows Users**: If the interactive wizard shows encoding errors, use the non-interactive mode:
+```bash
+pg init --no-interactive --with-branching --ticket-prefix MYAPP
 ```
 
 ### Interactive Setup Wizard
