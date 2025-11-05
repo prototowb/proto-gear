@@ -277,6 +277,27 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 6. **DON'T**: Use vague messages like "fix stuff" or "updates"
 
 #### Creating Pull Requests
+
+**IMPORTANT**: Proto Gear now detects your workflow mode and provides appropriate guidance!
+
+**Workflow Modes**:
+- **Local-Only**: No remote configured - use local merges
+- **Remote (Manual PRs)**: Remote configured, no `gh` CLI - create PRs via web interface
+- **Remote (Automated)**: Remote configured with `gh` CLI - use `gh pr create`
+
+Proto Gear automatically detects:
+- Git repository status
+- Remote repository configuration
+- GitHub CLI (`gh`) availability
+
+When `pg init --with-branching` is run, BRANCHING.md will include:
+- Detected workflow mode
+- Specific recommendations based on your setup
+- Instructions for installing `gh` CLI if needed
+
+**For AI Agents**: Read the "Workflow Mode" section in BRANCHING.md to understand the project's workflow capabilities before attempting to create PRs.
+
+**PR Creation Guidelines**:
 - **Title**: Same format as commit message (e.g., `feat(cli): add --version flag`)
 - **Description**: Include summary, changes made, testing done, checklist
 - **Reference**: Always reference related issue (e.g., `Closes PROTO-XXX`)

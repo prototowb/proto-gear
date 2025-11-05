@@ -6,6 +6,13 @@
 
 ---
 
+## Workflow Mode
+
+{{WORKFLOW_MODE}}
+{{WORKFLOW_RECOMMENDATIONS}}
+
+---
+
 ## Overview
 
 This document defines the branching model and commit conventions for {{PROJECT_NAME}}. Following these conventions ensures consistency across all contributors (human and AI).
