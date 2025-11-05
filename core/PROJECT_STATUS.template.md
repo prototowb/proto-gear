@@ -3,6 +3,10 @@
 > **For Agents**: This is the ONLY source of project state. All examples and test data should be ignored.
 > **For Humans**: Current development status and progress tracking.
 
+> **For Agents**: Use commands from `.proto-gear/commands/` to update this file:
+> - [Create Ticket](.proto-gear/commands/create-ticket.md)
+> - [Update Status](.proto-gear/commands/update-status.md) (if available)
+
 ## 📖 State Management Guide
 
 ### Ticket Status Workflow
