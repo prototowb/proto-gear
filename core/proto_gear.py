@@ -455,7 +455,29 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False):
+def copy_capability_templates(project_path, project_name, version="0.3.0", dry_run=False):
+    """
+    Copy capability templates to .proto-gear/ directory
+
+    Args:
+        project_path: Path to project directory
+        project_name: Name of the project
+        version: Proto Gear version (default: 0.3.0)
+        dry_run: If True, don't actually copy files
+
+    Returns:
+        dict: Result with status and files_created list
+    """
+    # TODO: Implementation for PROTO-019
+    # This is a stub for PROTO-022 testing
+    return {
+        'status': 'error',
+        'error': 'copy_capability_templates not yet implemented (PROTO-019)',
+        'files_created': []
+    }
+
+
+def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -603,30 +625,6 @@ current_sprint: null
             status_file.write_text(status_content, encoding="utf-8")
             files_created.append('PROJECT_STATUS.md')
 
-            # Create capabilities if requested
-            if with_capabilities:
-                capability_result = copy_capability_templates(
-                    current_dir,
-                    current_dir.name,
-                    version="0.3.0",
-                    dry_run=False
-                )
-
-                if capability_result['status'] == 'success':
-                    files_created.extend(capability_result['files_created'])
-                    print(f"{Colors.GREEN}[OK] Capability system created in .proto-gear/{Colors.ENDC}")
-                elif capability_result['status'] == 'warning':
-                    print(f"{Colors.YELLOW}[WARNING] {capability_result['errors'][0]}{Colors.ENDC}")
-                elif capability_result['status'] == 'partial':
-                    files_created.extend(capability_result['files_created'])
-                    print(f"{Colors.YELLOW}[WARNING] Capability creation had issues:{Colors.ENDC}")
-                    for error in capability_result['errors']:
-                        print(f"  - {error}")
-                else:
-                    print(f"{Colors.RED}[ERROR] Capability creation failed:{Colors.ENDC}")
-                    for error in capability_result['errors']:
-                        print(f"  - {error}")
-
             return {
                 'status': 'success',
                 'files_created': files_created,
@@ -641,19 +639,6 @@ current_sprint: null
         print("  - PROJECT_STATUS.md (project state tracker)")
         if with_branching:
             print("  - BRANCHING.md (Git workflow and commit conventions)")
-        if with_capabilities:
-            print("  - .proto-gear/ (Universal Capabilities System)")
-            print("    - .proto-gear/capabilities/ (Agent capability modules)")
-            print("    - .proto-gear/config.yaml (Capability configuration)")
-
-        # Show capability files in dry run
-        if with_capabilities:
-            capability_result = copy_capability_templates(
-                current_dir,
-                current_dir.name,
-                version="0.3.0",
-                dry_run=True
-            )
 
         return {'status': 'success', 'dry_run': True}
 
@@ -801,7 +786,7 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False):
+def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
 
@@ -815,8 +800,7 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
         result = setup_agent_framework_only(
             dry_run=dry_run,
             with_branching=with_branching,
-            ticket_prefix=ticket_prefix,
-            with_capabilities=with_capabilities
+            ticket_prefix=ticket_prefix
         )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
@@ -877,11 +861,6 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Generate BRANCHING.md with Git workflow conventions'
     )
     init_parser.add_argument(
-        '--with-capabilities',
-        action='store_true',
-        help='Generate .proto-gear/ capability system for modular AI agent patterns'
-    )
-    init_parser.add_argument(
         '--ticket-prefix',
         type=str,
         default=None,
@@ -909,7 +888,7 @@ For more information, visit: https://github.com/proto-gear/proto-gear
 
             # Determine if we should use interactive wizard
             # Use interactive if no flags provided (except --dry-run)
-            use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None and not args.with_capabilities
+            use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None
 
             if use_interactive:
                 # Run interactive wizard
@@ -938,8 +917,7 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                     result = run_simple_protogear_init(
                         dry_run=args.dry_run,
                         with_branching=wizard_config.get('with_branching', False),
-                        ticket_prefix=wizard_config.get('ticket_prefix'),
-                        with_capabilities=wizard_config.get('with_capabilities', False)
+                        ticket_prefix=wizard_config.get('ticket_prefix')
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -949,8 +927,7 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                 result = run_simple_protogear_init(
                     dry_run=args.dry_run,
                     with_branching=args.with_branching,
-                    ticket_prefix=args.ticket_prefix,
-                    with_capabilities=args.with_capabilities
+                    ticket_prefix=args.ticket_prefix
                 )
 
             if result['status'] == 'success':

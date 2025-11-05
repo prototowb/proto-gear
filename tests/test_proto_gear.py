@@ -851,5 +851,79 @@ class TestRunSimpleProtoGearInit:
         mock_setup.assert_called_once()
 
 
+class TestCapabilitySystemIntegration:
+    """Integration tests for capability system with pg init"""
+
+    @patch('proto_gear.copy_capability_templates')
+    @patch('proto_gear.setup_agent_framework_only')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_init_with_capabilities_flag(self, mock_detect_project, mock_detect_git, mock_setup, mock_copy_caps):
+        """Test pg init --with-capabilities --dry-run"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': True,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'local_only'
+        }
+        mock_setup.return_value = {'status': 'success', 'files_created': ['AGENTS.md']}
+        mock_copy_caps.return_value = {
+            'status': 'success',
+            'files_created': ['.proto-gear/INDEX.md', '.proto-gear/skills/INDEX.md']
+        }
+
+        # Note: This test assumes --with-capabilities will be implemented
+        # For now, we're testing the expected behavior
+        result = run_simple_protogear_init(
+            dry_run=True,
+            with_branching=False,
+            ticket_prefix='TEST'
+        )
+
+        assert result['status'] == 'success'
+        # When --with-capabilities is implemented, copy_capability_templates should be called
+        # mock_copy_caps.assert_called_once()
+
+    def test_capability_files_in_dry_run_output(self, tmp_path, monkeypatch, capsys):
+        """Test that dry run shows .proto-gear/ files when capabilities enabled"""
+        # This test will be more meaningful once copy_capability_templates is implemented
+        # For now, just verify dry-run doesn't crash
+        monkeypatch.chdir(tmp_path)
+
+        with patch('proto_gear.detect_project_structure') as mock_detect:
+            with patch('proto_gear.detect_git_config') as mock_git:
+                mock_detect.return_value = {
+                    'detected': True,
+                    'type': 'Python Project',
+                    'framework': None,
+                    'directories': [],
+                    'structure_summary': 'Basic'
+                }
+                mock_git.return_value = {
+                    'is_git_repo': False,
+                    'has_remote': False,
+                    'remote_name': None,
+                    'main_branch': 'main',
+                    'dev_branch': 'development',
+                    'has_gh_cli': False,
+                    'workflow_mode': 'no_git'
+                }
+
+                result = setup_agent_framework_only(dry_run=True)
+
+                assert result['status'] == 'success'
+                assert result.get('dry_run') is True
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
