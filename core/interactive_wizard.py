@@ -145,6 +145,55 @@ class RichWizard:
 
         return table
 
+    def ask_capabilities_system(self) -> bool:
+        """Ask user if they want Universal Capabilities System"""
+        if not QUESTIONARY_AVAILABLE:
+            # Fallback to simple y/n prompt
+            print("\n🔧 Universal Capabilities System")
+            print("-" * 30)
+            print("Proto Gear can generate a modular capability system that allows")
+            print("AI agents to dynamically load and use specialized capabilities.")
+            while True:
+                response = input("\nGenerate .proto-gear/ capability system? (y/n): ").lower()
+                if response in ['y', 'yes']:
+                    return True
+                elif response in ['n', 'no']:
+                    return False
+                print("Please enter 'y' or 'n'")
+
+        # Enhanced questionary prompt
+        description = [
+            "",
+            "Proto Gear can generate a modular capability system that allows",
+            "AI agents to dynamically load and use specialized capabilities.",
+            "",
+            "[dim]This includes:[/dim]",
+            f"  {CHARS['bullet']} Capability module system (.proto-gear/capabilities/)",
+            f"  {CHARS['bullet']} Dynamic capability loading and registration",
+            f"  {CHARS['bullet']} Configuration management (config.yaml)",
+            f"  {CHARS['bullet']} Built-in capabilities (git, testing, deployment)",
+            ""
+        ]
+
+        if self.console:
+            self.print_panel(
+                "\n".join(description),
+                title="🔧 Universal Capabilities System",
+                border_style="cyan"
+            )
+
+        answer = questionary.select(
+            "Generate .proto-gear/ capability system?",
+            choices=[
+                questionary.Choice(f"{CHARS['check']} Yes - Generate capability system", value=True),
+                questionary.Choice(f"{CHARS['cross']} No - Skip this step", value=False)
+            ],
+            style=PROTO_GEAR_STYLE,
+            instruction="(Use arrow keys to navigate, Enter to select)"
+        ).ask()
+
+        return answer if answer is not None else False
+
     def ask_branching_strategy(self, git_config: Dict) -> bool:
         """Ask user if they want branching strategy with arrow key selection"""
         if not QUESTIONARY_AVAILABLE:
@@ -279,6 +328,11 @@ class RichWizard:
             else:
                 print(f"  {CHARS['cross']} BRANCHING.md (not selected)")
 
+            if config.get('with_capabilities'):
+                print(f"  {CHARS['check']} .proto-gear/ (Universal Capabilities System)")
+            else:
+                print(f"  {CHARS['cross']} .proto-gear/ (not selected)")
+
             while True:
                 response = input("\nProceed with setup? (y/n): ").lower()
                 if response in ['y', 'yes']:
@@ -299,6 +353,7 @@ class RichWizard:
         table.add_row("Branching", f"{CHARS['check']} Enabled" if config.get('with_branching') else f"{CHARS['cross']} Disabled")
         if config.get('with_branching'):
             table.add_row("Ticket Prefix", config.get('ticket_prefix', 'N/A'))
+        table.add_row("Capabilities", f"{CHARS['check']} Enabled" if config.get('with_capabilities') else f"{CHARS['cross']} Disabled")
 
         files_list = [
             f"{CHARS['check']} AGENTS.md (AI agent integration guide)",
@@ -309,6 +364,11 @@ class RichWizard:
             files_list.append(f"{CHARS['check']} BRANCHING.md (Git workflow conventions)")
         else:
             files_list.append(f"[dim]{CHARS['cross']} BRANCHING.md (not selected)[/dim]")
+
+        if config.get('with_capabilities'):
+            files_list.append(f"{CHARS['check']} .proto-gear/ (Universal Capabilities System)")
+        else:
+            files_list.append(f"[dim]{CHARS['cross']} .proto-gear/ (not selected)[/dim]")
 
         files_text = "\n".join(files_list)
 
@@ -381,6 +441,13 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
             return None
     else:
         config['ticket_prefix'] = None
+
+    # Ask about capabilities system
+    try:
+        with_capabilities = wizard.ask_capabilities_system()
+        config['with_capabilities'] = with_capabilities
+    except KeyboardInterrupt:
+        return None
 
     # Show configuration summary and get confirmation
     try:

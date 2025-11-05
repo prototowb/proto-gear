@@ -455,7 +455,7 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None):
+def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -617,6 +617,10 @@ current_sprint: null
         print("  - PROJECT_STATUS.md (project state tracker)")
         if with_branching:
             print("  - BRANCHING.md (Git workflow and commit conventions)")
+        if with_capabilities:
+            print("  - .proto-gear/ (Universal Capabilities System)")
+            print("    - .proto-gear/capabilities/ (Agent capability modules)")
+            print("    - .proto-gear/config.yaml (Capability configuration)")
 
         return {'status': 'success', 'dry_run': True}
 
@@ -764,7 +768,7 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None):
+def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
 
@@ -778,7 +782,8 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
         result = setup_agent_framework_only(
             dry_run=dry_run,
             with_branching=with_branching,
-            ticket_prefix=ticket_prefix
+            ticket_prefix=ticket_prefix,
+            with_capabilities=with_capabilities
         )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
@@ -839,6 +844,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Generate BRANCHING.md with Git workflow conventions'
     )
     init_parser.add_argument(
+        '--with-capabilities',
+        action='store_true',
+        help='Generate .proto-gear/ capability system for modular AI agent patterns'
+    )
+    init_parser.add_argument(
         '--ticket-prefix',
         type=str,
         default=None,
@@ -866,7 +876,7 @@ For more information, visit: https://github.com/proto-gear/proto-gear
 
             # Determine if we should use interactive wizard
             # Use interactive if no flags provided (except --dry-run)
-            use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None
+            use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None and not args.with_capabilities
 
             if use_interactive:
                 # Run interactive wizard
@@ -895,7 +905,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                     result = run_simple_protogear_init(
                         dry_run=args.dry_run,
                         with_branching=wizard_config.get('with_branching', False),
-                        ticket_prefix=wizard_config.get('ticket_prefix')
+                        ticket_prefix=wizard_config.get('ticket_prefix'),
+                        with_capabilities=wizard_config.get('with_capabilities', False)
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -905,7 +916,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                 result = run_simple_protogear_init(
                     dry_run=args.dry_run,
                     with_branching=args.with_branching,
-                    ticket_prefix=args.ticket_prefix
+                    ticket_prefix=args.ticket_prefix,
+                    with_capabilities=args.with_capabilities
                 )
 
             if result['status'] == 'success':
