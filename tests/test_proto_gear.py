@@ -19,7 +19,9 @@ from proto_gear import (
     show_splash_screen,
     print_farewell,
     show_help,
-    run_simple_protogear_init
+    run_simple_protogear_init,
+    interactive_setup_wizard,
+    main
 )
 from ui_helper import Colors
 
@@ -438,6 +440,312 @@ class TestUIFunctions:
         assert mock_print.call_count > 10
         # Should wait for user input at the end
         mock_input.assert_called_once()
+
+
+class TestInteractiveSetupWizard:
+    """Test legacy interactive setup wizard"""
+
+    @patch('proto_gear.safe_input')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_wizard_basic_flow(self, mock_detect_project, mock_detect_git, mock_input):
+        """Test basic wizard flow with branching enabled"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': False,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'no_git'
+        }
+
+        # User inputs: yes to branching, custom prefix, yes to proceed
+        mock_input.side_effect = ['y', 'MYTEST', 'y']
+
+        result = interactive_setup_wizard()
+
+        assert result['with_branching'] is True
+        assert result['ticket_prefix'] == 'MYTEST'
+        assert result['confirmed'] is True
+
+    @patch('proto_gear.safe_input')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_wizard_user_cancels(self, mock_detect_project, mock_detect_git, mock_input):
+        """Test wizard when user declines at confirmation"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': False,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'no_git'
+        }
+
+        # User inputs: no to branching, no to proceed
+        mock_input.side_effect = ['n', 'n']
+
+        result = interactive_setup_wizard()
+
+        assert result['with_branching'] is False
+        assert result['ticket_prefix'] is None
+        assert result['confirmed'] is False
+
+    @patch('proto_gear.safe_input')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_wizard_keyboard_interrupt(self, mock_detect_project, mock_detect_git, mock_input):
+        """Test wizard Ctrl+C handling"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': False,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'no_git'
+        }
+
+        # Simulate Ctrl+C - KeyboardInterrupt should propagate
+        mock_input.side_effect = KeyboardInterrupt()
+
+        with pytest.raises(KeyboardInterrupt):
+            interactive_setup_wizard()
+
+    @patch('proto_gear.safe_input')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_wizard_default_prefix(self, mock_detect_project, mock_detect_git, mock_input):
+        """Test wizard with default prefix (empty input)"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': True,
+            'has_remote': True,
+            'remote_name': 'origin',
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': True,
+            'workflow_mode': 'remote_automated'
+        }
+
+        # User inputs: yes to branching, empty (default prefix), yes to proceed
+        mock_input.side_effect = ['y', '', 'y']
+
+        result = interactive_setup_wizard()
+
+        assert result['with_branching'] is True
+        assert result['ticket_prefix'] == 'PROJ'  # Default
+        assert result['confirmed'] is True
+
+    @patch('proto_gear.safe_input')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_wizard_invalid_prefix_fallback(self, mock_detect_project, mock_detect_git, mock_input):
+        """Test wizard with invalid prefix falls back to default"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Node.js Project',
+            'framework': 'npm',
+            'directories': ['src', 'test'],
+            'structure_summary': 'Standard'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': True,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'local_only'
+        }
+
+        # User inputs: yes to branching, invalid prefix (!@#), yes to proceed
+        mock_input.side_effect = ['y', '!@#', 'y']
+
+        result = interactive_setup_wizard()
+
+        assert result['with_branching'] is True
+        # Should fall back to suggested prefix (PROJ)
+        assert result['ticket_prefix'] == 'PROJ'
+        assert result['confirmed'] is True
+
+    @patch('proto_gear.safe_input')
+    @patch('proto_gear.detect_git_config')
+    @patch('proto_gear.detect_project_structure')
+    def test_wizard_invalid_responses_retry(self, mock_detect_project, mock_detect_git, mock_input):
+        """Test wizard retry on invalid responses"""
+        mock_detect_project.return_value = {
+            'detected': True,
+            'type': 'Python Project',
+            'framework': None,
+            'directories': [],
+            'structure_summary': 'Basic'
+        }
+        mock_detect_git.return_value = {
+            'is_git_repo': False,
+            'has_remote': False,
+            'remote_name': None,
+            'main_branch': 'main',
+            'dev_branch': 'development',
+            'has_gh_cli': False,
+            'workflow_mode': 'no_git'
+        }
+
+        # User inputs: invalid, then 'y' for branching; then 'maybe' (invalid), then 'y' for confirm
+        mock_input.side_effect = ['maybe', 'y', 'MYPROJ', 'maybe', 'y']
+
+        result = interactive_setup_wizard()
+
+        assert result['with_branching'] is True
+        assert result['ticket_prefix'] == 'MYPROJ'
+        assert result['confirmed'] is True
+
+
+class TestMainFunction:
+    """Test main() CLI entry point"""
+
+    @patch('sys.argv', ['pg', 'init', '--dry-run', '--no-interactive', '--with-branching', '--ticket-prefix', 'TEST'])
+    @patch('proto_gear.run_simple_protogear_init')
+    def test_main_init_non_interactive(self, mock_run_init):
+        """Test main with init command non-interactive"""
+        mock_run_init.return_value = {'status': 'success', 'files_created': ['AGENTS.md']}
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+        mock_run_init.assert_called_once()
+
+    @patch('sys.argv', ['pg', 'init', '--dry-run'])
+    @patch('proto_gear.interactive_setup_wizard')
+    @patch('proto_gear.run_simple_protogear_init')
+    @patch.dict('proto_gear.__dict__', {'ENHANCED_WIZARD_AVAILABLE': False, 'QUESTIONARY_AVAILABLE': False})
+    def test_main_init_fallback_wizard(self, mock_run_init, mock_wizard):
+        """Test main with fallback to simple wizard"""
+        mock_wizard.return_value = {'confirmed': True, 'with_branching': False, 'ticket_prefix': None}
+        mock_run_init.return_value = {'status': 'success'}
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+        mock_wizard.assert_called_once()
+
+    @patch('sys.argv', ['pg', 'init'])
+    @patch('proto_gear.interactive_setup_wizard')
+    @patch.dict('proto_gear.__dict__', {'ENHANCED_WIZARD_AVAILABLE': False, 'QUESTIONARY_AVAILABLE': False})
+    def test_main_init_wizard_cancelled(self, mock_wizard):
+        """Test main when wizard is cancelled"""
+        mock_wizard.return_value = {'confirmed': False}
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+
+    @patch('sys.argv', ['pg', 'init'])
+    @patch('proto_gear.interactive_setup_wizard')
+    @patch.dict('proto_gear.__dict__', {'ENHANCED_WIZARD_AVAILABLE': False, 'QUESTIONARY_AVAILABLE': False})
+    def test_main_init_wizard_keyboard_interrupt(self, mock_wizard):
+        """Test main when wizard receives Ctrl+C"""
+        mock_wizard.side_effect = KeyboardInterrupt()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+
+    @patch('sys.argv', ['pg', 'help'])
+    @patch('builtins.input', return_value='')
+    @patch('builtins.print')
+    def test_main_help_command(self, mock_print, mock_input):
+        """Test main with help command"""
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+
+    @patch('sys.argv', ['pg'])
+    @patch('builtins.print')
+    def test_main_no_command(self, mock_print):
+        """Test main with no command shows welcome"""
+        # main() should complete without raising SystemExit in this case
+        main()
+
+        # Verify welcome message was printed
+        assert mock_print.called
+
+    @patch('sys.argv', ['pg', 'init', '--dry-run', '--no-interactive', '--with-branching'])
+    @patch('proto_gear.run_simple_protogear_init')
+    def test_main_init_failed(self, mock_run_init):
+        """Test main when init fails"""
+        mock_run_init.return_value = {'status': 'failed', 'error': 'Test error'}
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 1
+
+    @patch('sys.argv', ['pg'])
+    @patch('builtins.print')
+    def test_main_keyboard_interrupt_handler(self, mock_print):
+        """Test main Ctrl+C handler at top level"""
+        with patch('proto_gear.show_splash_screen', side_effect=KeyboardInterrupt()):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+            assert exc_info.value.code == 0
+
+    @patch('sys.argv', ['pg', 'init', '--dry-run', '--no-interactive'])
+    @patch('proto_gear.run_simple_protogear_init')
+    def test_main_init_cancelled_status(self, mock_run_init):
+        """Test main when init returns cancelled status"""
+        mock_run_init.return_value = {'status': 'cancelled'}
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+
+    @patch('sys.argv', ['pg'])
+    @patch('builtins.print')
+    def test_main_unexpected_exception(self, mock_print):
+        """Test main with unexpected exception"""
+        with patch('proto_gear.show_splash_screen', side_effect=RuntimeError('Test error')):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+            # Should exit with error code 1
+            assert exc_info.value.code == 1
 
 
 class TestRunSimpleProtoGearInit:
