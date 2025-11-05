@@ -455,6 +455,28 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
+def copy_capability_templates(project_path, project_name, version="0.3.0", dry_run=False):
+    """
+    Copy capability templates to .proto-gear/ directory
+
+    Args:
+        project_path: Path to project directory
+        project_name: Name of the project
+        version: Proto Gear version (default: 0.3.0)
+        dry_run: If True, don't actually copy files
+
+    Returns:
+        dict: Result with status and files_created list
+    """
+    # TODO: Implementation for PROTO-019
+    # This is a stub for PROTO-022 testing
+    return {
+        'status': 'error',
+        'error': 'copy_capability_templates not yet implemented (PROTO-019)',
+        'files_created': []
+    }
+
+
 def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
