@@ -17,7 +17,7 @@ def read_requirements(filename):
 
 setup(
     name="proto-gear",
-    version="0.3.0",
+    version="0.4.0",
     author="Proto Gear Team",
     author_email="team@protogear.dev",
     description="Proto Gear - AI Agent Framework for intelligent development workflows",

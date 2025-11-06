@@ -6,8 +6,8 @@
 ## Current State
 
 ```yaml
-project_phase: "Development"
-project_version: "0.3.0"
+project_phase: "Release"
+project_version: "0.4.0"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"

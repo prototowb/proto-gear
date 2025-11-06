@@ -455,7 +455,7 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
-def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.3.0", dry_run: bool = False) -> dict:
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.4.0", dry_run: bool = False) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
 
@@ -742,7 +742,7 @@ current_sprint: null
                 capability_result = copy_capability_templates(
                     current_dir,
                     current_dir.name,
-                    version="0.3.0",
+                    version="0.4.0",
                     dry_run=False
                 )
 
@@ -774,7 +774,7 @@ current_sprint: null
             capability_result = copy_capability_templates(
                 current_dir,
                 current_dir.name,
-                version="0.3.0",
+                version="0.4.0",
                 dry_run=True
             )
 
