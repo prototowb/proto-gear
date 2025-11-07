@@ -6,18 +6,6 @@
 
 ---
 
-## Workflow Mode
-
-**Remote Workflow (Manual PRs)** - Remote configured, GitHub CLI not detected
-
-> **💡 Tip**: GitHub CLI (`gh`) is not detected. You can:
-> - Install `gh` CLI for automated PR creation: https://cli.github.com
-> - Continue using manual PR creation via web interface
-> - Use local merges if you prefer
-
-
----
-
 ## Overview
 
 This document defines the branching model and commit conventions for . Following these conventions ensures consistency across all contributors (human and AI).
@@ -309,7 +297,7 @@ NEVER:
 ---
 
 **Document Status**: Active
-**Generated**: 2025-11-08
+**Generated**: 2025-11-05
 **Maintained By**:  Team
 **Tool**: Proto Gear AI Agent Framework
 
