@@ -5,6 +5,113 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-11-08
+
+### Added - Preset-Based Wizard & Enhanced UX
+
+**Major UX Release**: Completely redesigned interactive wizard with preset-based configuration and single-page CLI experience.
+
+#### Preset System
+- **4 Configuration Presets** for different user needs:
+  - ⚡ **Quick Start** - Recommended for most projects (core templates + capabilities)
+  - 📦 **Full Setup** - All features enabled
+  - 🎯 **Minimal** - Just essentials (AGENTS.md, PROJECT_STATUS.md)
+  - 🔧 **Custom** - Full granular control over every option
+
+#### Custom Wizard Path
+- **Stage 1: Core Templates** - Select additional templates individually
+- **Stage 2: Git Workflow** - Configure BRANCHING.md and ticket prefix
+- **Stage 3: Capabilities** - Granular selection:
+  - Option to select all capabilities at once
+  - OR choose specific categories: Skills, Workflows, Commands
+
+#### Single-Page CLI Experience
+- Screen clearing between wizard steps for focused UX
+- Progress indicators showing current step (Step X of Y)
+- Project context always visible in compact header
+- No scrollback clutter - feels like modern single-page app
+
+#### Improved Selection UX
+- Removed confusing background colors from checkboxes
+- Clear visual indicators using only:
+  - ✅ Checkbox icon changes (☐ → ☑)
+  - 🎨 Text color changes (white → green)
+  - No reverse video or background highlighting
+- Used `noreverse` attribute for clean questionary prompts
+
+#### Documentation
+- **Capabilities Roadmap** (`docs/dev/capabilities-roadmap.md`) - Comprehensive 12-month plan
+  - Vision: Users assemble custom AI sub-agents from capabilities
+  - Philosophy: Quality over quantity
+  - 3 Phases: Foundation (v0.5.0) → Expansion (v0.7.0) → Composition (v1.0.0)
+  - Timeline to v1.0.0 with sub-agent builder
+  - Quality standards for all capabilities
+
+### Changed
+- Configuration summary now displays as proper table (not object reference)
+- Capabilities display shows selected categories correctly
+- Questionary style improved with explicit `noreverse` for cleaner UX
+
+### Fixed
+- Configuration summary table rendering (was showing `<rich.table.Table object>`)
+- Capabilities display logic (was showing "no categories selected" when items were selected)
+- Package relative imports for proto_gear_pkg
+
+### Technical Details
+
+**New Files**:
+- `.github/workflows/release.yml` - Automated release workflow
+- `docs/dev/capabilities-roadmap.md` - Comprehensive roadmap document
+- `docs/dev/wizard-ux-redesign.md` - Design proposal (implemented)
+
+**Modified Files**:
+- `core/interactive_wizard.py` (+450 lines) - Preset system, custom wizard, UX improvements
+- `core/proto_gear.py` (+45 lines) - Capabilities config parameter threading
+- `pyproject.toml` - Version bump to 0.4.1
+
+**New Methods**:
+- `RichWizard.clear_screen()` - Clear terminal for single-page experience
+- `RichWizard.show_step_header()` - Consistent step progress display
+- `RichWizard.ask_preset_selection()` - Preset selection screen
+- `RichWizard.show_preset_preview()` - Preview files before generation
+- `RichWizard.ask_core_templates_selection()` - Granular template selection
+- `RichWizard.ask_git_workflow_options()` - Git workflow configuration
+- `RichWizard.ask_capabilities_selection()` - Granular capabilities selection
+
+**Functions Enhanced**:
+- `copy_capability_templates()` - Now accepts `capabilities_config` for granular filtering
+- `setup_agent_framework_only()` - Supports capabilities_config parameter
+- `run_simple_protogear_init()` - Threads capabilities_config through
+
+### Breaking Changes
+- None - Fully backward compatible with v0.4.0
+
+### Usage
+
+```bash
+# Interactive wizard with presets
+pg init
+
+# Select preset and see exactly what will be created
+# Then confirm or go back to choose different preset
+
+# Custom path gives full control:
+# 1. Choose which templates to include
+# 2. Configure Git workflow
+# 3. Select specific capability categories
+
+# Non-interactive mode still works
+pg init --with-capabilities --with-branching --ticket-prefix MYPROJ
+```
+
+### Related Tickets
+- PROTO-023: Preset-based wizard system
+- PROTO-024: Custom wizard path with granular control
+- PROTO-025: Single-page CLI experience
+- PROTO-026: Capabilities roadmap documentation
+
+---
+
 ## [0.4.0] - 2025-11-06
 
 ### Added - Universal Capabilities System (Phase 1)
@@ -146,6 +253,7 @@ pg init
 
 ---
 
+[0.4.1]: https://github.com/anthropics/proto-gear/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/anthropics/proto-gear/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/anthropics/proto-gear/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/anthropics/proto-gear/releases/tag/v0.2.0

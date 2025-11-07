@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+include core/*.md
+include core/*.yaml
+include core/*.yml
+recursive-include core/capabilities *.md
