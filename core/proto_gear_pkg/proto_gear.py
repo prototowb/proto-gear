@@ -13,7 +13,7 @@ from typing import Optional
 import argparse
 
 # Import UI helper for consistent terminal output
-from ui_helper import UIHelper, Colors
+from .ui_helper import UIHelper, Colors
 ui = UIHelper()
 
 # Try to import enhanced wizard module

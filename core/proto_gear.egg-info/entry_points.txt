@@ -1,4 +1,4 @@
 [console_scripts]
-pg = proto_gear:main
-proto-gear = proto_gear:main
-protogear = proto_gear:main
+pg = proto_gear_pkg.proto_gear:main
+proto-gear = proto_gear_pkg.proto_gear:main
+protogear = proto_gear_pkg.proto_gear:main
