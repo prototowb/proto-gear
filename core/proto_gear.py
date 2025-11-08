@@ -42,7 +42,7 @@ LOGO_V1 = """
     ║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
     ║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
     ║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-    ║                        🤖 AI Agent Framework v0.4.1 🤖       ║
+    ║                        🤖 AI Agent Framework v0.5.0 🤖       ║
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
 """
@@ -91,7 +91,7 @@ def show_splash_screen():
     except UnicodeEncodeError:
         # Fallback for terminals that don't support Unicode
         print("=" * 60)
-        print(" PROTO GEAR - AI Agent Framework v0.4.1")
+        print(" PROTO GEAR - AI Agent Framework v0.5.0")
         print("=" * 60)
     print(Colors.ENDC)
 
@@ -455,7 +455,7 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
-def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.4.1", dry_run: bool = False, capabilities_config: dict = None) -> dict:
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.5.0", dry_run: bool = False, capabilities_config: dict = None) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
 
@@ -717,7 +717,7 @@ pg help
 {'5. Start development with AI agents reading templates' if with_branching else ''}
 
 ---
-*Powered by ProtoGear Agent Framework v0.4.1 (Alpha)*
+*Powered by ProtoGear Agent Framework v0.5.0 (Beta)*
 """
             agents_file.write_text(agents_content, encoding="utf-8")
             files_created.append('AGENTS.md')
@@ -766,7 +766,7 @@ current_sprint: null
                 capability_result = copy_capability_templates(
                     current_dir,
                     current_dir.name,
-                    version="0.4.1",
+                    version="0.5.0",
                     dry_run=False,
                     capabilities_config=capabilities_config
                 )
