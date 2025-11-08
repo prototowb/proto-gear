@@ -10,7 +10,8 @@ Proto Gear is a Python-based template generator that creates collaboration envir
 **IMPORTANT**: We maintain a clear separation between package files (distributed to users) and development files (contributors only).
 
 ### Directory Organization
-- **`core/`** - PACKAGE: Main package (distributed via pip)
+- **`core/proto_gear_pkg/`** - PACKAGE: Main package source code (THE canonical location - edit here!)
+- **`core/`** - PACKAGE: Contains only `proto_gear_pkg/` and build artifacts
 - **`tests/`** - DEVELOPMENT: Test suite
 - **`docs/user/`** - DOCUMENTATION: End-user guides and tutorials
 - **`docs/dev/`** - DOCUMENTATION: Contributor and design documents
@@ -21,6 +22,28 @@ Proto Gear is a Python-based template generator that creates collaboration envir
 - **`.claude/`** - DEVELOPMENT: Claude Code configuration
 
 **Complete Structure**: See `docs/dev/project-structure.md` for detailed breakdown
+
+### ⚠️ CRITICAL: Avoiding Duplicate File Issues
+
+**THE RULE**: All package files live in `core/proto_gear_pkg/` - nowhere else!
+
+**History**: We previously had duplicate files in both `core/` and `core/proto_gear_pkg/`, which caused:
+- Version updates only appearing in one location
+- New features not being available in installed package
+- Sync nightmares between duplicate files
+
+**What to edit**:
+- ✅ **Templates**: Edit `core/proto_gear_pkg/*.template.md`
+- ✅ **Python code**: Edit `core/proto_gear_pkg/*.py`
+- ✅ **Capabilities**: Edit `core/proto_gear_pkg/capabilities/**/*`
+- ❌ **Never create files directly in `core/`** - they won't be used!
+
+**After editing**:
+1. Clear Python cache: `rm -rf core/proto_gear_pkg/__pycache__`
+2. Test immediately: `pg init --dry-run`
+3. Verify changes appear
+
+**Package entry point**: `pyproject.toml` points to `proto_gear_pkg.proto_gear:main`
 
 ## Development Commands
 
@@ -35,7 +58,7 @@ Proto Gear is a Python-based template generator that creates collaboration envir
 - **Primary command**: `pg init` - Initialize AI agent templates in current project
 - **Help command**: `pg help` - Show detailed documentation
 - **Dry run testing**: `pg init --dry-run`
-- **Direct Python execution**: `cd core && python proto_gear.py init --dry-run`
+- **Direct Python execution**: `python -m proto_gear_pkg.proto_gear init --dry-run`
 
 ### Testing Specific Scenarios
 ```bash
@@ -96,13 +119,13 @@ pg init --no-interactive --with-branching --ticket-prefix PROTO
 pg init --with-branching --ticket-prefix PROTO
 
 # Option 2: Manual sync
-# - Compare core/*.template.md with root AGENTS.md, etc.
+# - Compare core/proto_gear_pkg/*.template.md with root AGENTS.md, etc.
 # - Manually update sections that improved
 # - Keep custom content (our tickets, status, etc.)
 ```
 
 **Agent Checklist for Template Updates**:
-1. Check if `core/*.template.md` files were modified recently
+1. Check if `core/proto_gear_pkg/*.template.md` files were modified recently
 2. Read current `AGENTS.md`, `PROJECT_STATUS.md`, `BRANCHING.md`
 3. Compare with templates to see what's new
 4. Either:
@@ -113,7 +136,7 @@ pg init --with-branching --ticket-prefix PROTO
 **Example Update Flow**:
 ```bash
 # 1. Check what changed in templates
-git log --oneline core/*.template.md
+git log --oneline core/proto_gear_pkg/*.template.md
 
 # 2. If templates improved, backup current files
 cp AGENTS.md AGENTS.md.backup
