@@ -21,7 +21,8 @@ Combined workstreams for v0.5.0 capabilities system development.
 - ✅ SECURITY.template.md
 - ✅ ARCHITECTURE.template.md
 - ✅ CODE_OF_CONDUCT.template.md
-- ⏸️ Integration pending
+- ✅ Merged to development
+- ⏸️ CLI integration pending (documented)
 
 **Created**: 2025-11-08
-**Status**: Skills and Workflows complete, Templates integration in progress
+**Status**: All three workstreams merged to development
