@@ -68,7 +68,10 @@
       "Bash(pip uninstall:*)",
       "Bash(pip install:*)",
       "Bash(cmd.exe /c \"echo n | pg init\")",
-      "Bash(pip cache purge:*)"
+      "Bash(pip cache purge:*)",
+      "Bash(git -C \"G:\\Projects\\proto-gear\" status)",
+      "Bash(git -C \"G:\\Projects\\proto-gear\" branch -a)",
+      "Bash(git -C \"G:\\Projects\\proto-gear\" worktree list:*)"
     ],
     "deny": [],
     "ask": []
