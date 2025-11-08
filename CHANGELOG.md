@@ -7,6 +7,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.1] - 2025-11-08
 
+## [0.5.0] - 2025-11-08
+
+### Added - Universal Capabilities System
+
+**Major Feature Release**: Complete capabilities system with skills, workflows, and templates for comprehensive AI-human collaboration.
+
+#### New Skills (3)
+- **Debugging & Troubleshooting** (`skills/debugging/`) - 757 lines
+  - 8-step scientific method for systematic debugging
+  - Debugging techniques: rubber duck, binary search, divide-and-conquer
+  - Common scenarios: intermittent bugs, production-only issues, performance problems
+  - Tool guidance: pdb, debugger, logging frameworks
+
+- **Code Review** (`skills/code-review/`) - 510 lines
+  - 7-point review checklist: functionality, tests, design, readability, performance, security, documentation
+  - Guidelines for reviewers and authors
+  - Constructive feedback patterns with examples
+  - Review process workflow
+
+- **Refactoring** (`skills/refactoring/`) - 623 lines
+  - Code smells identification: long method, duplicate code, large class, magic numbers
+  - Refactoring patterns: extract method, rename, extract variable, replace conditional with polymorphism
+  - Red-green-refactor cycle integration
+  - Real-world refactoring examples
+
+#### New Workflows (3)
+- **Bug Fix** (`workflows/bug-fix.template.md`) - 820 lines
+  - 8-step systematic debugging and fix process
+  - Follows scientific method: reproduce, isolate, hypothesize, test, fix, verify, prevent
+  - Regression testing requirements
+  - Post-fix prevention strategies
+
+- **Hotfix** (`workflows/hotfix.template.md`) - 900 lines
+  - 9-step emergency workflow for critical production issues
+  - Severity decision tree (when to use hotfix vs. regular bug fix)
+  - Branch from main (production) not development
+  - Minimal fixes with technical debt tracking
+  - Post-deployment monitoring and incident documentation
+
+- **Release** (`workflows/release.template.md`) - 1,050 lines
+  - 10-step complete release management process
+  - Semantic versioning guidelines (major/minor/patch)
+  - Changelog generation from conventional commits
+  - Full testing suite requirements (unit, integration, e2e, security)
+  - Staging deployment and QA sign-off workflow
+  - Production deployment with monitoring and rollback plans
+
+#### New Templates (4)
+- **CONTRIBUTING.template.md** - 12K
+  - Complete contribution guidelines with 10-step workflow
+  - Development setup and testing requirements
+  - Code review process and standards
+  - Issue and PR creation guidelines
+
+- **SECURITY.template.md** - 10K
+  - Vulnerability reporting procedures
+  - Security policies and timelines
+  - Supported versions table
+  - Security best practices and tools
+
+- **ARCHITECTURE.template.md** - 11K
+  - System design documentation structure
+  - Architecture Decision Records (ADR) template
+  - Component, data, and infrastructure architecture sections
+  - Design patterns and tech stack documentation
+
+- **CODE_OF_CONDUCT.template.md** - 12K
+  - Based on Contributor Covenant v2.1
+  - Community guidelines and standards
+  - Enforcement procedures
+  - Conflict resolution mechanisms
+
+#### Updated Capabilities Indexes
+- **skills/INDEX.template.md** - Updated with 3 new skills
+- **workflows/INDEX.template.md** - Updated with 3 new workflows and decision tree
+
+### Documentation
+- **Git Worktrees Workflow** (`docs/dev/git-worktrees-workflow.md`)
+  - Complete guide for parallel development using Git worktrees
+  - Three-workstream approach (Templates, Skills, Workflows)
+  - Branch management and merge strategies
+
+- **Integration Documentation** for templates
+  - `INTEGRATION_NOTES.md` - Step-by-step manual integration guide
+  - `integrate_templates.py` - Automation script for CLI integration
+  - `DEVELOPMENT_SUMMARY.md` - Complete development session summary
+
+### Technical Details
+- **Total additions**: ~6,266 lines of production-ready documentation
+- **New capability files**: 10 (7 capabilities + 3 templates)
+- **Total templates**: 8 (4 core + 4 new)
+- **Total capabilities**: 14 files (skills, workflows, commands)
+- **Development approach**: Three parallel worktree branches merged to development
+
+### Notes
+- Templates CLI integration pending (documented in `INTEGRATION_NOTES.md`)
+- All capabilities follow established YAML frontmatter pattern
+- Skills and workflows include comprehensive examples and anti-patterns
+- Tech-stack agnostic design applies to all new capabilities
+
+
 ### Added - Preset-Based Wizard & Enhanced UX
 
 **Major UX Release**: Completely redesigned interactive wizard with preset-based configuration and single-page CLI experience.
