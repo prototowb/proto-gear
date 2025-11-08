@@ -5,7 +5,20 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.1] - 2025-11-08
+## [0.5.1] - 2025-11-09
+
+### Fixed
+- **Critical**: Eliminated duplicate file structure that prevented v0.5.0 features from being available
+  - Consolidated all package files into `core/proto_gear_pkg/` (single source of truth)
+  - Removed duplicate files from `core/` that were causing sync issues
+  - All v0.5.0 capabilities (skills, workflows, templates) now properly available
+- Updated version strings in correct location (`proto_gear_pkg/proto_gear.py`)
+- Added finalize-release workflow for post-release verification
+- Updated documentation to prevent future duplication issues
+
+### Changed
+- Package structure: `core/` now only contains `proto_gear_pkg/` and build artifacts
+- Status: Alpha → Beta
 
 ## [0.5.0] - 2025-11-08
 
