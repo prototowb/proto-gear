@@ -1,0 +1,36 @@
+# Proto Gear - Minimal Configuration Example
+# This is the minimum configuration needed to use Proto Gear
+# Most values will use defaults if not specified
+
+# Basic agent configuration
+agents:
+  core:
+    - id: backend
+      name: "Backend Agent"
+    - id: frontend
+      name: "Frontend Agent"
+    - id: testing
+      name: "Testing Agent"
+    - id: devops
+      name: "DevOps Agent"
+
+  flex_pool:
+    - id: documentation
+      name: "Documentation Agent"
+    - id: performance
+      name: "Performance Agent"
+
+# Git workflow basics
+git:
+  main_branch: "main"
+  dev_branch: "development"
+
+# Testing basics
+testing:
+  framework: "pytest"
+  coverage_threshold: 80
+
+# Ticket configuration
+tickets:
+  prefix: "PROJ"  # Change to your project prefix
+  start_number: 1
