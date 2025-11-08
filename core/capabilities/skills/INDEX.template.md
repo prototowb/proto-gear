@@ -18,6 +18,45 @@
 - Trigger keywords: "write tests", "testing", "test coverage", "tdd", "quality assurance"
 - Context: Use when you need to ensure code quality through automated testing
 
+### Debugging & Troubleshooting
+**File**: `debugging/SKILL.md`
+**Version**: 1.0.0
+**Description**: Systematic debugging methodology for identifying and fixing software issues
+**Tags**: debugging, troubleshooting, problem-solving, root-cause-analysis, investigation
+**When to Use**: When code behaves unexpectedly, tests fail, or errors occur
+**Patterns**: 4 (scientific-method, divide-and-conquer, rubber-duck, binary-search)
+**Status**: Stable
+
+**Relevance**:
+- Trigger keywords: "debug", "troubleshoot", "bug", "error", "issue", "failing", "broken"
+- Context: Use when investigating code problems or fixing defects
+
+### Code Review
+**File**: `code-review/SKILL.md`
+**Version**: 1.0.0
+**Description**: Effective code review practices for quality, learning, and collaboration
+**Tags**: code-review, quality, collaboration, feedback, best-practices
+**When to Use**: When reviewing pull requests or having your code reviewed
+**Patterns**: 3 (constructive-feedback, checklist-based, security-first)
+**Status**: Stable
+
+**Relevance**:
+- Trigger keywords: "review", "pr", "pull request", "feedback", "check code"
+- Context: Use during PR reviews or code quality assessments
+
+### Refactoring
+**File**: `refactoring/SKILL.md`
+**Version**: 1.0.0
+**Description**: Systematic code improvement while preserving behavior
+**Tags**: refactoring, code-quality, clean-code, maintainability, technical-debt
+**When to Use**: When code works but needs improvement in structure or readability
+**Patterns**: 4 (red-green-refactor, extract-method, rename, simplify)
+**Status**: Stable
+
+**Relevance**:
+- Trigger keywords: "refactor", "clean up", "improve", "simplify", "restructure", "technical debt"
+- Context: Use when improving code quality without changing behavior
+
 ---
 
 ## How to Use Skills
