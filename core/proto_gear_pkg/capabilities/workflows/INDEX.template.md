@@ -22,6 +22,79 @@
 - Trigger keywords: "new feature", "implement feature", "build feature", "add feature"
 - Context: Starting work on a new user-facing capability
 
+
+### Bug Fix
+**File**: `bug-fix.md`
+**Version**: 1.0.0
+**Description**: Systematic workflow for investigating and fixing software defects
+**Tags**: bug, fix, debugging, workflow, testing
+**Category**: maintenance
+**Steps**: 8
+**Duration**: 1-3 hours per bug
+**Status**: Stable
+
+**Dependencies**:
+- skills/debugging
+- skills/testing
+- commands/create-ticket
+
+**Relevance**:
+- Trigger keywords: "bug", "defect", "error", "issue", "broken", "not working", "failing"
+- Context: When existing functionality is broken or behaving incorrectly
+
+### Hotfix
+**File**: `hotfix.md`
+**Version**: 1.0.0
+**Description**: Emergency workflow for critical production bugs requiring immediate fixes
+**Tags**: hotfix, production, emergency, critical, urgent
+**Category**: maintenance
+**Steps**: 9
+**Duration**: 30 minutes - 2 hours
+**Status**: Stable
+
+**Dependencies**:
+- skills/debugging
+- skills/testing
+
+**Relevance**:
+- Trigger keywords: "hotfix", "production bug", "critical", "emergency", "urgent fix", "outage"
+- Context: When production is broken and requires immediate fix
+
+### Release
+**File**: `release.md`
+**Version**: 1.0.0
+**Description**: Complete workflow for preparing, testing, and deploying software releases
+**Tags**: release, deployment, versioning, changelog, production
+**Category**: deployment
+**Steps**: 10
+**Duration**: 2-4 hours
+**Status**: Stable
+
+**Dependencies**:
+- skills/testing
+- commands/create-ticket
+
+**Relevance**:
+- Trigger keywords: "release", "deploy", "ship", "version", "publish"
+- Context: When ready to release new version to production
+
+### Finalize Release
+**File**: `finalize-release.md`
+**Version**: 1.0.0
+**Description**: Post-release verification and dogfooding installation workflow
+**Tags**: finalize, post-release, verification, dogfooding, installation
+**Category**: deployment
+**Steps**: 8
+**Duration**: 15-30 minutes
+**Status**: Stable
+
+**Dependencies**:
+- workflows/release (must be completed first)
+
+**Relevance**:
+- Trigger keywords: "finalize release", "post-release", "verify installation", "dogfooding setup"
+- Context: After pushing a version tag and creating a GitHub release
+
 ---
 
 ## How to Use Workflows
@@ -70,7 +143,10 @@ Task: Add user login feature
 What are you working on?
 
 ├─ New functionality → feature-development.md
-├─ Fixing a bug → bug-fix.md (if available)
+├─ Fixing a bug → bug-fix.md
+├─ Critical production issue → hotfix.md
+├─ Ready to release → release.md
+├─ Just pushed a release tag → finalize-release.md
 ├─ Improving code structure → refactoring.md (if available)
 ├─ Making code faster → performance-optimization.md (if available)
 └─ Other tasks → Check commands/ for single-action patterns
