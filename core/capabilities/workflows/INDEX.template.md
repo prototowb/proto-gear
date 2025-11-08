@@ -77,6 +77,24 @@
 **Relevance**:
 - Trigger keywords: "release", "deploy", "ship", "version", "publish"
 - Context: When ready to release new version to production
+
+### Finalize Release
+**File**: `finalize-release.md`
+**Version**: 1.0.0
+**Description**: Post-release verification and dogfooding installation workflow
+**Tags**: finalize, post-release, verification, dogfooding, installation
+**Category**: deployment
+**Steps**: 8
+**Duration**: 15-30 minutes
+**Status**: Stable
+
+**Dependencies**:
+- workflows/release (must be completed first)
+
+**Relevance**:
+- Trigger keywords: "finalize release", "post-release", "verify installation", "dogfooding setup"
+- Context: After pushing a version tag and creating a GitHub release
+
 ---
 
 ## How to Use Workflows
@@ -128,6 +146,7 @@ What are you working on?
 ├─ Fixing a bug → bug-fix.md
 ├─ Critical production issue → hotfix.md
 ├─ Ready to release → release.md
+├─ Just pushed a release tag → finalize-release.md
 ├─ Improving code structure → refactoring.md (if available)
 ├─ Making code faster → performance-optimization.md (if available)
 └─ Other tasks → Check commands/ for single-action patterns
