@@ -5,6 +5,26 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-11-09
+
+### Fixed
+- **Critical**: Interactive wizard now includes all v0.5.0+ templates (CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT)
+- Interactive wizard was frozen at v0.4.1 feature set - now fully synced with CLI
+- "Full Setup" preset now correctly generates ALL 8 templates using `with_all=True`
+- Custom template selection now offers all 5 additional templates (was only TESTING)
+- Wizard config now properly passes `with_all` flag to generation function
+
+### Added
+- Documented root cause in `WIZARD-TEMPLATE-SYNC-ISSUE.md` to prevent future sync issues
+- Prevention checklist for adding new templates without breaking wizard
+- Enhanced template selection in custom wizard path with all templates
+
+### Changed
+- Updated PRESETS to reflect v0.5.2+ feature set
+- "Full Setup" preset description now accurate: "All 8 templates + full capabilities"
+- "Quick Start" preset now includes TESTING.md by default
+- Configuration summary displays all selected templates correctly
+
 ## [0.5.2] - 2025-11-09
 
 ### Added

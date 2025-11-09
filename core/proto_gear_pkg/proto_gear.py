@@ -42,7 +42,7 @@ LOGO_V1 = """
     ║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
     ║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
     ║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-    ║                        🤖 AI Agent Framework v0.5.2 🤖       ║
+    ║                        🤖 AI Agent Framework v0.5.3 🤖       ║
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
 """
@@ -91,7 +91,7 @@ def show_splash_screen():
     except UnicodeEncodeError:
         # Fallback for terminals that don't support Unicode
         print("=" * 60)
-        print(" PROTO GEAR - AI Agent Framework v0.5.2")
+        print(" PROTO GEAR - AI Agent Framework v0.5.3")
         print("=" * 60)
     print(Colors.ENDC)
 
@@ -494,7 +494,7 @@ def generate_project_template(template_name, project_dir, context):
         return None
 
 
-def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.5.2", dry_run: bool = False, capabilities_config: dict = None) -> dict:
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.5.3", dry_run: bool = False, capabilities_config: dict = None) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
 
