@@ -6,31 +6,41 @@
 
 ```yaml
 project_phase: "Production Release"
-version: "0.6.0"
+version: "0.6.1"
 release_date: "2025-11-09"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-08"
-current_sprint: "v0.6.0 Complete"
+current_sprint: "v0.6.1 Complete"
 ```
 
 ## 📦 Latest Release
 
-**v0.6.0** - Template Auto-Discovery & Granular Selection (2025-11-09)
-- **MAJOR FEATURE**: Template auto-discovery system (PROTO-023 completed)
-- Adding new templates requires ZERO code changes
-- Granular capability selection with detailed descriptions
-- Users see all 10 capabilities with full details before installing
-- 3 selection levels: All, Category, or Individual
-- Dynamic template discovery eliminates wizard sync issues
-- Status: ✅ Released to main, tagged (v0.6.0), and pushed to GitHub
+**v0.6.1** - Critical Wizard Bug Fix (2025-11-09)
+- **CRITICAL FIX**: Wizard template selections were being completely ignored
+- User selections now properly generated (TESTING, CONTRIBUTING, etc.)
+- Fixed regression from v0.6.0 where core_templates wasn't passed through
+- All selected templates now generated correctly
+- Non-selected templates correctly excluded
+- Dry-run mode shows accurate preview
+- Status: ✅ Released to main, tagged (v0.6.1), and pushed to GitHub
 
 ## 🎫 Active Tickets
 
 *All v0.5.0 tickets completed!*
 
 ## ✅ Completed Tickets
+
+### v0.6.1 Release (2025-11-09) - Critical Bug Fix
+- Investigate wizard selections not generating (COMPLETED)
+- Fix core_templates not being passed to generation (COMPLETED)
+- Add core_templates parameter to all functions (COMPLETED)
+- Update template generation priority logic (COMPLETED)
+- Fix dry-run display to show selected templates (COMPLETED)
+- Test with wizard selections (COMPLETED)
+- Verify actual file generation (COMPLETED)
+- Tag and push v0.6.1 release (COMPLETED)
 
 ### v0.6.0 Release (2025-11-09) - PROTO-023 COMPLETED
 - Implement discover_available_templates() function (COMPLETED)
@@ -93,10 +103,16 @@ current_sprint: "v0.6.0 Complete"
 | Workflows | Complete | 5 workflows (Feature Dev, Bug Fix, Hotfix, Release, Finalize) |
 | Commands | Complete | 1 command (Create Ticket) |
 | Documentation | Complete | Comprehensive user and dev guides |
-| Version | v0.6.0 | Released and tagged |
+| Version | v0.6.1 | Released and tagged |
 | Interactive Wizard | Enhanced | Auto-discovery + granular capability selection |
 
 ## Recent Updates
+
+- 2025-11-09: **v0.6.1 Released** - Critical Wizard Bug Fix
+  - **CRITICAL FIX**: Wizard selections were completely ignored in v0.6.0
+  - User-selected templates now properly generated
+  - Fixed core_templates parameter not being passed
+  - All selections work correctly now
 
 - 2025-11-09: **v0.6.0 Released** - Template Auto-Discovery & Granular Selection
   - **MAJOR FEATURE**: PROTO-023 completed - template auto-discovery system
@@ -145,4 +161,4 @@ current_sprint: "v0.6.0 Complete"
 
 ---
 *Maintained by ProtoGear Agent Framework*
-*Last Updated: 2025-11-09 (v0.6.0)*
+*Last Updated: 2025-11-09 (v0.6.1)*
