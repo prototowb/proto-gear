@@ -6,29 +6,39 @@
 
 ```yaml
 project_phase: "Production Release"
-version: "0.5.0"
-release_date: "2025-11-08"
+version: "0.5.2"
+release_date: "2025-11-09"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-08"
-current_sprint: "v0.5.0 Complete"
+current_sprint: "v0.5.2 Complete"
 ```
 
 ## 📦 Latest Release
 
-**v0.5.0** - Universal Capabilities System (2025-11-08)
-- 3 new skills: Debugging, Code Review, Refactoring
-- 3 new workflows: Bug Fix, Hotfix, Release
-- 4 new templates: CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT
-- Total: ~6,266 lines of production documentation
-- Status: ✅ Released to main, tagged, and pushed to GitHub
+**v0.5.2** - Template Access Fix (2025-11-09)
+- `--all` flag to generate all available project templates
+- All v0.5.0 templates now accessible (CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT)
+- Generic template generation function for future extensibility
+- Status: ✅ Released to main, tagged (v0.5.2), and pushed to GitHub
 
 ## 🎫 Active Tickets
 
 *All v0.5.0 tickets completed!*
 
 ## ✅ Completed Tickets
+
+### v0.5.2 Release (2025-11-09)
+- Implement `--all` flag for complete template generation (COMPLETED)
+- Fix template availability issue from v0.5.0/v0.5.1 (COMPLETED)
+- Test template generation with all 8 templates (COMPLETED)
+- Update CHANGELOG and version to 0.5.2 (COMPLETED)
+- Tag and push v0.5.2 release (COMPLETED)
+
+### v0.5.1 Release (2025-11-09)
+- Fix duplicate file structure (COMPLETED)
+- Consolidate to single source in proto_gear_pkg/ (COMPLETED)
 
 ### v0.5.0 Release (2025-11-08)
 - V050-001: Skills Workstream - Debugging, Code Review, Refactoring (COMPLETED)
@@ -47,15 +57,25 @@ current_sprint: "v0.5.0 Complete"
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Core Templates | Complete | 8 templates total (4 core + 4 new) |
+| Core Templates | Complete | 8 templates total (all accessible via --all flag) |
+| Template Generation | Enhanced | Generic generation function + auto-discovery ready |
 | Capabilities System | Complete | 14 capability files (skills, workflows, commands) |
 | Skills | Complete | 4 skills (Testing, Debugging, Code Review, Refactoring) |
 | Workflows | Complete | 4 workflows (Feature Dev, Bug Fix, Hotfix, Release) |
 | Documentation | Complete | Comprehensive user and dev guides |
-| Version | v0.5.0 | Released and tagged |
-| Git Worktrees | Complete | 3 parallel workstreams merged successfully |
+| Version | v0.5.2 | Released and tagged |
 
 ## Recent Updates
+
+- 2025-11-09: **v0.5.2 Released** - Template Access Fix
+  - Implemented `--all` flag to generate all 8 templates
+  - Fixed template availability issue from v0.5.0/v0.5.1
+  - All capabilities templates now accessible to users
+  - Tagged v0.5.2 and pushed to GitHub
+
+- 2025-11-09: **v0.5.1 Released** - Critical Structure Fix
+  - Eliminated duplicate file structure
+  - Consolidated to single source in proto_gear_pkg/
 
 - 2025-11-08: **v0.5.0 Released** - Universal Capabilities System
   - Merged 3 parallel worktree branches to development
@@ -66,17 +86,18 @@ current_sprint: "v0.5.0 Complete"
 
 ## Next Steps
 
-### Optional Enhancements
-- [ ] Complete templates CLI integration (documented in INTEGRATION_NOTES.md)
-- [ ] Publish v0.5.0 to PyPI
-- [ ] Create GitHub Release with release notes
-- [ ] Update readiness assessment for v0.5.0
+### Immediate (v0.6.0 Planning)
+- [ ] Implement PROTO-023: Template auto-discovery system
+- [ ] Add template metadata support (flags, descriptions, conditions)
+- [ ] Smart defaults based on project type detection
+- [ ] Publish v0.5.2 to PyPI
 
 ### Future Development
-- [ ] v0.6.0: Additional skills and workflows
-- [ ] v0.7.0: Capabilities expansion phase
-- [ ] v1.0.0: Sub-agent builder system
+- [ ] v0.6.0: Template auto-discovery and smart defaults
+- [ ] v0.7.0: Additional skills and workflows
+- [ ] v0.8.0: Capabilities expansion phase
+- [ ] v1.0.0: Production-ready release
 
 ---
 *Maintained by ProtoGear Agent Framework*
-*Last Updated: 2025-11-08*
+*Last Updated: 2025-11-09*
