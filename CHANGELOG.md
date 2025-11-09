@@ -5,6 +5,23 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2025-11-09
+
+### Fixed
+- **CRITICAL**: Wizard template selections were being completely ignored
+  - User selections in wizard (TESTING, CONTRIBUTING, etc.) not generated
+  - Only AGENTS.md and PROJECT_STATUS.md were created regardless of selections
+  - `core_templates` parameter now properly passed through generation pipeline
+  - All selected templates are now generated correctly
+  - Non-selected templates correctly excluded
+- Dry-run mode now displays selected templates accurately
+
+### Technical
+- Added `core_templates` parameter to `setup_agent_framework_only()`
+- Added `core_templates` parameter to `run_simple_protogear_init()`
+- Updated wizard invocation to pass `core_templates` from wizard config
+- Template generation now has 3 priority levels: wizard selections > --all flag > legacy behavior
+
 ## [0.6.0] - 2025-11-09
 
 ### Added
