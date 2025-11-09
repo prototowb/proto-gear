@@ -6,30 +6,43 @@
 
 ```yaml
 project_phase: "Production Release"
-version: "0.5.3"
+version: "0.6.0"
 release_date: "2025-11-09"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-08"
-current_sprint: "v0.5.3 Complete"
+current_sprint: "v0.6.0 Complete"
 ```
 
 ## 📦 Latest Release
 
-**v0.5.3** - Wizard Sync Fix (2025-11-09)
-- **CRITICAL**: Fixed interactive wizard frozen at v0.4.1 feature set
-- Interactive wizard now includes all v0.5.0+ templates
-- Full Setup preset correctly generates all 8 templates
-- Custom path offers all 5 additional templates
-- Documented root cause in WIZARD-TEMPLATE-SYNC-ISSUE.md
-- Status: ✅ Released to main, tagged (v0.5.3), and pushed to GitHub
+**v0.6.0** - Template Auto-Discovery & Granular Selection (2025-11-09)
+- **MAJOR FEATURE**: Template auto-discovery system (PROTO-023 completed)
+- Adding new templates requires ZERO code changes
+- Granular capability selection with detailed descriptions
+- Users see all 10 capabilities with full details before installing
+- 3 selection levels: All, Category, or Individual
+- Dynamic template discovery eliminates wizard sync issues
+- Status: ✅ Released to main, tagged (v0.6.0), and pushed to GitHub
 
 ## 🎫 Active Tickets
 
 *All v0.5.0 tickets completed!*
 
 ## ✅ Completed Tickets
+
+### v0.6.0 Release (2025-11-09) - PROTO-023 COMPLETED
+- Implement discover_available_templates() function (COMPLETED)
+- Create template auto-discovery system (COMPLETED)
+- Update wizard to use dynamic template discovery (COMPLETED)
+- Remove hardcoded template lists from wizard (COMPLETED)
+- Add CAPABILITIES_METADATA with all 10 capabilities (COMPLETED)
+- Implement granular capability selection (3 levels) (COMPLETED)
+- Update configuration summary for granular display (COMPLETED)
+- Test auto-discovery with all templates (COMPLETED)
+- Update version to 0.6.0 and CHANGELOG (COMPLETED)
+- Tag and push v0.6.0 release (COMPLETED)
 
 ### v0.5.3 Release (2025-11-09)
 - Identify root cause of wizard sync issue (COMPLETED)
@@ -71,16 +84,26 @@ current_sprint: "v0.5.3 Complete"
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Core Templates | Complete | 8 templates total (all accessible via --all flag) |
-| Template Generation | Enhanced | Generic generation function + auto-discovery ready |
+| Core Templates | Complete | 8 templates total (auto-discovered) |
+| Template Auto-Discovery | Complete | PROTO-023 implemented - zero code changes needed |
+| Template Generation | Dynamic | Auto-discovers all *.template.md files |
 | Capabilities System | Complete | 14 capability files (skills, workflows, commands) |
+| Capability Selection | Granular | 3 levels with detailed descriptions |
 | Skills | Complete | 4 skills (Testing, Debugging, Code Review, Refactoring) |
-| Workflows | Complete | 4 workflows (Feature Dev, Bug Fix, Hotfix, Release) |
+| Workflows | Complete | 5 workflows (Feature Dev, Bug Fix, Hotfix, Release, Finalize) |
+| Commands | Complete | 1 command (Create Ticket) |
 | Documentation | Complete | Comprehensive user and dev guides |
-| Version | v0.5.3 | Released and tagged |
-| Interactive Wizard | Fixed | Now synced with CLI feature set (v0.5.3) |
+| Version | v0.6.0 | Released and tagged |
+| Interactive Wizard | Enhanced | Auto-discovery + granular capability selection |
 
 ## Recent Updates
+
+- 2025-11-09: **v0.6.0 Released** - Template Auto-Discovery & Granular Selection
+  - **MAJOR FEATURE**: PROTO-023 completed - template auto-discovery system
+  - Adding new templates requires ZERO code changes
+  - Granular capability selection with detailed metadata
+  - 3 selection levels: All, Category, Individual
+  - Dynamic wizard eliminates sync issues permanently
 
 - 2025-11-09: **v0.5.3 Released** - Wizard Sync Fix
   - **CRITICAL FIX**: Interactive wizard now synced with v0.5.2+ features
@@ -107,18 +130,19 @@ current_sprint: "v0.5.3 Complete"
 
 ## Next Steps
 
-### Immediate (v0.6.0 Planning)
-- [ ] Implement PROTO-023: Template auto-discovery system
-- [ ] Add template metadata support (flags, descriptions, conditions)
-- [ ] Smart defaults based on project type detection
-- [ ] Publish v0.5.2 to PyPI
+### Immediate
+- [ ] Publish v0.6.0 to PyPI
+- [ ] Create GitHub Release with release notes
+- [ ] Update readiness assessment for v0.6.0
 
-### Future Development
-- [ ] v0.6.0: Template auto-discovery and smart defaults
-- [ ] v0.7.0: Additional skills and workflows
-- [ ] v0.8.0: Capabilities expansion phase
+### Future Development (v0.7.0+)
+- [ ] Template metadata support (YAML frontmatter with conditions)
+- [ ] Smart defaults based on project type detection
+- [ ] Dynamic CLI flag generation from template metadata
+- [ ] Additional skills and workflows
+- [ ] Test coverage improvements (current: 38%, target: 70%+)
 - [ ] v1.0.0: Production-ready release
 
 ---
 *Maintained by ProtoGear Agent Framework*
-*Last Updated: 2025-11-09 (v0.5.3)*
+*Last Updated: 2025-11-09 (v0.6.0)*
