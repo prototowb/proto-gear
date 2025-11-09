@@ -104,6 +104,67 @@ PRESETS = {
 }
 
 
+# Capability metadata - what's actually available
+CAPABILITIES_METADATA = {
+    'skills': {
+        'testing': {
+            'name': 'Testing (TDD)',
+            'description': 'Test-Driven Development methodology',
+            'details': 'Red-Green-Refactor cycle, test pyramid, coverage targets'
+        },
+        'debugging': {
+            'name': 'Debugging & Troubleshooting',
+            'description': 'Systematic debugging approach',
+            'details': '8-step scientific method, rubber duck debugging, binary search'
+        },
+        'code-review': {
+            'name': 'Code Review',
+            'description': 'Structured code review process',
+            'details': 'Review checklist, feedback patterns, security checks'
+        },
+        'refactoring': {
+            'name': 'Refactoring',
+            'description': 'Safe code refactoring techniques',
+            'details': 'Extract method, rename, simplify conditionals, remove duplication'
+        }
+    },
+    'workflows': {
+        'feature-development': {
+            'name': 'Feature Development',
+            'description': '7-step feature development process',
+            'details': 'Plan → Design → Implement → Test → Review → Document → Deploy'
+        },
+        'bug-fix': {
+            'name': 'Bug Fix',
+            'description': 'Systematic bug resolution workflow',
+            'details': 'Reproduce → Diagnose → Fix → Test → Verify → Document'
+        },
+        'hotfix': {
+            'name': 'Hotfix',
+            'description': 'Emergency production fix workflow',
+            'details': 'Fast-track critical fixes with minimal risk'
+        },
+        'release': {
+            'name': 'Release',
+            'description': 'Version release workflow',
+            'details': 'Version bump → Changelog → Tag → Build → Publish'
+        },
+        'finalize-release': {
+            'name': 'Finalize Release',
+            'description': 'Post-release verification workflow',
+            'details': 'Verify deployment, update docs, notify stakeholders'
+        }
+    },
+    'commands': {
+        'create-ticket': {
+            'name': 'Create Ticket',
+            'description': 'Generate project tickets',
+            'details': 'Structured ticket creation with templates'
+        }
+    }
+}
+
+
 # Encoding-safe characters with fallbacks
 def get_safe_chars():
     """Get encoding-safe characters for console output"""
@@ -645,17 +706,36 @@ class RichWizard:
             if not include:
                 return {'enabled': False}
 
-            # Ask about granular selection
-            print("\nCapability categories:")
-            print(f"  1. All categories (Skills, Workflows, Commands)")
-            print(f"  2. Select specific categories")
+            # Show detailed info
+            print("\nAvailable capabilities:")
+            print(f"\n  [SKILLS] - 4 skills available:")
+            for key, skill in CAPABILITIES_METADATA['skills'].items():
+                print(f"    - {skill['name']}: {skill['description']}")
+
+            print(f"\n  [WORKFLOWS] - 5 workflows available:")
+            for key, workflow in CAPABILITIES_METADATA['workflows'].items():
+                print(f"    - {workflow['name']}: {workflow['description']}")
+
+            print(f"\n  [COMMANDS] - 1 command available:")
+            for key, cmd in CAPABILITIES_METADATA['commands'].items():
+                print(f"    - {cmd['name']}: {cmd['description']}")
+
+            # Ask about selection level
+            print("\nSelection options:")
+            print(f"  1. All capabilities (4 skills + 5 workflows + 1 command)")
+            print(f"  2. Select by category (Skills, Workflows, Commands)")
+            print(f"  3. Select individual capabilities (granular)")
 
             choice = input("\nChoice [1]: ").strip()
 
-            if choice == '2':
-                skills = input("Include Skills (TDD methodology)? (y/n): ").lower() in ['y', 'yes']
-                workflows = input("Include Workflows (Feature development)? (y/n): ").lower() in ['y', 'yes']
-                commands = input("Include Commands (Create ticket)? (y/n): ").lower() in ['y', 'yes']
+            if choice == '3':
+                # Granular selection
+                return self._ask_granular_capabilities_fallback()
+            elif choice == '2':
+                # Category selection
+                skills = input("Include all Skills? (y/n): ").lower() in ['y', 'yes']
+                workflows = input("Include all Workflows? (y/n): ").lower() in ['y', 'yes']
+                commands = input("Include all Commands? (y/n): ").lower() in ['y', 'yes']
 
                 return {
                     'enabled': True,
@@ -664,6 +744,7 @@ class RichWizard:
                     'commands': commands
                 }
             else:
+                # All capabilities
                 return {
                     'enabled': True,
                     'skills': True,
@@ -673,19 +754,33 @@ class RichWizard:
 
         # Enhanced selection with questionary
         if self.console:
+            # Show detailed breakdown
             description = [
                 "",
                 "The capability system provides modular, reusable patterns for AI agents.",
                 "",
-                "[dim]Categories available:[/dim]",
-                f"  {CHARS['bullet']} [cyan]Skills[/cyan] - TDD methodology and testing patterns",
-                f"  {CHARS['bullet']} [cyan]Workflows[/cyan] - Feature development process (7 steps)",
-                f"  {CHARS['bullet']} [cyan]Commands[/cyan] - Ticket creation and documentation",
-                ""
+                "[bold cyan]Available Capabilities:[/bold cyan]",
+                "",
+                "[yellow]Skills (4):[/yellow]"
             ]
+            for key, skill in CAPABILITIES_METADATA['skills'].items():
+                description.append(f"  {CHARS['bullet']} {skill['name']} - {skill['description']}")
+
+            description.append("")
+            description.append("[yellow]Workflows (5):[/yellow]")
+            for key, workflow in CAPABILITIES_METADATA['workflows'].items():
+                description.append(f"  {CHARS['bullet']} {workflow['name']} - {workflow['description']}")
+
+            description.append("")
+            description.append("[yellow]Commands (1):[/yellow]")
+            for key, cmd in CAPABILITIES_METADATA['commands'].items():
+                description.append(f"  {CHARS['bullet']} {cmd['name']} - {cmd['description']}")
+
+            description.append("")
+
             self.print_panel(
                 "\n".join(description),
-                title=f"{CHARS['wrench']} Universal Capabilities",
+                title=f"{CHARS['wrench']} Universal Capabilities System",
                 border_style="cyan"
             )
 
@@ -699,12 +794,13 @@ class RichWizard:
         if not include_capabilities:
             return {'enabled': False}
 
-        # Ask about granular selection
+        # Ask about selection level
         selection_type = questionary.select(
             "How would you like to configure capabilities?",
             choices=[
-                questionary.Choice(f"{CHARS['check']} All categories (Skills, Workflows, Commands)", value='all'),
-                questionary.Choice(f"{CHARS['wrench']} Select specific categories", value='custom')
+                questionary.Choice(f"{CHARS['check']} All capabilities (4 skills + 5 workflows + 1 command)", value='all'),
+                questionary.Choice(f"{CHARS['wrench']} Select by category (Skills, Workflows, Commands)", value='category'),
+                questionary.Choice(f"🔍 Select individual capabilities (granular)", value='granular')
             ],
             style=PROTO_GEAR_STYLE,
             instruction="(Use arrow keys, Enter to select)"
@@ -717,14 +813,16 @@ class RichWizard:
                 'workflows': True,
                 'commands': True
             }
+        elif selection_type == 'granular':
+            return self._ask_granular_capabilities()
 
-        # Custom category selection
+        # Category selection
         categories = questionary.checkbox(
             "Select capability categories:",
             choices=[
-                questionary.Choice("Skills - TDD methodology", value='skills', checked=True),
-                questionary.Choice("Workflows - Feature development", value='workflows', checked=True),
-                questionary.Choice("Commands - Ticket creation", value='commands', checked=True)
+                questionary.Choice(f"Skills (4) - TDD, Debugging, Code Review, Refactoring", value='skills', checked=True),
+                questionary.Choice(f"Workflows (5) - Feature Dev, Bug Fix, Hotfix, Release, Finalize", value='workflows', checked=True),
+                questionary.Choice(f"Commands (1) - Create Ticket", value='commands', checked=True)
             ],
             style=PROTO_GEAR_STYLE,
             instruction="(Space to select/deselect, Enter to confirm)"
@@ -738,6 +836,113 @@ class RichWizard:
             'skills': 'skills' in categories,
             'workflows': 'workflows' in categories,
             'commands': 'commands' in categories
+        }
+
+    def _ask_granular_capabilities(self) -> Dict:
+        """Ask user to select individual capabilities"""
+        if self.console:
+            self.console.print(f"\n[bold cyan]Select individual capabilities:[/bold cyan]\n")
+
+        # Select individual skills
+        skill_choices = []
+        for key, skill in CAPABILITIES_METADATA['skills'].items():
+            skill_choices.append(
+                questionary.Choice(
+                    f"{skill['name']} - {skill['details']}",
+                    value=key,
+                    checked=True
+                )
+            )
+
+        selected_skills = questionary.checkbox(
+            "Skills to include:",
+            choices=skill_choices,
+            style=PROTO_GEAR_STYLE,
+            instruction="(Space to select/deselect, Enter to confirm)"
+        ).ask()
+
+        if selected_skills is None:
+            selected_skills = []
+
+        # Select individual workflows
+        workflow_choices = []
+        for key, workflow in CAPABILITIES_METADATA['workflows'].items():
+            workflow_choices.append(
+                questionary.Choice(
+                    f"{workflow['name']} - {workflow['details']}",
+                    value=key,
+                    checked=True
+                )
+            )
+
+        selected_workflows = questionary.checkbox(
+            "Workflows to include:",
+            choices=workflow_choices,
+            style=PROTO_GEAR_STYLE,
+            instruction="(Space to select/deselect, Enter to confirm)"
+        ).ask()
+
+        if selected_workflows is None:
+            selected_workflows = []
+
+        # Select individual commands
+        command_choices = []
+        for key, cmd in CAPABILITIES_METADATA['commands'].items():
+            command_choices.append(
+                questionary.Choice(
+                    f"{cmd['name']} - {cmd['details']}",
+                    value=key,
+                    checked=True
+                )
+            )
+
+        selected_commands = questionary.checkbox(
+            "Commands to include:",
+            choices=command_choices,
+            style=PROTO_GEAR_STYLE,
+            instruction="(Space to select/deselect, Enter to confirm)"
+        ).ask()
+
+        if selected_commands is None:
+            selected_commands = []
+
+        return {
+            'enabled': True,
+            'skills': selected_skills if selected_skills else False,
+            'workflows': selected_workflows if selected_workflows else False,
+            'commands': selected_commands if selected_commands else False,
+            'granular': True  # Flag to indicate granular selection
+        }
+
+    def _ask_granular_capabilities_fallback(self) -> Dict:
+        """Fallback for granular capability selection without questionary"""
+        print("\n[SKILLS] Select skills to include:")
+        selected_skills = []
+        for key, skill in CAPABILITIES_METADATA['skills'].items():
+            response = input(f"  Include {skill['name']}? (y/n): ").lower()
+            if response in ['y', 'yes']:
+                selected_skills.append(key)
+
+        print("\n[WORKFLOWS] Select workflows to include:")
+        selected_workflows = []
+        for key, workflow in CAPABILITIES_METADATA['workflows'].items():
+            response = input(f"  Include {workflow['name']}? (y/n): ").lower()
+            if response in ['y', 'yes']:
+                selected_workflows.append(key)
+
+        print("\n[COMMANDS] Select commands to include:")
+        selected_commands = []
+        for key, cmd in CAPABILITIES_METADATA['commands'].items():
+            response = input(f"  Include {cmd['name']}? (y/n): ").lower()
+            if response in ['y', 'yes']:
+                selected_commands.append(key)
+
+        return {
+            'enabled': True,
+            'skills': selected_skills if selected_skills else False,
+            'workflows': selected_workflows if selected_workflows else False,
+            'commands': selected_commands if selected_commands else False,
+            'granular': True
         }
 
     def ask_branching_strategy(self, git_config: Dict) -> bool:
@@ -967,23 +1172,50 @@ class RichWizard:
 
         if config.get('with_capabilities'):
             if capabilities_config and capabilities_config.get('enabled'):
-                # Granular selection (custom path)
-                cap_parts = []
-                if capabilities_config.get('skills'):
-                    cap_parts.append("Skills")
-                if capabilities_config.get('workflows'):
-                    cap_parts.append("Workflows")
-                if capabilities_config.get('commands'):
-                    cap_parts.append("Commands")
+                # Check if granular selection was used
+                if capabilities_config.get('granular'):
+                    # Granular individual selection
+                    selected_items = []
 
-                if cap_parts:
-                    cap_desc = ", ".join(cap_parts)
-                    files_list.append(f"{CHARS['check']} .proto-gear/ ({cap_desc})")
+                    skills = capabilities_config.get('skills', [])
+                    if isinstance(skills, list) and skills:
+                        skill_names = [CAPABILITIES_METADATA['skills'][k]['name'] for k in skills if k in CAPABILITIES_METADATA['skills']]
+                        selected_items.append(f"Skills: {', '.join(skill_names)}")
+
+                    workflows = capabilities_config.get('workflows', [])
+                    if isinstance(workflows, list) and workflows:
+                        workflow_names = [CAPABILITIES_METADATA['workflows'][k]['name'] for k in workflows if k in CAPABILITIES_METADATA['workflows']]
+                        selected_items.append(f"Workflows: {', '.join(workflow_names)}")
+
+                    commands = capabilities_config.get('commands', [])
+                    if isinstance(commands, list) and commands:
+                        command_names = [CAPABILITIES_METADATA['commands'][k]['name'] for k in commands if k in CAPABILITIES_METADATA['commands']]
+                        selected_items.append(f"Commands: {', '.join(command_names)}")
+
+                    if selected_items:
+                        files_list.append(f"{CHARS['check']} .proto-gear/ capability system:")
+                        for item in selected_items:
+                            files_list.append(f"  [dim]{CHARS['bullet']} {item}[/dim]")
+                    else:
+                        files_list.append(f"[dim]{CHARS['cross']} .proto-gear/ (no capabilities selected)[/dim]")
                 else:
-                    files_list.append(f"[dim]{CHARS['cross']} .proto-gear/ (no categories selected)[/dim]")
+                    # Category selection (Skills, Workflows, Commands)
+                    cap_parts = []
+                    if capabilities_config.get('skills'):
+                        cap_parts.append("Skills (4)")
+                    if capabilities_config.get('workflows'):
+                        cap_parts.append("Workflows (5)")
+                    if capabilities_config.get('commands'):
+                        cap_parts.append("Commands (1)")
+
+                    if cap_parts:
+                        cap_desc = ", ".join(cap_parts)
+                        files_list.append(f"{CHARS['check']} .proto-gear/ ({cap_desc})")
+                    else:
+                        files_list.append(f"[dim]{CHARS['cross']} .proto-gear/ (no categories selected)[/dim]")
             else:
                 # Preset path (all capabilities) or empty config
-                files_list.append(f"{CHARS['check']} .proto-gear/ (Universal Capabilities System)")
+                files_list.append(f"{CHARS['check']} .proto-gear/ (All capabilities: 4 skills + 5 workflows + 1 command)")
         else:
             files_list.append(f"[dim]{CHARS['cross']} .proto-gear/ (not selected)[/dim]")
 
