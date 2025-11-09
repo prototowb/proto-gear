@@ -12,6 +12,9 @@ from pathlib import Path
 from typing import Optional
 import argparse
 
+# Import version from package
+from . import __version__
+
 # Import UI helper for consistent terminal output
 from .ui_helper import UIHelper, Colors
 ui = UIHelper()
@@ -26,7 +29,15 @@ except ImportError:
     RICH_AVAILABLE = False
 
 # ASCII Art for Proto Gear
-LOGO_V1 = """
+def get_logo_v1():
+    """Generate logo with dynamic version from __version__"""
+    version_text = f"🤖 AI Agent Framework v{__version__} 🤖"
+    # Center the version text within the 61-character width (║...║)
+    # 61 total - 2 for borders = 59 usable, center the text
+    padding = (59 - len(version_text)) // 2
+    version_line = f"    ║{' ' * padding}{version_text}{' ' * (59 - padding - len(version_text))}║"
+
+    return f"""
     ╔═════════════════════════════════════════════════════════════╗
     ║                                                             ║
     ║   ██████╗ ██████╗  ██████╗ ████████╗ ██████╗                ║
@@ -42,12 +53,12 @@ LOGO_V1 = """
     ║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
     ║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
     ║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-    ║                        🤖 AI Agent Framework v0.6.2 🤖       ║
+{version_line}
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
 """
 
-PROTO_GEAR_LOGOS = [LOGO_V1]
+PROTO_GEAR_LOGOS = [get_logo_v1]
 
 
 def clear_screen():
@@ -79,8 +90,9 @@ def show_splash_screen():
     """Display the Proto Gear splash screen"""
     clear_screen()
 
-    # Choose a random logo
-    logo = random.choice(PROTO_GEAR_LOGOS)
+    # Choose a random logo function and call it to get the logo string
+    logo_func = random.choice(PROTO_GEAR_LOGOS)
+    logo = logo_func()
 
     # Animated logo appearance (with encoding safety)
     print(Colors.CYAN + Colors.BOLD)
@@ -91,7 +103,7 @@ def show_splash_screen():
     except UnicodeEncodeError:
         # Fallback for terminals that don't support Unicode
         print("=" * 60)
-        print(" PROTO GEAR - AI Agent Framework v0.6.2")
+        print(f" PROTO GEAR - AI Agent Framework v{__version__}")
         print("=" * 60)
     print(Colors.ENDC)
 
@@ -520,7 +532,7 @@ def generate_project_template(template_name, project_dir, context):
         return None
 
 
-def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.6.0", dry_run: bool = False, capabilities_config: dict = None) -> dict:
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = None, dry_run: bool = False, capabilities_config: dict = None) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
 
@@ -542,6 +554,10 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
         - File permission management
     """
     import stat
+
+    # Use package version if not specified
+    if version is None:
+        version = __version__
 
     result = {
         'status': 'success',
@@ -879,7 +895,6 @@ current_sprint: null
                 capability_result = copy_capability_templates(
                     current_dir,
                     current_dir.name,
-                    version="0.4.1",
                     dry_run=False,
                     capabilities_config=capabilities_config
                 )
@@ -944,7 +959,6 @@ current_sprint: null
             capability_result = copy_capability_templates(
                 current_dir,
                 current_dir.name,
-                version="0.4.1",
                 dry_run=True,
                 capabilities_config=capabilities_config
             )

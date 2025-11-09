@@ -71,6 +71,56 @@ pg init --dry-run --with-branching --ticket-prefix TEST
 python -m pytest --cov=core --cov-report=term-missing
 ```
 
+### Version Management
+
+**Single Source of Truth**: We use dynamic versioning to avoid hardcoding version strings in multiple places.
+
+**Version Locations**:
+- `pyproject.toml` - Canonical version for package distribution
+- `core/proto_gear_pkg/__init__.py` - Python package version (`__version__` variable)
+- All other files import from `__init__.py` - NO hardcoded versions!
+
+**How It Works**:
+1. Update version in **TWO places only**:
+   - `pyproject.toml`: `version = "X.Y.Z"`
+   - `core/proto_gear_pkg/__init__.py`: `__version__ = "X.Y.Z"`
+2. All other code imports: `from . import __version__`
+3. All display strings use: `f"v{__version__}"` (never hardcoded)
+
+**Example Usage in Code**:
+```python
+# In proto_gear.py
+from . import __version__
+
+# Dynamic logo generation
+def get_logo_v1():
+    version_text = f"🤖 AI Agent Framework v{__version__} 🤖"
+    # ... rest of logo ...
+
+# Dynamic splash screen
+print(f" PROTO GEAR - AI Agent Framework v{__version__}")
+
+# Function parameters with dynamic defaults
+def copy_capability_templates(..., version: str = None, ...):
+    if version is None:
+        version = __version__  # Use package version
+```
+
+**NEVER**:
+- ❌ Hardcode version strings like `"v0.6.2"` in banner text
+- ❌ Use hardcoded version defaults in function parameters
+- ❌ Duplicate version numbers anywhere in the codebase
+
+**ALWAYS**:
+- ✅ Import `__version__` from package
+- ✅ Use f-strings: `f"v{__version__}"`
+- ✅ Default to `None` and set to `__version__` in function body
+
+**Benefits**:
+- Single version bump updates all displays automatically
+- No risk of version string mismatches
+- Easier releases (change 2 files, not 10+)
+
 ### Dogfooding Workflow
 
 **IMPORTANT**: We use Proto Gear to develop Proto Gear itself!
