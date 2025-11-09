@@ -1127,14 +1127,67 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
 
             if result.get('files_created'):
                 print(f"\n{Colors.CYAN}Files created:{Colors.ENDC}")
+
+                # Separate template files from capability files
+                template_files = []
+                capability_files = []
+
                 for file in result['files_created']:
+                    # Handle both forward and backslash separators
+                    if file.startswith('.proto-gear/') or file.startswith('.proto-gear\\'):
+                        capability_files.append(file)
+                    else:
+                        template_files.append(file)
+
+                # Show templates
+                for file in template_files:
                     print(f"  + {file}")
 
+                # Show capabilities summary if any
+                if capability_files:
+                    print(f"\n{Colors.CYAN}Capabilities installed ({len(capability_files)} files):{Colors.ENDC}")
+                    print(f"  + .proto-gear/ directory with:")
+
+                    # Categorize capability files (handle both separators)
+                    skills = [f for f in capability_files if '/skills/' in f or '\\skills\\' in f]
+                    workflows = [f for f in capability_files if '/workflows/' in f or '\\workflows\\' in f]
+                    commands = [f for f in capability_files if '/commands/' in f or '\\commands\\' in f]
+
+                    if skills:
+                        print(f"    • {len(skills)} skill(s)")
+                    if workflows:
+                        print(f"    • {len(workflows)} workflow(s)")
+                    if commands:
+                        print(f"    • {len(commands)} command(s)")
+
+            # Dynamic next steps based on what was created
             print(f"\n{Colors.YELLOW}Next steps:{Colors.ENDC}")
-            print("  1. Review AGENTS.md to understand AI agent patterns and workflows")
-            print("  2. Check PROJECT_STATUS.md for project state tracking")
-            print("  3. Review TESTING.md for TDD methodology")
-            print("  4. AI agents will read these templates and collaborate naturally")
+            files = result.get('files_created', [])
+            step = 1
+
+            if 'AGENTS.md' in files:
+                print(f"  {step}. Review AGENTS.md to understand AI agent patterns and workflows")
+                step += 1
+
+            if 'PROJECT_STATUS.md' in files:
+                print(f"  {step}. Check PROJECT_STATUS.md for project state tracking")
+                step += 1
+
+            if 'TESTING.md' in files:
+                print(f"  {step}. Review TESTING.md for TDD methodology")
+                step += 1
+
+            if 'BRANCHING.md' in files:
+                print(f"  {step}. Follow BRANCHING.md conventions for Git workflow")
+                step += 1
+
+            # Check if capabilities were installed
+            has_capabilities = any(f.startswith('.proto-gear/') or f.startswith('.proto-gear\\') for f in files)
+            if has_capabilities:
+                print(f"  {step}. Explore .proto-gear/ for available skills, workflows, and commands")
+                step += 1
+
+            print(f"  {step}. AI agents will read these templates and collaborate naturally")
 
     return result
 
