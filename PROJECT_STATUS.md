@@ -6,31 +6,37 @@
 
 ```yaml
 project_phase: "Production Release"
-version: "0.6.1"
+version: "0.6.2"
 release_date: "2025-11-09"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-08"
-current_sprint: "v0.6.1 Complete"
+current_sprint: "v0.6.2 Complete"
 ```
 
 ## 📦 Latest Release
 
-**v0.6.1** - Critical Wizard Bug Fix (2025-11-09)
-- **CRITICAL FIX**: Wizard template selections were being completely ignored
-- User selections now properly generated (TESTING, CONTRIBUTING, etc.)
-- Fixed regression from v0.6.0 where core_templates wasn't passed through
-- All selected templates now generated correctly
-- Non-selected templates correctly excluded
-- Dry-run mode shows accurate preview
-- Status: ✅ Released to main, tagged (v0.6.1), and pushed to GitHub
+**v0.6.2** - Enhanced Output Display (2025-11-09)
+- **Enhanced Final Output**: Files created section now separates templates from capabilities
+- Capability files grouped with summary showing counts (skills/workflows/commands)
+- Next steps are dynamic based on what was actually created
+- Cross-platform path handling (supports both / and \ separators)
+- Cleaner, more informative output highlighting installed capabilities
+- Status: ✅ Released to main, tagged (v0.6.2), and pushed to GitHub
 
 ## 🎫 Active Tickets
 
 *All v0.5.0 tickets completed!*
 
 ## ✅ Completed Tickets
+
+### v0.6.2 Release (2025-11-09) - Enhanced Output Display
+- Separate template files from capability files in output (COMPLETED)
+- Group capability files with summary counts (COMPLETED)
+- Make next steps dynamic based on selections (COMPLETED)
+- Add cross-platform path handling (COMPLETED)
+- Tag and push v0.6.2 release (COMPLETED)
 
 ### v0.6.1 Release (2025-11-09) - Critical Bug Fix
 - Investigate wizard selections not generating (COMPLETED)
@@ -103,10 +109,16 @@ current_sprint: "v0.6.1 Complete"
 | Workflows | Complete | 5 workflows (Feature Dev, Bug Fix, Hotfix, Release, Finalize) |
 | Commands | Complete | 1 command (Create Ticket) |
 | Documentation | Complete | Comprehensive user and dev guides |
-| Version | v0.6.1 | Released and tagged |
+| Version | v0.6.2 | Released and tagged |
 | Interactive Wizard | Enhanced | Auto-discovery + granular capability selection |
 
 ## Recent Updates
+
+- 2025-11-09: **v0.6.2 Released** - Enhanced Output Display
+  - **Enhanced UX**: Final output now separates templates from capabilities
+  - Capability files grouped with summary (skills/workflows/commands counts)
+  - Dynamic next steps based on what was actually created
+  - Cross-platform path handling for Windows/Unix compatibility
 
 - 2025-11-09: **v0.6.1 Released** - Critical Wizard Bug Fix
   - **CRITICAL FIX**: Wizard selections were completely ignored in v0.6.0
@@ -161,4 +173,4 @@ current_sprint: "v0.6.1 Complete"
 
 ---
 *Maintained by ProtoGear Agent Framework*
-*Last Updated: 2025-11-09 (v0.6.1)*
+*Last Updated: 2025-11-09 (v0.6.2)*

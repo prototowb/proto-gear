@@ -5,6 +5,40 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-11-09
+
+### Changed
+- **Enhanced Final Output Display**
+  - Files created section now separates template files from capability files
+  - Capability files are grouped with summary showing counts (skills/workflows/commands)
+  - Next steps are now dynamic based on what was actually created
+  - Added cross-platform path handling (supports both `/` and `\` separators)
+  - Cleaner, more informative output that highlights what capabilities were installed
+
+### Example
+```
+Files created:
+  + BRANCHING.md
+  + AGENTS.md
+  + TESTING.md
+  + CONTRIBUTING.md
+  + PROJECT_STATUS.md
+
+Capabilities installed (15 files):
+  + .proto-gear/ directory with:
+    • 5 skill(s)
+    • 6 workflow(s)
+    • 2 command(s)
+
+Next steps:
+  1. Review AGENTS.md for collaboration patterns
+  2. Check PROJECT_STATUS.md for project state
+  3. Review TESTING.md for TDD patterns
+  4. Follow BRANCHING.md conventions for Git workflow
+  5. Explore .proto-gear/ for available skills, workflows, and commands
+  6. AI agents will read these templates and collaborate naturally
+```
+
 ## [0.6.1] - 2025-11-09
 
 ### Fixed
