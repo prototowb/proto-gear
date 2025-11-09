@@ -42,7 +42,7 @@ LOGO_V1 = """
     ║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
     ║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
     ║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-    ║                        🤖 AI Agent Framework v0.5.1 🤖       ║
+    ║                        🤖 AI Agent Framework v0.5.2 🤖       ║
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
 """
@@ -91,7 +91,7 @@ def show_splash_screen():
     except UnicodeEncodeError:
         # Fallback for terminals that don't support Unicode
         print("=" * 60)
-        print(" PROTO GEAR - AI Agent Framework v0.5.1")
+        print(" PROTO GEAR - AI Agent Framework v0.5.2")
         print("=" * 60)
     print(Colors.ENDC)
 
@@ -455,7 +455,46 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
-def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.5.1", dry_run: bool = False, capabilities_config: dict = None) -> dict:
+def generate_project_template(template_name, project_dir, context):
+    """
+    Generate a project template from the template file.
+    
+    Args:
+        template_name: Name of the template (e.g., 'TESTING', 'CONTRIBUTING')
+        project_dir: Path to project directory
+        context: Dictionary with placeholder values
+    
+    Returns:
+        Path to created file or None if failed
+    """
+    try:
+        # Get template file from package
+        template_file = Path(__file__).parent / f"{template_name}.template.md"
+        
+        if not template_file.exists():
+            print(f"Warning: Template {template_name}.template.md not found")
+            return None
+        
+        # Read template content
+        content = template_file.read_text(encoding='utf-8')
+        
+        # Replace placeholders
+        for key, value in context.items():
+            placeholder = f"{{{{{key}}}}}"
+            content = content.replace(placeholder, str(value))
+        
+        # Write to project directory
+        output_file = project_dir / f"{template_name}.md"
+        output_file.write_text(content, encoding='utf-8')
+        
+        return output_file
+        
+    except Exception as e:
+        print(f"Error generating {template_name}: {e}")
+        return None
+
+
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.5.2", dry_run: bool = False, capabilities_config: dict = None) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
 
@@ -613,7 +652,7 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
     return result
 
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None):
+def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -759,6 +798,41 @@ current_sprint: null
 *Maintained by ProtoGear Agent Framework*
 """
             status_file.write_text(status_content, encoding="utf-8")
+
+            # Generate additional templates if --all flag is used
+            if with_all or with_branching:
+                template_context = {
+                    'PROJECT_NAME': current_dir.name,
+                    'TICKET_PREFIX': ticket_prefix,
+                    'DATE': datetime.now().strftime('%Y-%m-%d'),
+                    'YEAR': datetime.now().strftime('%Y')
+                }
+
+                # List of templates to generate
+                templates_to_generate = ['TESTING']
+
+                if with_all:
+                    templates_to_generate.extend([
+                        'BRANCHING',
+                        'CONTRIBUTING',
+                        'SECURITY',
+                        'ARCHITECTURE',
+                        'CODE_OF_CONDUCT'
+                    ])
+                elif with_branching and 'BRANCHING' not in [f.replace('.md', '') for f in files_created]:
+                    # Old behavior: only BRANCHING if not already created
+                    templates_to_generate.append('BRANCHING')
+
+                for template_name in templates_to_generate:
+                    output_file = generate_project_template(
+                        template_name,
+                        current_dir,
+                        template_context
+                    )
+
+                    if output_file:
+                        files_created.append(f"{template_name}.md")
+
             files_created.append('PROJECT_STATUS.md')
 
             # Create capabilities if requested
@@ -793,6 +867,14 @@ current_sprint: null
         print("  - PROJECT_STATUS.md (project state tracker)")
         if with_branching:
             print("  - BRANCHING.md (Git workflow and commit conventions)")
+
+        # Show additional templates if --all flag is used
+        if with_all:
+            print("  - TESTING.md (TDD patterns and best practices)")
+            print("  - CONTRIBUTING.md (Contribution guidelines)")
+            print("  - SECURITY.md (Security policy and vulnerability reporting)")
+            print("  - ARCHITECTURE.md (System design documentation)")
+            print("  - CODE_OF_CONDUCT.md (Community guidelines)")
 
         # Show capability files if requested
         if with_capabilities:
@@ -950,7 +1032,7 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None):
+def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
 
@@ -967,6 +1049,8 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
             ticket_prefix=ticket_prefix,
             with_capabilities=with_capabilities,
             capabilities_config=capabilities_config
+        ,
+            with_all=with_all
         )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
@@ -1038,6 +1122,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Generate .proto-gear/ capability system (skills, workflows, commands)'
     )
     init_parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Generate ALL available project templates (TESTING, BRANCHING, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT)'
+    )
+    init_parser.add_argument(
         '--no-interactive',
         action='store_true',
         help='Skip interactive wizard (use for automated/scripted setup)'
@@ -1090,7 +1179,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                         with_branching=wizard_config.get('with_branching', False),
                         ticket_prefix=wizard_config.get('ticket_prefix'),
                         with_capabilities=wizard_config.get('with_capabilities', False),
-                        capabilities_config=wizard_config.get('capabilities_config')
+                        capabilities_config=wizard_config.get('capabilities_config'),
+                        with_all=args.all if hasattr(args, 'all') else False
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -1102,7 +1192,9 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                     with_branching=args.with_branching,
                     ticket_prefix=args.ticket_prefix,
                     with_capabilities=args.with_capabilities
-                )
+                ,
+                        with_all=args.all if hasattr(args, 'all') else False
+                    )
 
             if result['status'] == 'success':
                 print(f"\n{Colors.GREEN}ProtoGear AI Agent Framework initialized!{Colors.ENDC}")

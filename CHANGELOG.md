@@ -5,6 +5,20 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-11-09
+
+### Added
+- `--all` flag to generate all available project templates
+- Generic `generate_project_template()` function for template generation
+
+### Fixed
+- v0.5.0/v0.5.1 templates (CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT) now accessible via `--all` flag
+- Template generation no longer requires manual CLI integration
+
+### Changed
+- Improved template generation to support all 8 templates
+- Backward compatible with existing `--with-branching` flag
+
 ## [0.5.1] - 2025-11-09
 
 ### Fixed
