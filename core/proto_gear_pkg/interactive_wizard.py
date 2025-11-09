@@ -8,6 +8,13 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+# Import template discovery from proto_gear module
+try:
+    from .proto_gear import discover_available_templates
+except ImportError:
+    # Fallback if running standalone
+    discover_available_templates = None
+
 try:
     import questionary
     from questionary import Style
@@ -513,47 +520,68 @@ class RichWizard:
     def ask_core_templates_selection(self) -> Dict[str, bool]:
         """
         Ask user which core templates to generate (Custom path)
+        Uses auto-discovery to show all available templates (v0.6.0)
         Returns dict with template selections
         """
+        # Discover available templates
+        available_templates = {}
+        if discover_available_templates:
+            discovered = discover_available_templates()
+            # Filter out AGENTS and PROJECT_STATUS (always included)
+            available_templates = {
+                k: v for k, v in discovered.items()
+                if k not in ['AGENTS', 'PROJECT_STATUS']
+            }
+        else:
+            # Fallback to hardcoded list
+            available_templates = {
+                'TESTING': {'name': 'TESTING', 'filename': 'TESTING.md'},
+                'BRANCHING': {'name': 'BRANCHING', 'filename': 'BRANCHING.md'},
+                'CONTRIBUTING': {'name': 'CONTRIBUTING', 'filename': 'CONTRIBUTING.md'},
+                'SECURITY': {'name': 'SECURITY', 'filename': 'SECURITY.md'},
+                'ARCHITECTURE': {'name': 'ARCHITECTURE', 'filename': 'ARCHITECTURE.md'},
+                'CODE_OF_CONDUCT': {'name': 'CODE_OF_CONDUCT', 'filename': 'CODE_OF_CONDUCT.md'},
+            }
+
         if not QUESTIONARY_AVAILABLE:
             # Fallback to simple prompts
             print(f"\n{CHARS['memo']} Template Selection")
             print("-" * 50)
             print("Select which templates to generate:")
             print(f"  {CHARS['bullet']} AGENTS.md and PROJECT_STATUS.md are always included")
-            print("\nAdditional templates:")
-            print("  1. TESTING.md - TDD workflow and testing patterns")
-            print("  2. CONTRIBUTING.md - Contribution guidelines for open-source")
-            print("  3. SECURITY.md - Security policy and vulnerability reporting")
-            print("  4. ARCHITECTURE.md - System design documentation")
-            print("  5. CODE_OF_CONDUCT.md - Community guidelines")
+            print(f"\nAdditional templates ({len(available_templates)} available):")
+
+            for idx, (name, info) in enumerate(sorted(available_templates.items()), 1):
+                print(f"  {idx}. {info['filename']}")
+
             print("  A. Select ALL additional templates")
 
-            response = input("\nSelect templates (e.g., '1,2,5' or 'A' for all): ").strip().upper()
+            response = input(f"\nSelect templates (e.g., '1,2' or 'A' for all): ").strip().upper()
 
-            if response == 'A':
-                return {
-                    'AGENTS': True,
-                    'PROJECT_STATUS': True,
-                    'TESTING': True,
-                    'CONTRIBUTING': True,
-                    'SECURITY': True,
-                    'ARCHITECTURE': True,
-                    'CODE_OF_CONDUCT': True,
-                    'with_all': True
-                }
-
-            selected = set(response.replace(' ', '').split(','))
-            return {
+            result = {
                 'AGENTS': True,
                 'PROJECT_STATUS': True,
-                'TESTING': '1' in selected,
-                'CONTRIBUTING': '2' in selected,
-                'SECURITY': '3' in selected,
-                'ARCHITECTURE': '4' in selected,
-                'CODE_OF_CONDUCT': '5' in selected,
-                'with_all': False
             }
+
+            if response == 'A':
+                # Select all
+                for name in available_templates:
+                    result[name] = True
+                result['with_all'] = True
+            else:
+                # Parse selection
+                selected_indices = set(response.replace(' ', '').split(','))
+                template_list = sorted(available_templates.keys())
+
+                for idx_str in selected_indices:
+                    if idx_str.isdigit():
+                        idx = int(idx_str) - 1
+                        if 0 <= idx < len(template_list):
+                            result[template_list[idx]] = True
+
+                result['with_all'] = len([v for v in result.values() if v is True]) - 2 == len(available_templates)
+
+            return result
 
         # Enhanced selection with questionary
         if self.console:
@@ -561,7 +589,7 @@ class RichWizard:
                 "",
                 f"[dim]AGENTS.md and PROJECT_STATUS.md are always included (core functionality)[/dim]",
                 "",
-                "Select additional templates to generate:",
+                f"Select additional templates to generate ([cyan]{len(available_templates)} available[/cyan]):",
                 ""
             ]
             self.print_panel(
@@ -570,36 +598,52 @@ class RichWizard:
                 border_style="cyan"
             )
 
-        # Use checkbox for multi-select
-        choices = questionary.checkbox(
+        # Build choices dynamically from discovered templates
+        choices = []
+        template_descriptions = {
+            'TESTING': 'TDD workflow and testing patterns',
+            'BRANCHING': 'Git workflow conventions',
+            'CONTRIBUTING': 'Contribution guidelines for open-source',
+            'SECURITY': 'Security policy and vulnerability reporting',
+            'ARCHITECTURE': 'System design documentation',
+            'CODE_OF_CONDUCT': 'Community guidelines'
+        }
+
+        for name in sorted(available_templates.keys()):
+            desc = template_descriptions.get(name, 'Project template')
+            # Default TESTING to checked, others unchecked
+            checked = (name == 'TESTING')
+            choices.append(
+                questionary.Choice(
+                    f"{name}.md - {desc}",
+                    value=name,
+                    checked=checked
+                )
+            )
+
+        selected = questionary.checkbox(
             "Select additional templates:",
-            choices=[
-                questionary.Choice("TESTING.md - TDD workflow and testing patterns", value='TESTING', checked=True),
-                questionary.Choice("CONTRIBUTING.md - Contribution guidelines for open-source", value='CONTRIBUTING', checked=False),
-                questionary.Choice("SECURITY.md - Security policy and vulnerability reporting", value='SECURITY', checked=False),
-                questionary.Choice("ARCHITECTURE.md - System design documentation", value='ARCHITECTURE', checked=False),
-                questionary.Choice("CODE_OF_CONDUCT.md - Community guidelines", value='CODE_OF_CONDUCT', checked=False),
-            ],
+            choices=choices,
             style=PROTO_GEAR_STYLE,
             instruction="(Space to select/deselect, Enter to confirm)"
         ).ask()
 
-        if choices is None:
-            choices = []
+        if selected is None:
+            selected = []
 
-        # Check if user selected all
-        all_selected = len(choices) == 5
-
-        return {
+        # Build result dict
+        result = {
             'AGENTS': True,
             'PROJECT_STATUS': True,
-            'TESTING': 'TESTING' in choices,
-            'CONTRIBUTING': 'CONTRIBUTING' in choices,
-            'SECURITY': 'SECURITY' in choices,
-            'ARCHITECTURE': 'ARCHITECTURE' in choices,
-            'CODE_OF_CONDUCT': 'CODE_OF_CONDUCT' in choices,
-            'with_all': all_selected
         }
+
+        for name in available_templates:
+            result[name] = name in selected
+
+        # Check if user selected all
+        result['with_all'] = len(selected) == len(available_templates)
+
+        return result
 
     def ask_git_workflow_options(self, git_config: Dict, current_dir: Path) -> Dict:
         """

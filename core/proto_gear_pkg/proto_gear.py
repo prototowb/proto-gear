@@ -42,7 +42,7 @@ LOGO_V1 = """
     ║   ██║   ██║██╔══╝  ██╔══██║██╔══██╗                         ║
     ║   ╚██████╔╝███████╗██║  ██║██║  ██║                         ║
     ║    ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                         ║
-    ║                        🤖 AI Agent Framework v0.5.3 🤖       ║
+    ║                        🤖 AI Agent Framework v0.6.0 🤖       ║
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
 """
@@ -91,7 +91,7 @@ def show_splash_screen():
     except UnicodeEncodeError:
         # Fallback for terminals that don't support Unicode
         print("=" * 60)
-        print(" PROTO GEAR - AI Agent Framework v0.5.3")
+        print(" PROTO GEAR - AI Agent Framework v0.6.0")
         print("=" * 60)
     print(Colors.ENDC)
 
@@ -455,46 +455,72 @@ git push -u origin {{DEV_BRANCH}}
         return None
 
 
+def discover_available_templates():
+    """
+    Auto-discover all template files in the package (v0.6.0 feature).
+
+    Returns:
+        Dict mapping template names to template info
+    """
+    template_dir = Path(__file__).parent
+    templates = {}
+
+    try:
+        for template_file in template_dir.glob("*.template.md"):
+            # Extract template name (e.g., "TESTING.template.md" -> "TESTING")
+            name = template_file.stem.replace(".template", "")
+
+            templates[name] = {
+                'path': template_file,
+                'name': name,
+                'filename': f"{name}.md"
+            }
+    except Exception as e:
+        print(f"Error discovering templates: {e}")
+
+    return templates
+
+
 def generate_project_template(template_name, project_dir, context):
     """
     Generate a project template from the template file.
-    
+
     Args:
         template_name: Name of the template (e.g., 'TESTING', 'CONTRIBUTING')
         project_dir: Path to project directory
         context: Dictionary with placeholder values
-    
+
     Returns:
         Path to created file or None if failed
     """
     try:
         # Get template file from package
         template_file = Path(__file__).parent / f"{template_name}.template.md"
-        
+
         if not template_file.exists():
             print(f"Warning: Template {template_name}.template.md not found")
             return None
-        
+
         # Read template content
         content = template_file.read_text(encoding='utf-8')
-        
+
         # Replace placeholders
         for key, value in context.items():
             placeholder = f"{{{{{key}}}}}"
             content = content.replace(placeholder, str(value))
-        
+
         # Write to project directory
         output_file = project_dir / f"{template_name}.md"
         output_file.write_text(content, encoding='utf-8')
-        
+
         return output_file
-        
+
     except Exception as e:
         print(f"Error generating {template_name}: {e}")
         return None
 
 
-def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.5.3", dry_run: bool = False, capabilities_config: dict = None) -> dict:
+def copy_capability_templates(target_dir: Path, project_name: str, version: str = "0.6.0", dry_run: bool = False, capabilities_config: dict = None) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
 

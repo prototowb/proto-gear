@@ -5,6 +5,34 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-11-09
+
+### Added
+- **Template Auto-Discovery System** (PROTO-023 completed)
+  - `discover_available_templates()` function automatically finds all `*.template.md` files
+  - Adding new templates now requires ZERO code changes
+  - Templates are dynamically discovered at runtime
+- **Granular Capability Selection** in interactive wizard
+  - Users can now see detailed descriptions of each capability
+  - 3 selection levels: All, By Category, or Individual capabilities
+  - Shows exactly what skills/workflows/commands are being installed
+  - Detailed CAPABILITIES_METADATA with descriptions for all 10 capabilities
+- Enhanced wizard UX with capability details
+  - Skills: Testing, Debugging, Code Review, Refactoring
+  - Workflows: Feature Dev, Bug Fix, Hotfix, Release, Finalize
+  - Commands: Create Ticket
+- Auto-discovery fallback to hardcoded list for robustness
+
+### Changed
+- Interactive wizard now uses template auto-discovery for dynamic template selection
+- Template selection shows count of available templates (e.g., "6 available")
+- Configuration summary displays individual capability names when using granular selection
+- Improved capability descriptions in wizard panels
+
+### Fixed
+- Template additions no longer require manual wizard updates (addresses wizard sync issue)
+- Users can now make informed decisions about which capabilities to install
+
 ## [0.5.3] - 2025-11-09
 
 ### Fixed
