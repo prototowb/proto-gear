@@ -1180,7 +1180,7 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                         ticket_prefix=wizard_config.get('ticket_prefix'),
                         with_capabilities=wizard_config.get('with_capabilities', False),
                         capabilities_config=wizard_config.get('capabilities_config'),
-                        with_all=args.all if hasattr(args, 'all') else False
+                        with_all=wizard_config.get('with_all', False)
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")

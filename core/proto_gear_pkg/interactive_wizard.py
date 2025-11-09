@@ -27,7 +27,7 @@ except ImportError:
     RICH_AVAILABLE = False
 
 
-# Preset Configurations for v0.4.1
+# Preset Configurations for v0.5.2+
 PRESETS = {
     'quick': {
         'name': 'Quick Start',
@@ -37,31 +37,36 @@ PRESETS = {
         'details': [
             'AGENTS.md - AI agent collaboration',
             'PROJECT_STATUS.md - State tracking',
+            'TESTING.md - TDD patterns',
             'BRANCHING.md - If git detected',
-            '.proto-gear/ - Full capability system (8 files)'
+            '.proto-gear/ - Full capability system'
         ],
         'config': {
-            'core': ['AGENTS', 'PROJECT_STATUS'],
+            'core': ['AGENTS', 'PROJECT_STATUS', 'TESTING'],
             'branching': 'auto',  # Only if git detected
-            'testing': False,
+            'with_all': False,  # Individual templates
             'capabilities': True,
         }
     },
     'full': {
-        'name': 'Full Setup',
+        'name': 'Full Setup (All Templates)',
         'emoji': '📦',
         'ascii': '[FULL]',
-        'description': 'Everything enabled - All templates and capabilities',
+        'description': 'Everything - All 8 templates + full capabilities',
         'details': [
-            'AGENTS.md + PROJECT_STATUS.md',
-            'BRANCHING.md - Always included',
+            'AGENTS.md + PROJECT_STATUS.md (always included)',
             'TESTING.md - TDD patterns',
-            '.proto-gear/ - Full capability system (8 files)'
+            'BRANCHING.md - Git workflow conventions',
+            'CONTRIBUTING.md - Contribution guidelines',
+            'SECURITY.md - Security policy',
+            'ARCHITECTURE.md - System design docs',
+            'CODE_OF_CONDUCT.md - Community guidelines',
+            '.proto-gear/ - Full capability system'
         ],
         'config': {
-            'core': ['AGENTS', 'PROJECT_STATUS', 'TESTING'],
+            'core': ['AGENTS', 'PROJECT_STATUS'],
             'branching': True,
-            'testing': True,
+            'with_all': True,  # Generate ALL templates
             'capabilities': True,
         }
     },
@@ -73,13 +78,13 @@ PRESETS = {
         'details': [
             'AGENTS.md - AI agent collaboration',
             'PROJECT_STATUS.md - State tracking',
-            'No branching strategy',
+            'No additional templates',
             'No capabilities'
         ],
         'config': {
             'core': ['AGENTS', 'PROJECT_STATUS'],
             'branching': False,
-            'testing': False,
+            'with_all': False,
             'capabilities': False,
         }
     },
@@ -451,17 +456,42 @@ class RichWizard:
         """
         if not QUESTIONARY_AVAILABLE:
             # Fallback to simple prompts
-            print(f"\n{CHARS['memo']} Core Templates Selection")
+            print(f"\n{CHARS['memo']} Template Selection")
             print("-" * 50)
-            print("Select which core templates to generate:")
+            print("Select which templates to generate:")
             print(f"  {CHARS['bullet']} AGENTS.md and PROJECT_STATUS.md are always included")
+            print("\nAdditional templates:")
+            print("  1. TESTING.md - TDD workflow and testing patterns")
+            print("  2. CONTRIBUTING.md - Contribution guidelines for open-source")
+            print("  3. SECURITY.md - Security policy and vulnerability reporting")
+            print("  4. ARCHITECTURE.md - System design documentation")
+            print("  5. CODE_OF_CONDUCT.md - Community guidelines")
+            print("  A. Select ALL additional templates")
 
-            testing = input("\nInclude TESTING.md (TDD workflow)? (y/n): ").lower() in ['y', 'yes']
+            response = input("\nSelect templates (e.g., '1,2,5' or 'A' for all): ").strip().upper()
 
+            if response == 'A':
+                return {
+                    'AGENTS': True,
+                    'PROJECT_STATUS': True,
+                    'TESTING': True,
+                    'CONTRIBUTING': True,
+                    'SECURITY': True,
+                    'ARCHITECTURE': True,
+                    'CODE_OF_CONDUCT': True,
+                    'with_all': True
+                }
+
+            selected = set(response.replace(' ', '').split(','))
             return {
-                'AGENTS': True,  # Always included
-                'PROJECT_STATUS': True,  # Always included
-                'TESTING': testing
+                'AGENTS': True,
+                'PROJECT_STATUS': True,
+                'TESTING': '1' in selected,
+                'CONTRIBUTING': '2' in selected,
+                'SECURITY': '3' in selected,
+                'ARCHITECTURE': '4' in selected,
+                'CODE_OF_CONDUCT': '5' in selected,
+                'with_all': False
             }
 
         # Enhanced selection with questionary
@@ -475,7 +505,7 @@ class RichWizard:
             ]
             self.print_panel(
                 "\n".join(description),
-                title=f"{CHARS['memo']} Core Templates",
+                title=f"{CHARS['memo']} Template Selection",
                 border_style="cyan"
             )
 
@@ -483,7 +513,11 @@ class RichWizard:
         choices = questionary.checkbox(
             "Select additional templates:",
             choices=[
-                questionary.Choice("TESTING.md - TDD workflow and testing patterns", value='TESTING', checked=False),
+                questionary.Choice("TESTING.md - TDD workflow and testing patterns", value='TESTING', checked=True),
+                questionary.Choice("CONTRIBUTING.md - Contribution guidelines for open-source", value='CONTRIBUTING', checked=False),
+                questionary.Choice("SECURITY.md - Security policy and vulnerability reporting", value='SECURITY', checked=False),
+                questionary.Choice("ARCHITECTURE.md - System design documentation", value='ARCHITECTURE', checked=False),
+                questionary.Choice("CODE_OF_CONDUCT.md - Community guidelines", value='CODE_OF_CONDUCT', checked=False),
             ],
             style=PROTO_GEAR_STYLE,
             instruction="(Space to select/deselect, Enter to confirm)"
@@ -492,10 +526,18 @@ class RichWizard:
         if choices is None:
             choices = []
 
+        # Check if user selected all
+        all_selected = len(choices) == 5
+
         return {
             'AGENTS': True,
             'PROJECT_STATUS': True,
-            'TESTING': 'TESTING' in choices
+            'TESTING': 'TESTING' in choices,
+            'CONTRIBUTING': 'CONTRIBUTING' in choices,
+            'SECURITY': 'SECURITY' in choices,
+            'ARCHITECTURE': 'ARCHITECTURE' in choices,
+            'CODE_OF_CONDUCT': 'CODE_OF_CONDUCT' in choices,
+            'with_all': all_selected
         }
 
     def ask_git_workflow_options(self, git_config: Dict, current_dir: Path) -> Dict:
@@ -875,17 +917,50 @@ class RichWizard:
             f"{CHARS['check']} PROJECT_STATUS.md (Project state tracking)"
         ]
 
-        # Handle custom core templates
-        core_templates = config.get('core_templates', {})
-        if core_templates.get('TESTING'):
-            files_list.append(f"{CHARS['check']} TESTING.md (TDD workflow)")
-        elif preset == 'custom':
-            files_list.append(f"[dim]{CHARS['cross']} TESTING.md (not selected)[/dim]")
+        # Handle with_all flag (v0.5.2+)
+        with_all = config.get('with_all', False)
 
-        if config.get('with_branching'):
+        if with_all:
+            # All templates selected
+            files_list.append(f"{CHARS['check']} TESTING.md (TDD workflow)")
             files_list.append(f"{CHARS['check']} BRANCHING.md (Git workflow conventions)")
+            files_list.append(f"{CHARS['check']} CONTRIBUTING.md (Contribution guidelines)")
+            files_list.append(f"{CHARS['check']} SECURITY.md (Security policy)")
+            files_list.append(f"{CHARS['check']} ARCHITECTURE.md (System design docs)")
+            files_list.append(f"{CHARS['check']} CODE_OF_CONDUCT.md (Community guidelines)")
         else:
-            files_list.append(f"[dim]{CHARS['cross']} BRANCHING.md (not selected)[/dim]")
+            # Handle custom core templates
+            core_templates = config.get('core_templates', {})
+            if core_templates.get('TESTING'):
+                files_list.append(f"{CHARS['check']} TESTING.md (TDD workflow)")
+            elif preset == 'custom':
+                files_list.append(f"[dim]{CHARS['cross']} TESTING.md (not selected)[/dim]")
+
+            if config.get('with_branching'):
+                files_list.append(f"{CHARS['check']} BRANCHING.md (Git workflow conventions)")
+            else:
+                files_list.append(f"[dim]{CHARS['cross']} BRANCHING.md (not selected)[/dim]")
+
+            # Show other templates if selected in custom path
+            if core_templates.get('CONTRIBUTING'):
+                files_list.append(f"{CHARS['check']} CONTRIBUTING.md (Contribution guidelines)")
+            elif preset == 'custom':
+                files_list.append(f"[dim]{CHARS['cross']} CONTRIBUTING.md (not selected)[/dim]")
+
+            if core_templates.get('SECURITY'):
+                files_list.append(f"{CHARS['check']} SECURITY.md (Security policy)")
+            elif preset == 'custom':
+                files_list.append(f"[dim]{CHARS['cross']} SECURITY.md (not selected)[/dim]")
+
+            if core_templates.get('ARCHITECTURE'):
+                files_list.append(f"{CHARS['check']} ARCHITECTURE.md (System design docs)")
+            elif preset == 'custom':
+                files_list.append(f"[dim]{CHARS['cross']} ARCHITECTURE.md (not selected)[/dim]")
+
+            if core_templates.get('CODE_OF_CONDUCT'):
+                files_list.append(f"{CHARS['check']} CODE_OF_CONDUCT.md (Community guidelines)")
+            elif preset == 'custom':
+                files_list.append(f"[dim]{CHARS['cross']} CODE_OF_CONDUCT.md (not selected)[/dim]")
 
         # Handle granular capabilities
         capabilities_config = config.get('capabilities_config', {})
@@ -1066,7 +1141,10 @@ def _apply_preset_config(preset_config: Dict, git_detected: bool, current_dir: P
     # Capabilities
     config['with_capabilities'] = preset_config['capabilities']
 
-    # Testing (for future v0.5.0)
-    # config['with_testing'] = preset_config.get('testing', False)
+    # All templates flag (v0.5.2+)
+    config['with_all'] = preset_config.get('with_all', False)
+
+    # Core templates (for custom path compatibility)
+    config['core_templates'] = preset_config.get('core', {})
 
     return config

@@ -28,7 +28,6 @@ Proto Gear is a Python-based template generator that creates collaboration envir
 **THE RULE**: All package files live in `core/proto_gear_pkg/` - nowhere else!
 
 **History**: We previously had duplicate files in both `core/` and `core/proto_gear_pkg/`, which caused:
-- Version updates only appearing in one location
 - New features not being available in installed package
 - Sync nightmares between duplicate files
 
