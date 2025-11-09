@@ -678,7 +678,7 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
     return result
 
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False):
+def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -825,39 +825,52 @@ current_sprint: null
 """
             status_file.write_text(status_content, encoding="utf-8")
 
-            # Generate additional templates if --all flag is used
-            if with_all or with_branching:
-                template_context = {
-                    'PROJECT_NAME': current_dir.name,
-                    'TICKET_PREFIX': ticket_prefix,
-                    'DATE': datetime.now().strftime('%Y-%m-%d'),
-                    'YEAR': datetime.now().strftime('%Y')
-                }
+            # Generate additional templates based on selections
+            template_context = {
+                'PROJECT_NAME': current_dir.name,
+                'TICKET_PREFIX': ticket_prefix,
+                'DATE': datetime.now().strftime('%Y-%m-%d'),
+                'YEAR': datetime.now().strftime('%Y')
+            }
 
-                # List of templates to generate
-                templates_to_generate = ['TESTING']
+            templates_to_generate = []
 
-                if with_all:
-                    templates_to_generate.extend([
-                        'BRANCHING',
-                        'CONTRIBUTING',
-                        'SECURITY',
-                        'ARCHITECTURE',
-                        'CODE_OF_CONDUCT'
-                    ])
-                elif with_branching and 'BRANCHING' not in [f.replace('.md', '') for f in files_created]:
-                    # Old behavior: only BRANCHING if not already created
+            # Priority 1: Use core_templates if provided (from wizard)
+            if core_templates and isinstance(core_templates, dict):
+                # Generate templates that were explicitly selected
+                for template_name, should_generate in core_templates.items():
+                    if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                        # Skip if already created (e.g., BRANCHING from with_branching flag)
+                        if f"{template_name}.md" not in files_created:
+                            templates_to_generate.append(template_name)
+
+            # Priority 2: Handle --all flag (CLI)
+            elif with_all:
+                templates_to_generate.extend([
+                    'TESTING',
+                    'BRANCHING',
+                    'CONTRIBUTING',
+                    'SECURITY',
+                    'ARCHITECTURE',
+                    'CODE_OF_CONDUCT'
+                ])
+
+            # Priority 3: Legacy behavior for with_branching
+            elif with_branching:
+                templates_to_generate.append('TESTING')
+                if 'BRANCHING' not in [f.replace('.md', '') for f in files_created]:
                     templates_to_generate.append('BRANCHING')
 
-                for template_name in templates_to_generate:
-                    output_file = generate_project_template(
-                        template_name,
-                        current_dir,
-                        template_context
-                    )
+            # Generate all selected templates
+            for template_name in templates_to_generate:
+                output_file = generate_project_template(
+                    template_name,
+                    current_dir,
+                    template_context
+                )
 
-                    if output_file:
-                        files_created.append(f"{template_name}.md")
+                if output_file:
+                    files_created.append(f"{template_name}.md")
 
             files_created.append('PROJECT_STATUS.md')
 
@@ -894,13 +907,37 @@ current_sprint: null
         if with_branching:
             print("  - BRANCHING.md (Git workflow and commit conventions)")
 
-        # Show additional templates if --all flag is used
-        if with_all:
-            print("  - TESTING.md (TDD patterns and best practices)")
-            print("  - CONTRIBUTING.md (Contribution guidelines)")
-            print("  - SECURITY.md (Security policy and vulnerability reporting)")
-            print("  - ARCHITECTURE.md (System design documentation)")
-            print("  - CODE_OF_CONDUCT.md (Community guidelines)")
+        # Show additional templates based on selections
+        templates_shown = []
+
+        # Priority 1: Use core_templates if provided (from wizard)
+        if core_templates and isinstance(core_templates, dict):
+            for template_name, should_generate in core_templates.items():
+                if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS', 'BRANCHING']:
+                    templates_shown.append(template_name)
+
+        # Priority 2: Handle --all flag (CLI)
+        elif with_all:
+            templates_shown = ['TESTING', 'CONTRIBUTING', 'SECURITY', 'ARCHITECTURE', 'CODE_OF_CONDUCT']
+            if with_branching:
+                # BRANCHING already shown above
+                pass
+            else:
+                templates_shown.insert(0, 'BRANCHING')
+
+        # Show template descriptions
+        template_descriptions = {
+            'TESTING': 'TDD patterns and best practices',
+            'BRANCHING': 'Git workflow and commit conventions',
+            'CONTRIBUTING': 'Contribution guidelines',
+            'SECURITY': 'Security policy and vulnerability reporting',
+            'ARCHITECTURE': 'System design documentation',
+            'CODE_OF_CONDUCT': 'Community guidelines'
+        }
+
+        for template_name in templates_shown:
+            desc = template_descriptions.get(template_name, 'Project template')
+            print(f"  - {template_name}.md ({desc})")
 
         # Show capability files if requested
         if with_capabilities:
@@ -1058,7 +1095,7 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False):
+def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
     """Initialize ProtoGear AI Agent Framework in current project"""
     from datetime import datetime
 
@@ -1074,9 +1111,9 @@ def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix
             with_branching=with_branching,
             ticket_prefix=ticket_prefix,
             with_capabilities=with_capabilities,
-            capabilities_config=capabilities_config
-        ,
-            with_all=with_all
+            capabilities_config=capabilities_config,
+            with_all=with_all,
+            core_templates=core_templates
         )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
@@ -1206,7 +1243,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                         ticket_prefix=wizard_config.get('ticket_prefix'),
                         with_capabilities=wizard_config.get('with_capabilities', False),
                         capabilities_config=wizard_config.get('capabilities_config'),
-                        with_all=wizard_config.get('with_all', False)
+                        with_all=wizard_config.get('with_all', False),
+                        core_templates=wizard_config.get('core_templates')
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
