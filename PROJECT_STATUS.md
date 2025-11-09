@@ -6,28 +6,42 @@
 
 ```yaml
 project_phase: "Production Release"
-version: "0.5.2"
+version: "0.5.3"
 release_date: "2025-11-09"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-08"
-current_sprint: "v0.5.2 Complete"
+current_sprint: "v0.5.3 Complete"
 ```
 
 ## 📦 Latest Release
 
-**v0.5.2** - Template Access Fix (2025-11-09)
-- `--all` flag to generate all available project templates
-- All v0.5.0 templates now accessible (CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT)
-- Generic template generation function for future extensibility
-- Status: ✅ Released to main, tagged (v0.5.2), and pushed to GitHub
+**v0.5.3** - Wizard Sync Fix (2025-11-09)
+- **CRITICAL**: Fixed interactive wizard frozen at v0.4.1 feature set
+- Interactive wizard now includes all v0.5.0+ templates
+- Full Setup preset correctly generates all 8 templates
+- Custom path offers all 5 additional templates
+- Documented root cause in WIZARD-TEMPLATE-SYNC-ISSUE.md
+- Status: ✅ Released to main, tagged (v0.5.3), and pushed to GitHub
 
 ## 🎫 Active Tickets
 
 *All v0.5.0 tickets completed!*
 
 ## ✅ Completed Tickets
+
+### v0.5.3 Release (2025-11-09)
+- Identify root cause of wizard sync issue (COMPLETED)
+- Document wizard-template sync problem in WIZARD-TEMPLATE-SYNC-ISSUE.md (COMPLETED)
+- Update wizard PRESETS to include v0.5.0+ templates (COMPLETED)
+- Fix ask_core_templates_selection() to offer all templates (COMPLETED)
+- Update _apply_preset_config() to handle with_all flag (COMPLETED)
+- Fix wizard invocation to pass with_all from wizard config (COMPLETED)
+- Update configuration summary display for new templates (COMPLETED)
+- Test wizard with Full Setup preset (COMPLETED)
+- Update version to 0.5.3 and CHANGELOG (COMPLETED)
+- Tag and push v0.5.3 release (COMPLETED)
 
 ### v0.5.2 Release (2025-11-09)
 - Implement `--all` flag for complete template generation (COMPLETED)
@@ -63,9 +77,16 @@ current_sprint: "v0.5.2 Complete"
 | Skills | Complete | 4 skills (Testing, Debugging, Code Review, Refactoring) |
 | Workflows | Complete | 4 workflows (Feature Dev, Bug Fix, Hotfix, Release) |
 | Documentation | Complete | Comprehensive user and dev guides |
-| Version | v0.5.2 | Released and tagged |
+| Version | v0.5.3 | Released and tagged |
+| Interactive Wizard | Fixed | Now synced with CLI feature set (v0.5.3) |
 
 ## Recent Updates
+
+- 2025-11-09: **v0.5.3 Released** - Wizard Sync Fix
+  - **CRITICAL FIX**: Interactive wizard now synced with v0.5.2+ features
+  - All v0.5.0+ templates available in wizard presets
+  - Documented root cause and prevention strategy
+  - Feature parity between CLI and interactive paths
 
 - 2025-11-09: **v0.5.2 Released** - Template Access Fix
   - Implemented `--all` flag to generate all 8 templates
@@ -100,4 +121,4 @@ current_sprint: "v0.5.2 Complete"
 
 ---
 *Maintained by ProtoGear Agent Framework*
-*Last Updated: 2025-11-09*
+*Last Updated: 2025-11-09 (v0.5.3)*
