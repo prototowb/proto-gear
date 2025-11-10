@@ -1,8 +1,8 @@
-# AGENTS.md - 
+# AGENTS.md - Proto Gear
 
 > **ProtoGear Agent Framework Integration**
-> **Project Type**: Node.js Project
-> **Framework**: None
+> **Project Type**: Python Package
+> **Framework**: Python 3.8+
 
 > **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions
 
@@ -19,7 +19,7 @@ When this file is read by an AI agent, it should:
 
 ## Project Structure
 
-Project contains: core, dev, dist, docs, examples, scripts, tests, __pycache__
+Project contains: core, dev, dist, docs, examples, scripts, tests
 
 ## Agent Configuration
 
@@ -57,4 +57,4 @@ pg help
 5. Start development with AI agents reading templates
 
 ---
-*Powered by ProtoGear Agent Framework v0.4.1 (Alpha)*
+*Powered by ProtoGear Agent Framework v0.6.2*
