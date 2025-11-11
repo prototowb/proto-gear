@@ -438,6 +438,7 @@ git push -u origin {{DEV_BRANCH}}
 
         # Replace all placeholders
         content = template.replace('{{PROJECT_NAME}}', project_name)
+        content = content.replace('{{VERSION}}', __version__)
         content = content.replace('{{TICKET_PREFIX}}', ticket_prefix)
         content = content.replace('{{MAIN_BRANCH}}', git_config['main_branch'])
         content = content.replace('{{DEV_BRANCH}}', git_config['dev_branch'])
@@ -846,7 +847,8 @@ current_sprint: null
                 'PROJECT_NAME': current_dir.name,
                 'TICKET_PREFIX': ticket_prefix,
                 'DATE': datetime.now().strftime('%Y-%m-%d'),
-                'YEAR': datetime.now().strftime('%Y')
+                'YEAR': datetime.now().strftime('%Y'),
+                'VERSION': __version__
             }
 
             templates_to_generate = []
