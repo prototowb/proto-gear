@@ -5,6 +5,28 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2025-11-12
+
+### Fixed
+- **Template Versioning**: Templates now use dynamic `{{VERSION}}` instead of hardcoded "v0.3"
+  - BRANCHING.template.md: Fixed hardcoded version
+  - TESTING.template.md: Fixed hardcoded version (2 occurrences)
+  - Added VERSION to template_context dictionary
+  - Added VERSION replacement in generate_branching_doc function
+  - Generated templates now correctly show current Proto Gear version
+
+### Changed
+- **Documentation Cleanup**: Removed 15 deprecated documentation files
+  - Removed session notes and temporary implementation guides
+  - Removed duplicate release notes (consolidated in CHANGELOG.md)
+  - Cleaner project structure
+
+### Added
+- Quality-focused readiness assessment for v0.6.2
+  - Beta maturity level (7.2/10)
+  - No-rush philosophy emphasizing quality over speed
+  - Archived v0.3.0 assessment for historical reference
+
 ## [0.6.2] - 2025-11-09
 
 ### Changed

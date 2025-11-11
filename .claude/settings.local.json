@@ -101,7 +101,10 @@
       "Bash(/c/Users/tobia/AppData/Local/Programs/Python/Python313/python.exe:*)",
       "Bash(git rm:*)",
       "Bash(git show:*)",
-      "Bash(pg:*)"
+      "Bash(pg:*)",
+      "Bash(mv:*)",
+      "Bash(where:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
