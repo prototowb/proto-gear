@@ -11,9 +11,9 @@ import os
 import sys
 
 # Add core to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
+sys.path.insert(0, str(Path(__file__).parent.parent / 'core' / 'proto_gear_pkg'))
 
-from proto_gear import copy_capability_templates
+from proto_gear_pkg.proto_gear import copy_capability_templates
 
 
 class TestCapabilityTemplates(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestCapabilityTemplates(unittest.TestCase):
 
     def test_capability_templates_exist(self):
         """Verify capability templates exist in core/capabilities/"""
-        core_dir = Path(__file__).parent.parent / 'core'
+        core_dir = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg'
         cap_dir = core_dir / 'capabilities'
 
         self.assertTrue(cap_dir.exists(), "capabilities/ directory should exist")
@@ -33,7 +33,7 @@ class TestCapabilityTemplates(unittest.TestCase):
 
     def test_example_skill_exists(self):
         """Verify testing skill template exists"""
-        skill_file = Path(__file__).parent.parent / 'core' / 'capabilities' / 'skills' / 'testing' / 'SKILL.template.md'
+        skill_file = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'skills' / 'testing' / 'SKILL.template.md'
         self.assertTrue(skill_file.exists())
 
         # Check it has YAML frontmatter
@@ -43,7 +43,7 @@ class TestCapabilityTemplates(unittest.TestCase):
 
     def test_example_workflow_exists(self):
         """Verify feature-development workflow exists"""
-        workflow_file = Path(__file__).parent.parent / 'core' / 'capabilities' / 'workflows' / 'feature-development.template.md'
+        workflow_file = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'workflows' / 'feature-development.template.md'
         self.assertTrue(workflow_file.exists())
 
         content = workflow_file.read_text(encoding='utf-8')
@@ -52,7 +52,7 @@ class TestCapabilityTemplates(unittest.TestCase):
 
     def test_example_command_exists(self):
         """Verify create-ticket command exists"""
-        command_file = Path(__file__).parent.parent / 'core' / 'capabilities' / 'commands' / 'create-ticket.template.md'
+        command_file = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'commands' / 'create-ticket.template.md'
         self.assertTrue(command_file.exists())
 
         content = command_file.read_text(encoding='utf-8')

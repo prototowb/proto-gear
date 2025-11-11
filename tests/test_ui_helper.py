@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, call
 # Add core to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
 
-from ui_helper import UIHelper, Colors
+from proto_gear_pkg.ui_helper import UIHelper, Colors
 
 
 class TestUIHelper:

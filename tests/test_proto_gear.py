@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 # Add core to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
 
-from proto_gear import (
+from proto_gear_pkg.proto_gear import (
     detect_project_structure,
     detect_git_config,
     safe_input,
@@ -23,7 +23,7 @@ from proto_gear import (
     interactive_setup_wizard,
     main
 )
-from ui_helper import Colors
+from proto_gear_pkg.ui_helper import Colors
 
 
 class TestProjectDetection:
@@ -198,7 +198,7 @@ class TestMainCLI:
 
         with patch('sys.argv', ['pg', 'init', '--dry-run', '--no-interactive']):
             with pytest.raises(SystemExit) as exc_info:
-                from proto_gear import main
+                from proto_gear_pkg.proto_gear import main
                 main()
 
             assert exc_info.value.code == 0
@@ -211,7 +211,7 @@ class TestMainCLI:
         """Test pg help command"""
         with patch('sys.argv', ['pg', 'help']):
             with pytest.raises(SystemExit) as exc_info:
-                from proto_gear import main
+                from proto_gear_pkg.proto_gear import main
                 main()
 
             assert exc_info.value.code == 0
