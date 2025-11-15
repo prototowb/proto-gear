@@ -104,7 +104,8 @@
       "Bash(pg:*)",
       "Bash(mv:*)",
       "Bash(where:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
