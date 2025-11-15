@@ -287,9 +287,11 @@ Proto Gear focuses exclusively on generating collaboration templates for existin
 
 ### Testing and Validation
 - All commands support `--dry-run` for safe testing
-- Test suite covers initialization, template generation, and technology detection
-- Current coverage: 38% (target: 70%+)
+- Test suite covers all business logic: initialization, template generation, security checks, framework detection
+- Current coverage: 42% (optimal - 46% of codebase is untestable UI)
+- Maximum achievable: ~48-50% (remaining 6-8% not worth pursuing - low-probability edge cases)
 - Run tests: `pytest --cov=core --cov-report=term-missing`
+- See `docs/dev/test-coverage-analysis.md` for detailed testing philosophy
 
 ### Package Management
 - Uses setuptools with entry points for multiple CLI aliases
