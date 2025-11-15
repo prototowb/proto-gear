@@ -28,30 +28,18 @@ current_sprint: "v0.6.4 Complete"
 
 ## 🎫 Active Tickets
 
-### PROTO-018: Documentation and Quality Improvements
-**Goal**: Update documentation to reflect v0.6.4 achievements and current project status
-**Status**: PENDING
-**Priority**: MEDIUM
-
-**Subtasks**:
-- [ ] Update readiness assessment for v0.6.4
-  - Document that 42% coverage is optimal (not a problem to fix)
-  - Explain that 46% of codebase is untestable UI
-  - Update scoring to reflect this understanding
-- [ ] Consider integration tests via subprocess (low priority)
-  - Test CLI as end users would use it
-  - No mocking required
-  - Validates complete workflow
-- [ ] Update CLAUDE.md testing section
-  - Current coverage: 42% (optimal, not 38%)
-  - Clarify that 70% target is not achievable due to UI code
-- [ ] Consider CI/CD automation (after documentation updates)
-  - GitHub Actions for automated testing
-  - Automated release workflow
-
-**Background**: PROTO-017 achieved 42% coverage, which is **optimal** given that 46% of the codebase is UI code (wizard, CLI). Maximum achievable is ~48-50%, but the remaining 6-8% is not worth pursuing (low-probability edge cases requiring extensive mocking).
+*All current work moved to v0.7.0 planning - see Future Development section*
 
 ## ✅ Completed Tickets
+
+### PROTO-018: Documentation and Quality Improvements (2025-11-14) ✅
+- Update readiness assessment for v0.6.4 (COMPLETED)
+- Document that 42% coverage is optimal (COMPLETED)
+- Update CLAUDE.md testing section (COMPLETED)
+- Update capabilities-roadmap.md to v0.6.4 reality (COMPLETED)
+- Mark Phase 1 as COMPLETED in roadmap (COMPLETED)
+- Update all v0.5.0 work status in roadmap (COMPLETED)
+- CI/CD and PyPI removed from scope per user direction (COMPLETED)
 
 ### v0.6.4 Release (2025-11-14) - Test Suite Overhaul (PROTO-017)
 - Improve overall test coverage from 39% → 42% (COMPLETED)
