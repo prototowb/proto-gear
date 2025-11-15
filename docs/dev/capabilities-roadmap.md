@@ -1,8 +1,8 @@
 # Proto Gear Capabilities Roadmap
 
-**Date**: 2025-11-07
+**Date**: 2025-11-14 (Updated)
 **Status**: Living Document
-**Version**: v0.4.1+
+**Version**: v0.6.4
 
 ---
 
@@ -40,54 +40,62 @@ Proto Gear's capability system should enable users to **assemble their own AI su
 
 ---
 
-## Current State (v0.4.1)
+## Current State (v0.6.4)
 
 ### Available Capabilities
 
-#### Skills (1)
-- **testing/TDD** - Red-green-refactor cycle, test pyramid, coverage targets
-  - Status: ✅ Complete
-  - Quality: High
-  - Documentation: Complete
+#### Core Templates (8)
+- **AGENTS.md** - AI agent collaboration guide ✅
+- **PROJECT_STATUS.md** - Project state tracking ✅
+- **TESTING.md** - TDD workflow and patterns ✅
+- **BRANCHING.md** - Git workflow conventions ✅
+- **CONTRIBUTING.md** - Contributor guidelines ✅
+- **SECURITY.md** - Security policy ✅
+- **ARCHITECTURE.md** - System design documentation ✅
+- **CODE_OF_CONDUCT.md** - Community standards ✅
 
-#### Workflows (1)
-- **feature-development** - 7-step process from planning to deployment
-  - Status: ✅ Complete
-  - Quality: High
-  - Documentation: Complete
+#### Skills (4)
+- **testing** - TDD methodology and test pyramid ✅
+- **debugging** - Systematic debugging approach ✅
+- **code-review** - Review checklist and standards ✅
+- **refactoring** - Safe refactoring strategies ✅
+
+#### Workflows (5)
+- **feature-development** - 7-step development process ✅
+- **bug-fix** - Issue triage to deployment ✅
+- **hotfix** - Emergency patch workflow ✅
+- **release** - Version bump to publish ✅
+- **finalize** - Project completion workflow ✅
 
 #### Commands (1)
-- **create-ticket** - Ticket documentation and tracking
-  - Status: ✅ Complete
-  - Quality: High
-  - Documentation: Complete
+- **create-ticket** - Ticket documentation ✅
 
-### Current Limitations
+### Key Achievements (v0.4.1 → v0.6.4)
 
-1. **Limited Template Selection** - Only TESTING.md as optional core template
-2. **No Sub-Agent Assembly** - Can select categories but not compose agents
-3. **Fixed Capability Structure** - No custom capability loading yet
-4. **No Capability Dependencies** - Capabilities can't reference each other
+1. ✅ **Template Auto-Discovery** - Zero-code extensibility (v0.6.0)
+2. ✅ **8 Core Templates** - All Phase 1 targets completed (v0.5.0)
+3. ✅ **14 Total Capabilities** - Exceeded Phase 1 goal of 10-15
+4. ✅ **Granular Selection** - 3-level capability selection (v0.6.0)
+5. ✅ **Optimal Test Coverage** - 42% coverage, all business logic tested (v0.6.4)
 
 ---
 
-## Phase 1: Foundation (v0.4.1 - v0.5.0)
+## Phase 1: Foundation (v0.4.1 - v0.5.0) ✅ COMPLETED
 
-**Timeline**: Current → 3-4 months
+**Timeline**: Nov 2025 (3 weeks actual vs 3-4 months planned)
 **Goal**: Establish 10-15 high-quality capabilities across all categories
+**Result**: ✅ EXCEEDED - 14 capabilities + 8 templates
 
-### Additional Core Templates
+### Core Templates - COMPLETED
 
-**Priority: HIGH**
-
-| Template | Purpose | Effort | Target |
-|----------|---------|--------|--------|
-| CONTRIBUTING.md | Contributor guidelines | 2-4h | v0.5.0 |
-| CODE_OF_CONDUCT.md | Community standards | 1-2h | v0.5.0 |
-| SECURITY.md | Security policy & reporting | 2-3h | v0.5.0 |
-| ARCHITECTURE.md | System design documentation | 4-6h | v0.5.0 |
-| API.md | API documentation patterns | 3-5h | v0.5.0 |
-| DEPLOYMENT.md | Deployment workflow | 3-5h | v0.5.0 |
+| Template | Purpose | Status | Completed |
+|----------|---------|--------|-----------|
+| CONTRIBUTING.md | Contributor guidelines | ✅ DONE | v0.5.0 |
+| CODE_OF_CONDUCT.md | Community standards | ✅ DONE | v0.5.0 |
+| SECURITY.md | Security policy & reporting | ✅ DONE | v0.5.0 |
+| ARCHITECTURE.md | System design documentation | ✅ DONE | v0.5.0 |
+| ~~API.md~~ | ~~API documentation patterns~~ | ⏭️ DEFERRED | Future |
+| ~~DEPLOYMENT.md~~ | ~~Deployment workflow~~ | ⏭️ DEFERRED | Future |
 
 **Implementation:**
 ```python
@@ -106,18 +114,16 @@ choices = questionary.checkbox(
 ).ask()
 ```
 
-### Skills Expansion
+### Skills Expansion - PARTIALLY COMPLETED
 
-**Priority: MEDIUM-HIGH**
-
-| Skill | Purpose | Effort | Target |
-|-------|---------|--------|--------|
-| debugging | Systematic debugging methodology | 3-4h | v0.5.0 |
-| code-review | Review checklist and best practices | 3-4h | v0.5.0 |
-| refactoring | Safe refactoring strategies | 4-5h | v0.5.0 |
-| performance | Profiling and optimization | 4-6h | v0.5.0 |
-| security-review | Security audit checklist | 4-6h | v0.6.0 |
-| documentation | Writing effective docs | 3-4h | v0.6.0 |
+| Skill | Purpose | Status | Completed |
+|-------|---------|--------|-----------|
+| debugging | Systematic debugging methodology | ✅ DONE | v0.5.0 |
+| code-review | Review checklist and best practices | ✅ DONE | v0.5.0 |
+| refactoring | Safe refactoring strategies | ✅ DONE | v0.5.0 |
+| performance | Profiling and optimization | ⏭️ DEFERRED | Future |
+| security-review | Security audit checklist | ⏭️ DEFERRED | Future |
+| documentation | Writing effective docs | ⏭️ DEFERRED | Future |
 
 **Structure** (each skill):
 ```
@@ -127,31 +133,31 @@ choices = questionary.checkbox(
   CHECKLIST.md       # Step-by-step checklist
 ```
 
-### Workflows Expansion
+### Workflows Expansion - PARTIALLY COMPLETED
 
-**Priority: MEDIUM-HIGH**
+| Workflow | Purpose | Status | Completed |
+|----------|---------|--------|-----------|
+| bug-fix | Issue triage to deployment | ✅ DONE | v0.5.0 |
+| hotfix | Emergency patch workflow | ✅ DONE | v0.5.0 |
+| release | Version bump to publish | ✅ DONE | v0.5.0 |
+| finalize | Project completion workflow | ✅ DONE | v0.5.0 |
+| code-review-process | PR creation to merge | ⏭️ DEFERRED | Future |
+| incident-response | Production issue handling | ⏭️ DEFERRED | Future |
+| migration | Breaking change workflow | ⏭️ DEFERRED | Future |
 
-| Workflow | Purpose | Effort | Target |
-|----------|---------|--------|--------|
-| bug-fix | Issue triage to deployment | 3-4h | v0.5.0 |
-| hotfix | Emergency patch workflow | 2-3h | v0.5.0 |
-| release | Version bump to publish | 4-5h | v0.5.0 |
-| code-review-process | PR creation to merge | 3-4h | v0.5.0 |
-| incident-response | Production issue handling | 5-6h | v0.6.0 |
-| migration | Breaking change workflow | 4-5h | v0.6.0 |
+### Commands Expansion - DEFERRED
 
-### Commands Expansion
+**Status**: Phase 1 focused on quality over quantity - 1 command sufficient for now
 
-**Priority: MEDIUM**
-
-| Command | Purpose | Effort | Target |
+| Command | Purpose | Status | Target |
 |---------|---------|--------|--------|
-| update-status | Status tracking and updates | 2-3h | v0.5.0 |
-| create-branch | Branch from ticket | 2h | v0.5.0 |
-| close-ticket | Completion checklist | 2h | v0.5.0 |
-| start-sprint | Sprint initialization | 3-4h | v0.5.0 |
-| end-sprint | Sprint retrospective | 3-4h | v0.5.0 |
-| generate-changelog | Automated changelog | 4-5h | v0.6.0 |
+| create-ticket | Ticket documentation | ✅ DONE | v0.5.0 |
+| update-status | Status tracking and updates | ⏭️ DEFERRED | Phase 2 |
+| create-branch | Branch from ticket | ⏭️ DEFERRED | Phase 2 |
+| close-ticket | Completion checklist | ⏭️ DEFERRED | Phase 2 |
+| start-sprint | Sprint initialization | ⏭️ DEFERRED | Phase 2 |
+| end-sprint | Sprint retrospective | ⏭️ DEFERRED | Phase 2 |
+| generate-changelog | Automated changelog | ⏭️ DEFERRED | Phase 2 |
 
 ### Agents Category (New)
 
@@ -467,53 +473,55 @@ pg marketplace review username/capability-name --stars 5
 
 ---
 
-## Roadmap Summary
+## Roadmap Summary (Updated for v0.6.4)
 
-| Version | Focus | Timeline | Key Deliverables |
-|---------|-------|----------|------------------|
-| v0.4.1 | Granular wizard | Current | Custom path, category selection |
-| v0.5.0 | Foundation | 3-4 months | 10-15 capabilities, 5+ templates |
-| v0.6.0 | Expansion | 5-6 months | 20-30 capabilities, metadata system |
-| v0.7.0 | Discovery | 7-8 months | 30-40 capabilities, CLI discovery |
-| v0.8.0 | Composition | 9-10 months | Sub-agent builder, composition engine |
-| v0.9.0 | Polish | 11 months | 40-50 capabilities, community prep |
-| v1.0.0 | Production | 12 months | 50+ capabilities, sub-agent system |
-| v1.5.0+ | Marketplace | Future | Community contributions, ratings |
+| Version | Focus | Status | Key Deliverables |
+|---------|-------|--------|------------------|
+| v0.4.1 | Granular wizard | ✅ DONE | Custom path, category selection |
+| v0.5.0 | Foundation | ✅ DONE | 14 capabilities, 8 templates (exceeded goal!) |
+| v0.6.0 | Auto-Discovery | ✅ DONE | Template auto-discovery, granular selection |
+| v0.6.4 | Quality & Testing | ✅ DONE | 42% optimal test coverage, test philosophy |
+| **v0.7.0** | **Metadata & Polish** | 🚧 CURRENT | Template metadata, integration tests, CI/CD |
+| v0.8.0 | Composition | 📋 PLANNED | Sub-agent builder, composition engine |
+| v0.9.0 | Community | 📋 PLANNED | Capability contributions, documentation |
+| v1.0.0 | Production | 📋 PLANNED | Production-ready, stable APIs |
+| v1.5.0+ | Marketplace | 💭 FUTURE | Community marketplace, ratings |
 
 ---
 
-## Next Steps (Immediate)
+## Next Steps (v0.7.0 - Current Focus)
 
-**For v0.5.0 (Next Release):**
+**Phase 1 Review**: ✅ EXCEEDED all goals - 14 capabilities, 8 templates, auto-discovery
 
-1. **Add 4-5 Core Templates** (Priority: HIGH)
-   - CONTRIBUTING.md
-   - SECURITY.md
-   - ARCHITECTURE.md
-   - CODE_OF_CONDUCT.md
+**For v0.7.0 (Current Development):**
 
-2. **Add 3-4 Skills** (Priority: MEDIUM)
-   - debugging
-   - code-review
-   - refactoring
+1. **Template Metadata System** (Priority: HIGH)
+   - YAML frontmatter for conditional content
+   - Metadata-driven template generation
+   - Smart defaults based on project detection
 
-3. **Add 2-3 Workflows** (Priority: MEDIUM)
-   - bug-fix
-   - hotfix
-   - release
+2. **Integration Tests** (Priority: HIGH)
+   - Subprocess-based CLI testing
+   - End-to-end workflow validation
+   - Cross-platform test coverage
 
-4. **Add 2-3 Commands** (Priority: LOW)
-   - update-status
-   - create-branch
-   - close-ticket
+3. **Enhanced Project Detection** (Priority: MEDIUM)
+   - More framework detection (Angular, Svelte, etc.)
+   - Better project type inference
+   - Configuration file analysis
 
-5. **Implement Metadata System** (Priority: MEDIUM)
-   - Add metadata.yaml to existing capabilities
-   - Create validation schema
-   - Update wizard to show metadata
+4. **Additional Capabilities** (Priority: MEDIUM - Based on Need)
+   - Performance optimization skill
+   - Security review workflow
+   - Documentation writing skill
+   - Only add if user feedback indicates need
 
-**Estimated Effort**: 40-60 hours
-**Target Date**: v0.5.0 (3-4 months)
+5. **CI/CD Foundation** (Priority: DEFERRED)
+   - GitHub Actions setup (removed from scope per user)
+   - Automated releases (removed from scope per user)
+
+**Estimated Effort**: 30-40 hours
+**Target Date**: v0.7.0 (1-2 months)
 
 ---
 
@@ -533,6 +541,6 @@ This roadmap is a living document. As we learn from user feedback and see how AI
 
 ---
 
-*Last Updated: 2025-11-07*
-*Document Version: 1.0.0*
-*Proto Gear Version: v0.4.1*
+*Last Updated: 2025-11-14*
+*Document Version: 2.0.0*
+*Proto Gear Version: v0.6.4*
