@@ -19,7 +19,7 @@ from . import __version__
 from .ui_helper import UIHelper, Colors
 ui = UIHelper()
 
-n# Import metadata parser for template frontmatter support
+# Import metadata parser for template frontmatter support
 from .metadata_parser import MetadataParser, apply_conditional_content
 # Try to import enhanced wizard module
 try:
