@@ -204,7 +204,16 @@ def print_farewell():
 
 
 def detect_project_structure(project_path):
-    """Detect existing project structure and technologies"""
+    """Detect existing project structure and technologies
+
+    Supports detection for:
+    - Node.js projects (Angular, Svelte, Next.js, React, Vue.js, Express)
+    - Python projects (Django, FastAPI)
+    - Ruby projects (Ruby on Rails)
+    - PHP projects (Laravel)
+    - Java projects (Spring Boot)
+    - C# projects (ASP.NET)
+    """
     import json
 
     info = {
@@ -216,9 +225,21 @@ def detect_project_structure(project_path):
     }
 
     try:
+        # Check for Angular (angular.json)
+        if (project_path / 'angular.json').exists():
+            info['detected'] = True
+            info['type'] = 'Node.js Project'
+            info['framework'] = 'Angular'
+
+        # Check for Svelte/SvelteKit (svelte.config.js)
+        elif (project_path / 'svelte.config.js').exists():
+            info['detected'] = True
+            info['type'] = 'Node.js Project'
+            info['framework'] = 'SvelteKit'
+
         # Check for package.json (Node.js project)
-        package_json = project_path / 'package.json'
-        if package_json.exists():
+        elif (project_path / 'package.json').exists():
+            package_json = project_path / 'package.json'
             info['detected'] = True
             info['type'] = 'Node.js Project'
 
@@ -227,14 +248,95 @@ def detect_project_structure(project_path):
                     package_data = json.load(f)
                     deps = {**package_data.get('dependencies', {}), **package_data.get('devDependencies', {})}
 
+                    # Check for specific frameworks (ordered by specificity)
                     if 'next' in deps:
                         info['framework'] = 'Next.js'
+                    elif '@angular/core' in deps:
+                        info['framework'] = 'Angular'
+                    elif 'svelte' in deps:
+                        info['framework'] = 'Svelte'
                     elif 'react' in deps:
                         info['framework'] = 'React'
                     elif 'vue' in deps:
                         info['framework'] = 'Vue.js'
                     elif 'express' in deps:
                         info['framework'] = 'Express.js'
+            except:
+                pass
+
+        # Check for Ruby on Rails (Gemfile + config/application.rb)
+        elif (project_path / 'Gemfile').exists():
+            info['detected'] = True
+            info['type'] = 'Ruby Project'
+
+            # Check for Rails
+            if (project_path / 'config' / 'application.rb').exists():
+                info['framework'] = 'Ruby on Rails'
+            else:
+                try:
+                    with open(project_path / 'Gemfile') as f:
+                        gemfile_content = f.read()
+                        if 'rails' in gemfile_content.lower():
+                            info['framework'] = 'Ruby on Rails'
+                except:
+                    pass
+
+        # Check for Laravel (composer.json + artisan)
+        elif (project_path / 'composer.json').exists():
+            info['detected'] = True
+            info['type'] = 'PHP Project'
+
+            # Check for Laravel
+            if (project_path / 'artisan').exists():
+                info['framework'] = 'Laravel'
+            else:
+                try:
+                    with open(project_path / 'composer.json') as f:
+                        composer_data = json.load(f)
+                        requires = composer_data.get('require', {})
+                        if 'laravel/framework' in requires:
+                            info['framework'] = 'Laravel'
+                except:
+                    pass
+
+        # Check for Spring Boot (pom.xml or build.gradle)
+        elif (project_path / 'pom.xml').exists() or (project_path / 'build.gradle').exists():
+            info['detected'] = True
+            info['type'] = 'Java Project'
+
+            # Check for Spring Boot in pom.xml
+            if (project_path / 'pom.xml').exists():
+                try:
+                    with open(project_path / 'pom.xml') as f:
+                        pom_content = f.read()
+                        if 'spring-boot' in pom_content.lower():
+                            info['framework'] = 'Spring Boot'
+                except:
+                    pass
+
+            # Check for Spring Boot in build.gradle
+            if not info['framework'] and (project_path / 'build.gradle').exists():
+                try:
+                    with open(project_path / 'build.gradle') as f:
+                        gradle_content = f.read()
+                        if 'spring-boot' in gradle_content.lower() or 'org.springframework.boot' in gradle_content:
+                            info['framework'] = 'Spring Boot'
+                except:
+                    pass
+
+        # Check for ASP.NET (*.csproj)
+        elif any(project_path.glob('*.csproj')):
+            info['detected'] = True
+            info['type'] = 'C# Project'
+
+            # Check for ASP.NET in csproj files
+            try:
+                for csproj in project_path.glob('*.csproj'):
+                    with open(csproj) as f:
+                        csproj_content = f.read()
+                        if 'Microsoft.AspNetCore' in csproj_content or 'Microsoft.NET.Sdk.Web' in csproj_content:
+                            info['framework'] = 'ASP.NET'
+                            break
             except:
                 pass
 
