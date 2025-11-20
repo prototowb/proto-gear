@@ -19,6 +19,8 @@ from . import __version__
 from .ui_helper import UIHelper, Colors
 ui = UIHelper()
 
+# Import metadata parser for template frontmatter support
+from .metadata_parser import MetadataParser, apply_conditional_content
 # Try to import enhanced wizard module
 try:
     from .interactive_wizard import run_enhanced_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
@@ -496,7 +498,7 @@ def discover_available_templates():
 
 def generate_project_template(template_name, project_dir, context):
     """
-    Generate a project template from the template file.
+    Generate a project template from the template file with metadata support.
 
     Args:
         template_name: Name of the template (e.g., 'TESTING', 'CONTRIBUTING')
@@ -515,7 +517,28 @@ def generate_project_template(template_name, project_dir, context):
             return None
 
         # Read template content
-        content = template_file.read_text(encoding='utf-8')
+        full_content = template_file.read_text(encoding='utf-8')
+
+        # Parse metadata from template
+        metadata, content = MetadataParser.parse_template(full_content)
+
+        # Check if template requirements are met (if metadata exists)
+        if metadata.name:  # Has metadata
+            project_info = {
+                'project_type': context.get('PROJECT_TYPE', 'Any'),
+                'framework': context.get('FRAMEWORK', 'Unknown')
+            }
+
+            if not metadata.meets_requirements(project_info):
+                print(f"Info: Template {template_name} requirements not met for this project type")
+                # Still generate, but user should know
+            
+            # Get conditional content sections
+            conditional_sections = metadata.get_conditional_content(project_info)
+
+            # Apply conditional content to template
+            if conditional_sections:
+                content = apply_conditional_content(content, conditional_sections)
 
         # Replace placeholders
         for key, value in context.items():
@@ -531,6 +554,7 @@ def generate_project_template(template_name, project_dir, context):
     except Exception as e:
         print(f"Error generating {template_name}: {e}")
         return None
+
 
 
 def copy_capability_templates(target_dir: Path, project_name: str, version: str = None, dry_run: bool = False, capabilities_config: dict = None) -> dict:
