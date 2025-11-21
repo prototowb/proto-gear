@@ -162,7 +162,7 @@ class TestErrorHandling:
         assert result.returncode != 0
 
 
-class TestCrossP latformCompatibility:
+class TestCrossPlatformCompatibility:
     """Test cross-platform compatibility"""
 
     def test_cli_works_on_current_platform(self, temp_project_dir):
