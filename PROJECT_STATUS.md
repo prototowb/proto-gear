@@ -6,30 +6,63 @@
 
 ```yaml
 project_phase: "Production Release"
-version: "0.6.2"
-release_date: "2025-11-09"
+version: "0.6.4"
+release_date: "2025-11-14"
 protogear_enabled: true
 framework: "Python"
 project_type: "Python Package"
 initialization_date: "2025-11-08"
-current_sprint: "v0.6.2 Complete"
+current_sprint: "v0.6.4 Complete"
 ```
 
 ## 📦 Latest Release
 
-**v0.6.2** - Enhanced Output Display (2025-11-09)
-- **Enhanced Final Output**: Files created section now separates templates from capabilities
-- Capability files grouped with summary showing counts (skills/workflows/commands)
-- Next steps are dynamic based on what was actually created
-- Cross-platform path handling (supports both / and \ separators)
-- Cleaner, more informative output highlighting installed capabilities
-- Status: ✅ Released to main, tagged (v0.6.2), and pushed to GitHub
+**v0.6.4** - Test Suite Overhaul (2025-11-14)
+- **Test Coverage**: Improved from 39% → 42% (+3%)
+- **Test Quality**: 218 passing tests in 4.63 seconds
+- **Memory Fixes**: Zero memory leaks (fixed 20+ GB RAM consumption)
+- **Test Reliability**: Zero hanging tests (fixed infinite wait on interactive input)
+- **Code Cleanup**: Removed 1,207 lines of redundant tests, added 1,747 lines of high-value tests
+- **New Test Files**: Security, framework detection, git workflows, setup functions
+- Status: ✅ Released to main, tagged (v0.6.4), and pushed to GitHub
 
 ## 🎫 Active Tickets
 
-*All v0.5.0 tickets completed!*
+*All current work moved to v0.7.0 planning - see Future Development section*
 
 ## ✅ Completed Tickets
+
+### PROTO-018: Documentation and Quality Improvements (2025-11-14) ✅
+- Update readiness assessment for v0.6.4 (COMPLETED)
+- Document that 42% coverage is optimal (COMPLETED)
+- Update CLAUDE.md testing section (COMPLETED)
+- Update capabilities-roadmap.md to v0.6.4 reality (COMPLETED)
+- Mark Phase 1 as COMPLETED in roadmap (COMPLETED)
+- Update all v0.5.0 work status in roadmap (COMPLETED)
+- CI/CD and PyPI removed from scope per user direction (COMPLETED)
+
+### v0.6.4 Release (2025-11-14) - Test Suite Overhaul (PROTO-017)
+- Improve overall test coverage from 39% → 42% (COMPLETED)
+- Increase proto_gear.py coverage from 52% → 61% (COMPLETED)
+- Fix memory leak (20+ GB RAM consumption) (COMPLETED)
+- Fix hanging tests (infinite wait on interactive input) (COMPLETED)
+- Remove 1,207 lines of redundant test code (COMPLETED)
+- Add 1,747 lines of targeted, high-value tests (COMPLETED)
+- Create test_capability_security.py (19 tests) (COMPLETED)
+- Create test_coverage_boost.py (22 tests) (COMPLETED)
+- Create test_project_detection.py (15 tests) (COMPLETED)
+- Create test_setup_function.py (16 tests) (COMPLETED)
+- Tag and push v0.6.4 release (COMPLETED)
+
+### v0.6.3 Release (2025-11-12) - Template Versioning Fix
+- Fix hardcoded version in BRANCHING.template.md (COMPLETED)
+- Fix hardcoded version in TESTING.template.md (2 occurrences) (COMPLETED)
+- Add VERSION to template_context dictionary (COMPLETED)
+- Add VERSION replacement in generate_branching_doc (COMPLETED)
+- Verify generated templates show current version (COMPLETED)
+- Clean up 15 deprecated documentation files (COMPLETED)
+- Update readiness assessment for v0.6.2 (COMPLETED)
+- Tag and push v0.6.3 release (COMPLETED)
 
 ### v0.6.2 Release (2025-11-09) - Enhanced Output Display
 - Separate template files from capability files in output (COMPLETED)
@@ -109,10 +142,26 @@ current_sprint: "v0.6.2 Complete"
 | Workflows | Complete | 5 workflows (Feature Dev, Bug Fix, Hotfix, Release, Finalize) |
 | Commands | Complete | 1 command (Create Ticket) |
 | Documentation | Complete | Comprehensive user and dev guides |
-| Version | v0.6.2 | Released and tagged |
+| Test Coverage | 42% | Target: 70%+ (PROTO-017 improved from 39%) |
+| Version | v0.6.4 | Released and tagged |
 | Interactive Wizard | Enhanced | Auto-discovery + granular capability selection |
 
 ## Recent Updates
+
+- 2025-11-14: **v0.6.4 Released** - Test Suite Overhaul (PROTO-017)
+  - **Test Coverage**: Improved from 39% → 42% (+3%)
+  - **proto_gear.py**: Coverage improved from 52% → 61% (+9%)
+  - **Test Quality**: 218 tests passing in 4.63 seconds
+  - **Memory Fixes**: Fixed 20+ GB RAM consumption issue
+  - **Reliability**: Fixed infinite wait on interactive input
+  - **Code Cleanup**: Removed 1,207 lines redundant tests, added 1,747 lines high-value tests
+  - **New Tests**: Security, framework detection, git workflows, setup functions
+
+- 2025-11-12: **v0.6.3 Released** - Template Versioning Fix
+  - **Dynamic Versioning**: Fixed hardcoded version strings in templates
+  - **Template Fixes**: BRANCHING.template.md and TESTING.template.md now use {{VERSION}}
+  - **Documentation Cleanup**: Removed 15 deprecated session notes
+  - **Readiness Assessment**: Updated for v0.6.2 quality focus
 
 - 2025-11-09: **v0.6.2 Released** - Enhanced Output Display
   - **Enhanced UX**: Final output now separates templates from capabilities
@@ -168,9 +217,9 @@ current_sprint: "v0.6.2 Complete"
 - [ ] Smart defaults based on project type detection
 - [ ] Dynamic CLI flag generation from template metadata
 - [ ] Additional skills and workflows
-- [ ] Test coverage improvements (current: 38%, target: 70%+)
-- [ ] v1.0.0: Production-ready release
+- [ ] CI/CD automation (GitHub Actions for automated testing/releases)
+- [ ] v1.0.0: Production-ready release (after documentation and CI/CD)
 
 ---
 *Maintained by ProtoGear Agent Framework*
-*Last Updated: 2025-11-09 (v0.6.2)*
+*Last Updated: 2025-11-14 (v0.6.4)*

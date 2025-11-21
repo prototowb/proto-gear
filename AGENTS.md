@@ -3,6 +3,7 @@
 > **ProtoGear Agent Framework Integration**
 > **Project Type**: Python Package
 > **Framework**: Python 3.8+
+> **Version**: v0.6.4
 
 > **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions
 
@@ -57,4 +58,4 @@ pg help
 5. Start development with AI agents reading templates
 
 ---
-*Powered by ProtoGear Agent Framework v0.6.2*
+*Powered by ProtoGear Agent Framework v0.6.4*
