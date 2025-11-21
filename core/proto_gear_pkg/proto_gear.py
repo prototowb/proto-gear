@@ -239,6 +239,30 @@ def detect_project_structure(project_path):
             info['type'] = 'Node.js Project'
             info['framework'] = 'SvelteKit'
 
+        # Check for Rust (Cargo.toml)
+        elif (project_path / 'Cargo.toml').exists():
+            info['detected'] = True
+            info['type'] = 'Rust Project'
+
+            # Try to detect specific frameworks/patterns
+            try:
+                with open(project_path / 'Cargo.toml') as f:
+                    cargo_content = f.read()
+                    if 'actix-web' in cargo_content:
+                        info['framework'] = 'Actix Web'
+                    elif 'rocket' in cargo_content:
+                        info['framework'] = 'Rocket'
+                    elif 'axum' in cargo_content:
+                        info['framework'] = 'Axum'
+                    elif 'warp' in cargo_content:
+                        info['framework'] = 'Warp'
+                    elif 'tauri' in cargo_content:
+                        info['framework'] = 'Tauri'
+                    elif 'yew' in cargo_content:
+                        info['framework'] = 'Yew'
+            except:
+                pass
+
         # Check for package.json (Node.js project)
         elif (project_path / 'package.json').exists():
             package_json = project_path / 'package.json'
