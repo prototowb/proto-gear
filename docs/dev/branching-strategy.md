@@ -435,95 +435,36 @@ git status
 
 ## Release Process
 
-### 🚨 CRITICAL: GitHub Release is Mandatory
+**🚨 IMPORTANT**: For complete release instructions, see `docs/dev/release-workflow.md`
 
-**Every tagged release MUST have a corresponding GitHub release with release notes.**
+This section provides a quick reference. For detailed step-by-step instructions for patch, minor, and major releases, including:
+- Version file updates
+- CHANGELOG.md updates
+- Git tagging procedures
+- **MANDATORY GitHub release creation**
+- Post-release documentation updates
+- Emergency procedures
 
-This is NOT optional. The release process is incomplete without it.
+**See**: [`docs/dev/release-workflow.md`](./release-workflow.md) for the complete workflow.
 
-**Why?**
-- Users rely on GitHub releases to track changes
-- Release notes provide context and migration guidance
-- Maintains professional project standards
-- Enables automated notifications to watchers
+### Quick Reference
 
-**How to check if you forgot:**
-```bash
-# List all tags
-git tag
+**Patch Release (v0.X.Y → v0.X.Y+1)**:
+- Bug fixes only
+- Hotfix branch from `main`
+- See release-workflow.md for 12-step process
 
-# List all GitHub releases
-gh release list
+**Minor Release (v0.X.Y → v0.X+1.0)**:
+- New features, backwards-compatible
+- Release branch from `development`
+- See release-workflow.md for 15-step process
 
-# If a tag exists but no release, create it immediately:
-gh release create v0.X.X --title "v0.X.X - Title" --notes "Release notes..."
-```
+**Major Release (v0.X.Y → v1.0.0)**:
+- Breaking changes, major milestones
+- Comprehensive testing and security audit
+- See release-workflow.md for 21-step process
 
-**For AI Agents**: After pushing a tag, immediately create the GitHub release. Do not wait. Do not skip this step.
-
----
-
-### Patch Release (v0.3.0 → v0.3.1)
-
-1. Create hotfix branch: `hotfix/v0.3.1-fixes`
-2. Apply fixes
-3. Update version in `setup.py` and `core/proto_gear_pkg/__init__.py`
-4. Update `CHANGELOG.md`
-5. Merge to `main` via PR
-6. Tag: `git tag -a v0.3.1 -m "Release v0.3.1: Brief description"`
-7. Push tags: `git push origin v0.3.1`
-8. **🚨 CRITICAL**: Create GitHub release with `gh release create v0.3.1 --title "v0.3.1 - Title" --notes "Release notes..."`
-9. Merge `main` back to `development`
-10. Update PROJECT_STATUS.md with release details
-
-### Minor Release (v0.3.x → v0.4.0)
-
-1. Feature freeze on `development`
-2. Create release branch: `release/v0.4.0`
-3. Final testing and bug fixes
-4. Update version in `pyproject.toml` and `core/proto_gear_pkg/__init__.py`
-5. Update `CHANGELOG.md`
-6. Merge to `main` via PR
-7. Tag: `git tag -a v0.4.0 -m "Release v0.4.0: Brief description"`
-8. Push tags: `git push origin v0.4.0`
-9. **🚨 CRITICAL**: Create GitHub release with `gh release create v0.4.0 --title "v0.4.0 - Title" --notes "$(cat <<'EOF'
-   # Release Notes
-   ## Features
-   - Feature 1
-   - Feature 2
-   ## Bug Fixes
-   - Fix 1
-   EOF
-   )"`
-10. Merge `main` back to `development`
-11. Update PROJECT_STATUS.md with release details
-12. Update readiness assessment (docs/dev/readiness-assessment.md)
-
-### Major Release (v0.x.x → v1.0.0)
-
-1. Comprehensive testing
-2. Security audit
-3. Documentation review
-4. Create release branch: `release/v1.0.0`
-5. Release candidate: `v1.0.0-rc.1`
-6. Community testing period
-7. Final fixes
-8. Update all documentation
-9. Update version in `pyproject.toml` and `core/proto_gear_pkg/__init__.py`
-10. Update `CHANGELOG.md` with comprehensive release notes
-11. Merge to `main` via PR
-12. Tag: `git tag -a v1.0.0 -m "Release v1.0.0: Production Ready"`
-13. Push tags: `git push origin v1.0.0`
-14. **🚨 CRITICAL**: Create GitHub release with comprehensive notes:
-    ```bash
-    gh release create v1.0.0 \
-      --title "v1.0.0 - Production Ready" \
-      --notes-file RELEASE_NOTES_v1.0.0.md
-    ```
-15. Merge `main` back to `development`
-16. Update PROJECT_STATUS.md with release details
-17. Update readiness assessment (docs/dev/readiness-assessment.md)
-18. Announce on social media, blog, etc.
+**🚨 CRITICAL**: Every release MUST include a GitHub release. This is not optional.
 
 ---
 
