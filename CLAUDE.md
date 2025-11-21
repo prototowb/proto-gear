@@ -376,6 +376,23 @@ When `pg init --with-branching` is run, BRANCHING.md will include:
 - **Description**: Include summary, changes made, testing done, checklist
 - **Reference**: Always reference related issue (e.g., `Closes PROTO-XXX`)
 
+#### 🚨 CRITICAL: Release Process
+
+**Every tagged release MUST include a GitHub release with release notes.**
+
+When creating a release:
+1. Update version in `pyproject.toml` and `core/proto_gear_pkg/__init__.py`
+2. Update `CHANGELOG.md`
+3. Merge to `main` and tag: `git tag -a v0.X.X -m "Release v0.X.X: Description"`
+4. Push tag: `git push origin v0.X.X`
+5. **IMMEDIATELY create GitHub release**: `gh release create v0.X.X --title "v0.X.X - Title" --notes "Release notes..."`
+6. Update `PROJECT_STATUS.md` with release details
+7. Update `docs/dev/readiness-assessment.md` (for minor/major releases)
+
+**This is NOT optional.** A tag without a GitHub release is an incomplete release.
+
+**See**: `docs/dev/branching-strategy.md` for complete release process for patch/minor/major releases.
+
 ### Current Issue Tracking
 - **Format**: `PROTO-{number}` (e.g., PROTO-001, PROTO-002)
 - **Starting from**: PROTO-001

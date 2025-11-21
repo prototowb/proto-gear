@@ -435,28 +435,69 @@ git status
 
 ## Release Process
 
+### 🚨 CRITICAL: GitHub Release is Mandatory
+
+**Every tagged release MUST have a corresponding GitHub release with release notes.**
+
+This is NOT optional. The release process is incomplete without it.
+
+**Why?**
+- Users rely on GitHub releases to track changes
+- Release notes provide context and migration guidance
+- Maintains professional project standards
+- Enables automated notifications to watchers
+
+**How to check if you forgot:**
+```bash
+# List all tags
+git tag
+
+# List all GitHub releases
+gh release list
+
+# If a tag exists but no release, create it immediately:
+gh release create v0.X.X --title "v0.X.X - Title" --notes "Release notes..."
+```
+
+**For AI Agents**: After pushing a tag, immediately create the GitHub release. Do not wait. Do not skip this step.
+
+---
+
 ### Patch Release (v0.3.0 → v0.3.1)
 
 1. Create hotfix branch: `hotfix/v0.3.1-fixes`
 2. Apply fixes
-3. Update version in `setup.py`
+3. Update version in `setup.py` and `core/proto_gear_pkg/__init__.py`
 4. Update `CHANGELOG.md`
 5. Merge to `main` via PR
-6. Tag: `git tag -a v0.3.1 -m "Release v0.3.1"`
-7. Merge `main` back to `development`
-8. Push tags: `git push origin v0.3.1`
+6. Tag: `git tag -a v0.3.1 -m "Release v0.3.1: Brief description"`
+7. Push tags: `git push origin v0.3.1`
+8. **🚨 CRITICAL**: Create GitHub release with `gh release create v0.3.1 --title "v0.3.1 - Title" --notes "Release notes..."`
+9. Merge `main` back to `development`
+10. Update PROJECT_STATUS.md with release details
 
 ### Minor Release (v0.3.x → v0.4.0)
 
 1. Feature freeze on `development`
 2. Create release branch: `release/v0.4.0`
 3. Final testing and bug fixes
-4. Update version in `setup.py`
+4. Update version in `pyproject.toml` and `core/proto_gear_pkg/__init__.py`
 5. Update `CHANGELOG.md`
 6. Merge to `main` via PR
-7. Tag: `git tag -a v0.4.0 -m "Release v0.4.0"`
-8. Merge `main` back to `development`
-9. Push tags: `git push origin v0.4.0`
+7. Tag: `git tag -a v0.4.0 -m "Release v0.4.0: Brief description"`
+8. Push tags: `git push origin v0.4.0`
+9. **🚨 CRITICAL**: Create GitHub release with `gh release create v0.4.0 --title "v0.4.0 - Title" --notes "$(cat <<'EOF'
+   # Release Notes
+   ## Features
+   - Feature 1
+   - Feature 2
+   ## Bug Fixes
+   - Fix 1
+   EOF
+   )"`
+10. Merge `main` back to `development`
+11. Update PROJECT_STATUS.md with release details
+12. Update readiness assessment (docs/dev/readiness-assessment.md)
 
 ### Major Release (v0.x.x → v1.0.0)
 
@@ -468,8 +509,21 @@ git status
 6. Community testing period
 7. Final fixes
 8. Update all documentation
-9. Merge to `main`
-10. Tag and announce
+9. Update version in `pyproject.toml` and `core/proto_gear_pkg/__init__.py`
+10. Update `CHANGELOG.md` with comprehensive release notes
+11. Merge to `main` via PR
+12. Tag: `git tag -a v1.0.0 -m "Release v1.0.0: Production Ready"`
+13. Push tags: `git push origin v1.0.0`
+14. **🚨 CRITICAL**: Create GitHub release with comprehensive notes:
+    ```bash
+    gh release create v1.0.0 \
+      --title "v1.0.0 - Production Ready" \
+      --notes-file RELEASE_NOTES_v1.0.0.md
+    ```
+15. Merge `main` back to `development`
+16. Update PROJECT_STATUS.md with release details
+17. Update readiness assessment (docs/dev/readiness-assessment.md)
+18. Announce on social media, blog, etc.
 
 ---
 
