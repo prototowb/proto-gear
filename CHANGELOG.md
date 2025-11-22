@@ -5,6 +5,97 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2025-11-22
+
+### Added
+- **Incremental Update Wizard** (PROTO-023)
+  - Automatic detection of existing Proto Gear installations
+  - Rich table display showing current installation status
+  - Multiple update modes:
+    - Add missing templates (shows count of available templates)
+    - Add capabilities system (if not installed)
+    - Update all templates to latest version
+    - Custom selection (choose specific templates to add/update)
+  - Seamless integration with existing wizard flow
+  - Proper ticket prefix handling for BRANCHING.md additions
+  - Graceful fallback for non-rich terminal environments
+
+- **File Protection System** (PROTO-023)
+  - Interactive prompts when files already exist
+  - Four user options: Overwrite, Skip, Backup (.bak), View diff
+  - `--force` flag for non-interactive overwrites
+  - `detect_existing_environment()` function
+  - `safe_write_file()` function with action tracking
+  - Updated all file write operations to use safe writing
+
+### Changed
+- Init wizard now detects existing installations and offers incremental updates
+- File write operations now check for existence before overwriting
+
+### Technical
+- New `run_incremental_wizard()` function in interactive_wizard.py
+- Enhanced init command handler with environment detection
+- Maintains backward compatibility with non-interactive mode
+
+## [0.7.0] - 2025-11-21
+
+### Added
+- **Template Metadata System** (PROTO-020)
+  - YAML frontmatter support in all templates
+  - Conditional content rendering based on configuration
+  - Metadata fields: title, description, version, requires_git, preset_compatibility
+  - Backward compatible with existing templates
+  - New `MetadataParser` class with `parse_template()` and `apply_conditional_content()`
+  - Comprehensive test coverage (17 new tests)
+
+- **Rust Project Detection** (PROTO-021)
+  - Cargo.toml detection with priority over package.json
+  - Framework detection for 6 Rust frameworks:
+    - Actix Web (web framework)
+    - Rocket (web framework)
+    - Axum (web framework)
+    - Warp (web framework)
+    - Tauri (desktop apps)
+    - Yew (WebAssembly frontend)
+  - Handles wasm-pack scenarios correctly
+  - Workspace detection support
+  - 17 comprehensive tests for Rust detection
+
+### Changed
+- Detection priority: Cargo.toml now checked before package.json
+- Enhanced project structure detection with better framework identification
+- Test coverage: 42% → 47% (+5%)
+- Test count: 218 → 302 tests (+84 tests)
+
+### Fixed
+- Rust projects with package.json (wasm-pack) no longer misidentified as Node.js
+
+### Documentation
+- **New Release Workflow Documentation** (`docs/dev/release-workflow.md`)
+  - Dedicated 590+ line release process guide
+  - Separate workflows for patch/minor/major releases
+  - Explicit GitHub release creation steps (marked 🚨 CRITICAL)
+  - Post-release checklists and emergency procedures
+  - Release notes templates and version numbering guide
+
+- **Updated Branching Strategy**
+  - Added "Starting New Work" section to prevent main branch work
+  - Clear command: `git checkout -b feature/XXX development`
+  - Emphasizes always branching FROM development
+  - Updated both BRANCHING.md and BRANCHING.template.md
+
+- **Updated Readiness Assessment** (`docs/dev/readiness-assessment.md`)
+  - Version: v0.6.4 → v0.7.0
+  - Readiness Score: 8.3/10 → 8.8/10 (+0.5)
+  - Added new categories: Project Detection (9/10), Template Metadata (9/10)
+  - Updated test coverage statistics
+
+### Technical
+- New `metadata_parser.py` module for template frontmatter
+- Enhanced `detect_project_structure()` with Rust support
+- New test file: `test_rust_detection.py` (17 tests)
+- New test file: `test_template_metadata.py` (17 tests)
+
 ## [0.6.4] - 2025-11-14
 
 ### Changed
