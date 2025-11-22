@@ -90,15 +90,15 @@ def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force:
         return ('skipped', False)
 
     # Interactive mode: prompt user
-    print(f"\n{Colors.YELLOW}File exists: {file_path.name}{Colors.RESET}")
-    print(f"{Colors.CYAN}Options:{Colors.RESET}")
+    print(f"\n{Colors.YELLOW}File exists: {file_path.name}{Colors.ENDC}")
+    print(f"{Colors.CYAN}Options:{Colors.ENDC}")
     print(f"  1. Overwrite (replace existing file)")
     print(f"  2. Skip (keep existing file)")
     print(f"  3. Backup (save as .bak and create new)")
     print(f"  4. View diff (show what would change)")
 
     while True:
-        choice = input(f"{Colors.GREEN}Choose [1/2/3/4]: {Colors.RESET}").strip()
+        choice = input(f"{Colors.GREEN}Choose [1/2/3/4]: {Colors.ENDC}").strip()
 
         if choice == '1':
             file_path.write_text(content, encoding='utf-8')
@@ -110,19 +110,19 @@ def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force:
             backup_path = file_path.with_suffix('.md.bak')
             backup_path.write_text(file_path.read_text(encoding='utf-8'), encoding='utf-8')
             file_path.write_text(content, encoding='utf-8')
-            print(f"{Colors.GREEN}✓ Backup created: {backup_path.name}{Colors.RESET}")
+            print(f"{Colors.GREEN}✓ Backup created: {backup_path.name}{Colors.ENDC}")
             return ('backed_up', True)
         elif choice == '4':
             # Show diff
-            print(f"\n{Colors.CYAN}=== Current Content ==={Colors.RESET}")
+            print(f"\n{Colors.CYAN}=== Current Content ==={Colors.ENDC}")
             print(file_path.read_text(encoding='utf-8')[:500])
-            print(f"{Colors.CYAN}=== New Content ==={Colors.RESET}")
+            print(f"{Colors.CYAN}=== New Content ==={Colors.ENDC}")
             print(content[:500])
-            print(f"{Colors.YELLOW}(showing first 500 characters of each){Colors.RESET}\n")
+            print(f"{Colors.YELLOW}(showing first 500 characters of each){Colors.ENDC}\n")
             # Ask again
             continue
         else:
-            print(f"{Colors.RED}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.RESET}")
+            print(f"{Colors.RED}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.ENDC}")
 
 
 # ASCII Art for Proto Gear
