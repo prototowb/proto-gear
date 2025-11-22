@@ -1539,7 +1539,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
             action = questionary.select(
                 "What would you like to do?",
                 choices=action_choices,
-                style=wizard.style
+                style=PROTO_GEAR_STYLE
             ).ask()
         except KeyboardInterrupt:
             return None
@@ -1572,7 +1572,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
                     ticket_prefix = questionary.text(
                         "Ticket prefix for branch names?",
                         default=suggested_prefix,
-                        style=wizard.style
+                        style=PROTO_GEAR_STYLE
                     ).ask()
                     config['ticket_prefix'] = ticket_prefix if ticket_prefix else suggested_prefix
                 except KeyboardInterrupt:
@@ -1615,7 +1615,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
                 selected = questionary.checkbox(
                     "Select templates to add/update:",
                     choices=template_choices,
-                    style=wizard.style
+                    style=PROTO_GEAR_STYLE
                 ).ask()
             except KeyboardInterrupt:
                 return None
@@ -1635,7 +1635,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
                     ticket_prefix = questionary.text(
                         "Ticket prefix for branch names?",
                         default=suggested_prefix,
-                        style=wizard.style
+                        style=PROTO_GEAR_STYLE
                     ).ask()
                     config['ticket_prefix'] = ticket_prefix if ticket_prefix else suggested_prefix
                 except KeyboardInterrupt:
@@ -1647,7 +1647,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
                     add_caps = questionary.confirm(
                         "Add capabilities system (.proto-gear/)?",
                         default=False,
-                        style=wizard.style
+                        style=PROTO_GEAR_STYLE
                     ).ask()
                 except KeyboardInterrupt:
                     return None
