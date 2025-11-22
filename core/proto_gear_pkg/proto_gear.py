@@ -30,6 +30,100 @@ except ImportError:
     QUESTIONARY_AVAILABLE = False
     RICH_AVAILABLE = False
 
+# File handling helpers
+def detect_existing_environment(project_dir: Path) -> dict:
+    """
+    Detect if Proto Gear files already exist in the project.
+
+    Returns dict with:
+    - is_existing: bool - True if any Proto Gear files exist
+    - existing_files: list - List of existing Proto Gear files
+    - existing_capabilities: bool - True if .proto-gear/ directory exists
+    """
+    proto_gear_files = ['AGENTS.md', 'PROJECT_STATUS.md', 'BRANCHING.md', 'TESTING.md',
+                        'CONTRIBUTING.md', 'SECURITY.md', 'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']
+
+    existing_files = []
+    for filename in proto_gear_files:
+        if (project_dir / filename).exists():
+            existing_files.append(filename)
+
+    capabilities_dir = project_dir / '.proto-gear'
+
+    return {
+        'is_existing': len(existing_files) > 0 or capabilities_dir.exists(),
+        'existing_files': existing_files,
+        'existing_capabilities': capabilities_dir.exists()
+    }
+
+
+def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force: bool = False, interactive: bool = True) -> tuple:
+    """
+    Safely write a file with existence checking and user prompts.
+
+    Args:
+        file_path: Path to file to write
+        content: Content to write
+        dry_run: If True, don't actually write files
+        force: If True, overwrite without prompting
+        interactive: If True and file exists, prompt user for action
+
+    Returns:
+        tuple: (action_taken: str, file_written: bool)
+        action_taken can be: 'created', 'overwritten', 'skipped', 'backed_up'
+    """
+    if dry_run:
+        return ('would_create', False)
+
+    if not file_path.exists():
+        file_path.write_text(content, encoding='utf-8')
+        return ('created', True)
+
+    # File exists - check what to do
+    if force:
+        file_path.write_text(content, encoding='utf-8')
+        return ('overwritten', True)
+
+    if not interactive:
+        # Non-interactive mode: skip existing files by default
+        return ('skipped', False)
+
+    # Interactive mode: prompt user
+    print(f"\n{Colors.YELLOW}File exists: {file_path.name}{Colors.RESET}")
+    print(f"{Colors.CYAN}Options:{Colors.RESET}")
+    print(f"  1. Overwrite (replace existing file)")
+    print(f"  2. Skip (keep existing file)")
+    print(f"  3. Backup (save as .bak and create new)")
+    print(f"  4. View diff (show what would change)")
+
+    while True:
+        choice = input(f"{Colors.GREEN}Choose [1/2/3/4]: {Colors.RESET}").strip()
+
+        if choice == '1':
+            file_path.write_text(content, encoding='utf-8')
+            return ('overwritten', True)
+        elif choice == '2':
+            return ('skipped', False)
+        elif choice == '3':
+            # Create backup
+            backup_path = file_path.with_suffix('.md.bak')
+            backup_path.write_text(file_path.read_text(encoding='utf-8'), encoding='utf-8')
+            file_path.write_text(content, encoding='utf-8')
+            print(f"{Colors.GREEN}✓ Backup created: {backup_path.name}{Colors.RESET}")
+            return ('backed_up', True)
+        elif choice == '4':
+            # Show diff
+            print(f"\n{Colors.CYAN}=== Current Content ==={Colors.RESET}")
+            print(file_path.read_text(encoding='utf-8')[:500])
+            print(f"{Colors.CYAN}=== New Content ==={Colors.RESET}")
+            print(content[:500])
+            print(f"{Colors.YELLOW}(showing first 500 characters of each){Colors.RESET}\n")
+            # Ask again
+            continue
+        else:
+            print(f"{Colors.RED}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.RESET}")
+
+
 # ASCII Art for Proto Gear
 def get_logo_v1():
     """Generate logo with dynamic version from __version__"""
@@ -622,7 +716,7 @@ def discover_available_templates():
     return templates
 
 
-def generate_project_template(template_name, project_dir, context):
+def generate_project_template(template_name, project_dir, context, dry_run=False, force=False, interactive=True):
     """
     Generate a project template from the template file with metadata support.
 
@@ -630,9 +724,12 @@ def generate_project_template(template_name, project_dir, context):
         template_name: Name of the template (e.g., 'TESTING', 'CONTRIBUTING')
         project_dir: Path to project directory
         context: Dictionary with placeholder values
+        dry_run: If True, don't actually write files
+        force: If True, overwrite existing files without prompting
+        interactive: If True, prompt for overwrite decisions (unless force=True)
 
     Returns:
-        Path to created file or None if failed
+        tuple: (Path to created file or None if failed, action_taken: str)
     """
     try:
         # Get template file from package
@@ -673,13 +770,16 @@ def generate_project_template(template_name, project_dir, context):
 
         # Write to project directory
         output_file = project_dir / f"{template_name}.md"
-        output_file.write_text(content, encoding='utf-8')
+        action, written = safe_write_file(output_file, content, dry_run=dry_run, force=force, interactive=interactive)
 
-        return output_file
+        if written or action == 'would_create':
+            return (output_file, action)
+        else:
+            return (None, action)
 
     except Exception as e:
         print(f"Error generating {template_name}: {e}")
-        return None
+        return (None, 'error')
 
 
 
@@ -886,8 +986,9 @@ def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefi
 
                 if branching_content:
                     branching_file = current_dir / 'BRANCHING.md'
-                    branching_file.write_text(branching_content, encoding="utf-8")
-                    files_created.append('BRANCHING.md')
+                    action, written = safe_write_file(branching_file, branching_content, dry_run=dry_run, force=force, interactive=True)
+                    if written or action == 'would_create':
+                        files_created.append('BRANCHING.md')
                     branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
 
             # Create AGENTS.md
@@ -951,8 +1052,9 @@ pg help
 ---
 *Powered by ProtoGear Agent Framework v0.5.0 (Beta)*
 """
-            agents_file.write_text(agents_content, encoding="utf-8")
-            files_created.append('AGENTS.md')
+            action, written = safe_write_file(agents_file, agents_content, dry_run=dry_run, force=force, interactive=True)
+            if written or action == 'would_create':
+                files_created.append('AGENTS.md')
 
             # Create PROJECT_STATUS.md
             status_file = current_dir / 'PROJECT_STATUS.md'
@@ -990,7 +1092,9 @@ current_sprint: null
 ---
 *Maintained by ProtoGear Agent Framework*
 """
-            status_file.write_text(status_content, encoding="utf-8")
+            action, written = safe_write_file(status_file, status_content, dry_run=dry_run, force=force, interactive=True)
+            if written or action == 'would_create':
+                files_created.append('PROJECT_STATUS.md')
 
             # Generate additional templates based on selections
             template_context = {
@@ -1031,13 +1135,16 @@ current_sprint: null
 
             # Generate all selected templates
             for template_name in templates_to_generate:
-                output_file = generate_project_template(
+                output_file, action = generate_project_template(
                     template_name,
                     current_dir,
-                    template_context
+                    template_context,
+                    dry_run=dry_run,
+                    force=force,
+                    interactive=True
                 )
 
-                if output_file:
+                if output_file or action == 'would_create':
                     files_created.append(f"{template_name}.md")
 
             files_created.append('PROJECT_STATUS.md')
@@ -1261,8 +1368,20 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
-    """Initialize ProtoGear AI Agent Framework in current project"""
+def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
+    """
+    Initialize ProtoGear AI Agent Framework in current project
+
+    Args:
+        dry_run: If True, don't actually write files
+        force: If True, overwrite existing files without prompting
+        with_branching: Generate BRANCHING.md
+        ticket_prefix: Ticket ID prefix
+        with_capabilities: Generate .proto-gear/ directory
+        capabilities_config: Configuration for capabilities
+        with_all: Generate all available templates
+        core_templates: List of specific core templates to generate
+    """
     from datetime import datetime
 
     print(f"\n{Colors.BOLD}ProtoGear AI Agent Framework Initialization{Colors.ENDC}")
@@ -1388,6 +1507,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Simulate without creating files'
     )
     init_parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Force overwrite existing files without prompting'
+    )
+    init_parser.add_argument(
         '--with-branching',
         action='store_true',
         help='Generate BRANCHING.md with Git workflow conventions'
@@ -1458,6 +1582,7 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                     # Run setup with wizard configuration
                     result = run_simple_protogear_init(
                         dry_run=args.dry_run,
+                        force=args.force if hasattr(args, 'force') else False,
                         with_branching=wizard_config.get('with_branching', False),
                         ticket_prefix=wizard_config.get('ticket_prefix'),
                         with_capabilities=wizard_config.get('with_capabilities', False),
@@ -1472,11 +1597,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                 # Run with CLI flags (non-interactive)
                 result = run_simple_protogear_init(
                     dry_run=args.dry_run,
+                    force=args.force if hasattr(args, 'force') else False,
                     with_branching=args.with_branching,
                     ticket_prefix=args.ticket_prefix,
-                    with_capabilities=args.with_capabilities
-                ,
-                        with_all=args.all if hasattr(args, 'all') else False
+                    with_capabilities=args.with_capabilities,
+                    with_all=args.all if hasattr(args, 'all') else False
                     )
 
             if result['status'] == 'success':
