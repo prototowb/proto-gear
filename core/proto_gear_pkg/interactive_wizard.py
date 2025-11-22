@@ -190,6 +190,9 @@ def get_safe_chars():
             'ticket': '🎫',
             'memo': '📝',
             'chart': '📊',
+            'plus': '➕',
+            'gear': '⚙️',
+            'refresh': '🔄',
         }
     except (UnicodeEncodeError, AttributeError):
         # Fallback to ASCII
@@ -203,6 +206,9 @@ def get_safe_chars():
             'ticket': '[TICKET]',
             'memo': '[CONFIG]',
             'chart': '[PROJECT]',
+            'plus': '[+]',
+            'gear': '[GEAR]',
+            'refresh': '[UPDATE]',
         }
 
 
