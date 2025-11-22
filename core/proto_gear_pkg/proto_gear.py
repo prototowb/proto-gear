@@ -946,7 +946,7 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
     return result
 
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
+def setup_agent_framework_only(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -1394,6 +1394,7 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
     try:
         result = setup_agent_framework_only(
             dry_run=dry_run,
+            force=force,
             with_branching=with_branching,
             ticket_prefix=ticket_prefix,
             with_capabilities=with_capabilities,
