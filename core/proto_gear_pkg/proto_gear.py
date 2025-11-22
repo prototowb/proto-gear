@@ -992,9 +992,15 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
                         files_created.append('BRANCHING.md')
                     branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
 
-            # Create AGENTS.md
+            # Create AGENTS.md (only if doesn't exist or explicitly selected)
             agents_file = current_dir / 'AGENTS.md'
-            agents_content = f"""# AGENTS.md - {current_dir.name}
+            should_create_agents = (
+                not agents_file.exists() or  # Fresh install
+                (core_templates and 'AGENTS' in [t.replace('.md', '') for t in (core_templates if isinstance(core_templates, list) else [])])  # Explicitly selected
+            )
+
+            if should_create_agents:
+                agents_content = f"""# AGENTS.md - {current_dir.name}
 
 > **ProtoGear Agent Framework Integration**
 > **Project Type**: {project_info.get('type', 'Unknown')}
@@ -1053,13 +1059,19 @@ pg help
 ---
 *Powered by ProtoGear Agent Framework v0.5.0 (Beta)*
 """
-            action, written = safe_write_file(agents_file, agents_content, dry_run=dry_run, force=force, interactive=True)
-            if written or action == 'would_create':
-                files_created.append('AGENTS.md')
+                action, written = safe_write_file(agents_file, agents_content, dry_run=dry_run, force=force, interactive=True)
+                if written or action == 'would_create':
+                    files_created.append('AGENTS.md')
 
-            # Create PROJECT_STATUS.md
+            # Create PROJECT_STATUS.md (only if doesn't exist or explicitly selected)
             status_file = current_dir / 'PROJECT_STATUS.md'
-            status_content = f"""# PROJECT STATUS - {current_dir.name}
+            should_create_status = (
+                not status_file.exists() or  # Fresh install
+                (core_templates and 'PROJECT_STATUS' in [t.replace('.md', '') for t in (core_templates if isinstance(core_templates, list) else [])])  # Explicitly selected
+            )
+
+            if should_create_status:
+                status_content = f"""# PROJECT STATUS - {current_dir.name}
 
 > **Single Source of Truth** for project state
 
@@ -1093,9 +1105,9 @@ current_sprint: null
 ---
 *Maintained by ProtoGear Agent Framework*
 """
-            action, written = safe_write_file(status_file, status_content, dry_run=dry_run, force=force, interactive=True)
-            if written or action == 'would_create':
-                files_created.append('PROJECT_STATUS.md')
+                action, written = safe_write_file(status_file, status_content, dry_run=dry_run, force=force, interactive=True)
+                if written or action == 'would_create':
+                    files_created.append('PROJECT_STATUS.md')
 
             # Generate additional templates based on selections
             template_context = {
