@@ -122,7 +122,7 @@ def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force:
             # Ask again
             continue
         else:
-            print(f"{Colors.RED}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.ENDC}")
+            print(f"{Colors.FAIL}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.ENDC}")
 
 
 # ASCII Art for Proto Gear
@@ -1121,13 +1121,22 @@ current_sprint: null
             templates_to_generate = []
 
             # Priority 1: Use core_templates if provided (from wizard)
-            if core_templates and isinstance(core_templates, dict):
-                # Generate templates that were explicitly selected
-                for template_name, should_generate in core_templates.items():
-                    if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS']:
-                        # Skip if already created (e.g., BRANCHING from with_branching flag)
-                        if f"{template_name}.md" not in files_created:
-                            templates_to_generate.append(template_name)
+            if core_templates:
+                if isinstance(core_templates, dict):
+                    # Dict format: {template_name: bool}
+                    for template_name, should_generate in core_templates.items():
+                        if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                            # Skip if already created (e.g., BRANCHING from with_branching flag)
+                            if f"{template_name}.md" not in files_created:
+                                templates_to_generate.append(template_name)
+                elif isinstance(core_templates, list):
+                    # List format from incremental wizard: ['BRANCHING.md', 'TESTING.md']
+                    for template in core_templates:
+                        template_name = template.replace('.md', '')
+                        if template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                            # Skip if already created
+                            if template not in files_created:
+                                templates_to_generate.append(template_name)
 
             # Priority 2: Handle --all flag (CLI)
             elif with_all:
