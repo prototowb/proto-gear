@@ -1424,3 +1424,273 @@ def _apply_preset_config(preset_config: Dict, git_detected: bool, current_dir: P
     config['core_templates'] = preset_config.get('core', {})
 
     return config
+
+
+def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: Dict, current_dir: Path) -> Optional[Dict]:
+    """
+    Run wizard for updating an existing Proto Gear environment.
+
+    Args:
+        existing_env: Output from detect_existing_environment()
+        project_info: Project detection info
+        git_config: Git configuration info
+        current_dir: Current directory path
+
+    Returns:
+        Configuration dict or None if cancelled
+    """
+    wizard = RichWizard()
+    wizard.clear_screen()
+
+    # Print header
+    if wizard.console:
+        wizard.console.print("\n[bold cyan]ProtoGear Environment Update[/bold cyan]")
+        wizard.console.print("[dim]" + "=" * 60 + "[/dim]\n")
+        wizard.console.print("[yellow]Proto Gear is already initialized in this project![/yellow]\n")
+    else:
+        print("\nProtoGear Environment Update")
+        print("=" * 60)
+        print("Proto Gear is already initialized in this project!\n")
+
+    # Show what's currently installed
+    if wizard.console:
+        # Create rich table showing existing files
+        from rich.table import Table
+        table = Table(title="Current Installation", box=box.ROUNDED)
+        table.add_column("Component", style="cyan")
+        table.add_column("Status", style="green")
+
+        # Core templates
+        for template in ['AGENTS.md', 'PROJECT_STATUS.md']:
+            status = "✓ Installed" if template in existing_env['existing_files'] else "✗ Missing"
+            style = "green" if template in existing_env['existing_files'] else "red"
+            table.add_row(template, f"[{style}]{status}[/{style}]")
+
+        # Optional templates
+        optional = ['TESTING.md', 'BRANCHING.md', 'CONTRIBUTING.md', 'SECURITY.md',
+                   'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']
+        for template in optional:
+            status = "✓ Installed" if template in existing_env['existing_files'] else "✗ Missing"
+            style = "green" if template in existing_env['existing_files'] else "dim"
+            table.add_row(template, f"[{style}]{status}[/{style}]")
+
+        # Capabilities
+        cap_status = "✓ Installed" if existing_env['existing_capabilities'] else "✗ Not installed"
+        cap_style = "green" if existing_env['existing_capabilities'] else "dim"
+        table.add_row(".proto-gear/ (capabilities)", f"[{cap_style}]{cap_status}[/{cap_style}]")
+
+        wizard.console.print(table)
+        wizard.console.print()
+    else:
+        # Fallback text output
+        print("Current Installation:")
+        print("-" * 60)
+        for f in ['AGENTS.md', 'PROJECT_STATUS.md', 'TESTING.md', 'BRANCHING.md',
+                  'CONTRIBUTING.md', 'SECURITY.md', 'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']:
+            status = "✓" if f in existing_env['existing_files'] else "✗"
+            print(f"  {status} {f}")
+        cap_status = "✓" if existing_env['existing_capabilities'] else "✗"
+        print(f"  {cap_status} .proto-gear/ (capabilities)")
+        print()
+
+    # Ask what to do
+    if QUESTIONARY_AVAILABLE:
+        action_choices = []
+
+        # Find missing templates
+        all_templates = ['TESTING.md', 'BRANCHING.md', 'CONTRIBUTING.md', 'SECURITY.md',
+                        'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']
+        missing_templates = [t for t in all_templates if t not in existing_env['existing_files']]
+
+        if missing_templates:
+            action_choices.append({
+                'name': f"{CHARS['plus']} Add missing templates ({len(missing_templates)} available)",
+                'value': 'add_missing'
+            })
+
+        if not existing_env['existing_capabilities']:
+            action_choices.append({
+                'name': f"{CHARS['gear']} Add capabilities system (.proto-gear/)",
+                'value': 'add_capabilities'
+            })
+
+        action_choices.extend([
+            {
+                'name': f"{CHARS['refresh']} Update all templates to latest version",
+                'value': 'update_all'
+            },
+            {
+                'name': f"{CHARS['check']} Custom selection (choose specific items)",
+                'value': 'custom'
+            },
+            {
+                'name': f"{CHARS['cross']} Cancel (no changes)",
+                'value': 'cancel'
+            }
+        ])
+
+        try:
+            action = questionary.select(
+                "What would you like to do?",
+                choices=action_choices,
+                style=wizard.style
+            ).ask()
+        except KeyboardInterrupt:
+            return None
+
+        if action == 'cancel' or action is None:
+            return None
+
+        # Build configuration based on action
+        config = {
+            'with_branching': 'BRANCHING.md' in existing_env['existing_files'],
+            'ticket_prefix': None,
+            'with_capabilities': existing_env['existing_capabilities'],
+            'capabilities_config': None,
+            'with_all': False,
+            'core_templates': [],
+            'confirmed': True
+        }
+
+        if action == 'add_missing':
+            # Add all missing templates
+            config['core_templates'] = missing_templates
+            if 'BRANCHING.md' in missing_templates:
+                config['with_branching'] = True
+                # Ask for ticket prefix
+                suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+                if not suggested_prefix or len(suggested_prefix) < 2:
+                    suggested_prefix = 'PROJ'
+
+                try:
+                    ticket_prefix = questionary.text(
+                        "Ticket prefix for branch names?",
+                        default=suggested_prefix,
+                        style=wizard.style
+                    ).ask()
+                    config['ticket_prefix'] = ticket_prefix if ticket_prefix else suggested_prefix
+                except KeyboardInterrupt:
+                    return None
+
+        elif action == 'add_capabilities':
+            config['with_capabilities'] = True
+            # Ask for capabilities configuration
+            try:
+                capabilities_config = wizard.ask_capabilities_selection()
+                config['capabilities_config'] = capabilities_config
+                config['with_capabilities'] = capabilities_config.get('enabled', False)
+            except KeyboardInterrupt:
+                return None
+
+        elif action == 'update_all':
+            # Update all existing files
+            config['core_templates'] = existing_env['existing_files']
+            config['with_branching'] = 'BRANCHING.md' in existing_env['existing_files']
+            # Keep existing capabilities setting
+
+        elif action == 'custom':
+            # Let user choose specific templates
+            template_choices = []
+            for t in all_templates:
+                if t in existing_env['existing_files']:
+                    template_choices.append({
+                        'name': f"{t} (update existing)",
+                        'value': t,
+                        'checked': False
+                    })
+                else:
+                    template_choices.append({
+                        'name': f"{t} (add new)",
+                        'value': t,
+                        'checked': False
+                    })
+
+            try:
+                selected = questionary.checkbox(
+                    "Select templates to add/update:",
+                    choices=template_choices,
+                    style=wizard.style
+                ).ask()
+            except KeyboardInterrupt:
+                return None
+
+            if selected is None:
+                return None
+
+            config['core_templates'] = selected
+            if 'BRANCHING.md' in selected and 'BRANCHING.md' not in existing_env['existing_files']:
+                config['with_branching'] = True
+                # Ask for ticket prefix
+                suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+                if not suggested_prefix or len(suggested_prefix) < 2:
+                    suggested_prefix = 'PROJ'
+
+                try:
+                    ticket_prefix = questionary.text(
+                        "Ticket prefix for branch names?",
+                        default=suggested_prefix,
+                        style=wizard.style
+                    ).ask()
+                    config['ticket_prefix'] = ticket_prefix if ticket_prefix else suggested_prefix
+                except KeyboardInterrupt:
+                    return None
+
+            # Ask about capabilities if not installed
+            if not existing_env['existing_capabilities']:
+                try:
+                    add_caps = questionary.confirm(
+                        "Add capabilities system (.proto-gear/)?",
+                        default=False,
+                        style=wizard.style
+                    ).ask()
+                except KeyboardInterrupt:
+                    return None
+
+                if add_caps:
+                    try:
+                        capabilities_config = wizard.ask_capabilities_selection()
+                        config['capabilities_config'] = capabilities_config
+                        config['with_capabilities'] = capabilities_config.get('enabled', False)
+                    except KeyboardInterrupt:
+                        return None
+
+        return config
+
+    else:
+        # Fallback for no questionary - simple text prompts
+        print("Options:")
+        print("1. Add missing templates")
+        print("2. Add capabilities system")
+        print("3. Update all templates")
+        print("4. Cancel")
+
+        choice = input("Choose an option [1-4]: ").strip()
+
+        if choice == '4' or not choice:
+            return None
+
+        config = {
+            'with_branching': 'BRANCHING.md' in existing_env['existing_files'],
+            'ticket_prefix': None,
+            'with_capabilities': existing_env['existing_capabilities'],
+            'capabilities_config': None,
+            'with_all': False,
+            'core_templates': [],
+            'confirmed': True
+        }
+
+        if choice == '1':
+            all_templates = ['TESTING.md', 'BRANCHING.md', 'CONTRIBUTING.md', 'SECURITY.md',
+                            'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']
+            missing_templates = [t for t in all_templates if t not in existing_env['existing_files']]
+            config['core_templates'] = missing_templates
+
+        elif choice == '2':
+            config['with_capabilities'] = True
+
+        elif choice == '3':
+            config['core_templates'] = existing_env['existing_files']
+
+        return config
+
+    return config
