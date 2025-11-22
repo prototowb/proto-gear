@@ -23,12 +23,13 @@ ui = UIHelper()
 from .metadata_parser import MetadataParser, apply_conditional_content
 # Try to import enhanced wizard module
 try:
-    from .interactive_wizard import run_enhanced_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
+    from .interactive_wizard import run_enhanced_wizard, run_incremental_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
     ENHANCED_WIZARD_AVAILABLE = True
 except ImportError:
     ENHANCED_WIZARD_AVAILABLE = False
     QUESTIONARY_AVAILABLE = False
     RICH_AVAILABLE = False
+    run_incremental_wizard = None
 
 # File handling helpers
 def detect_existing_environment(project_dir: Path) -> dict:
@@ -1552,17 +1553,32 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         if args.command == 'init':
             show_splash_screen()
 
+            # Check if Proto Gear is already initialized
+            current_dir = Path(".")
+            existing_env = detect_existing_environment(current_dir)
+
             # Determine if we should use interactive wizard
-            # Use interactive if no flags provided (except --dry-run)
+            # Use interactive if no flags provided (except --dry-run and --force)
             use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None and not args.with_capabilities
 
             if use_interactive:
                 # Run interactive wizard
                 try:
-                    # Try to use enhanced wizard if available
-                    if ENHANCED_WIZARD_AVAILABLE and QUESTIONARY_AVAILABLE:
+                    # Check if this is an incremental update (Proto Gear already initialized)
+                    if existing_env['is_existing'] and ENHANCED_WIZARD_AVAILABLE and run_incremental_wizard:
+                        # Run incremental wizard for updating existing environment
+                        project_info = detect_project_structure(current_dir)
+                        git_config = detect_git_config()
+
+                        wizard_config = run_incremental_wizard(existing_env, project_info, git_config, current_dir)
+
+                        if wizard_config is None or not wizard_config.get('confirmed'):
+                            print(f"\n{Colors.YELLOW}Update cancelled by user.{Colors.ENDC}")
+                            sys.exit(0)
+
+                    # Fresh initialization - use enhanced wizard if available
+                    elif ENHANCED_WIZARD_AVAILABLE and QUESTIONARY_AVAILABLE:
                         # Get project info for enhanced wizard
-                        current_dir = Path(".")
                         project_info = detect_project_structure(current_dir)
                         git_config = detect_git_config()
 
