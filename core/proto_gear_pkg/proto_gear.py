@@ -1169,8 +1169,6 @@ current_sprint: null
                 if output_file or action == 'would_create':
                     files_created.append(f"{template_name}.md")
 
-            files_created.append('PROJECT_STATUS.md')
-
             # Create capabilities if requested
             if with_capabilities:
                 capability_result = copy_capability_templates(
