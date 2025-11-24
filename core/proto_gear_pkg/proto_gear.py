@@ -90,15 +90,15 @@ def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force:
         return ('skipped', False)
 
     # Interactive mode: prompt user
-    print(f"\n{Colors.YELLOW}File exists: {file_path.name}{Colors.RESET}")
-    print(f"{Colors.CYAN}Options:{Colors.RESET}")
+    print(f"\n{Colors.YELLOW}File exists: {file_path.name}{Colors.ENDC}")
+    print(f"{Colors.CYAN}Options:{Colors.ENDC}")
     print(f"  1. Overwrite (replace existing file)")
     print(f"  2. Skip (keep existing file)")
     print(f"  3. Backup (save as .bak and create new)")
     print(f"  4. View diff (show what would change)")
 
     while True:
-        choice = input(f"{Colors.GREEN}Choose [1/2/3/4]: {Colors.RESET}").strip()
+        choice = input(f"{Colors.GREEN}Choose [1/2/3/4]: {Colors.ENDC}").strip()
 
         if choice == '1':
             file_path.write_text(content, encoding='utf-8')
@@ -110,19 +110,19 @@ def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force:
             backup_path = file_path.with_suffix('.md.bak')
             backup_path.write_text(file_path.read_text(encoding='utf-8'), encoding='utf-8')
             file_path.write_text(content, encoding='utf-8')
-            print(f"{Colors.GREEN}✓ Backup created: {backup_path.name}{Colors.RESET}")
+            print(f"{Colors.GREEN}✓ Backup created: {backup_path.name}{Colors.ENDC}")
             return ('backed_up', True)
         elif choice == '4':
             # Show diff
-            print(f"\n{Colors.CYAN}=== Current Content ==={Colors.RESET}")
+            print(f"\n{Colors.CYAN}=== Current Content ==={Colors.ENDC}")
             print(file_path.read_text(encoding='utf-8')[:500])
-            print(f"{Colors.CYAN}=== New Content ==={Colors.RESET}")
+            print(f"{Colors.CYAN}=== New Content ==={Colors.ENDC}")
             print(content[:500])
-            print(f"{Colors.YELLOW}(showing first 500 characters of each){Colors.RESET}\n")
+            print(f"{Colors.YELLOW}(showing first 500 characters of each){Colors.ENDC}\n")
             # Ask again
             continue
         else:
-            print(f"{Colors.RED}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.RESET}")
+            print(f"{Colors.FAIL}Invalid choice. Please enter 1, 2, 3, or 4.{Colors.ENDC}")
 
 
 # ASCII Art for Proto Gear
@@ -946,7 +946,7 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
     return result
 
 
-def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
+def setup_agent_framework_only(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -992,9 +992,15 @@ def setup_agent_framework_only(dry_run=False, with_branching=False, ticket_prefi
                         files_created.append('BRANCHING.md')
                     branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
 
-            # Create AGENTS.md
+            # Create AGENTS.md (only if doesn't exist or explicitly selected)
             agents_file = current_dir / 'AGENTS.md'
-            agents_content = f"""# AGENTS.md - {current_dir.name}
+            should_create_agents = (
+                not agents_file.exists() or  # Fresh install
+                (core_templates and 'AGENTS' in [t.replace('.md', '') for t in (core_templates if isinstance(core_templates, list) else [])])  # Explicitly selected
+            )
+
+            if should_create_agents:
+                agents_content = f"""# AGENTS.md - {current_dir.name}
 
 > **ProtoGear Agent Framework Integration**
 > **Project Type**: {project_info.get('type', 'Unknown')}
@@ -1053,13 +1059,19 @@ pg help
 ---
 *Powered by ProtoGear Agent Framework v0.5.0 (Beta)*
 """
-            action, written = safe_write_file(agents_file, agents_content, dry_run=dry_run, force=force, interactive=True)
-            if written or action == 'would_create':
-                files_created.append('AGENTS.md')
+                action, written = safe_write_file(agents_file, agents_content, dry_run=dry_run, force=force, interactive=True)
+                if written or action == 'would_create':
+                    files_created.append('AGENTS.md')
 
-            # Create PROJECT_STATUS.md
+            # Create PROJECT_STATUS.md (only if doesn't exist or explicitly selected)
             status_file = current_dir / 'PROJECT_STATUS.md'
-            status_content = f"""# PROJECT STATUS - {current_dir.name}
+            should_create_status = (
+                not status_file.exists() or  # Fresh install
+                (core_templates and 'PROJECT_STATUS' in [t.replace('.md', '') for t in (core_templates if isinstance(core_templates, list) else [])])  # Explicitly selected
+            )
+
+            if should_create_status:
+                status_content = f"""# PROJECT STATUS - {current_dir.name}
 
 > **Single Source of Truth** for project state
 
@@ -1093,9 +1105,9 @@ current_sprint: null
 ---
 *Maintained by ProtoGear Agent Framework*
 """
-            action, written = safe_write_file(status_file, status_content, dry_run=dry_run, force=force, interactive=True)
-            if written or action == 'would_create':
-                files_created.append('PROJECT_STATUS.md')
+                action, written = safe_write_file(status_file, status_content, dry_run=dry_run, force=force, interactive=True)
+                if written or action == 'would_create':
+                    files_created.append('PROJECT_STATUS.md')
 
             # Generate additional templates based on selections
             template_context = {
@@ -1109,13 +1121,22 @@ current_sprint: null
             templates_to_generate = []
 
             # Priority 1: Use core_templates if provided (from wizard)
-            if core_templates and isinstance(core_templates, dict):
-                # Generate templates that were explicitly selected
-                for template_name, should_generate in core_templates.items():
-                    if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS']:
-                        # Skip if already created (e.g., BRANCHING from with_branching flag)
-                        if f"{template_name}.md" not in files_created:
-                            templates_to_generate.append(template_name)
+            if core_templates:
+                if isinstance(core_templates, dict):
+                    # Dict format: {template_name: bool}
+                    for template_name, should_generate in core_templates.items():
+                        if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                            # Skip if already created (e.g., BRANCHING from with_branching flag)
+                            if f"{template_name}.md" not in files_created:
+                                templates_to_generate.append(template_name)
+                elif isinstance(core_templates, list):
+                    # List format from incremental wizard: ['BRANCHING.md', 'TESTING.md']
+                    for template in core_templates:
+                        template_name = template.replace('.md', '')
+                        if template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                            # Skip if already created
+                            if template not in files_created:
+                                templates_to_generate.append(template_name)
 
             # Priority 2: Handle --all flag (CLI)
             elif with_all:
@@ -1147,8 +1168,6 @@ current_sprint: null
 
                 if output_file or action == 'would_create':
                     files_created.append(f"{template_name}.md")
-
-            files_created.append('PROJECT_STATUS.md')
 
             # Create capabilities if requested
             if with_capabilities:
@@ -1394,6 +1413,7 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
     try:
         result = setup_agent_framework_only(
             dry_run=dry_run,
+            force=force,
             with_branching=with_branching,
             ticket_prefix=ticket_prefix,
             with_capabilities=with_capabilities,

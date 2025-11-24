@@ -5,6 +5,33 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2025-11-22
+
+### Fixed
+- **Incremental Wizard Crashes** (9 critical bugs fixed)
+  - Missing CHARS keys (`plus`, `gear`, `refresh`) causing KeyError
+  - Missing style attribute - Changed `wizard.style` → `PROTO_GEAR_STYLE`
+  - Missing force parameter in `setup_agent_framework_only()` causing NameError
+  - Wrong Colors constants - `Colors.RESET` → `Colors.ENDC`, `Colors.RED` → `Colors.FAIL`
+  - Core files (AGENTS.md, PROJECT_STATUS.md) created even when not selected
+  - List format core_templates not handled properly
+  - Unselected templates being generated in incremental mode
+  - Incorrect success message reporting skipped files as created
+
+### Changed
+- **AGENTS.md Template Enhanced for Better Agent Adherence**
+  - Added prominent "⚠️ BEFORE ANY WORK - MANDATORY READING" section at top
+  - Explicit Read tool instructions: `Read(file_path="PROJECT_STATUS.md")`
+  - Pre-flight checklist with actionable items
+  - 5 critical rules clearly stated (never commit to main, always update status, etc.)
+  - Direct, actionable language to ensure agents actually read referenced files
+
+### Technical
+- Fixed all AttributeError and NameError exceptions in incremental wizard
+- Improved file selection logic to respect user choices
+- Better reporting of actually created files (excludes skipped files)
+- Template now explicitly instructs agents to use Read tool before starting work
+
 ## [0.7.1] - 2025-11-22
 
 ### Added

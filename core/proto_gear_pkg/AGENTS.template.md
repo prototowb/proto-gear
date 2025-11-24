@@ -1,7 +1,45 @@
 # AGENTS.md - Lead AI Development Workflow
 ## Autonomous Project Management & Documentation System
 
-> **TRIGGER NOTICE**: When this file is read by an agent, it MUST execute the [Automatic Workflow](#automatic-workflow) section immediately.
+---
+
+## ⚠️ BEFORE ANY WORK - MANDATORY READING
+
+**READ THESE FILES FIRST** using the Read tool before proceeding with any task:
+
+1. **`PROJECT_STATUS.md`** (REQUIRED) - Current project state, active tickets, sprint info
+   - Use Read tool: `Read(file_path="PROJECT_STATUS.md")`
+   - Check: current_sprint, active tickets, project phase
+   - **Update this file** when completing tickets or changing project state
+
+2. **`BRANCHING.md`** (REQUIRED if git repo) - Git workflow and commit conventions
+   - Use Read tool: `Read(file_path="BRANCHING.md")`
+   - Follow: branch naming (`feature/TICKET-XXX-description`)
+   - Follow: commit format (`type(scope): subject`)
+   - **ALWAYS create feature branches** - never commit to main or development directly
+
+3. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
+   - Use Read tool: `Read(file_path=".proto-gear/INDEX.md")`
+   - Check: available skills, workflows, and specialized agents
+
+### ✅ Pre-Flight Checklist
+
+Before starting ANY development task, verify:
+- [ ] Read PROJECT_STATUS.md - know current sprint and active tickets
+- [ ] Read BRANCHING.md - understand git workflow
+- [ ] Created feature branch FROM development (not main)
+- [ ] Updated PROJECT_STATUS.md with ticket status
+- [ ] Following commit message conventions
+
+### 🚨 Critical Rules
+
+1. **NEVER commit directly to `main` or `development`** - always use feature branches
+2. **ALWAYS update PROJECT_STATUS.md** when starting/completing tickets
+3. **ALWAYS follow branch naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
+4. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
+5. **ALWAYS read existing files before modifying** - use Read tool first
+
+---
 
 ## 📖 How to Use This Document
 
