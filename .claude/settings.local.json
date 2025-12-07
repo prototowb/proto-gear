@@ -105,7 +105,11 @@
       "Bash(mv:*)",
       "Bash(where:*)",
       "Bash(echo:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(gh:*)",
+      "Bash(git stash:*)",
+      "Bash(/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command \"(Get-Content ''core/proto_gear_pkg/interactive_wizard.py'').Count\")",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

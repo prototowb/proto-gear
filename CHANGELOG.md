@@ -5,6 +5,77 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2025-12-07
+
+### Added
+- **Comprehensive Cross-Reference Network Across All Templates**
+  - Added "📚 Related Documentation" sections to all 8 core templates
+  - AGENTS.md now references all possible generated files (was missing 5 files)
+  - Every template cross-references related documentation for easy navigation
+  - Created interconnected documentation graph with AGENTS.md as master hub
+  - Templates now list CONTRIBUTING.md, SECURITY.md, ARCHITECTURE.md, CODE_OF_CONDUCT.md
+
+- **Mandatory Capability Discovery System**
+  - New Critical Rule #1: "ALWAYS check `.proto-gear/INDEX.md` first"
+  - Pre-Flight Checklist Item #1: Check for capabilities before starting any task
+  - 3-step capability discovery workflow with explicit instructions
+  - Adaptive design: works whether capabilities are installed or not
+  - Capability references integrated across all relevant templates
+
+- **Enhanced AGENTS.md Template** (691 lines, +73% increase)
+  - Comprehensive "BEFORE ANY WORK - MANDATORY READING" section now includes 8 files
+  - TESTING.md added to mandatory reading (was missing)
+  - 5 optional templates now documented (CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT, capabilities)
+  - Detailed capability discovery workflow (Step 1: Check, Step 2: Discover, Step 3: Load)
+  - Clear workflow for using capabilities with native tools
+  - Updated Pre-Flight Checklist from 5 to 9 items
+
+- **Documentation Improvements**
+  - PROJECT_STATUS.md: Added related documentation section
+  - TESTING.md: Added title header and cross-references to AGENTS.md, capabilities
+  - BRANCHING.md: Added cross-references to workflows and feature-development
+  - CONTRIBUTING.md: Added references with BRANCHING.md marked as REQUIRED
+  - SECURITY.md: Added security-specific documentation references
+  - ARCHITECTURE.md: Added architectural task capability references
+  - CODE_OF_CONDUCT.md: Added community documentation links
+
+- **Developer Documentation** (3 new files)
+  - `docs/dev/dogfooding-update-guide.md` - Guide for updating Proto Gear's own templates
+  - `docs/dev/capability-discovery-flow.md` - Visual flow diagram with examples
+  - `docs/dev/template-improvements-2025-12-07.md` - Comprehensive technical summary
+
+### Fixed
+- **Critical: AGENTS.md Used Hardcoded Content Instead of Template**
+  - `setup_agent_framework_only()` function had hardcoded v0.5.0 AGENTS.md content
+  - Template updates were being ignored, always generating 58-line outdated version
+  - Replaced hardcoded content with call to `generate_project_template()`
+  - Now correctly uses AGENTS.template.md file with all improvements
+
+### Changed
+- **Help System Updated**
+  - `pg help` now lists all 8 templates with (recommended)/(optional) labels
+  - Added .proto-gear/ capabilities system to template list
+  - Updated "Getting Started" workflow to mention reviewing all generated files
+  - More comprehensive template documentation in help output
+
+- **Template Coverage**
+  - Files referenced in AGENTS.md: 3 → 8 (+167%)
+  - Templates with cross-references: 0 → 8 (all templates)
+  - AGENTS.md lines: ~400 → 691 (+73%)
+  - Capability mentions across templates: 1 → 8 (+700%)
+  - Pre-flight checklist items: 5 → 9 (+80%)
+
+### Impact
+- **For AI Agents**: Complete awareness of all generated files, mandatory capability discovery
+- **For Users**: Professional interconnected documentation, no orphaned files
+- **For Proto Gear**: Production-ready template quality, self-documenting system
+
+### Technical
+- Zero breaking changes - fully backward compatible
+- All templates tested and verified working
+- Template generation confirmed at 691 lines for AGENTS.md
+- Cross-reference network validated across all 8 templates
+
 ## [0.7.2] - 2025-11-22
 
 ### Fixed

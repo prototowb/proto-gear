@@ -18,26 +18,56 @@
    - Follow: commit format (`type(scope): subject`)
    - **ALWAYS create feature branches** - never commit to main or development directly
 
-3. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
+3. **`TESTING.md`** (RECOMMENDED) - Test-Driven Development workflow
+   - Use Read tool: `Read(file_path="TESTING.md")`
+   - Follow: Red-Green-Refactor cycle, test pyramid, coverage targets
+   - **Write tests before implementation** when following TDD
+
+4. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
    - Use Read tool: `Read(file_path=".proto-gear/INDEX.md")`
    - Check: available skills, workflows, and specialized agents
+
+5. **`CONTRIBUTING.md`** (OPTIONAL) - Contribution guidelines
+   - Use Read tool: `Read(file_path="CONTRIBUTING.md")`
+   - Review: coding standards, PR process, development setup
+   - **Follow these guidelines** when contributing to the project
+
+6. **`SECURITY.md`** (OPTIONAL) - Security policy and vulnerability reporting
+   - Use Read tool: `Read(file_path="SECURITY.md")`
+   - Review: security practices, vulnerability disclosure process
+   - **Report security issues** following the defined process
+
+7. **`ARCHITECTURE.md`** (OPTIONAL) - System design and architecture decisions
+   - Use Read tool: `Read(file_path="ARCHITECTURE.md")`
+   - Understand: system components, architectural patterns, design decisions
+   - **Align changes** with documented architecture
+
+8. **`CODE_OF_CONDUCT.md`** (OPTIONAL) - Community guidelines
+   - Use Read tool: `Read(file_path="CODE_OF_CONDUCT.md")`
+   - Follow: community standards, expected behavior
+   - **Maintain respectful collaboration**
 
 ### ✅ Pre-Flight Checklist
 
 Before starting ANY development task, verify:
+- [ ] **FIRST**: Check if `.proto-gear/INDEX.md` exists - if yes, read it to discover available capabilities
 - [ ] Read PROJECT_STATUS.md - know current sprint and active tickets
-- [ ] Read BRANCHING.md - understand git workflow
+- [ ] Read BRANCHING.md (if exists) - understand git workflow
+- [ ] Read TESTING.md (if exists) - understand testing requirements
+- [ ] Check for CONTRIBUTING.md, SECURITY.md, ARCHITECTURE.md, CODE_OF_CONDUCT.md (if applicable)
+- [ ] If working on a specific task, check `.proto-gear/` for relevant workflows or skills
 - [ ] Created feature branch FROM development (not main)
 - [ ] Updated PROJECT_STATUS.md with ticket status
 - [ ] Following commit message conventions
 
 ### 🚨 Critical Rules
 
-1. **NEVER commit directly to `main` or `development`** - always use feature branches
-2. **ALWAYS update PROJECT_STATUS.md** when starting/completing tickets
-3. **ALWAYS follow branch naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
-4. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
-5. **ALWAYS read existing files before modifying** - use Read tool first
+1. **ALWAYS check `.proto-gear/INDEX.md` first** - if capabilities exist, use them for your task
+2. **NEVER commit directly to `main` or `development`** - always use feature branches
+3. **ALWAYS update PROJECT_STATUS.md** when starting/completing tickets
+4. **ALWAYS follow branch naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
+5. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
+6. **ALWAYS read existing files before modifying** - use Read tool first
 
 ---
 
@@ -52,27 +82,45 @@ This document defines **patterns and workflows** for natural language collaborat
 **For Humans:**
 This provides the framework for how AI agents should think about and approach the project. Review and customize the agent configurations and workflows to match your project needs.
 
-## 🚀 Enhanced with Universal Capabilities
+## 🚀 Universal Capabilities System (Optional Enhancement)
 
-This project uses Proto Gear's **Universal Capabilities System** for modular, discoverable patterns.
+**IMPORTANT**: Check if `.proto-gear/INDEX.md` exists before proceeding with capability discovery.
 
-### Capability Discovery
+### Capability Discovery Workflow
 
-AI agents can explore available capabilities:
+**Step 1: Check for Capabilities**
+```workflow
+1. Use Read tool to check: Read(file_path=".proto-gear/INDEX.md")
+2. If file exists → Capabilities are installed, proceed to Step 2
+3. If file NOT found → Capabilities not installed, skip this section
+```
 
-**Capability Index**: [.proto-gear/INDEX.md](.proto-gear/INDEX.md)
+**Step 2: Discover Available Capabilities (If Installed)**
 
-- **Skills** - Modular expertise (testing, git-workflow, debugging, etc.)
-- **Workflows** - Multi-step processes (feature-development, bug-fix, etc.)
-- **Commands** - Single actions (create-ticket, run-tests, etc.)
-- **Agents** - Specialized patterns (backend, frontend, testing, etc.)
+When `.proto-gear/INDEX.md` exists, you have access to:
 
-### How to Use Capabilities
+- **Skills** - Modular expertise (testing, debugging, code-review, refactoring, etc.)
+- **Workflows** - Multi-step processes (feature-development, bug-fix, hotfix, release, etc.)
+- **Commands** - Single actions (create-ticket, analyze-coverage, generate-changelog, etc.)
+- **Agents** - Specialized patterns (backend, frontend, testing, devops, etc.)
 
-1. **Read Index**: Start with `.proto-gear/INDEX.md`
-2. **Match Task**: Find relevant capabilities for your current task
-3. **Load Details**: Read specific capability files
-4. **Follow Patterns**: Use native tools (git, pytest, npm) as described
+**Step 3: Load Capabilities Before Each Task**
+
+```workflow
+BEFORE_STARTING_ANY_TASK:
+  1. Read .proto-gear/INDEX.md to see what's available
+  2. Match your current task to relevant capabilities
+  3. Check dependencies for required capabilities
+  4. Load specific capability files (e.g., .proto-gear/workflows/feature-development.md)
+  5. Follow the patterns using native tools (git, pytest, npm, etc.)
+```
+
+### Why Use Capabilities?
+
+- **Consistency**: Standardized patterns for common tasks
+- **Efficiency**: Pre-defined workflows save time
+- **Quality**: Best practices embedded in patterns
+- **Discoverability**: Easy to find the right approach for any task
 
 ### Integration with Core Agents
 

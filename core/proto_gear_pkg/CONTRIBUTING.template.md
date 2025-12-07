@@ -6,6 +6,19 @@
 
 ---
 
+## 📚 Related Documentation
+
+Before contributing, please review:
+
+- **AGENTS.md** - Agent workflows and collaboration patterns
+- **PROJECT_STATUS.md** - Current project state and active tickets
+- **BRANCHING.md** - Git workflow and commit conventions (REQUIRED for contributors)
+- **TESTING.md** (if exists) - TDD methodology and testing requirements
+- **SECURITY.md** (if exists) - Security policy and vulnerability reporting
+- **CODE_OF_CONDUCT.md** (if exists) - Community guidelines and expected behavior
+
+---
+
 ## Welcome Contributors!
 
 Thank you for your interest in contributing to {{PROJECT_NAME}}! This document provides guidelines and workflows for contributing to the project.

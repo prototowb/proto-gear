@@ -6,6 +6,18 @@
 
 ---
 
+## 📚 Related Documentation
+
+This file is part of the Proto Gear documentation system. For complete context, also review:
+
+- **AGENTS.md** - Agent workflows, collaboration patterns, and capability discovery
+- **PROJECT_STATUS.md** - Current project state, active tickets, sprint info
+- **TESTING.md** (if exists) - TDD methodology and testing patterns
+- **.proto-gear/INDEX.md** (if exists) - Available capabilities and git workflows
+- **.proto-gear/workflows/feature-development.md** (if exists) - Complete feature development process
+
+---
+
 ## Workflow Mode
 
 {{WORKFLOW_MODE}}
@@ -94,6 +106,53 @@ hotfix/v1.2.1-data-loss-bug
 3. Merge to: `{{MAIN_BRANCH}}` AND `{{DEV_BRANCH}}`
 4. Tag new version immediately
 5. Delete after merge
+
+---
+
+## Starting New Work
+
+### Critical Rule: Always Branch FROM Development
+
+**Never work directly on `{{MAIN_BRANCH}}` or `{{DEV_BRANCH}}`** - always create a feature branch.
+
+**The Command** (works from any current branch):
+```bash
+# Create feature branch FROM development (regardless of current branch)
+git checkout -b feature/{{TICKET_PREFIX}}-XXX-description {{DEV_BRANCH}}
+```
+
+**Example Workflow**:
+```bash
+# You can be on ANY branch - main, development, or another feature branch
+# This command creates a new branch FROM development:
+git checkout -b feature/{{TICKET_PREFIX}}-042-add-search {{DEV_BRANCH}}
+
+# Do your work
+git add .
+git commit -m "feat(search): implement search functionality"
+
+# Merge back to development when done
+git checkout {{DEV_BRANCH}}
+git merge feature/{{TICKET_PREFIX}}-042-add-search
+git branch -d feature/{{TICKET_PREFIX}}-042-add-search
+```
+
+**Why This Matters**:
+- ✅ Your feature starts from the latest integration point ({{DEV_BRANCH}})
+- ✅ Works regardless of which branch you're currently on
+- ✅ Prevents accidentally working directly on {{MAIN_BRANCH}} or {{DEV_BRANCH}}
+- ✅ Keeps {{MAIN_BRANCH}} clean (release-only)
+
+**Common Mistake to Avoid**:
+```bash
+# ❌ WRONG - Working directly on main or development
+git checkout {{MAIN_BRANCH}}
+# ... make changes directly ... (BAD!)
+
+# ✅ CORRECT - Always use a feature branch
+git checkout -b feature/{{TICKET_PREFIX}}-XXX {{DEV_BRANCH}}
+# ... make changes in the branch ... (GOOD!)
+```
 
 ---
 
