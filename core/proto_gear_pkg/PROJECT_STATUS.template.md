@@ -7,6 +7,21 @@
 > - [Create Ticket](.proto-gear/commands/create-ticket.md)
 > - [Update Status](.proto-gear/commands/update-status.md) (if available)
 
+## 📚 Related Documentation
+
+This file is part of the Proto Gear documentation system. For complete context, also review:
+
+- **AGENTS.md** - Agent workflows, collaboration patterns, and capability discovery
+- **BRANCHING.md** (if exists) - Git workflow, branch naming, commit conventions
+- **TESTING.md** (if exists) - TDD methodology, test pyramid, coverage targets
+- **.proto-gear/INDEX.md** (if exists) - Available capabilities, skills, and workflows
+- **CONTRIBUTING.md** (if exists) - Contribution guidelines and standards
+- **SECURITY.md** (if exists) - Security policy and vulnerability reporting
+- **ARCHITECTURE.md** (if exists) - System design and architectural decisions
+- **CODE_OF_CONDUCT.md** (if exists) - Community guidelines
+
+**Agents**: Always read AGENTS.md first to understand the full workflow and available capabilities.
+
 ## 📖 State Management Guide
 
 ### Ticket Status Workflow

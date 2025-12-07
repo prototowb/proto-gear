@@ -137,6 +137,20 @@ conditional_sections:
 
 ---
 
+# TESTING.md - Test-Driven Development Workflow
+
+## 📚 Related Documentation
+
+This file is part of the Proto Gear documentation system. For complete context, also review:
+
+- **AGENTS.md** - Agent workflows, collaboration patterns, and capability discovery
+- **PROJECT_STATUS.md** - Current project state, active tickets, sprint info
+- **BRANCHING.md** (if exists) - Git workflow, branch naming, commit conventions
+- **.proto-gear/INDEX.md** (if exists) - Available capabilities and testing workflows
+- **.proto-gear/skills/testing/** (if exists) - Advanced TDD patterns and techniques
+
+---
+
 ## Testing Philosophy
 
 ### Test-Driven Development (TDD)

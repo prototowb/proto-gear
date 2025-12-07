@@ -250,9 +250,13 @@ def show_help():
         ("Core Templates Generated", [
             "- AGENTS.md: Agent patterns, roles, and collaboration workflows",
             "- PROJECT_STATUS.md: Single source of truth for project state",
-            "- BRANCHING.md: Git workflow and commit conventions",
-            "- TESTING.md: TDD methodology and testing patterns",
-            "- .github/pull_request_template.md: PR template"
+            "- TESTING.md: TDD methodology and testing patterns (recommended)",
+            "- BRANCHING.md: Git workflow and commit conventions (optional)",
+            "- CONTRIBUTING.md: Contribution guidelines (optional)",
+            "- SECURITY.md: Security policy and vulnerability reporting (optional)",
+            "- ARCHITECTURE.md: System design documentation (optional)",
+            "- CODE_OF_CONDUCT.md: Community guidelines (optional)",
+            "- .proto-gear/: Universal capabilities system with modular patterns"
         ]),
         ("Key Features", [
             "+ Auto-detection of existing tech stack and frameworks",
@@ -264,10 +268,11 @@ def show_help():
         ]),
         ("Getting Started", [
             "1. Navigate to your project directory",
-            "2. Run 'pg init' to initialize agent templates",
-            "3. Review the generated AGENTS.md, PROJECT_STATUS.md, and TESTING.md",
-            "4. AI agents read templates and collaborate via natural language",
-            "5. Update PROJECT_STATUS.md as work progresses"
+            "2. Run 'pg init' to initialize agent templates (interactive wizard)",
+            "3. Review generated files (AGENTS.md, PROJECT_STATUS.md, TESTING.md, etc.)",
+            "4. Customize templates to match your project's workflow",
+            "5. AI agents read templates and collaborate via natural language",
+            "6. Update PROJECT_STATUS.md as work progresses"
         ]),
         ("Commands", [
             "pg init           - Initialize AI agent templates in current project",
@@ -1000,67 +1005,27 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
             )
 
             if should_create_agents:
-                agents_content = f"""# AGENTS.md - {current_dir.name}
+                # Use template-based generation instead of hardcoded content
+                template_context = {
+                    'PROJECT_NAME': current_dir.name,
+                    'TICKET_PREFIX': ticket_prefix,
+                    'DATE': datetime.now().strftime('%Y-%m-%d'),
+                    'YEAR': datetime.now().strftime('%Y'),
+                    'VERSION': __version__,
+                    'PROJECT_TYPE': project_info.get('type', 'Unknown'),
+                    'FRAMEWORK': project_info.get('framework', 'Unknown'),
+                }
 
-> **ProtoGear Agent Framework Integration**
-> **Project Type**: {project_info.get('type', 'Unknown')}
-> **Framework**: {project_info.get('framework', 'Unknown')}
-{branching_reference}
-## Framework Activation
+                output_file, action = generate_project_template(
+                    'AGENTS',
+                    current_dir,
+                    template_context,
+                    dry_run=dry_run,
+                    force=force,
+                    interactive=True
+                )
 
-This project is now integrated with ProtoGear's AI agent workflow system.
-
-When this file is read by an AI agent, it should:
-
-1. Analyze the current project structure
-2. Understand the technology stack in use
-3. Provide context-aware development assistance
-4. Follow the project's established patterns{'5. Follow branching and commit conventions in BRANCHING.md' if with_branching else ''}
-
-## Project Structure
-
-{project_info.get('structure_summary', 'Basic project structure detected')}
-
-## Agent Configuration
-
-Proto Gear uses an adaptive hybrid system with 4 permanent core agents and 2 flexible
-sprint-specific slots that adapt based on current development needs.
-
-### Core Agents (Always Active)
-- **Backend Agent**: Server-side logic, APIs, database integration
-- **Frontend Agent**: UI/UX, component development, styling
-- **Testing Agent**: Test creation, coverage analysis, quality assurance
-- **DevOps Agent**: CI/CD, deployment, infrastructure management
-
-### Flex Agents (Sprint-Based)
-Automatically configured based on sprint type:
-- Documentation Agent
-- Performance Agent
-- Security Agent
-- Refactoring Agent
-
-## Workflow Commands
-
-```bash
-# Initialize agent templates (already done)
-pg init
-
-# Show help and documentation
-pg help
-```
-
-## Next Steps
-
-1. Review this file to understand agent patterns and workflows
-2. Check PROJECT_STATUS.md for current project state{'3. Review BRANCHING.md for Git workflow conventions' if with_branching else '3. Review TESTING.md for TDD patterns'}
-{'4. Review TESTING.md for TDD patterns' if with_branching else '4. Start development with AI agents reading templates'}
-{'5. Start development with AI agents reading templates' if with_branching else ''}
-
----
-*Powered by ProtoGear Agent Framework v0.5.0 (Beta)*
-"""
-                action, written = safe_write_file(agents_file, agents_content, dry_run=dry_run, force=force, interactive=True)
-                if written or action == 'would_create':
+                if output_file or action == 'would_create':
                     files_created.append('AGENTS.md')
 
             # Create PROJECT_STATUS.md (only if doesn't exist or explicitly selected)
