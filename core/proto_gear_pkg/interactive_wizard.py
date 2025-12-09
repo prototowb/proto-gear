@@ -1488,15 +1488,23 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
         wizard.console.print(table)
         wizard.console.print()
     else:
-        # Fallback text output
+        # Fallback text output with encoding-safe characters
         print("Current Installation:")
         print("-" * 60)
         for f in ['AGENTS.md', 'PROJECT_STATUS.md', 'TESTING.md', 'BRANCHING.md',
                   'CONTRIBUTING.md', 'SECURITY.md', 'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']:
-            status = "✓" if f in existing_env['existing_files'] else "✗"
-            print(f"  {status} {f}")
-        cap_status = "✓" if existing_env['existing_capabilities'] else "✗"
-        print(f"  {cap_status} .proto-gear/ (capabilities)")
+            try:
+                status = "✓" if f in existing_env['existing_files'] else "✗"
+                print(f"  {status} {f}")
+            except UnicodeEncodeError:
+                status = "[x]" if f in existing_env['existing_files'] else "[ ]"
+                print(f"  {status} {f}")
+        try:
+            cap_status = "✓" if existing_env['existing_capabilities'] else "✗"
+            print(f"  {cap_status} .proto-gear/ (capabilities)")
+        except UnicodeEncodeError:
+            cap_status = "[x]" if existing_env['existing_capabilities'] else "[ ]"
+            print(f"  {cap_status} .proto-gear/ (capabilities)")
         print()
 
     # Ask what to do
