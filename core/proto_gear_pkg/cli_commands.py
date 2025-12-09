@@ -419,8 +419,56 @@ def cmd_agent_delete(args):
 
 
 def cmd_agent_create(args):
-    """Create a new agent (interactive wizard - TODO)"""
-    print(f"{Colors.WARNING}Interactive agent creation wizard is not yet implemented.{Colors.ENDC}")
-    print(f"\nFor now, create agent configurations manually in .proto-gear/agents/")
-    print(f"See: docs/dev/agent-configuration-schema.md for schema documentation")
-    return 1
+    """Create a new agent (interactive wizard)"""
+    try:
+        from .agent_wizard import run_agent_creation_wizard
+    except ImportError:
+        print(f"{Colors.FAIL}Agent wizard not available{Colors.ENDC}")
+        return 1
+
+    agents_dir = get_agents_dir()
+    caps_dir = get_capabilities_dir()
+
+    # Ensure agents directory exists
+    agents_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{Colors.HEADER}🤖 Proto Gear Agent Creation Wizard{Colors.ENDC}\n")
+
+    # Run wizard
+    agent = run_agent_creation_wizard(agents_dir, caps_dir)
+
+    if not agent:
+        print(f"\n{Colors.YELLOW}Agent creation cancelled{Colors.ENDC}")
+        return 0
+
+    # Generate filename from agent name
+    agent_filename = agent.name.lower().replace(" ", "-")
+    if not agent_filename.endswith(".yaml"):
+        agent_filename += ".yaml"
+
+    # Check if file already exists
+    agent_file = agents_dir / agent_filename
+    if agent_file.exists():
+        overwrite = input(f"\n{Colors.WARNING}Agent file already exists. Overwrite? (yes/no): {Colors.ENDC}").strip().lower()
+        if overwrite != 'yes':
+            print(f"{Colors.YELLOW}Agent not saved{Colors.ENDC}")
+            return 0
+
+    # Save agent
+    try:
+        manager = AgentManager(agents_dir, caps_dir)
+        agent_name = agent_filename.replace(".yaml", "")
+        manager.save_agent(agent, agent_name)
+
+        print(f"\n{Colors.GREEN}✓ Agent created successfully!{Colors.ENDC}")
+        print(f"\nSaved to: {agent_file}")
+        print(f"\n{Colors.CYAN}Next steps:{Colors.ENDC}")
+        print(f"  1. Review: pg agent show {agent_name}")
+        print(f"  2. Validate: pg agent validate {agent_name}")
+        print(f"  3. Customize: Edit {agent_file} as needed")
+
+        return 0
+
+    except Exception as e:
+        print(f"\n{Colors.FAIL}Error saving agent: {e}{Colors.ENDC}")
+        return 1
