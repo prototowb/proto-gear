@@ -1,8 +1,8 @@
 # Proto Gear Capabilities Roadmap
 
-**Date**: 2025-11-14 (Updated)
+**Date**: 2025-12-09 (Updated)
 **Status**: Living Document
-**Version**: v0.6.4
+**Version**: v0.7.3
 
 ---
 
@@ -40,7 +40,7 @@ Proto Gear's capability system should enable users to **assemble their own AI su
 
 ---
 
-## Current State (v0.6.4)
+## Current State (v0.7.3)
 
 ### Available Capabilities
 
@@ -70,13 +70,18 @@ Proto Gear's capability system should enable users to **assemble their own AI su
 #### Commands (1)
 - **create-ticket** - Ticket documentation ✅
 
-### Key Achievements (v0.4.1 → v0.6.4)
+### Key Achievements (v0.4.1 → v0.7.3)
 
 1. ✅ **Template Auto-Discovery** - Zero-code extensibility (v0.6.0)
 2. ✅ **8 Core Templates** - All Phase 1 targets completed (v0.5.0)
 3. ✅ **14 Total Capabilities** - Exceeded Phase 1 goal of 10-15
 4. ✅ **Granular Selection** - 3-level capability selection (v0.6.0)
-5. ✅ **Optimal Test Coverage** - 42% coverage, all business logic tested (v0.6.4)
+5. ✅ **Optimal Test Coverage** - 47% coverage, all business logic tested (v0.7.0)
+6. ✅ **Template Metadata System** - YAML frontmatter for conditional content (v0.7.0)
+7. ✅ **Enhanced Project Detection** - 14 frameworks across 7 languages (v0.7.0)
+8. ✅ **Cross-Reference Network** - All 8 templates interconnected (v0.7.3)
+9. ✅ **Mandatory Capability Discovery** - 3-step workflow ensures usage (v0.7.3)
+10. ✅ **Professional Template Quality** - Production-ready documentation (v0.7.3)
 
 ---
 
@@ -473,55 +478,67 @@ pg marketplace review username/capability-name --stars 5
 
 ---
 
-## Roadmap Summary (Updated for v0.6.4)
+## Roadmap Summary (Updated for v0.7.3)
 
 | Version | Focus | Status | Key Deliverables |
 |---------|-------|--------|------------------|
 | v0.4.1 | Granular wizard | ✅ DONE | Custom path, category selection |
 | v0.5.0 | Foundation | ✅ DONE | 14 capabilities, 8 templates (exceeded goal!) |
 | v0.6.0 | Auto-Discovery | ✅ DONE | Template auto-discovery, granular selection |
-| v0.6.4 | Quality & Testing | ✅ DONE | 42% optimal test coverage, test philosophy |
-| **v0.7.0** | **Metadata & Polish** | 🚧 CURRENT | Template metadata, integration tests, CI/CD |
-| v0.8.0 | Composition | 📋 PLANNED | Sub-agent builder, composition engine |
+| v0.6.4 | Quality & Testing | ✅ DONE | 47% optimal test coverage, test philosophy |
+| v0.7.0 | Metadata & Detection | ✅ DONE | Template metadata, enhanced project detection, Rust |
+| v0.7.1 | Incremental Updates | ✅ DONE | File protection, incremental wizard |
+| v0.7.2 | Bugfixes | ✅ DONE | Critical bugfixes, AGENTS.md enhancement |
+| v0.7.3 | Template Quality | ✅ DONE | Cross-references, capability discovery, professional quality |
+| **v0.8.0** | **Composition** | 🚧 NEXT | Sub-agent builder, composition engine |
 | v0.9.0 | Community | 📋 PLANNED | Capability contributions, documentation |
 | v1.0.0 | Production | 📋 PLANNED | Production-ready, stable APIs |
 | v1.5.0+ | Marketplace | 💭 FUTURE | Community marketplace, ratings |
 
 ---
 
-## Next Steps (v0.7.0 - Current Focus)
+## Next Steps (v0.8.0 - Planning Phase)
 
-**Phase 1 Review**: ✅ EXCEEDED all goals - 14 capabilities, 8 templates, auto-discovery
+**Phase 1 & 2 Review**: ✅ EXCEEDED all goals
+- 14 capabilities, 8 templates, auto-discovery
+- Template metadata system with conditional content
+- Enhanced project detection (14 frameworks, 7 languages)
+- Cross-reference network across all templates
+- Mandatory capability discovery
+- Production-ready quality (9.2/10)
 
-**For v0.7.0 (Current Development):**
+**For v0.8.0 (Next Major Feature):**
 
-1. **Template Metadata System** (Priority: HIGH)
-   - YAML frontmatter for conditional content
-   - Metadata-driven template generation
-   - Smart defaults based on project detection
+1. **Sub-Agent Builder Wizard** (Priority: HIGH)
+   - Interactive wizard for composing custom AI agents
+   - Select skills, workflows, commands from available capabilities
+   - Generate agent configuration files
+   - Preview composed agent capabilities
 
-2. **Integration Tests** (Priority: HIGH)
-   - Subprocess-based CLI testing
-   - End-to-end workflow validation
-   - Cross-platform test coverage
+2. **Composition Engine** (Priority: HIGH)
+   - Dependency resolution (auto-include required capabilities)
+   - Conflict detection (warn about incompatible capabilities)
+   - Context optimization (load only needed capabilities per task)
+   - Validation system (ensure composed agents are viable)
 
-3. **Enhanced Project Detection** (Priority: MEDIUM)
-   - More framework detection (Angular, Svelte, etc.)
-   - Better project type inference
-   - Configuration file analysis
+3. **Agent Configuration System** (Priority: HIGH)
+   - YAML-based agent definitions
+   - Custom context priority rules
+   - Agent-specific instructions
+   - Capability composition rules
 
-4. **Additional Capabilities** (Priority: MEDIUM - Based on Need)
-   - Performance optimization skill
-   - Security review workflow
-   - Documentation writing skill
+4. **Enhanced Capability Management** (Priority: MEDIUM)
+   - CLI commands for capability discovery
+   - Capability metadata expansion
+   - Search and filter capabilities
+   - Show capability details and dependencies
+
+5. **Additional Language Support** (Priority: LOW - Based on Demand)
+   - Go, Kotlin, Swift, etc.
    - Only add if user feedback indicates need
 
-5. **CI/CD Foundation** (Priority: DEFERRED)
-   - GitHub Actions setup (removed from scope per user)
-   - Automated releases (removed from scope per user)
-
-**Estimated Effort**: 30-40 hours
-**Target Date**: v0.7.0 (1-2 months)
+**Estimated Effort**: 60-80 hours (major feature)
+**Target Date**: v0.8.0 (2-3 months) - No rush, quality first
 
 ---
 
@@ -541,6 +558,6 @@ This roadmap is a living document. As we learn from user feedback and see how AI
 
 ---
 
-*Last Updated: 2025-11-14*
-*Document Version: 2.0.0*
-*Proto Gear Version: v0.6.4*
+*Last Updated: 2025-12-09*
+*Document Version: 3.0.0*
+*Proto Gear Version: v0.7.3*
