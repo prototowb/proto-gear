@@ -24,35 +24,63 @@ current_branch: "development"
 | PROTO-026 | Create capability metadata system (v0.8.0 Phase 1) | feature | IN_PROGRESS | feature/PROTO-026-capability-metadata | Development Agent |
 
 ### PROTO-026 Details
-**Capability Metadata System for v0.8.0 Composition Engine** - **✅ PHASE 1 COMPLETE**
+**Capability Metadata System for v0.8.0 Composition Engine** - **✅ PHASE 2 COMPLETE**
 
-**Goal**: Enhance capability metadata to support dependency resolution, conflict detection, and smart composition.
+**Goal**: Enhance capability metadata to support dependency resolution, conflict detection, and smart composition. Build CLI commands and example agents.
 
 **Progress**:
+
+**Phase 1 (Metadata System) - COMPLETE**:
 - ✅ Explored current .proto-gear/ structure (20 capabilities: 7 skills, 10 workflows, 3 commands)
 - ✅ Designed enhanced metadata schema v2.0 (separate metadata.yaml files)
 - ✅ Documented schema in docs/dev/capability-metadata-schema-v2.md (850+ lines)
 - ✅ Created capability_metadata.py module with parser, validator, and composition engine
 - ✅ Wrote comprehensive tests (34 tests, all passing)
-- ✅ Added metadata.yaml to all 20 capabilities (COMPLETE!)
+- ✅ Added metadata.yaml to all 20 capabilities
 - ✅ Reorganized workflows into consistent directory structure
 - ✅ All metadata validated (0 warnings, 0 errors)
 
+**Phase 2 (CLI & Examples) - COMPLETE**:
+- ✅ Designed agent configuration schema v1.0
+- ✅ Created agent_config.py module (AgentManager, AgentValidator, etc.)
+- ✅ Wrote 22 comprehensive tests for agent system (all passing)
+- ✅ Implemented 'pg capabilities' CLI commands (list, search, show)
+- ✅ Implemented 'pg agent' CLI commands (create stub, list, show, validate, delete)
+- ✅ Created 5 example agent configurations (Testing, Bug Fix, Code Review, Documentation, Release Manager)
+- ✅ Added comprehensive README.md for example agents
+
 **Files Created**:
-- `docs/dev/capability-metadata-schema-v2.md` - Complete schema documentation
-- `docs/dev/PROTO-026-review-summary.md` - Comprehensive review document
+- `docs/dev/capability-metadata-schema-v2.md` - Capability metadata schema (850+ lines)
+- `docs/dev/agent-configuration-schema.md` - Agent configuration schema (540+ lines)
+- `docs/dev/PROTO-026-review-summary.md` - Phase 1 review document
 - `docs/dev/PROTO-026-before-after.md` - Before/after comparison
-- `core/proto_gear_pkg/capability_metadata.py` - Parser, validator, composition engine (650 lines)
-- `tests/test_capability_metadata.py` - 34 comprehensive tests (750 lines)
-- **20 metadata.yaml files** - One for each capability (1,300+ lines total)
+- `core/proto_gear_pkg/capability_metadata.py` - Composition engine (650 lines)
+- `core/proto_gear_pkg/agent_config.py` - Agent management system (540 lines)
+- `core/proto_gear_pkg/cli_commands.py` - CLI command handlers (420 lines)
+- `tests/test_capability_metadata.py` - 34 tests (750 lines)
+- `tests/test_agent_config.py` - 22 tests (410 lines)
+- `test_composition_engine.py` - Interactive demo script (120 lines)
+- **20 metadata.yaml files** - Capability metadata (1,300+ lines total)
+- **5 example agent YAML files** - Ready-to-use agent configurations (350+ lines total)
 
-**Validation Results**:
-- All 20 capabilities load successfully
-- 0 validation warnings
-- 0 validation errors
-- 100% test pass rate (34/34)
+**Test Results**:
+- Capability metadata: 34/34 tests passing
+- Agent configuration: 22/22 tests passing
+- Total: 56/56 tests passing (100%)
+- All agents validate successfully with composition engine
 
-**Next Phase**: PROTO-027 - CLI commands and interactive sub-agent builder wizard
+**CLI Commands Tested**:
+```bash
+pg capabilities list          # Lists all 20 capabilities
+pg capabilities search bug    # Searches by keyword
+pg capabilities show testing  # Shows detailed capability info
+pg agent list                 # Lists configured agents
+pg agent show testing-agent   # Shows agent details
+pg agent validate testing-agent  # Validates agent + shows recommendations
+pg agent delete testing-agent # Deletes agent (with confirmation)
+```
+
+**Next Phase**: PROTO-027 - Interactive sub-agent builder wizard (optional enhancement)
 
 ## ✅ Completed Tickets
 
