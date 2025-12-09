@@ -19,7 +19,29 @@ current_branch: "development"
 
 ## 🎫 Active Tickets
 
-*No active tickets - v0.7.3 released successfully* 🎉
+| ID | Title | Type | Status | Branch | Assignee |
+|----|-------|------|--------|--------|----------|
+| PROTO-026 | Create capability metadata system (v0.8.0 Phase 1) | feature | IN_PROGRESS | feature/PROTO-026-capability-metadata | Development Agent |
+
+### PROTO-026 Details
+**Capability Metadata System for v0.8.0 Composition Engine**
+
+**Goal**: Enhance capability metadata to support dependency resolution, conflict detection, and smart composition.
+
+**Progress**:
+- ✅ Explored current .proto-gear/ structure (20 capabilities: 7 skills, 10 workflows, 3 commands)
+- ✅ Designed enhanced metadata schema v2.0 (separate metadata.yaml files)
+- ✅ Documented schema in docs/dev/capability-metadata-schema-v2.md (850+ lines)
+- ✅ Created capability_metadata.py module with parser, validator, and composition engine
+- ✅ Wrote comprehensive tests (34 tests, all passing)
+- ⏳ **NEXT**: Add metadata.yaml to 20 existing capabilities
+
+**Files Created**:
+- `docs/dev/capability-metadata-schema-v2.md` - Complete schema documentation
+- `core/proto_gear_pkg/capability_metadata.py` - Parser, validator, composition engine
+- `tests/test_capability_metadata.py` - 34 comprehensive tests
+
+**Test Coverage**: 100% passing (34/34 tests)
 
 ## ✅ Completed Tickets
 
