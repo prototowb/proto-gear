@@ -31,6 +31,9 @@ except ImportError:
     RICH_AVAILABLE = False
     run_incremental_wizard = None
 
+# Import CLI command handlers
+from . import cli_commands
+
 # File handling helpers
 def detect_existing_environment(project_dir: Path) -> dict:
     """
@@ -1602,6 +1605,109 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Show detailed help and documentation'
     )
 
+    # 'capabilities' command group
+    capabilities_parser = subparsers.add_parser(
+        'capabilities',
+        help='Browse and search available capabilities'
+    )
+    capabilities_subparsers = capabilities_parser.add_subparsers(dest='capabilities_command', help='Capabilities commands')
+
+    # capabilities list
+    capabilities_list_parser = capabilities_subparsers.add_parser(
+        'list',
+        help='List all available capabilities'
+    )
+
+    # capabilities search
+    capabilities_search_parser = capabilities_subparsers.add_parser(
+        'search',
+        help='Search capabilities by keyword'
+    )
+    capabilities_search_parser.add_argument(
+        'query',
+        type=str,
+        help='Search query (keyword or phrase)'
+    )
+
+    # capabilities show
+    capabilities_show_parser = capabilities_subparsers.add_parser(
+        'show',
+        help='Show detailed information about a capability'
+    )
+    capabilities_show_parser.add_argument(
+        'name',
+        type=str,
+        help='Capability name (e.g., testing, bug-fix)'
+    )
+
+    # 'agent' command group
+    agent_parser = subparsers.add_parser(
+        'agent',
+        help='Manage agent configurations'
+    )
+    agent_subparsers = agent_parser.add_subparsers(dest='agent_command', help='Agent commands')
+
+    # agent create
+    agent_create_parser = agent_subparsers.add_parser(
+        'create',
+        help='Create a new agent configuration (interactive)'
+    )
+    agent_create_parser.add_argument(
+        'name',
+        type=str,
+        nargs='?',
+        help='Agent name (optional for interactive mode)'
+    )
+
+    # agent list
+    agent_list_parser = agent_subparsers.add_parser(
+        'list',
+        help='List all configured agents'
+    )
+
+    # agent show
+    agent_show_parser = agent_subparsers.add_parser(
+        'show',
+        help='Show detailed information about an agent'
+    )
+    agent_show_parser.add_argument(
+        'name',
+        type=str,
+        help='Agent name (without .yaml extension)'
+    )
+
+    # agent validate
+    agent_validate_parser = agent_subparsers.add_parser(
+        'validate',
+        help='Validate an agent configuration'
+    )
+    agent_validate_parser.add_argument(
+        'name',
+        type=str,
+        help='Agent name (without .yaml extension)'
+    )
+    agent_validate_parser.add_argument(
+        '--no-recommendations',
+        action='store_true',
+        help='Skip showing capability recommendations'
+    )
+
+    # agent delete
+    agent_delete_parser = agent_subparsers.add_parser(
+        'delete',
+        help='Delete an agent configuration'
+    )
+    agent_delete_parser.add_argument(
+        'name',
+        type=str,
+        help='Agent name (without .yaml extension)'
+    )
+    agent_delete_parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Skip confirmation prompt'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -1691,14 +1797,44 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             show_help()
             sys.exit(0)
 
+        # Handle 'capabilities' command
+        elif args.command == 'capabilities':
+            if args.capabilities_command == 'list':
+                sys.exit(cli_commands.cmd_capabilities_list(args))
+            elif args.capabilities_command == 'search':
+                sys.exit(cli_commands.cmd_capabilities_search(args))
+            elif args.capabilities_command == 'show':
+                sys.exit(cli_commands.cmd_capabilities_show(args))
+            else:
+                print(f"{Colors.YELLOW}Use 'pg capabilities --help' to see available commands{Colors.ENDC}")
+                sys.exit(1)
+
+        # Handle 'agent' command
+        elif args.command == 'agent':
+            if args.agent_command == 'create':
+                sys.exit(cli_commands.cmd_agent_create(args))
+            elif args.agent_command == 'list':
+                sys.exit(cli_commands.cmd_agent_list(args))
+            elif args.agent_command == 'show':
+                sys.exit(cli_commands.cmd_agent_show(args))
+            elif args.agent_command == 'validate':
+                sys.exit(cli_commands.cmd_agent_validate(args))
+            elif args.agent_command == 'delete':
+                sys.exit(cli_commands.cmd_agent_delete(args))
+            else:
+                print(f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}")
+                sys.exit(1)
+
         # No command provided - show help
         else:
             show_splash_screen()
             print(f"{Colors.GREEN}Welcome to Proto Gear AI Agent Framework!{Colors.ENDC}")
             print(f"{Colors.GRAY}Template generator for AI-powered development collaboration{Colors.ENDC}\n")
             print(f"{Colors.CYAN}Available Commands:{Colors.ENDC}")
-            print(f"  {Colors.BOLD}pg init{Colors.ENDC}         - Initialize AI agent templates in your project")
-            print(f"  {Colors.BOLD}pg help{Colors.ENDC}        - Show detailed documentation")
+            print(f"  {Colors.BOLD}pg init{Colors.ENDC}              - Initialize AI agent templates in your project")
+            print(f"  {Colors.BOLD}pg capabilities{Colors.ENDC}      - Browse and search available capabilities")
+            print(f"  {Colors.BOLD}pg agent{Colors.ENDC}             - Manage agent configurations")
+            print(f"  {Colors.BOLD}pg help{Colors.ENDC}              - Show detailed documentation")
             print(f"\n{Colors.GRAY}Run 'pg --help' for more options{Colors.ENDC}\n")
             print_farewell()
 
