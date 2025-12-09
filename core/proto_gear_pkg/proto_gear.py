@@ -309,12 +309,15 @@ def detect_project_structure(project_path):
     """Detect existing project structure and technologies
 
     Supports detection for:
-    - Node.js projects (Angular, Svelte, Next.js, React, Vue.js, Express)
-    - Python projects (Django, FastAPI)
-    - Ruby projects (Ruby on Rails)
-    - PHP projects (Laravel)
-    - Java projects (Spring Boot)
+    - Node.js projects (Angular, Svelte, Next.js, React, Vue.js, Express, NestJS, Nuxt.js, Gatsby)
+    - Python projects (Django, FastAPI, Flask, Pyramid)
+    - Ruby projects (Ruby on Rails, Sinatra)
+    - PHP projects (Laravel, Symfony)
+    - Java projects (Spring Boot, Micronaut, Quarkus)
     - C# projects (ASP.NET)
+    - Rust projects (Actix Web, Rocket, Axum, Warp, Tauri, Yew)
+    - Go projects (Gin, Echo, Fiber, Chi)
+    - Kotlin projects (Ktor, Spring Boot Kotlin)
     """
     import json
 
@@ -363,6 +366,26 @@ def detect_project_structure(project_path):
             except:
                 pass
 
+        # Check for Go (go.mod)
+        elif (project_path / 'go.mod').exists():
+            info['detected'] = True
+            info['type'] = 'Go Project'
+
+            # Try to detect specific frameworks
+            try:
+                with open(project_path / 'go.mod') as f:
+                    go_mod_content = f.read()
+                    if 'github.com/gin-gonic/gin' in go_mod_content:
+                        info['framework'] = 'Gin'
+                    elif 'github.com/labstack/echo' in go_mod_content:
+                        info['framework'] = 'Echo'
+                    elif 'github.com/gofiber/fiber' in go_mod_content:
+                        info['framework'] = 'Fiber'
+                    elif 'github.com/go-chi/chi' in go_mod_content:
+                        info['framework'] = 'Chi'
+            except:
+                pass
+
         # Check for package.json (Node.js project)
         elif (project_path / 'package.json').exists():
             package_json = project_path / 'package.json'
@@ -377,6 +400,12 @@ def detect_project_structure(project_path):
                     # Check for specific frameworks (ordered by specificity)
                     if 'next' in deps:
                         info['framework'] = 'Next.js'
+                    elif 'nuxt' in deps:
+                        info['framework'] = 'Nuxt.js'
+                    elif '@nestjs/core' in deps or '@nestjs/common' in deps:
+                        info['framework'] = 'NestJS'
+                    elif 'gatsby' in deps:
+                        info['framework'] = 'Gatsby'
                     elif '@angular/core' in deps:
                         info['framework'] = 'Angular'
                     elif 'svelte' in deps:
@@ -390,7 +419,7 @@ def detect_project_structure(project_path):
             except:
                 pass
 
-        # Check for Ruby on Rails (Gemfile + config/application.rb)
+        # Check for Ruby (Gemfile)
         elif (project_path / 'Gemfile').exists():
             info['detected'] = True
             info['type'] = 'Ruby Project'
@@ -404,10 +433,12 @@ def detect_project_structure(project_path):
                         gemfile_content = f.read()
                         if 'rails' in gemfile_content.lower():
                             info['framework'] = 'Ruby on Rails'
+                        elif 'sinatra' in gemfile_content.lower():
+                            info['framework'] = 'Sinatra'
                 except:
                     pass
 
-        # Check for Laravel (composer.json + artisan)
+        # Check for PHP (composer.json)
         elif (project_path / 'composer.json').exists():
             info['detected'] = True
             info['type'] = 'PHP Project'
@@ -422,31 +453,59 @@ def detect_project_structure(project_path):
                         requires = composer_data.get('require', {})
                         if 'laravel/framework' in requires:
                             info['framework'] = 'Laravel'
+                        elif 'symfony/symfony' in requires or 'symfony/framework-bundle' in requires:
+                            info['framework'] = 'Symfony'
                 except:
                     pass
 
-        # Check for Spring Boot (pom.xml or build.gradle)
-        elif (project_path / 'pom.xml').exists() or (project_path / 'build.gradle').exists():
+        # Check for Java/Kotlin (pom.xml or build.gradle)
+        elif (project_path / 'pom.xml').exists() or (project_path / 'build.gradle').exists() or (project_path / 'build.gradle.kts').exists():
             info['detected'] = True
-            info['type'] = 'Java Project'
 
-            # Check for Spring Boot in pom.xml
+            # Check if Kotlin
+            if (project_path / 'build.gradle.kts').exists():
+                info['type'] = 'Kotlin Project'
+            else:
+                info['type'] = 'Java Project'
+
+            # Check for frameworks in pom.xml
             if (project_path / 'pom.xml').exists():
                 try:
                     with open(project_path / 'pom.xml') as f:
                         pom_content = f.read()
+                        if 'kotlin' in pom_content.lower():
+                            info['type'] = 'Kotlin Project'
+
                         if 'spring-boot' in pom_content.lower():
                             info['framework'] = 'Spring Boot'
+                        elif 'micronaut' in pom_content.lower():
+                            info['framework'] = 'Micronaut'
+                        elif 'quarkus' in pom_content.lower():
+                            info['framework'] = 'Quarkus'
+                        elif 'io.ktor' in pom_content:
+                            info['framework'] = 'Ktor'
+                            info['type'] = 'Kotlin Project'
                 except:
                     pass
 
-            # Check for Spring Boot in build.gradle
-            if not info['framework'] and (project_path / 'build.gradle').exists():
+            # Check for frameworks in build.gradle or build.gradle.kts
+            gradle_file = project_path / 'build.gradle.kts' if (project_path / 'build.gradle.kts').exists() else project_path / 'build.gradle'
+            if not info['framework'] and gradle_file.exists():
                 try:
-                    with open(project_path / 'build.gradle') as f:
+                    with open(gradle_file) as f:
                         gradle_content = f.read()
+                        if 'kotlin' in gradle_content.lower():
+                            info['type'] = 'Kotlin Project'
+
                         if 'spring-boot' in gradle_content.lower() or 'org.springframework.boot' in gradle_content:
                             info['framework'] = 'Spring Boot'
+                        elif 'micronaut' in gradle_content.lower():
+                            info['framework'] = 'Micronaut'
+                        elif 'quarkus' in gradle_content.lower():
+                            info['framework'] = 'Quarkus'
+                        elif 'io.ktor' in gradle_content:
+                            info['framework'] = 'Ktor'
+                            info['type'] = 'Kotlin Project'
                 except:
                     pass
 
@@ -475,6 +534,18 @@ def detect_project_structure(project_path):
                 info['framework'] = 'Django'
             elif any('fastapi' in f.name.lower() for f in project_path.glob('*.py')):
                 info['framework'] = 'FastAPI'
+            else:
+                # Check requirements.txt for frameworks
+                if (project_path / 'requirements.txt').exists():
+                    try:
+                        with open(project_path / 'requirements.txt') as f:
+                            reqs_content = f.read().lower()
+                            if 'flask' in reqs_content:
+                                info['framework'] = 'Flask'
+                            elif 'pyramid' in reqs_content:
+                                info['framework'] = 'Pyramid'
+                    except:
+                        pass
 
         # Scan directories
         for item in project_path.iterdir():
