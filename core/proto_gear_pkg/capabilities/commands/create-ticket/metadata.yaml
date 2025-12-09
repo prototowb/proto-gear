@@ -1,0 +1,65 @@
+name: "Create Ticket"
+type: "command"
+version: "1.0.0"
+description: "Create and properly document a ticket in PROJECT_STATUS.md"
+
+category: "project-management"
+tags: ["ticket", "planning", "status", "documentation", "sprint", "tracking"]
+
+status: "stable"
+author: "Proto Gear Team"
+last_updated: "2025-12-09"
+
+dependencies:
+  required: []
+  optional:
+    - "workflows/feature-development"
+    - "workflows/bug-fix"
+  suggested: []
+
+conflicts: []
+
+composable_with:
+  - "workflows/feature-development"
+  - "workflows/bug-fix"
+  - "workflows/hotfix"
+  - "workflows/release"
+
+agent_roles:
+  - "Project Manager Agent"
+  - "All Agents"
+
+relevance:
+  triggers:
+    - "create ticket"
+    - "new ticket"
+    - "add ticket"
+    - "start work"
+    - "new feature"
+    - "bug report"
+  contexts:
+    - "When starting any new work item"
+    - "Before beginning features"
+    - "After discovering bugs"
+    - "During sprint planning"
+
+usage_notes: |
+  Create ticket command should be used before starting any trackable work.
+  Integrates with feature-development and bug-fix workflows as Step 1.
+
+  Updates PROJECT_STATUS.md to maintain single source of truth for project state.
+  Includes: ticket ID, title, type, status, branch, assignee.
+
+required_files:
+  - "PROJECT_STATUS.md"
+
+optional_files: []
+
+command:
+  idempotent: false
+  side_effects:
+    - "PROJECT_STATUS.md (adds ticket entry)"
+    - "PROJECT_STATUS.md (increments last_ticket_id)"
+  prerequisites:
+    - "PROJECT_STATUS.md must exist"
+    - "PROJECT_STATUS.md must have valid YAML metadata section"

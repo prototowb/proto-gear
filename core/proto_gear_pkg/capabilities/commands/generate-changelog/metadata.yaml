@@ -1,0 +1,63 @@
+name: "Generate Changelog"
+type: "command"
+version: "1.0.0"
+description: "Generate or update CHANGELOG.md from git history and conventional commits"
+
+category: "release"
+tags: ["changelog", "release", "documentation", "versioning", "history"]
+
+status: "stable"
+author: "Proto Gear Team"
+last_updated: "2025-12-09"
+
+dependencies:
+  required: []
+  optional:
+    - "workflows/release"
+    - "workflows/finalize-release"
+  suggested:
+    - "skills/documentation"
+
+conflicts: []
+
+composable_with:
+  - "skills/documentation"
+  - "workflows/release"
+  - "workflows/finalize-release"
+  - "workflows/complete-release"
+
+agent_roles:
+  - "Release Manager Agent"
+  - "Documentation Agent"
+  - "DevOps Agent"
+
+relevance:
+  triggers:
+    - "changelog"
+    - "generate changelog"
+    - "update changelog"
+    - "release notes"
+  contexts:
+    - "Before releases"
+    - "After completing features"
+    - "For version documentation"
+
+usage_notes: |
+  Generate changelog from git commit history.
+
+  Parses conventional commits, groups by type (feat/fix/etc), generates CHANGELOG.md.
+  Works best with consistent commit message format.
+
+required_files: []
+
+optional_files:
+  - "CHANGELOG.md"
+  - "BRANCHING.md"
+
+command:
+  idempotent: false
+  side_effects:
+    - "CHANGELOG.md (creates or updates)"
+  prerequisites:
+    - "Git repository must exist"
+    - "Conventional commit format recommended"

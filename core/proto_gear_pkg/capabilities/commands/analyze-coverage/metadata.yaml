@@ -1,0 +1,64 @@
+name: "Analyze Test Coverage"
+type: "command"
+version: "1.0.0"
+description: "Analyze test coverage reports and identify gaps"
+
+category: "testing"
+tags: ["coverage", "testing", "analysis", "quality", "metrics"]
+
+status: "stable"
+author: "Proto Gear Team"
+last_updated: "2025-12-09"
+
+dependencies:
+  required: []
+  optional:
+    - "skills/testing"
+  suggested:
+    - "workflows/feature-development"
+
+conflicts: []
+
+composable_with:
+  - "skills/testing"
+  - "skills/code-review"
+  - "workflows/feature-development"
+  - "workflows/bug-fix"
+
+agent_roles:
+  - "Testing Agent"
+  - "Quality Assurance Agent"
+  - "Full-Stack Developer Agent"
+
+relevance:
+  triggers:
+    - "coverage"
+    - "test coverage"
+    - "analyze coverage"
+    - "coverage report"
+    - "coverage gaps"
+  contexts:
+    - "After running tests"
+    - "Before merging code"
+    - "During code review"
+    - "For quality checks"
+
+usage_notes: |
+  Analyze test coverage to identify untested code.
+
+  Reads coverage reports, identifies gaps, suggests areas needing tests.
+  Works with various coverage tools (pytest-cov, jest, etc.).
+
+required_files: []
+
+optional_files:
+  - "TESTING.md"
+  - ".coveragerc"
+  - "jest.config.js"
+
+command:
+  idempotent: true
+  side_effects: []
+  prerequisites:
+    - "Test coverage report must exist"
+    - "Coverage tool must be configured"
