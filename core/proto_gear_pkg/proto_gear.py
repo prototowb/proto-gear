@@ -1650,13 +1650,42 @@ For more information, visit: https://github.com/proto-gear/proto-gear
     # agent create
     agent_create_parser = agent_subparsers.add_parser(
         'create',
-        help='Create a new agent configuration (interactive)'
+        help='Create a new agent configuration (interactive or quick mode)'
     )
     agent_create_parser.add_argument(
         'name',
         type=str,
         nargs='?',
-        help='Agent name (optional for interactive mode)'
+        help='Agent name (required for quick/template mode, optional for interactive)'
+    )
+    agent_create_parser.add_argument(
+        '--template',
+        type=str,
+        metavar='TEMPLATE',
+        help='Create from template (e.g., backend-developer, testing-focused)'
+    )
+    agent_create_parser.add_argument(
+        '--capabilities',
+        type=str,
+        metavar='CAPS',
+        help='Comma-separated capabilities (e.g., testing,debugging,feature-development)'
+    )
+    agent_create_parser.add_argument(
+        '--description',
+        type=str,
+        metavar='DESC',
+        help='Agent description'
+    )
+    agent_create_parser.add_argument(
+        '--author',
+        type=str,
+        metavar='AUTHOR',
+        help='Agent author name'
+    )
+    agent_create_parser.add_argument(
+        '--list-templates',
+        action='store_true',
+        help='List all available templates'
     )
 
     # agent list

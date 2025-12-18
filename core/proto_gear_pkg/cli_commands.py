@@ -72,35 +72,50 @@ def cmd_capabilities_list(args):
         elif metadata.type == CapabilityType.COMMAND:
             commands[cap_id] = metadata
 
-    # Display
+    # Display with enhanced formatting
     print(f"\n{Colors.HEADER}=== Proto Gear Capabilities ==={Colors.ENDC}\n")
 
     if skills:
-        print(f"{Colors.CYAN}SKILLS ({len(skills)}):{Colors.ENDC}")
+        # Box header
+        print(f"{Colors.CYAN}+-- SKILLS ({len(skills)}) " + "-" * 45 + f"+{Colors.ENDC}")
         for cap_id in sorted(skills.keys()):
             metadata = skills[cap_id]
+            # Extract short ID (e.g., "skills/testing" -> "testing")
+            short_id = cap_id.split('/')[-1]
+            status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
             status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"  - {metadata.name:40} [{status_color}{metadata.status.value}{Colors.ENDC}]")
-        print()
+            # Format: | [OK] short-id          Full Name
+            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
+                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+        print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     if workflows:
-        print(f"{Colors.CYAN}WORKFLOWS ({len(workflows)}):{Colors.ENDC}")
+        # Box header
+        print(f"{Colors.CYAN}+-- WORKFLOWS ({len(workflows)}) " + "-" * 42 + f"+{Colors.ENDC}")
         for cap_id in sorted(workflows.keys()):
             metadata = workflows[cap_id]
+            short_id = cap_id.split('/')[-1]
+            status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
             status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"  - {metadata.name:40} [{status_color}{metadata.status.value}{Colors.ENDC}]")
-        print()
+            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
+                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+        print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     if commands:
-        print(f"{Colors.CYAN}COMMANDS ({len(commands)}):{Colors.ENDC}")
+        # Box header
+        print(f"{Colors.CYAN}+-- COMMANDS ({len(commands)}) " + "-" * 43 + f"+{Colors.ENDC}")
         for cap_id in sorted(commands.keys()):
             metadata = commands[cap_id]
+            short_id = cap_id.split('/')[-1]
+            status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
             status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"  - {metadata.name:40} [{status_color}{metadata.status.value}{Colors.ENDC}]")
-        print()
+            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
+                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+        print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
-    print(f"Total: {len(all_caps)} capabilities")
-    print(f"\nUse 'pg capabilities show <name>' to see details")
+    # Summary
+    print(f"{Colors.BOLD}Total: {len(all_caps)} capabilities{Colors.ENDC}")
+    print(f"{Colors.GRAY}Use 'pg capabilities show <name>' to see details{Colors.ENDC}")
 
     return 0
 
@@ -418,28 +433,199 @@ def cmd_agent_delete(args):
         return 1
 
 
-def cmd_agent_create(args):
-    """Create a new agent (interactive wizard)"""
-    try:
-        from .agent_wizard import run_agent_creation_wizard
-    except ImportError:
-        print(f"{Colors.FAIL}Agent wizard not available{Colors.ENDC}")
-        return 1
+def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[AgentConfiguration]:
+    """
+    Create agent from template.
 
+    Args:
+        args: Arguments with template name and optional agent_name
+        agents_dir: Directory for agents
+        caps_dir: Directory for capabilities
+
+    Returns:
+        AgentConfiguration or None on error
+    """
+    from .agent_templates import create_agent_from_template, get_template
+
+    template_name = args.template
+    agent_name = args.name if hasattr(args, 'name') and args.name else None
+    author = args.author if hasattr(args, 'author') and args.author else None
+    description = args.description if hasattr(args, 'description') and args.description else None
+
+    # Check if template exists
+    template = get_template(template_name)
+    if not template:
+        print(f"{Colors.FAIL}Template not found: {template_name}{Colors.ENDC}")
+        print(f"\nUse 'pg agent create --list-templates' to see available templates")
+        return None
+
+    try:
+        # Create agent from template
+        agent = create_agent_from_template(template_name, agent_name, author)
+
+        # Override description if provided
+        if description:
+            agent.description = description
+
+        print(f"\n{Colors.GREEN}[OK] Agent created from template: {template_name}{Colors.ENDC}")
+        print(f"  Name: {agent.name}")
+        print(f"  Capabilities: {len(agent.capabilities.all_capabilities())}")
+
+        return agent
+
+    except Exception as e:
+        print(f"{Colors.FAIL}Error creating agent from template: {e}{Colors.ENDC}")
+        return None
+
+
+def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[AgentConfiguration]:
+    """
+    Create agent from command-line arguments (quick mode).
+
+    Args:
+        args: Arguments with name, capabilities, description
+        agents_dir: Directory for agents
+        caps_dir: Directory for capabilities
+
+    Returns:
+        AgentConfiguration or None on error
+    """
+    from datetime import datetime
+
+    # Validate required arguments
+    if not hasattr(args, 'name') or not args.name:
+        print(f"{Colors.FAIL}Agent name is required in quick mode{Colors.ENDC}")
+        print(f"Usage: pg agent create <name> --capabilities cap1,cap2,cap3")
+        return None
+
+    if not args.capabilities:
+        print(f"{Colors.FAIL}At least one capability is required{Colors.ENDC}")
+        print(f"Usage: pg agent create {args.name} --capabilities cap1,cap2,cap3")
+        return None
+
+    # Parse capabilities (comma-separated)
+    cap_list = [c.strip() for c in args.capabilities.split(',')]
+
+    # Load all capabilities for validation
+    try:
+        all_caps = load_all_capabilities(caps_dir)
+    except Exception as e:
+        print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
+        return None
+
+    # Categorize capabilities
+    skills = []
+    workflows = []
+    commands = []
+
+    for cap in cap_list:
+        # Try to find capability (support short names)
+        found = False
+        for category in ["skills", "workflows", "commands"]:
+            full_id = f"{category}/{cap}"
+            if full_id in all_caps:
+                if category == "skills":
+                    skills.append(full_id)
+                elif category == "workflows":
+                    workflows.append(full_id)
+                elif category == "commands":
+                    commands.append(full_id)
+                found = True
+                break
+            # Also try exact match
+            if cap in all_caps:
+                metadata = all_caps[cap]
+                if metadata.type.value == "skill":
+                    skills.append(cap)
+                elif metadata.type.value == "workflow":
+                    workflows.append(cap)
+                elif metadata.type.value == "command":
+                    commands.append(cap)
+                found = True
+                break
+
+        if not found:
+            print(f"{Colors.WARNING}Warning: Capability not found: {cap}{Colors.ENDC}")
+            print(f"  Use 'pg capabilities list' to see available capabilities")
+
+    if not skills and not workflows and not commands:
+        print(f"{Colors.FAIL}No valid capabilities found{Colors.ENDC}")
+        return None
+
+    # Get description
+    description = args.description if hasattr(args, 'description') and args.description else \
+                 f"Custom agent with {len(cap_list)} capabilities"
+
+    # Get author
+    author = args.author if hasattr(args, 'author') and args.author else "User"
+
+    # Create agent configuration
+    agent = AgentConfiguration(
+        name=args.name,
+        version="1.0.0",
+        description=description,
+        created=datetime.now().strftime("%Y-%m-%d"),
+        author=author,
+        capabilities=AgentCapabilities(
+            skills=skills,
+            workflows=workflows,
+            commands=commands
+        ),
+        context_priority=["PROJECT_STATUS.md", "AGENTS.md"],
+        agent_instructions=[],
+        required_files=["PROJECT_STATUS.md", "AGENTS.md"],
+        optional_files=[],
+        tags=["custom", "quick-create"],
+        status="active"
+    )
+
+    print(f"\n{Colors.GREEN}[OK] Quick agent created{Colors.ENDC}")
+    print(f"  Name: {agent.name}")
+    print(f"  Capabilities: {len(agent.capabilities.all_capabilities())} " +
+          f"({len(skills)} skills, {len(workflows)} workflows, {len(commands)} commands)")
+
+    return agent
+
+
+def cmd_agent_create(args):
+    """Create a new agent (interactive wizard or quick mode)"""
     agents_dir = get_agents_dir()
     caps_dir = get_capabilities_dir()
 
     # Ensure agents directory exists
     agents_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n{Colors.HEADER}🤖 Proto Gear Agent Creation Wizard{Colors.ENDC}\n")
-
-    # Run wizard
-    agent = run_agent_creation_wizard(agents_dir, caps_dir)
-
-    if not agent:
-        print(f"\n{Colors.YELLOW}Agent creation cancelled{Colors.ENDC}")
+    # Handle --list-templates flag
+    if hasattr(args, 'list_templates') and args.list_templates:
+        from .agent_templates import print_available_templates
+        print_available_templates()
         return 0
+
+    # Quick mode: --template or --capabilities
+    if hasattr(args, 'template') and args.template:
+        agent = _create_from_template(args, agents_dir, caps_dir)
+        if not agent:
+            return 1
+    elif hasattr(args, 'capabilities') and args.capabilities:
+        agent = _create_quick_agent(args, agents_dir, caps_dir)
+        if not agent:
+            return 1
+    else:
+        # Interactive wizard mode (default)
+        try:
+            from .agent_wizard import run_agent_creation_wizard
+        except ImportError:
+            print(f"{Colors.FAIL}Agent wizard not available{Colors.ENDC}")
+            return 1
+
+        print(f"\n{Colors.HEADER}🤖 Proto Gear Agent Creation Wizard{Colors.ENDC}\n")
+
+        # Run wizard
+        agent = run_agent_creation_wizard(agents_dir, caps_dir)
+
+        if not agent:
+            print(f"\n{Colors.YELLOW}Agent creation cancelled{Colors.ENDC}")
+            return 0
 
     # Generate filename from agent name
     agent_filename = agent.name.lower().replace(" ", "-")
@@ -460,7 +646,7 @@ def cmd_agent_create(args):
         agent_name = agent_filename.replace(".yaml", "")
         manager.save_agent(agent, agent_name)
 
-        print(f"\n{Colors.GREEN}✓ Agent created successfully!{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}[OK] Agent created successfully!{Colors.ENDC}")
         print(f"\nSaved to: {agent_file}")
         print(f"\n{Colors.CYAN}Next steps:{Colors.ENDC}")
         print(f"  1. Review: pg agent show {agent_name}")

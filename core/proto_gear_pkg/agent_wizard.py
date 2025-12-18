@@ -90,16 +90,52 @@ def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optio
         if not show_welcome(console):
             return None
 
-        # Step 2: Basic Information
-        name, description, author = get_basic_info()
-        if not name:
-            return None
+        # Step 1.5: Template or Custom?
+        template_name, use_template = ask_template_or_custom(console)
 
-        # Step 3: Capability Selection (most important)
-        capabilities = select_capabilities(all_caps, console)
-        if not capabilities or capabilities.is_empty():
-            print(f"\n{Colors.YELLOW}Agent creation cancelled - no capabilities selected{Colors.ENDC}")
-            return None
+        # If using template, create from template and allow customization
+        if use_template and template_name:
+            from .agent_templates import create_agent_from_template
+
+            # Get agent name
+            print(f"\n{Colors.HEADER}=== Customize Template ==={Colors.ENDC}\n")
+            name = questionary.text(
+                "Agent name:",
+                instruction=f"(press Enter to use default: '{template_name.replace('-', ' ').title()}')",
+                default="",
+                style=custom_style
+            ).ask()
+
+            # Create agent from template
+            agent = create_agent_from_template(template_name, name if name else None, None)
+
+            # Ask if user wants to customize further
+            customize = questionary.confirm(
+                "Would you like to customize this template further?",
+                default=False,
+                style=custom_style
+            ).ask()
+
+            if not customize:
+                return agent
+
+            # User wants to customize - continue with rest of wizard using template as starting point
+            description = agent.description
+            author = agent.author if agent.author else ""
+            capabilities = agent.capabilities
+
+            print(f"\n{Colors.CYAN}You can now modify the template...{Colors.ENDC}")
+        else:
+            # Step 2: Basic Information
+            name, description, author = get_basic_info()
+            if not name:
+                return None
+
+            # Step 3: Capability Selection (most important)
+            capabilities = select_capabilities(all_caps, console)
+            if not capabilities or capabilities.is_empty():
+                print(f"\n{Colors.YELLOW}Agent creation cancelled - no capabilities selected{Colors.ENDC}")
+                return None
 
         # Step 4: Validate selections
         print(f"\n{Colors.CYAN}Validating capability selections...{Colors.ENDC}")
@@ -183,13 +219,13 @@ Agents are **custom AI configurations** composed of:
 - **Instructions**: Specific behavioral guidelines
 - **File Dependencies**: Required project files
 
-## What You'll Do
+## Quick Start Options
 
-1. ✏️  **Basic Info**: Name and describe your agent
-2. 🎯 **Select Capabilities**: Choose from 20+ available capabilities
-3. 📋 **Set Priorities**: Define what matters most
-4. 📝 **Add Instructions**: Guide agent behavior
-5. ✅ **Review & Save**: Preview and confirm
+**Use a Template**: Start from pre-configured agent (faster!)
+- 7 templates: Backend, Frontend, Full-Stack, DevOps, QA, Testing, Minimal
+
+**Build from Scratch**: Customize everything step-by-step
+- Full control over all options
 
 Let's get started!
 """
@@ -207,6 +243,52 @@ Let's get started!
     ).ask()
 
     return proceed if proceed is not None else False
+
+
+def ask_template_or_custom(console: Optional[Console]) -> Tuple[Optional[str], bool]:
+    """
+    Ask if user wants to use a template or build from scratch.
+
+    Returns:
+        Tuple of (template_name, use_template) where template_name is the chosen template
+        or None if building from scratch, and use_template is True if using a template.
+    """
+    from .agent_templates import list_templates, get_template_description
+
+    print(f"\n{Colors.HEADER}=== Choose Starting Point ==={Colors.ENDC}\n")
+
+    # Build choices
+    choices = [
+        questionary.Choice(
+            title="Build from scratch - Full customization (recommended for advanced users)",
+            value="custom"
+        ),
+        questionary.Separator("--- OR START FROM TEMPLATE ---"),
+    ]
+
+    # Add template choices
+    templates = list_templates()
+    for idx, template_name in enumerate(templates, 1):
+        desc = get_template_description(template_name)
+        choices.append(
+            questionary.Choice(
+                title=f"{template_name:20} - {desc[:50]}...",
+                value=template_name
+            )
+        )
+
+    choice = questionary.select(
+        "How would you like to start?",
+        choices=choices,
+        style=custom_style
+    ).ask()
+
+    if not choice or choice == "custom":
+        print(f"\n{Colors.CYAN}Building custom agent from scratch...{Colors.ENDC}")
+        return None, False
+    else:
+        print(f"\n{Colors.GREEN}Using template: {choice}{Colors.ENDC}")
+        return choice, True
 
 
 def get_basic_info() -> Tuple[str, str, str]:
