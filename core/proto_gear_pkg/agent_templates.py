@@ -17,7 +17,7 @@ AGENT_TEMPLATES = {
         "capabilities": AgentCapabilities(
             skills=[],
             workflows=[],
-            commands=["commands/create-ticket"]
+            commands=["create-ticket"]
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
@@ -37,9 +37,9 @@ AGENT_TEMPLATES = {
         "name": "Testing-Focused Agent",
         "description": "Agent specialized in test-driven development and quality assurance",
         "capabilities": AgentCapabilities(
-            skills=["skills/testing", "skills/debugging", "skills/code-review"],
-            workflows=["workflows/bug-fix", "workflows/feature-development"],
-            commands=["commands/analyze-coverage", "commands/create-ticket"]
+            skills=["testing", "debugging", "code-review"],
+            workflows=["bug-fix", "feature-development"],
+            commands=["analyze-coverage", "create-ticket"]
         ),
         "context_priority": [
             "TESTING.md",
@@ -63,9 +63,9 @@ AGENT_TEMPLATES = {
         "name": "Backend Developer",
         "description": "Full-featured backend development agent with testing and debugging",
         "capabilities": AgentCapabilities(
-            skills=["skills/testing", "skills/debugging", "skills/refactoring", "skills/security"],
-            workflows=["workflows/feature-development", "workflows/bug-fix", "workflows/release"],
-            commands=["commands/create-ticket", "commands/analyze-coverage"]
+            skills=["testing", "debugging", "refactoring", "security"],
+            workflows=["feature-development", "bug-fix", "release"],
+            commands=["create-ticket", "analyze-coverage"]
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
@@ -90,9 +90,9 @@ AGENT_TEMPLATES = {
         "name": "Frontend Developer",
         "description": "Frontend development agent with focus on testing and code review",
         "capabilities": AgentCapabilities(
-            skills=["skills/testing", "skills/code-review", "skills/refactoring", "skills/performance"],
-            workflows=["workflows/feature-development", "workflows/bug-fix"],
-            commands=["commands/create-ticket", "commands/analyze-coverage"]
+            skills=["testing", "code-review", "refactoring", "performance"],
+            workflows=["feature-development", "bug-fix"],
+            commands=["create-ticket", "analyze-coverage"]
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
@@ -117,10 +117,10 @@ AGENT_TEMPLATES = {
         "name": "Full-Stack Developer",
         "description": "Complete full-stack development suite with all core capabilities",
         "capabilities": AgentCapabilities(
-            skills=["skills/testing", "skills/debugging", "skills/code-review", "skills/refactoring",
-                    "skills/security", "skills/performance"],
-            workflows=["workflows/feature-development", "workflows/bug-fix", "workflows/release"],
-            commands=["commands/create-ticket", "commands/analyze-coverage", "commands/generate-changelog"]
+            skills=["testing", "debugging", "code-review", "refactoring",
+                    "security", "performance"],
+            workflows=["feature-development", "bug-fix", "release"],
+            commands=["create-ticket", "analyze-coverage", "generate-changelog"]
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
@@ -145,10 +145,10 @@ AGENT_TEMPLATES = {
         "name": "DevOps Engineer",
         "description": "DevOps-focused agent for deployment, release, and infrastructure",
         "capabilities": AgentCapabilities(
-            skills=["skills/testing", "skills/security"],
-            workflows=["workflows/release", "workflows/hotfix", "workflows/cicd-setup",
-                      "workflows/monitoring-setup", "workflows/dependency-update"],
-            commands=["commands/generate-changelog", "commands/create-ticket"]
+            skills=["testing", "security"],
+            workflows=["release", "hotfix", "cicd-setup",
+                      "monitoring-setup", "dependency-update"],
+            commands=["generate-changelog", "create-ticket"]
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
@@ -173,9 +173,9 @@ AGENT_TEMPLATES = {
         "name": "QA Engineer",
         "description": "Quality assurance agent focused on testing and bug fixing",
         "capabilities": AgentCapabilities(
-            skills=["skills/testing", "skills/debugging", "skills/code-review"],
-            workflows=["workflows/bug-fix", "workflows/feature-development"],
-            commands=["commands/analyze-coverage", "commands/create-ticket"]
+            skills=["testing", "debugging", "code-review"],
+            workflows=["bug-fix", "feature-development"],
+            commands=["analyze-coverage", "create-ticket"]
         ),
         "context_priority": [
             "TESTING.md",

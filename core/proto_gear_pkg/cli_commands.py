@@ -59,12 +59,50 @@ def cmd_capabilities_list(args):
         print(f"{Colors.YELLOW}No capabilities found{Colors.ENDC}")
         return 0
 
+    # Apply filters
+    filtered_caps = all_caps.copy()
+
+    # Filter by type
+    if hasattr(args, 'type') and args.type:
+        filtered_caps = {
+            k: v for k, v in filtered_caps.items()
+            if v.type.value == args.type
+        }
+
+    # Filter by tag
+    if hasattr(args, 'tag') and args.tag:
+        tag_lower = args.tag.lower()
+        filtered_caps = {
+            k: v for k, v in filtered_caps.items()
+            if any(tag_lower in tag.lower() for tag in v.tags)
+        }
+
+    # Filter by role
+    if hasattr(args, 'role') and args.role:
+        role_lower = args.role.lower()
+        filtered_caps = {
+            k: v for k, v in filtered_caps.items()
+            if v.agent_roles and any(role_lower in role.lower() for role in v.agent_roles)
+        }
+
+    # Filter by status
+    if hasattr(args, 'status') and args.status:
+        filtered_caps = {
+            k: v for k, v in filtered_caps.items()
+            if v.status.value == args.status
+        }
+
+    if not filtered_caps:
+        print(f"{Colors.YELLOW}No capabilities match the specified filters{Colors.ENDC}")
+        print(f"\nTry: pg capabilities list (without filters)")
+        return 0
+
     # Group by type
     skills = {}
     workflows = {}
     commands = {}
 
-    for cap_id, metadata in all_caps.items():
+    for cap_id, metadata in filtered_caps.items():
         if metadata.type == CapabilityType.SKILL:
             skills[cap_id] = metadata
         elif metadata.type == CapabilityType.WORKFLOW:
@@ -114,7 +152,22 @@ def cmd_capabilities_list(args):
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     # Summary
-    print(f"{Colors.BOLD}Total: {len(all_caps)} capabilities{Colors.ENDC}")
+    filters_applied = []
+    if hasattr(args, 'type') and args.type:
+        filters_applied.append(f"type={args.type}")
+    if hasattr(args, 'tag') and args.tag:
+        filters_applied.append(f"tag={args.tag}")
+    if hasattr(args, 'role') and args.role:
+        filters_applied.append(f"role={args.role}")
+    if hasattr(args, 'status') and args.status:
+        filters_applied.append(f"status={args.status}")
+
+    if filters_applied:
+        print(f"{Colors.BOLD}Showing: {len(filtered_caps)} of {len(all_caps)} capabilities{Colors.ENDC}")
+        print(f"{Colors.GRAY}Filters: {', '.join(filters_applied)}{Colors.ENDC}")
+    else:
+        print(f"{Colors.BOLD}Total: {len(all_caps)} capabilities{Colors.ENDC}")
+
     print(f"{Colors.GRAY}Use 'pg capabilities show <name>' to see details{Colors.ENDC}")
 
     return 0
@@ -267,21 +320,56 @@ def cmd_agent_list(args):
         print(f"Create agents with: pg agent create <name>")
         return 0
 
-    print(f"\n{Colors.HEADER}=== Configured Agents ==={Colors.ENDC}\n")
+    # Print header with box
+    print(f"\n{Colors.CYAN}+-- Configured Agents ({len(agents)}) " + "-" * 40 + f"+{Colors.ENDC}")
+    print(f"{Colors.CYAN}|{Colors.ENDC}")
 
+    # Print table header
+    print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}NAME{' ' * 16}CAPABILITIES  STATUS{Colors.ENDC}        ")
+    print(f"{Colors.CYAN}|{Colors.ENDC} " + "-" * 54)
+
+    # Print agents in table format
     for agent in agents:
-        status_color = Colors.GREEN if agent.status == "active" else Colors.WARNING
-        print(f"{Colors.CYAN}{agent.name}{Colors.ENDC} (v{agent.version}) [{status_color}{agent.status}{Colors.ENDC}]")
-        print(f"  {agent.description}")
-
-        # Show capability count
+        # Calculate capabilities count
         cap_count = len(agent.capabilities.all_capabilities())
-        print(f"  Capabilities: {cap_count} ({len(agent.capabilities.skills)} skills, "
-              f"{len(agent.capabilities.workflows)} workflows, {len(agent.capabilities.commands)} commands)")
-        print()
+        cap_text = f"{cap_count} caps"
 
-    print(f"Total: {len(agents)} agents")
-    print(f"\nUse 'pg agent show <name>' to see details")
+        # Validate agent to get status
+        try:
+            errors, warnings = manager.validate_agent(agent)
+            if errors:
+                status_icon = f"{Colors.FAIL}[X]{Colors.ENDC}"
+                status_text = "Invalid"
+            elif warnings:
+                status_icon = f"{Colors.WARNING}[!]{Colors.ENDC}"
+                status_text = "Warnings"
+            else:
+                status_icon = f"{Colors.GREEN}[OK]{Colors.ENDC}"
+                status_text = "Valid"
+        except Exception:
+            status_icon = f"{Colors.FAIL}[X]{Colors.ENDC}"
+            status_text = "Error"
+
+        # Format name column (20 chars wide)
+        name_display = agent.name[:18] if len(agent.name) > 18 else agent.name
+        name_padding = " " * (20 - len(name_display))
+
+        # Format capabilities column (14 chars wide)
+        cap_padding = " " * (14 - len(cap_text))
+
+        # Print row
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.CYAN}{name_display}{Colors.ENDC}"
+              f"{name_padding}{cap_text}{cap_padding}{status_icon} {status_text}")
+
+    # Print footer
+    print(f"{Colors.CYAN}|{Colors.ENDC}")
+    print(f"{Colors.CYAN}+-- " + "-" * 60 + f"+{Colors.ENDC}")
+
+    # Print quick actions
+    print(f"\n{Colors.BOLD}Quick actions:{Colors.ENDC}")
+    print(f"  pg agent show <name>      - View configuration details")
+    print(f"  pg agent validate <name>  - Check for configuration issues")
+    print(f"  pg agent clone <src> <dst> - Duplicate an agent")
 
     return 0
 
@@ -525,22 +613,24 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
             full_id = f"{category}/{cap}"
             if full_id in all_caps:
                 if category == "skills":
-                    skills.append(full_id)
+                    skills.append(cap)  # Use short name, not full_id
                 elif category == "workflows":
-                    workflows.append(full_id)
+                    workflows.append(cap)  # Use short name, not full_id
                 elif category == "commands":
-                    commands.append(full_id)
+                    commands.append(cap)  # Use short name, not full_id
                 found = True
                 break
             # Also try exact match
             if cap in all_caps:
                 metadata = all_caps[cap]
+                # Extract short name from full path if needed
+                short_name = cap.split('/')[-1] if '/' in cap else cap
                 if metadata.type.value == "skill":
-                    skills.append(cap)
+                    skills.append(short_name)
                 elif metadata.type.value == "workflow":
-                    workflows.append(cap)
+                    workflows.append(short_name)
                 elif metadata.type.value == "command":
-                    commands.append(cap)
+                    commands.append(short_name)
                 found = True
                 break
 
@@ -585,6 +675,58 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
           f"({len(skills)} skills, {len(workflows)} workflows, {len(commands)} commands)")
 
     return agent
+
+
+def cmd_agent_clone(args):
+    """Clone an existing agent"""
+    source_name = args.source
+    dest_name = args.destination
+    agents_dir = get_agents_dir()
+    caps_dir = get_capabilities_dir()
+
+    try:
+        manager = AgentManager(agents_dir, caps_dir)
+
+        # Load source agent
+        source_agent = manager.load_agent(source_name)
+
+        # Create cloned agent with new name
+        from datetime import datetime
+        cloned_agent = AgentConfiguration(
+            name=dest_name,
+            version=source_agent.version,
+            description=args.description if hasattr(args, 'description') and args.description else f"Cloned from {source_name}",
+            created=datetime.now().strftime("%Y-%m-%d"),
+            author=source_agent.author,
+            capabilities=source_agent.capabilities,
+            context_priority=source_agent.context_priority.copy() if source_agent.context_priority else [],
+            agent_instructions=source_agent.agent_instructions.copy() if source_agent.agent_instructions else [],
+            required_files=source_agent.required_files.copy() if source_agent.required_files else [],
+            optional_files=source_agent.optional_files.copy() if source_agent.optional_files else [],
+            tags=source_agent.tags.copy() if source_agent.tags else [],
+            status=source_agent.status
+        )
+
+        # Save cloned agent
+        manager.save_agent(cloned_agent, dest_name)
+
+        print(f"\n{Colors.GREEN}[OK] Agent cloned successfully!{Colors.ENDC}")
+        print(f"  Source: {source_name}")
+        print(f"  New agent: {dest_name}")
+        print(f"  Capabilities: {len(cloned_agent.capabilities.all_capabilities())}")
+        print(f"\n{Colors.CYAN}Next steps:{Colors.ENDC}")
+        print(f"  1. Review: pg agent show {dest_name}")
+        print(f"  2. Customize: Edit .proto-gear/agents/{dest_name}.yaml")
+
+        return 0
+
+    except FileNotFoundError:
+        print(f"{Colors.FAIL}Source agent not found: {source_name}{Colors.ENDC}")
+        print(f"\nUse 'pg agent list' to see available agents")
+        return 1
+    except Exception as e:
+        print(f"{Colors.FAIL}Error cloning agent: {e}{Colors.ENDC}")
+        return 1
 
 
 def cmd_agent_create(args):

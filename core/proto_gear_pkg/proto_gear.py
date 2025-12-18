@@ -1617,6 +1617,28 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         'list',
         help='List all available capabilities'
     )
+    capabilities_list_parser.add_argument(
+        '--type',
+        type=str,
+        choices=['skill', 'workflow', 'command'],
+        help='Filter by capability type'
+    )
+    capabilities_list_parser.add_argument(
+        '--tag',
+        type=str,
+        help='Filter by tag (e.g., testing, deployment)'
+    )
+    capabilities_list_parser.add_argument(
+        '--role',
+        type=str,
+        help='Filter by agent role (e.g., "Backend Developer")'
+    )
+    capabilities_list_parser.add_argument(
+        '--status',
+        type=str,
+        choices=['stable', 'beta', 'experimental'],
+        help='Filter by status'
+    )
 
     # capabilities search
     capabilities_search_parser = capabilities_subparsers.add_parser(
@@ -1737,6 +1759,27 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Skip confirmation prompt'
     )
 
+    # agent clone
+    agent_clone_parser = agent_subparsers.add_parser(
+        'clone',
+        help='Clone an existing agent with a new name'
+    )
+    agent_clone_parser.add_argument(
+        'source',
+        type=str,
+        help='Source agent name to clone from'
+    )
+    agent_clone_parser.add_argument(
+        'destination',
+        type=str,
+        help='New agent name'
+    )
+    agent_clone_parser.add_argument(
+        '--description',
+        type=str,
+        help='Override description for cloned agent'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -1850,6 +1893,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                 sys.exit(cli_commands.cmd_agent_validate(args))
             elif args.agent_command == 'delete':
                 sys.exit(cli_commands.cmd_agent_delete(args))
+            elif args.agent_command == 'clone':
+                sys.exit(cli_commands.cmd_agent_clone(args))
             else:
                 print(f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}")
                 sys.exit(1)
