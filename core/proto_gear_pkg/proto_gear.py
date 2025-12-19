@@ -1553,6 +1553,14 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         """
     )
 
+    # Add version argument
+    from . import __version__
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'Proto Gear v{__version__}'
+    )
+
     # Create subcommands
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
