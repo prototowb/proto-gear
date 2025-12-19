@@ -1662,6 +1662,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Capability name (e.g., testing, bug-fix)'
     )
 
+    # capabilities tree
+    capabilities_tree_parser = capabilities_subparsers.add_parser(
+        'tree',
+        help='Show dependency tree for a capability'
+    )
+    capabilities_tree_parser.add_argument(
+        'capability_id',
+        type=str,
+        help='Capability ID (e.g., testing, skills/debugging)'
+    )
+
     # 'agent' command group
     agent_parser = subparsers.add_parser(
         'agent',
@@ -1877,6 +1888,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                 sys.exit(cli_commands.cmd_capabilities_search(args))
             elif args.capabilities_command == 'show':
                 sys.exit(cli_commands.cmd_capabilities_show(args))
+            elif args.capabilities_command == 'tree':
+                sys.exit(cli_commands.cmd_capabilities_tree(args))
             else:
                 print(f"{Colors.YELLOW}Use 'pg capabilities --help' to see available commands{Colors.ENDC}")
                 sys.exit(1)

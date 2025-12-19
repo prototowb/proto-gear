@@ -10,6 +10,7 @@ Provides:
 from pathlib import Path
 from typing import Optional, List
 import sys
+import difflib
 
 from .ui_helper import UIHelper, Colors
 from .agent_config import (
@@ -39,6 +40,24 @@ def get_agents_dir() -> Path:
     proto_gear_dir = Path(".proto-gear")
     agents_dir = proto_gear_dir / "agents"
     return agents_dir
+
+
+def get_close_matches(query: str, options: List[str], n: int = 3, cutoff: float = 0.6) -> List[str]:
+    """
+    Get close matches for a query string using fuzzy matching.
+
+    Args:
+        query: The string to match
+        options: List of possible matches
+        n: Maximum number of suggestions to return
+        cutoff: Similarity threshold (0.0 to 1.0)
+
+    Returns:
+        List of close matches
+    """
+    # Use difflib for fuzzy matching
+    matches = difflib.get_close_matches(query, options, n=n, cutoff=cutoff)
+    return matches
 
 
 # ============================================================================
@@ -237,8 +256,33 @@ def cmd_capabilities_show(args):
                 break
 
     if not metadata:
-        print(f"{Colors.FAIL}Capability not found: {name}{Colors.ENDC}")
-        print(f"\nUse 'pg capabilities list' to see all capabilities")
+        print(f"{Colors.FAIL}Capability not found: '{name}'{Colors.ENDC}\n")
+
+        # Suggest similar capabilities using fuzzy matching
+        all_cap_ids = list(all_caps.keys())
+        # Also extract short names for matching
+        short_names = [cap_id.split('/')[-1] for cap_id in all_cap_ids]
+        all_searchable = all_cap_ids + short_names
+
+        suggestions = get_close_matches(name, all_searchable, n=3, cutoff=0.6)
+        if suggestions:
+            print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
+            for suggestion in suggestions[:3]:
+                # If it's a short name, find the full ID
+                if '/' not in suggestion:
+                    matching_ids = [cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")]
+                    full_id = matching_ids[0] if matching_ids else suggestion
+                else:
+                    full_id = suggestion
+
+                if full_id in all_caps:
+                    cap_name = all_caps[full_id].name
+                    print(f"  - {suggestion} ({cap_name})")
+                else:
+                    print(f"  - {suggestion}")
+            print()
+
+        print(f"Use 'pg capabilities list' to see all capabilities")
         return 1
 
     # Display detailed information
@@ -290,6 +334,134 @@ def cmd_capabilities_show(args):
         print(f"\n{Colors.WARNING}Conflicts With:{Colors.ENDC}")
         for conflict in metadata.conflicts:
             print(f"  - {conflict}")
+
+    return 0
+
+
+def cmd_capabilities_tree(args):
+    """Show dependency tree for a capability"""
+    caps_dir = get_capabilities_dir()
+    cap_id = args.capability_id
+
+    # Load all capabilities
+    try:
+        all_caps = load_all_capabilities(caps_dir)
+    except Exception as e:
+        print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
+        return 1
+
+    # Find the capability (support short names)
+    metadata = None
+    full_id = None
+
+    # Try exact match first
+    if cap_id in all_caps:
+        metadata = all_caps[cap_id]
+        full_id = cap_id
+    else:
+        # Try with type prefix
+        for cap_type in ["skills", "workflows", "commands"]:
+            test_id = f"{cap_type}/{cap_id}"
+            if test_id in all_caps:
+                metadata = all_caps[test_id]
+                full_id = test_id
+                break
+
+    if not metadata:
+        print(f"{Colors.FAIL}Capability not found: '{cap_id}'{Colors.ENDC}\n")
+
+        # Suggest similar capabilities using fuzzy matching
+        all_cap_ids = list(all_caps.keys())
+        # Also extract short names for matching
+        short_names = [cid.split('/')[-1] for cid in all_cap_ids]
+        all_searchable = all_cap_ids + short_names
+
+        suggestions = get_close_matches(cap_id, all_searchable, n=3, cutoff=0.6)
+        if suggestions:
+            print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
+            for suggestion in suggestions[:3]:
+                # If it's a short name, find the full ID
+                if '/' not in suggestion:
+                    matching_ids = [cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")]
+                    full_id = matching_ids[0] if matching_ids else suggestion
+                else:
+                    full_id = suggestion
+
+                if full_id in all_caps:
+                    cap_name = all_caps[full_id].name
+                    print(f"  - {suggestion} ({cap_name})")
+                else:
+                    print(f"  - {suggestion}")
+            print()
+
+        print(f"Use 'pg capabilities list' to see all capabilities")
+        return 1
+
+    # Print header with box
+    print(f"\n{Colors.CYAN}+-- Dependency Tree: {metadata.name} " + "-" * (40 - len(metadata.name)) + f"+{Colors.ENDC}")
+    print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    # Show capability info
+    print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}{full_id}{Colors.ENDC} - {metadata.description}")
+    print(f"{Colors.CYAN}|{Colors.ENDC} Type: {metadata.type.value} | Status: {metadata.status.value}")
+    print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    # Show dependencies
+    has_dependencies = False
+
+    if metadata.dependencies.required:
+        has_dependencies = True
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Required Dependencies:{Colors.ENDC}")
+        for dep in metadata.dependencies.required:
+            dep_name = all_caps[dep].name if dep in all_caps else dep
+            print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
+        print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    if metadata.dependencies.optional:
+        has_dependencies = True
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Optional Dependencies:{Colors.ENDC}")
+        for dep in metadata.dependencies.optional:
+            dep_name = all_caps[dep].name if dep in all_caps else dep
+            print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
+        print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    if metadata.dependencies.suggested:
+        has_dependencies = True
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Suggested Capabilities:{Colors.ENDC}")
+        for dep in metadata.dependencies.suggested:
+            dep_name = all_caps[dep].name if dep in all_caps else dep
+            print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
+        print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    # Show composable capabilities
+    if metadata.composable_with:
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Composable With:{Colors.ENDC} {len(metadata.composable_with)} capabilities")
+        for comp in metadata.composable_with[:5]:
+            comp_name = all_caps[comp].name if comp in all_caps else comp
+            print(f"{Colors.CYAN}|{Colors.ENDC}   - {comp} ({comp_name})")
+        if len(metadata.composable_with) > 5:
+            print(f"{Colors.CYAN}|{Colors.ENDC}   ... and {len(metadata.composable_with) - 5} more")
+        print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    # Show conflicts
+    if metadata.conflicts:
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.WARNING}Conflicts With:{Colors.ENDC}")
+        for conflict in metadata.conflicts:
+            conflict_name = all_caps[conflict].name if conflict in all_caps else conflict
+            print(f"{Colors.CYAN}|{Colors.ENDC}   - {conflict} ({conflict_name})")
+        print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    if not has_dependencies and not metadata.composable_with and not metadata.conflicts:
+        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.GRAY}No dependencies or relationships defined{Colors.ENDC}")
+        print(f"{Colors.CYAN}|{Colors.ENDC}")
+
+    # Print footer
+    print(f"{Colors.CYAN}+-- " + "-" * 60 + f"+{Colors.ENDC}")
+
+    # Show usage tip
+    print(f"\n{Colors.BOLD}Quick actions:{Colors.ENDC}")
+    print(f"  pg capabilities show {cap_id}  - View full details")
+    print(f"  pg agent create --capabilities {cap_id},...  - Use in new agent")
 
     return 0
 
@@ -384,8 +556,23 @@ def cmd_agent_show(args):
         manager = AgentManager(agents_dir, caps_dir)
         agent = manager.load_agent(agent_name)
     except FileNotFoundError:
-        print(f"{Colors.FAIL}Agent not found: {agent_name}{Colors.ENDC}")
-        print(f"\nUse 'pg agent list' to see all agents")
+        print(f"{Colors.FAIL}Agent not found: '{agent_name}'{Colors.ENDC}\n")
+
+        # Suggest similar agents using fuzzy matching
+        try:
+            all_agents = manager.list_agents()
+            agent_names = [a.name for a in all_agents]
+            suggestions = get_close_matches(agent_name, agent_names, n=3, cutoff=0.6)
+
+            if suggestions:
+                print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
+                for suggestion in suggestions:
+                    print(f"  - {suggestion}")
+                print()
+        except Exception:
+            pass  # If we can't load agents for suggestions, just skip
+
+        print(f"Use 'pg agent list' to see all agents")
         return 1
     except Exception as e:
         print(f"{Colors.FAIL}Error loading agent: {e}{Colors.ENDC}")
@@ -450,7 +637,23 @@ def cmd_agent_validate(args):
         manager = AgentManager(agents_dir, caps_dir)
         agent = manager.load_agent(agent_name)
     except FileNotFoundError:
-        print(f"{Colors.FAIL}Agent not found: {agent_name}{Colors.ENDC}")
+        print(f"{Colors.FAIL}Agent not found: '{agent_name}'{Colors.ENDC}\n")
+
+        # Suggest similar agents using fuzzy matching
+        try:
+            all_agents = manager.list_agents()
+            agent_names = [a.name for a in all_agents]
+            suggestions = get_close_matches(agent_name, agent_names, n=3, cutoff=0.6)
+
+            if suggestions:
+                print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
+                for suggestion in suggestions:
+                    print(f"  - {suggestion}")
+                print()
+        except Exception:
+            pass  # If we can't load agents for suggestions, just skip
+
+        print(f"Use 'pg agent list' to see all agents")
         return 1
     except Exception as e:
         print(f"{Colors.FAIL}Error loading agent: {e}{Colors.ENDC}")
