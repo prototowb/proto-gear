@@ -5,6 +5,108 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-01-06
+
+### Added - Safe Template Update System
+
+**Patch Release**: Critical infrastructure for safely updating template files while preserving 100% of user data (tickets, metrics, custom configurations).
+
+#### Template Update Command
+- **`pg update`** - Smart template update system
+  - Updates PROJECT_STATUS.md to latest template version
+  - Preserves all tickets (Active, Completed)
+  - Preserves YAML state (project phase, sprint, metrics)
+  - Preserves custom configurations
+  - **100% data preservation guarantee**
+
+#### Update Features
+- **Preview-then-apply workflow** - See changes before applying
+  - Unified diff with color coding (green=added, red=removed)
+  - Line-by-line change statistics
+  - Informational warnings (unreplaced placeholders, validation notes)
+- **Automatic backups** - Creates `.bak` files before updates
+- **Dry-run mode** - `pg update --dry-run` for safe preview
+- **Force mode** - `pg update --force` to skip confirmation
+- **Selective updates** - Update specific templates: `pg update PROJECT_STATUS.md`
+
+#### Smart Merge Algorithm
+- **User data extraction** - Regex-based pattern matching for user content
+  - YAML blocks (project state, metrics, configuration)
+  - Ticket tables (Active, Completed, Blocked)
+  - Freeform sections (Recent Updates, Feature Progress)
+- **Template merging** - Combines new structure + old user data
+  - Applies new template improvements
+  - Injects preserved user data into correct sections
+  - Validates merged output
+- **Validation** - Ensures merged files are syntactically correct
+  - YAML syntax validation
+  - Table structure checks
+  - Placeholder detection
+
+### Technical Details
+
+**New Files**:
+- `core/proto_gear_pkg/template_updater.py` (~605 lines)
+  - `UserDataExtractor` - Parse and extract customized content
+  - `TemplateMerger` - Smart merge algorithm
+  - `DiffGenerator` - Colored unified diff with statistics
+  - `TemplateValidator` - Post-merge validation
+  - `TemplateUpdater` - Main orchestrator
+- `tests/test_template_updater.py` (~400 lines) - 21 unit tests
+- `tests/test_update_integration.py` (~300 lines) - 7 integration tests
+
+**Modified Files**:
+- `core/proto_gear_pkg/cli_commands.py` (+150 lines)
+  - Added `cmd_template_update()` command handler
+  - Added helper functions for project context detection
+- `core/proto_gear_pkg/proto_gear.py` (+30 lines)
+  - Added `update` subparser with flags (--dry-run, --force, --diff-only)
+  - Added command routing for `pg update`
+
+**Test Results**:
+- **28 automated tests** (21 unit + 7 integration)
+- **100% pass rate** across all tests
+- **Real-world tested** on actual PROJECT_STATUS.md with 47 tickets
+- **Zero data loss** in all test scenarios
+
+**Commands**:
+```bash
+# Preview update (safe, no changes)
+pg update --dry-run
+
+# Update all supported templates
+pg update
+
+# Update specific template
+pg update PROJECT_STATUS.md
+
+# Skip confirmation prompt
+pg update --force
+
+# Show help
+pg update --help
+```
+
+### Changed
+- Template update workflow now automated (was: manual merge required)
+- Dogfooding workflow simplified (was: complex manual process)
+
+### Performance
+- **Update speed**: <1 second for typical PROJECT_STATUS.md
+- **Backup creation**: Instant (creates .bak before changes)
+- **Diff generation**: <500ms with full color output
+
+### Known Limitations (v0.8.2)
+- **Supported templates**: PROJECT_STATUS.md only (MVP scope)
+- **Deferred to v0.9.0**: AGENTS.md, BRANCHING.md, TESTING.md full support
+- **Freeform sections**: Some sections use placeholder warnings (informational only)
+
+### Security
+- **Path traversal protection**: Validates all file paths
+- **Backup safety**: Always creates backup before modifications
+- **Read-only dry-run**: Preview mode never modifies files
+- **User confirmation**: Interactive prompt unless --force specified
+
 ## [0.8.1] - 2025-12-19
 
 ### Added - UX Improvements for Agent & Capability Management

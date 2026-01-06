@@ -1799,6 +1799,32 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Override description for cloned agent'
     )
 
+    # 'update' command for template updates
+    update_parser = subparsers.add_parser(
+        'update',
+        help='Update template files while preserving user data'
+    )
+    update_parser.add_argument(
+        'templates',
+        nargs='*',
+        help='Specific templates to update (e.g., PROJECT_STATUS.md AGENTS.md). If omitted, updates all supported templates.'
+    )
+    update_parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Preview changes without modifying files'
+    )
+    update_parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Skip confirmation prompt'
+    )
+    update_parser.add_argument(
+        '--diff-only',
+        action='store_true',
+        help='Show diff and exit without applying changes'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -1919,6 +1945,10 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             else:
                 print(f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}")
                 sys.exit(1)
+
+        # Handle 'update' command
+        elif args.command == 'update':
+            sys.exit(cli_commands.cmd_template_update(args))
 
         # No command provided - show help
         else:

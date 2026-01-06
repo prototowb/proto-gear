@@ -1003,3 +1003,157 @@ def cmd_agent_create(args):
     except Exception as e:
         print(f"\n{Colors.FAIL}Error saving agent: {e}{Colors.ENDC}")
         return 1
+
+
+# ============================================================================
+# Template Update Commands
+# ============================================================================
+
+def cmd_template_update(args):
+    """
+    Update template files while preserving user data.
+
+    Safely updates AGENTS.md and PROJECT_STATUS.md to latest template
+    versions while preserving tickets, metrics, and custom configurations.
+    """
+    from .template_updater import TemplateUpdater, TemplateUpdateError
+    import os
+
+    # Get templates to update
+    if args.templates and len(args.templates) > 0:
+        # User specified which templates
+        template_names = [t.replace('.md', '') for t in args.templates]
+    else:
+        # Update all supported templates
+        template_names = ['PROJECT_STATUS', 'AGENTS']
+
+    # Build project context for placeholders
+    project_dir = Path.cwd()
+    project_context = {
+        'PROJECT_NAME': project_dir.name,
+        'TICKET_PREFIX': _detect_ticket_prefix(project_dir),
+        'VERSION': _get_protogear_version(),
+        'MAIN_BRANCH': 'main',
+        'DEV_BRANCH': 'development',
+    }
+
+    # Initialize updater
+    updater = TemplateUpdater(project_dir)
+
+    # Track results
+    updated_count = 0
+    skipped_count = 0
+    error_count = 0
+
+    print(f"\n{Colors.CYAN}=== Template Update ==={Colors.ENDC}")
+    print(f"Project: {project_context['PROJECT_NAME']}")
+    print(f"Templates: {', '.join(template_names)}")
+    print()
+
+    # Update each template
+    for template_name in template_names:
+        filename = f"{template_name}.md"
+        file_path = project_dir / filename
+
+        # Check if file exists
+        if not file_path.exists():
+            print(f"{Colors.WARNING}[SKIP] {filename} - File not found{Colors.ENDC}")
+            skipped_count += 1
+            continue
+
+        try:
+            # Perform update
+            result = updater.update_template(
+                template_name,
+                project_context,
+                dry_run=args.dry_run,
+                force=args.force
+            )
+
+            # Report result
+            if result.success:
+                if args.dry_run:
+                    print(f"{Colors.CYAN}[DRY RUN] {filename} - Would update{Colors.ENDC}")
+                    print(f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines")
+                else:
+                    print(f"{Colors.GREEN}[OK] {filename} - Updated successfully{Colors.ENDC}")
+                    print(f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines")
+                    if result.backup_created:
+                        print(f"  Backup: {result.backup_path.name}")
+
+                # Show warnings if any
+                if result.warnings:
+                    print(f"  {Colors.WARNING}Warnings:{Colors.ENDC}")
+                    for warning in result.warnings:
+                        print(f"    - {warning}")
+
+                updated_count += 1
+            else:
+                print(f"{Colors.FAIL}[ERROR] {filename} - Update failed{Colors.ENDC}")
+                for error in result.errors:
+                    print(f"  - {error}")
+                error_count += 1
+
+        except TemplateUpdateError as e:
+            print(f"{Colors.FAIL}[ERROR] {filename} - {e}{Colors.ENDC}")
+            error_count += 1
+        except Exception as e:
+            print(f"{Colors.FAIL}[ERROR] {filename} - Unexpected error: {e}{Colors.ENDC}")
+            error_count += 1
+
+    # Summary
+    print(f"\n{Colors.CYAN}=== Summary ==={Colors.ENDC}")
+    if args.dry_run:
+        print(f"Mode: {Colors.CYAN}DRY RUN{Colors.ENDC} (no files modified)")
+    print(f"Updated: {Colors.GREEN}{updated_count}{Colors.ENDC}")
+    if skipped_count > 0:
+        print(f"Skipped: {Colors.WARNING}{skipped_count}{Colors.ENDC}")
+    if error_count > 0:
+        print(f"Errors: {Colors.FAIL}{error_count}{Colors.ENDC}")
+
+    print()
+
+    if args.dry_run and updated_count > 0:
+        print(f"{Colors.CYAN}Tip:{Colors.ENDC} Run without --dry-run to apply changes")
+
+    return 0 if error_count == 0 else 1
+
+
+def _detect_ticket_prefix(project_dir: Path) -> str:
+    """
+    Detect ticket prefix from PROJECT_STATUS.md if it exists.
+
+    Args:
+        project_dir: Project root directory
+
+    Returns:
+        Ticket prefix (e.g., "PROTO", "TEST") or "TICKET" as default
+    """
+    status_file = project_dir / "PROJECT_STATUS.md"
+    if status_file.exists():
+        try:
+            content = status_file.read_text(encoding='utf-8')
+            # Look for ticket IDs in completed tickets table
+            import re
+            matches = re.findall(r'\|\s*([A-Z]+-\d+)\s*\|', content)
+            if matches:
+                # Extract prefix from first match
+                prefix = matches[0].split('-')[0]
+                return prefix
+        except Exception:
+            pass
+    return "TICKET"
+
+
+def _get_protogear_version() -> str:
+    """
+    Get current Proto Gear version.
+
+    Returns:
+        Version string (e.g., "0.8.2")
+    """
+    try:
+        from . import __version__
+        return __version__
+    except Exception:
+        return "0.8.1"  # Fallback
