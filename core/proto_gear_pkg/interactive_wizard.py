@@ -1349,6 +1349,17 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
                 preset_config = PRESETS[preset_key]['config']
                 config = _apply_preset_config(preset_config, git_detected, current_dir)
                 config['preset'] = preset_key
+
+                # If branching is enabled, ask for ticket prefix
+                if config.get('with_branching') and git_detected:
+                    wizard.clear_screen()
+                    wizard.show_step_header(1, 1, "Git Configuration", project_info, current_dir)
+                    try:
+                        ticket_prefix = wizard.ask_ticket_prefix(config.get('ticket_prefix', 'PROJ'))
+                        config['ticket_prefix'] = ticket_prefix
+                    except KeyboardInterrupt:
+                        return None
+
                 config['confirmed'] = True
                 return config
             else:
@@ -1373,8 +1384,26 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
     wizard.clear_screen()
     wizard.show_step_header(2, 3, "Git Workflow", project_info, current_dir)
     try:
-        git_options = wizard.ask_git_workflow_options(git_config, current_dir)
-        config.update(git_options)
+        # Check if BRANCHING was selected in Stage 1 - if so, sync it
+        if core_templates.get('BRANCHING'):
+            # User selected BRANCHING in template selection
+            # Ask for ticket prefix using wizard method
+            if git_config.get('is_git_repo'):
+                suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:15]
+                if not suggested_prefix or len(suggested_prefix) < 2:
+                    suggested_prefix = 'PROJ'
+
+                ticket_prefix = wizard.ask_ticket_prefix(suggested_prefix)
+                config['with_branching'] = True
+                config['ticket_prefix'] = ticket_prefix
+            else:
+                # No git repo but BRANCHING selected - still enable it
+                config['with_branching'] = True
+                config['ticket_prefix'] = None
+        else:
+            # BRANCHING not selected in Stage 1, ask via git workflow options
+            git_options = wizard.ask_git_workflow_options(git_config, current_dir)
+            config.update(git_options)
     except KeyboardInterrupt:
         return None
 
