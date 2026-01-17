@@ -1,6 +1,7 @@
 name: "Create Ticket"
 type: "command"
-version: "1.0.0"
+slash_command: "/create-ticket"
+version: "1.1.0"
 description: "Create and properly document a ticket in PROJECT_STATUS.md"
 
 category: "project-management"
@@ -8,7 +9,35 @@ tags: ["ticket", "planning", "status", "documentation", "sprint", "tracking"]
 
 status: "stable"
 author: "Proto Gear Team"
-last_updated: "2025-12-09"
+last_updated: "2025-01-15"
+
+# Slash command arguments
+arguments:
+  required:
+    - name: "title"
+      type: "string"
+      description: "Ticket title (in quotes)"
+  optional:
+    - name: "--type"
+      type: "enum"
+      values: ["feature", "bugfix", "hotfix", "task"]
+      default: "task"
+      description: "Type of ticket"
+    - name: "--assignee"
+      type: "string"
+      description: "Agent or person responsible"
+    - name: "--priority"
+      type: "enum"
+      values: ["low", "medium", "high", "critical"]
+      default: "medium"
+      description: "Ticket priority"
+
+# Example invocations
+invocation_examples:
+  - '/create-ticket "Add user authentication"'
+  - '/create-ticket "Fix login bug" --type bugfix'
+  - '/create-ticket "Add dark mode" --type feature --assignee "Frontend Agent"'
+  - '/create-ticket "Update docs" --type task --priority low'
 
 dependencies:
   required: []
@@ -31,19 +60,19 @@ agent_roles:
 
 relevance:
   triggers:
+    - "/create-ticket"
     - "create ticket"
     - "new ticket"
     - "add ticket"
-    - "start work"
-    - "new feature"
-    - "bug report"
   contexts:
+    - "When user types /create-ticket"
     - "When starting any new work item"
     - "Before beginning features"
     - "After discovering bugs"
-    - "During sprint planning"
 
 usage_notes: |
+  Slash command: /create-ticket "title" [--type TYPE] [--assignee NAME] [--priority LEVEL]
+
   Create ticket command should be used before starting any trackable work.
   Integrates with feature-development and bug-fix workflows as Step 1.
 

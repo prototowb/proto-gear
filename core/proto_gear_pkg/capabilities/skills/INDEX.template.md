@@ -1,6 +1,19 @@
 # Skills Index
 
-> **Modular, reusable expertise** - Skills provide focused knowledge in specific domains
+> **Implicit, continuous expertise** - Skills are activated automatically when contextually relevant
+
+## Skills vs Slash Commands
+
+| Aspect | Skills | Slash Commands |
+|--------|--------|----------------|
+| **Invocation** | Implicit (AI decides) | Explicit (`/command-name`) |
+| **Nature** | Continuous expertise | Discrete action |
+| **Duration** | Throughout task | Start → Finish |
+| **Example** | "testing" skill during TDD | `/create-ticket "Add auth"` |
+
+**Key insight**: Skills are **expertise you apply based on context**. They don't have a `/` prefix and aren't explicitly invoked by the user.
+
+---
 
 ## Available Skills
 
@@ -61,14 +74,23 @@
 
 ## How to Use Skills
 
-Skills are modular expertise areas that you can activate when relevant to your current task.
+Skills are **implicit expertise** - you don't invoke them with `/`, you activate them based on context.
 
 ### For AI Agents
 
-1. **Scan this index** to see available skills
-2. **Match your task** - Does your current work require this expertise?
-3. **Load the skill** - Read the SKILL.md file for detailed patterns
-4. **Apply patterns** - Follow the guidance using native tools
+**Skills are NOT slash commands!** There is no `/testing` or `/debugging` command. Instead:
+
+1. **Recognize context** - Is the current task related to testing, debugging, code review, etc.?
+2. **Load relevant skill** - Read the SKILL.md file for expertise
+3. **Apply continuously** - Use the skill's patterns throughout your work
+4. **No explicit invocation** - Skills are active when relevant, not triggered by user command
+
+### When to Activate Skills
+
+- **Testing skill**: When writing tests, implementing features with TDD, fixing bugs
+- **Debugging skill**: When investigating errors, troubleshooting issues
+- **Code Review skill**: When reviewing PRs, checking code quality
+- **Refactoring skill**: When improving code structure
 
 ### Skill Structure
 

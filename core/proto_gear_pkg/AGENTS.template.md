@@ -131,6 +131,185 @@ Core agents defined below are **extended** by specialized agent patterns in `.pr
 - **Testing Agent** → Extended by `.proto-gear/agents/testing/AGENT.md` (if available)
 - **DevOps Agent** → Extended by `.proto-gear/agents/devops/AGENT.md` (if available)
 
+## 🎯 Slash Command Recognition
+
+### What are Slash Commands?
+
+Slash commands are **explicit instructions** from the human, typed as `/command-name`. They're different from natural language requests:
+
+| Input Type | Example | AI Response |
+|------------|---------|-------------|
+| **Slash Command** | `/create-ticket "Add auth"` | Execute command exactly as documented |
+| **Natural Language** | "create a ticket for auth" | AI decides how to accomplish |
+
+### How to Recognize Slash Commands
+
+When user input starts with `/`, it's a slash command:
+
+```
+/create-ticket "Add user authentication" --type feature
+/analyze-coverage --path src/
+/generate-changelog --since v1.0.0
+```
+
+### Slash Command Execution Protocol
+
+When you recognize a slash command:
+
+1. **Parse the input**:
+   - Command name: word after `/` (e.g., `create-ticket`)
+   - Required args: values in quotes (e.g., `"Add user authentication"`)
+   - Optional flags: `--flag value` pairs
+
+2. **Locate command documentation**:
+   ```
+   .proto-gear/commands/{command-name}/COMMAND.md
+   ```
+
+3. **Validate arguments**:
+   - Check required arguments are present
+   - Validate optional values against allowed values
+   - Return error if validation fails
+
+4. **Execute AI Execution Steps**:
+   - Follow the numbered steps in the command's documentation exactly
+   - Use native tools (Read, Edit, Bash) as described
+
+5. **Confirm completion**:
+   - Report the result as specified in the command
+
+### Example Execution
+
+```
+User: /create-ticket "Add dark mode" --type feature
+
+AI:
+1. Parse: command=create-ticket, title="Add dark mode", --type=feature
+2. Read: .proto-gear/commands/create-ticket/COMMAND.md
+3. Validate: title present ✓, --type is valid enum ✓
+4. Execute:
+   - Read PROJECT_STATUS.md → last_ticket_id=42, prefix=PROJ
+   - Calculate: PROJ-043
+   - Edit PROJECT_STATUS.md: add ticket row, increment last_ticket_id
+5. Confirm: "Created ticket PROJ-043: Add dark mode"
+```
+
+### Available Slash Commands
+
+See `.proto-gear/INDEX.md` for the complete list, or read `.proto-gear/commands/INDEX.md` for detailed syntax.
+
+### Slash Commands vs Skills
+
+**Key Difference**:
+- **Slash commands** = Explicit: Human says "do this specific thing now"
+- **Skills** = Implicit: Expertise AI applies based on context (no `/` prefix)
+
+## 🔤 Slash Command Autocomplete Protocol
+
+> **For AI Agents**: Implement autocomplete when user types `/command...`
+
+### When to Activate
+
+Activate autocomplete when you detect:
+- User message starts with `/`
+- User is typing a partial command (e.g., `/cre`, `/ana`, `/gen`)
+
+### Autocomplete Behavior
+
+**Step 1: Load Available Commands**
+
+Read `.proto-gear/commands/INDEX.md` to get the command list:
+
+| Command | Shortcut | Syntax | Purpose |
+|---------|----------|--------|---------|
+| `/create-ticket` | `/ct` | `"title" [--type TYPE]` | Create ticket |
+| `/analyze-coverage` | `/ac` | `[--path DIR]` | Analyze coverage |
+| `/generate-changelog` | `/gc` | `[--since VER]` | Generate changelog |
+
+**Step 2: Match User Input**
+
+When user types `/cre`, filter commands where name starts with input:
+- `/create-ticket` ✓ matches `/cre`
+- `/ct` ✓ matches shortcut
+
+When user types `/a`, multiple matches:
+- `/analyze-coverage` ✓
+- `/ac` ✓
+
+**Step 3: Suggest to User**
+
+Present matching command(s) with:
+- **Command name**: `/create-ticket`
+- **Short description**: "Create ticket in PROJECT_STATUS.md"
+- **Syntax hint**: `"title" [--type TYPE] [--assignee NAME]`
+
+Example suggestion format:
+```
+┌─────────────────────────────────────────────────────┐
+│ /create-ticket                                       │
+│ Create and document a ticket in PROJECT_STATUS.md   │
+│ Usage: /create-ticket "title" [--type TYPE]         │
+└─────────────────────────────────────────────────────┘
+```
+
+**Step 4: On Selection**
+
+When user selects a command:
+1. If they haven't provided arguments, show argument hints
+2. If arguments provided, execute following the command's AI Execution Steps
+
+### Argument Autocomplete
+
+When user types `/create-ticket "title" --`:
+
+Suggest available flags:
+- `--type` (feature, bugfix, hotfix, task)
+- `--assignee` (agent or person name)
+- `--priority` (low, medium, high, critical)
+
+When user types `/create-ticket "title" --type `:
+
+Suggest valid values:
+- `feature`
+- `bugfix`
+- `hotfix`
+- `task`
+
+### Quick Reference: Command Shortcuts
+
+For efficiency, memorize these shortcuts:
+
+| Shortcut | Full Command | Purpose |
+|----------|--------------|---------|
+| `/ct` | `/create-ticket` | Create ticket |
+| `/ac` | `/analyze-coverage` | Coverage analysis |
+| `/gc` | `/generate-changelog` | Generate changelog |
+
+### Example Interaction
+
+```
+User types: /cre
+
+AI suggests:
+  /create-ticket - Create and document a ticket in PROJECT_STATUS.md
+  Usage: /create-ticket "title" [--type TYPE]
+
+User types: /create-ticket "Add dark mode" --type feature
+
+AI executes:
+1. Reads .proto-gear/commands/create-ticket/COMMAND.md
+2. Follows AI Execution Steps
+3. Reports: "Created ticket PROJ-043: Add dark mode"
+```
+
+### Implementation Notes for AI Agents
+
+1. **Cache the command list**: After first read, remember available commands for the session
+2. **Prefix matching**: Match from start of command name (case-insensitive)
+3. **Show shortcuts**: When suggesting, show both full name and shortcut
+4. **Validate early**: Check arguments before executing
+5. **Clear feedback**: Show what command will do before executing
+
 ## 🚨 CRITICAL: PROJECT STATE MANAGEMENT
 
 ### 📊 PROJECT STATE LOCATION

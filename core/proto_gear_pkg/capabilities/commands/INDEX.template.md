@@ -1,151 +1,234 @@
-# Commands Index
+# Slash Commands Reference
 
-> **Single-action patterns** - Commands provide guidance for discrete, atomic tasks
+> **For AI Agents**: When a human types `/command-name`, find the command here and execute it.
 
-## Available Commands
+## Quick Reference
 
-### Create Ticket
-**File**: `create-ticket.md`
-**Version**: 1.0.0
-**Description**: Create and properly document a ticket in PROJECT_STATUS.md
-**Tags**: ticket, planning, status, documentation, sprint
-**Category**: project-management
-**Status**: Stable
+| Command | Shortcut | Syntax | Purpose |
+|---------|----------|--------|---------|
+| `/create-ticket` | `/ct` | `"title" [--type TYPE]` | Create ticket in PROJECT_STATUS.md |
+| `/analyze-coverage` | `/ac` | `[--path DIR]` | Analyze test coverage |
+| `/generate-changelog` | `/gc` | `[--since VER]` | Generate CHANGELOG.md |
 
-**Dependencies**:
-- PROJECT_STATUS.md
+### Shortcuts
 
-**Related**:
-- workflows/feature-development (uses this command in Step 1)
+For faster invocation, use these shortcuts:
 
-**Relevance**:
-- Trigger keywords: "create ticket", "new ticket", "add ticket", "start work"
-- Context: When starting any new work item (feature, bug fix, task)
+```
+/ct  →  /create-ticket
+/ac  →  /analyze-coverage
+/gc  →  /generate-changelog
+```
+
+**Note**: Shortcuts expand to the full command. Arguments work the same way:
+- `/ct "Add auth"` = `/create-ticket "Add auth"`
+- `/ac --path src/` = `/analyze-coverage --path src/`
 
 ---
 
-## How to Use Commands
+## Available Slash Commands
 
-Commands are single-action patterns for discrete tasks. Unlike workflows, commands focus on one specific action.
+### `/create-ticket`
 
-### For AI Agents
-
-1. **Identify the action** - What specific task do you need to accomplish?
-2. **Find matching command** - Look for trigger keywords
-3. **Check dependencies** - Ensure required files exist (e.g., PROJECT_STATUS.md)
-4. **Follow the pattern** - Execute the steps described
-5. **Verify completion** - Check that the action succeeded
-
-### Command Structure
-
-Each command contains:
-- **Purpose** - Why this command exists
-- **When to Use** - Specific scenarios
-- **Prerequisites** - What must exist before running
-- **Command Pattern** - Step-by-step instructions
-- **Complete Example** - Before/after demonstration
-- **Validation Checklist** - How to verify success
-
-### Example: Using Create Ticket Command
-
+**Syntax**:
 ```
-Task: Document a new feature as a ticket
-
-1. Read commands/create-ticket.md
-2. Read PROJECT_STATUS.md to get last_ticket_id
-3. Determine next ticket ID (e.g., PROJ-043)
-4. Add ticket entry to Active Tickets table
-5. Increment last_ticket_id in metadata
-6. Verify ticket was created correctly
+/create-ticket "title" [--type TYPE] [--assignee NAME] [--priority LEVEL]
 ```
+
+**Arguments**:
+| Argument | Required | Default | Values |
+|----------|----------|---------|--------|
+| `title` | Yes | - | Any text in quotes |
+| `--type` | No | task | feature, bugfix, hotfix, task |
+| `--assignee` | No | Unassigned | Agent or person name |
+| `--priority` | No | medium | low, medium, high, critical |
+
+**Examples**:
+```
+/create-ticket "Add user authentication"
+/create-ticket "Fix login bug" --type bugfix --priority high
+/create-ticket "Refactor API layer" --type task --assignee "Backend Agent"
+```
+
+**File**: [create-ticket/COMMAND.md](create-ticket/COMMAND.md)
 
 ---
 
-## Command vs. Workflow
+### `/analyze-coverage`
 
-**When to use a Command**:
-- Single, atomic action
-- Quick reference needed
-- Part of a larger workflow
-- No multiple decision points
+**Syntax**:
+```
+/analyze-coverage [--path DIRECTORY] [--threshold NUMBER]
+```
 
-**When to use a Workflow**:
-- Multi-step process
-- Multiple decision points
-- Orchestrates several actions
-- Takes significant time
+**Arguments**:
+| Argument | Required | Default | Values |
+|----------|----------|---------|--------|
+| `--path` | No | . | Directory to analyze |
+| `--threshold` | No | 70 | Minimum coverage % |
+
+**Examples**:
+```
+/analyze-coverage
+/analyze-coverage --path src/
+/analyze-coverage --threshold 80
+```
+
+**File**: [analyze-coverage/COMMAND.md](analyze-coverage/COMMAND.md)
+
+---
+
+### `/generate-changelog`
+
+**Syntax**:
+```
+/generate-changelog [--since VERSION] [--output FILE]
+```
+
+**Arguments**:
+| Argument | Required | Default | Values |
+|----------|----------|---------|--------|
+| `--since` | No | last tag | Version to start from |
+| `--output` | No | CHANGELOG.md | Output file path |
+
+**Examples**:
+```
+/generate-changelog
+/generate-changelog --since v1.0.0
+/generate-changelog --output docs/CHANGES.md
+```
+
+**File**: [generate-changelog/COMMAND.md](generate-changelog/COMMAND.md)
+
+---
+
+## AI Execution Protocol
+
+When you recognize a slash command (input starting with `/`):
+
+### Step 1: Parse the Input
+
+Extract:
+- **Command name**: The word after `/` (e.g., `create-ticket`)
+- **Required arguments**: Values in quotes or without flags
+- **Optional flags**: `--flag value` pairs
+
+**Example parsing**:
+```
+Input: /create-ticket "Add auth" --type feature --assignee "Backend Agent"
+
+Command: create-ticket
+Arguments:
+  - title: "Add auth" (required)
+  - --type: feature
+  - --assignee: "Backend Agent"
+```
+
+### Step 2: Locate Command Documentation
+
+Read the command file:
+```
+.proto-gear/commands/{command-name}/COMMAND.md
+```
+
+### Step 3: Validate Arguments
+
+Check against the command's Arguments table:
+- Are all required arguments present?
+- Are optional values valid (e.g., --type must be feature|bugfix|hotfix|task)?
+
+**If validation fails**: Return the error message from the command's Error Handling section.
+
+### Step 4: Execute AI Execution Steps
+
+Follow the numbered steps in the command's "AI Execution Steps" section exactly.
+
+### Step 5: Confirm Completion
+
+Report the result to the user as specified in the command's Step 6 (or equivalent).
+
+---
+
+## Slash Commands vs Skills
+
+| Aspect | Slash Commands | Skills |
+|--------|---------------|--------|
+| **Invocation** | Explicit: Human types `/command` | Implicit: AI activates when relevant |
+| **Syntax** | `/command-name "arg" --flag value` | No special syntax |
+| **Nature** | Discrete, one-time action | Continuous expertise |
+| **Duration** | Start → Finish → Done | Active throughout task |
+| **Output** | Specific deliverable | Ongoing guidance |
+| **Example** | `/create-ticket "Add login"` | "testing" skill active during TDD |
+
+**Key Difference**:
+- Slash commands are **explicit instructions** from the human
+- Skills are **expertise you apply** based on context
+
+---
+
+## Error Handling
+
+When a slash command fails, report clearly:
+
+```
+Error: {specific error message}
+Usage: {correct syntax}
+```
 
 **Example**:
-- Command: "Create Ticket" (single action)
-- Workflow: "Feature Development" (uses Create Ticket as Step 1 of 7)
+```
+Error: Missing required argument 'title'
+Usage: /create-ticket "title" [--type TYPE]
+```
 
 ---
 
-## Commands Reference
+## Adding Custom Slash Commands
 
-### Project Management
-- **create-ticket** - Document new work item in PROJECT_STATUS.md
+To add a new slash command:
 
-### Git Workflow
-- **create-branch** - Create feature branch (if available)
-- **commit-changes** - Make conventional commit (if available)
-
-### Testing
-- **run-tests** - Execute test suite (if available)
-
-### Status Updates
-- **update-status** - Modify PROJECT_STATUS.md (if available)
-
-*Additional commands available when using `--with-capabilities=full`*
-
----
-
-## Adding Custom Commands
-
-To add a new command to this project:
-
-1. Create file: `commands/your-command-name.md`
-2. Add YAML frontmatter:
-   ```yaml
+1. **Create directory**: `commands/your-command/`
+2. **Create COMMAND.md** with this structure:
+   ```markdown
    ---
-   name: "Your Command Name"
+   name: "Your Command"
    type: "command"
-   version: "1.0.0"
-   description: "Brief description of what this command does"
-   tags: ["keyword1", "keyword2"]
-   category: "project-management"
-   relevance:
-     - trigger: "keywords that suggest this command"
-     - context: "when to use this command"
-   dependencies: ["PROJECT_STATUS.md"]
-   related: ["workflows/feature-development"]
-   status: "stable"
+   slash_command: "/your-command"
+   arguments:
+     required:
+       - name: "arg1"
+         type: "string"
+     optional:
+       - name: "--flag"
+         type: "enum"
+         values: ["a", "b", "c"]
+         default: "a"
    ---
+
+   # /your-command
+
+   ## Invocation Syntax
+   ## Arguments
+   ## AI Execution Steps
+   ## Completion Criteria
+   ## Error Handling
    ```
-3. Write clear, actionable instructions
-4. Include before/after examples
-5. Add validation checklist
-6. Update this INDEX.md to list your new command
+3. **Update this INDEX.md** to list the new command
 
 ---
 
 ## Integration with Workflows
 
-Commands are often used as building blocks within larger workflows:
+Slash commands are building blocks for workflows:
 
-- **feature-development** workflow uses:
-  - create-ticket (Step 1)
-  - create-branch (Step 2)
-  - run-tests (Steps 3-5)
-  - commit-changes (Step 6)
-  - update-status (Step 7)
+| Workflow | Uses Commands |
+|----------|---------------|
+| Feature Development | `/create-ticket` → `/analyze-coverage` |
+| Bug Fix | `/create-ticket` → testing |
+| Release | `/generate-changelog` |
 
-This modular approach means:
-- Commands can be used independently
-- Workflows can reference commands
-- Easy to customize individual steps
-- Consistent patterns across workflows
+Workflows **orchestrate** multiple commands; commands are **atomic actions**.
 
 ---
 
-*Proto Gear Commands Index*
+*Proto Gear Slash Commands Reference v1.1*

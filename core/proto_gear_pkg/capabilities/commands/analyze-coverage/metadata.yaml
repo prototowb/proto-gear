@@ -1,14 +1,40 @@
-name: "Analyze Test Coverage"
+name: "Analyze Coverage"
 type: "command"
-version: "1.0.0"
-description: "Analyze test coverage reports and identify gaps"
+slash_command: "/analyze-coverage"
+version: "1.1.0"
+description: "Run and analyze test coverage for the project"
 
 category: "testing"
 tags: ["coverage", "testing", "analysis", "quality", "metrics"]
 
 status: "stable"
 author: "Proto Gear Team"
-last_updated: "2025-12-09"
+last_updated: "2025-01-15"
+
+# Slash command arguments
+arguments:
+  optional:
+    - name: "--path"
+      type: "string"
+      default: "."
+      description: "Directory to analyze"
+    - name: "--threshold"
+      type: "number"
+      default: 70
+      description: "Minimum coverage percentage"
+    - name: "--format"
+      type: "enum"
+      values: ["text", "html", "json", "lcov"]
+      default: "text"
+      description: "Output format"
+
+# Example invocations
+invocation_examples:
+  - '/analyze-coverage'
+  - '/analyze-coverage --path src/'
+  - '/analyze-coverage --threshold 80'
+  - '/analyze-coverage --format html'
+  - '/analyze-coverage --path tests/ --threshold 90'
 
 dependencies:
   required: []
@@ -32,22 +58,22 @@ agent_roles:
 
 relevance:
   triggers:
+    - "/analyze-coverage"
     - "coverage"
     - "test coverage"
     - "analyze coverage"
-    - "coverage report"
-    - "coverage gaps"
   contexts:
+    - "When user types /analyze-coverage"
     - "After running tests"
     - "Before merging code"
     - "During code review"
-    - "For quality checks"
 
 usage_notes: |
-  Analyze test coverage to identify untested code.
+  Slash command: /analyze-coverage [--path DIR] [--threshold NUM] [--format FMT]
 
-  Reads coverage reports, identifies gaps, suggests areas needing tests.
-  Works with various coverage tools (pytest-cov, jest, etc.).
+  Analyze test coverage to identify untested code.
+  Detects project type and runs appropriate coverage tool.
+  Reports pass/fail based on threshold.
 
 required_files: []
 
@@ -55,10 +81,11 @@ optional_files:
   - "TESTING.md"
   - ".coveragerc"
   - "jest.config.js"
+  - "pyproject.toml"
 
 command:
   idempotent: true
   side_effects: []
   prerequisites:
-    - "Test coverage report must exist"
-    - "Coverage tool must be configured"
+    - "Test framework must be configured"
+    - "Coverage tool must be available"

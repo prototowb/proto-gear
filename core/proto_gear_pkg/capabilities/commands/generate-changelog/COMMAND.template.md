@@ -1,13 +1,174 @@
-# Generate Changelog Command
+---
+name: "Generate Changelog"
+type: "command"
+slash_command: "/generate-changelog"
+version: "1.1.0"
+description: "Generate or update CHANGELOG.md from git history"
+tags: ["release", "changelog", "documentation", "versioning"]
+category: "release-management"
+arguments:
+  optional:
+    - name: "--since"
+      type: "string"
+      description: "Version tag to start from (e.g., v1.0.0)"
+    - name: "--output"
+      type: "string"
+      default: "CHANGELOG.md"
+      description: "Output file path"
+    - name: "--format"
+      type: "enum"
+      values: ["keepachangelog", "conventional", "github"]
+      default: "keepachangelog"
+      description: "Changelog format"
+dependencies: []
+author: "Proto Gear Team"
+last_updated: "2025-01-15"
+status: "stable"
+---
 
-**Capability Type**: Command
-**Category**: Release Management
-**Complexity**: Beginner
-**Estimated Time**: 15-30 minutes
+# /generate-changelog
 
-## Overview
+> Generate or update CHANGELOG.md from git history
 
-The Generate Changelog command provides quick reference for creating and maintaining changelog files. Changelogs document notable changes in each version of a project, making it easier for users and contributors to understand what's new, fixed, or changed.
+## Invocation Syntax
+
+```
+/generate-changelog [--since VERSION] [--output FILE] [--format FORMAT]
+```
+
+## Arguments
+
+| Argument | Required | Type | Default | Description |
+|----------|----------|------|---------|-------------|
+| `--since` | No | string | last tag | Version to start from |
+| `--output` | No | string | CHANGELOG.md | Output file path |
+| `--format` | No | enum | keepachangelog | Format: keepachangelog, conventional, github |
+
+## Examples
+
+```
+/generate-changelog
+/generate-changelog --since v1.0.0
+/generate-changelog --output docs/CHANGES.md
+/generate-changelog --format conventional
+/generate-changelog --since v1.2.0 --format github
+```
+
+---
+
+## AI Execution Steps
+
+> **For AI Agents**: Execute these steps when `/generate-changelog` is invoked.
+
+### Step 1: Parse Arguments
+
+Extract from user input:
+- **--since**: Version tag to start from (default: detect last tag)
+- **--output**: Output file path (default: CHANGELOG.md)
+- **--format**: Format style (default: keepachangelog)
+
+### Step 2: Get Git History
+
+Read commits since the specified version:
+
+```bash
+# Get last tag if --since not specified
+git describe --tags --abbrev=0
+
+# Get commits since tag
+git log {since_tag}..HEAD --pretty=format:"%h %s" --reverse
+```
+
+### Step 3: Categorize Commits
+
+Group commits by type based on conventional commit prefixes:
+
+| Prefix | Category |
+|--------|----------|
+| `feat:` | Added |
+| `fix:` | Fixed |
+| `docs:` | Documentation |
+| `perf:` | Performance |
+| `refactor:` | Changed |
+| `BREAKING CHANGE:` | Breaking |
+| `security:` | Security |
+| `deprecate:` | Deprecated |
+
+### Step 4: Generate Changelog Content
+
+Format according to --format:
+
+**Keep a Changelog (default)**:
+```markdown
+## [Unreleased]
+
+### Added
+- {feat commits}
+
+### Changed
+- {refactor commits}
+
+### Fixed
+- {fix commits}
+
+### Security
+- {security commits}
+```
+
+**Conventional**:
+```markdown
+## {version} ({date})
+
+### Features
+- {feat commits with scope}
+
+### Bug Fixes
+- {fix commits with scope}
+```
+
+### Step 5: Write or Update File
+
+- If file exists: Prepend new section after header
+- If file doesn't exist: Create with full template
+
+### Step 6: Confirm to User
+
+```
+Changelog updated: {output_file}
+- Added: {count} new entries
+- From: {since_tag} to HEAD
+- Format: {format}
+```
+
+---
+
+## Completion Criteria
+
+- [ ] Git history retrieved successfully
+- [ ] Commits categorized by type
+- [ ] Changelog content generated in correct format
+- [ ] File written or updated
+- [ ] User notified of changes
+
+---
+
+## Error Handling
+
+| Condition | Error Message |
+|-----------|---------------|
+| Not a git repository | "Error: Not a git repository. Initialize with `git init` first." |
+| No commits found | "Error: No commits found since {version}." |
+| Invalid --since tag | "Error: Tag '{tag}' not found. Use `git tag` to list available tags." |
+| Invalid --format | "Error: Invalid format '{value}'. Must be: keepachangelog, conventional, github" |
+| Write permission denied | "Error: Cannot write to {output}. Check file permissions." |
+
+---
+
+## Format Reference
+
+The sections below provide detailed changelog format guidelines and automation tools.
+
+---
 
 ## When to Use This Command
 

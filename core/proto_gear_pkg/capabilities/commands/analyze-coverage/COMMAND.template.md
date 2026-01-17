@@ -1,13 +1,161 @@
-# Analyze Coverage Command
+---
+name: "Analyze Coverage"
+type: "command"
+slash_command: "/analyze-coverage"
+version: "1.1.0"
+description: "Run and analyze test coverage for the project"
+tags: ["testing", "coverage", "quality", "metrics"]
+category: "testing"
+arguments:
+  optional:
+    - name: "--path"
+      type: "string"
+      default: "."
+      description: "Directory to analyze"
+    - name: "--threshold"
+      type: "number"
+      default: 70
+      description: "Minimum coverage percentage"
+    - name: "--format"
+      type: "enum"
+      values: ["text", "html", "json", "lcov"]
+      default: "text"
+      description: "Output format"
+dependencies: []
+author: "Proto Gear Team"
+last_updated: "2025-01-15"
+status: "stable"
+---
 
-**Capability Type**: Command
-**Category**: Testing
-**Complexity**: Beginner
-**Estimated Time**: 15-30 minutes
+# /analyze-coverage
 
-## Overview
+> Run and analyze test coverage for the project
 
-The Analyze Coverage command provides quick reference for running test coverage analysis across different technology stacks. This command helps developers measure how much of their code is tested and identify gaps in test coverage.
+## Invocation Syntax
+
+```
+/analyze-coverage [--path DIRECTORY] [--threshold NUMBER] [--format FORMAT]
+```
+
+## Arguments
+
+| Argument | Required | Type | Default | Description |
+|----------|----------|------|---------|-------------|
+| `--path` | No | string | . | Directory to analyze |
+| `--threshold` | No | number | 70 | Minimum coverage % to pass |
+| `--format` | No | enum | text | Output: text, html, json, lcov |
+
+## Examples
+
+```
+/analyze-coverage
+/analyze-coverage --path src/
+/analyze-coverage --threshold 80
+/analyze-coverage --format html
+/analyze-coverage --path tests/ --threshold 90 --format lcov
+```
+
+---
+
+## AI Execution Steps
+
+> **For AI Agents**: Execute these steps when `/analyze-coverage` is invoked.
+
+### Step 1: Parse Arguments
+
+Extract from user input:
+- **--path**: Directory to analyze (default: current directory)
+- **--threshold**: Minimum coverage % (default: 70)
+- **--format**: Output format (default: text)
+
+### Step 2: Detect Project Type
+
+Read project files to detect the testing framework:
+- `package.json` → JavaScript/TypeScript (Jest, Vitest)
+- `pyproject.toml` / `setup.py` → Python (pytest-cov)
+- `Cargo.toml` → Rust (cargo-tarpaulin)
+- `go.mod` → Go (go test -cover)
+- `pom.xml` / `build.gradle` → Java (JaCoCo)
+
+### Step 3: Run Coverage Command
+
+Execute the appropriate coverage command for the detected framework:
+
+**JavaScript/TypeScript (Jest)**:
+```bash
+npm test -- --coverage --coverageDirectory=coverage
+```
+
+**Python (pytest)**:
+```bash
+pytest --cov={path} --cov-report=term-missing --cov-fail-under={threshold}
+```
+
+**Go**:
+```bash
+go test -coverprofile=coverage.out ./{path}/...
+go tool cover -func=coverage.out
+```
+
+### Step 4: Parse Results
+
+Extract coverage metrics from output:
+- Line coverage %
+- Branch coverage %
+- Function coverage %
+- Files below threshold
+
+### Step 5: Report to User
+
+Output summary:
+
+```
+Coverage Analysis Complete
+==========================
+Overall: {coverage}%
+Threshold: {threshold}%
+Status: {PASS/FAIL}
+
+By Metric:
+- Lines: {line_coverage}%
+- Branches: {branch_coverage}%
+- Functions: {function_coverage}%
+
+{if files_below_threshold}
+Files Below Threshold:
+- {file1}: {coverage1}%
+- {file2}: {coverage2}%
+{/if}
+```
+
+---
+
+## Completion Criteria
+
+- [ ] Project type detected
+- [ ] Coverage command executed
+- [ ] Results parsed and summarized
+- [ ] Pass/Fail status reported based on threshold
+- [ ] Low-coverage files identified (if any)
+
+---
+
+## Error Handling
+
+| Condition | Error Message |
+|-----------|---------------|
+| No test framework detected | "Error: Could not detect testing framework. Ensure package.json, pyproject.toml, or equivalent exists." |
+| Tests fail | "Error: Tests failed. Fix failing tests before analyzing coverage." |
+| Coverage tool not installed | "Error: Coverage tool not found. Install: {installation command}" |
+| Invalid --format value | "Error: Invalid format '{value}'. Must be: text, html, json, lcov" |
+
+---
+
+## Technology Reference
+
+The sections below provide detailed coverage commands for each technology stack.
+
+---
 
 ## When to Use This Command
 
