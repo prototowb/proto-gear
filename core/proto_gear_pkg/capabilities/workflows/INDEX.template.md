@@ -95,6 +95,60 @@
 - Trigger keywords: "finalize release", "post-release", "verify installation", "dogfooding setup"
 - Context: After pushing a version tag and creating a GitHub release
 
+### Code Review Process
+**File**: `code-review-process/WORKFLOW.md`
+**Version**: 1.0.0
+**Description**: Complete PR creation, review, approval, and merge workflow
+**Tags**: pr, pull-request, review, merge, collaboration, code-quality
+**Category**: development
+**Steps**: 7
+**Duration**: 30 min - 4 hours
+**Status**: Stable
+
+**Dependencies**:
+- skills/code-review
+- commands/update-status
+
+**Relevance**:
+- Trigger keywords: "code review", "pull request", "PR", "merge", "review", "approve"
+- Context: After feature implementation, before merging to main/development
+
+### Incident Response
+**File**: `incident-response/WORKFLOW.md`
+**Version**: 1.0.0
+**Description**: Production issue handling from detection through resolution and post-mortem
+**Tags**: incident, production, emergency, monitoring, response, post-mortem
+**Category**: operations
+**Steps**: 9
+**Duration**: 15 min - 8 hours
+**Status**: Stable
+
+**Dependencies**:
+- skills/debugging
+- workflows/hotfix
+
+**Relevance**:
+- Trigger keywords: "incident", "outage", "production down", "alert", "emergency", "on-call"
+- Context: When monitoring alerts fire or users report production issues
+
+### Migration
+**File**: `migration/WORKFLOW.md`
+**Version**: 1.0.0
+**Description**: Breaking change and data migration workflow with rollback planning
+**Tags**: migration, breaking-change, data, schema, backwards-compatibility, rollout
+**Category**: development
+**Steps**: 8
+**Duration**: 1 day - 2 weeks
+**Status**: Stable
+
+**Dependencies**:
+- skills/testing
+- workflows/release
+
+**Relevance**:
+- Trigger keywords: "migration", "breaking change", "schema change", "data migration", "deprecation"
+- Context: When introducing breaking changes or migrating data between systems
+
 ---
 
 ## How to Use Workflows
@@ -145,6 +199,9 @@ What are you working on?
 ├─ New functionality → feature-development.md
 ├─ Fixing a bug → bug-fix.md
 ├─ Critical production issue → hotfix.md
+├─ Production incident/outage → incident-response/WORKFLOW.md
+├─ Code review / PR → code-review-process/WORKFLOW.md
+├─ Breaking change / data migration → migration/WORKFLOW.md
 ├─ Ready to release → release.md
 ├─ Just pushed a release tag → finalize-release.md
 ├─ Improving code structure → refactoring.md (if available)

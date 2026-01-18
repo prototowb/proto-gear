@@ -7,6 +7,7 @@
 | Command | Shortcut | Syntax | Purpose |
 |---------|----------|--------|---------|
 | `/create-ticket` | `/ct` | `"title" [--type TYPE]` | Create ticket in PROJECT_STATUS.md |
+| `/update-status` | `/us` | `<ID> <STATUS> [--reason]` | Update ticket status |
 | `/analyze-coverage` | `/ac` | `[--path DIR]` | Analyze test coverage |
 | `/generate-changelog` | `/gc` | `[--since VER]` | Generate CHANGELOG.md |
 
@@ -16,12 +17,14 @@ For faster invocation, use these shortcuts:
 
 ```
 /ct  →  /create-ticket
+/us  →  /update-status
 /ac  →  /analyze-coverage
 /gc  →  /generate-changelog
 ```
 
 **Note**: Shortcuts expand to the full command. Arguments work the same way:
 - `/ct "Add auth"` = `/create-ticket "Add auth"`
+- `/us PROJ-043 COMPLETED` = `/update-status PROJ-043 COMPLETED`
 - `/ac --path src/` = `/analyze-coverage --path src/`
 
 ---
@@ -51,6 +54,35 @@ For faster invocation, use these shortcuts:
 ```
 
 **File**: [create-ticket/COMMAND.md](create-ticket/COMMAND.md)
+
+---
+
+### `/update-status`
+
+**Syntax**:
+```
+/update-status <TICKET_ID> <STATUS> [--reason REASON] [--branch BRANCH]
+```
+
+**Shortcut**: `/us`
+
+**Arguments**:
+| Argument | Required | Default | Values |
+|----------|----------|---------|--------|
+| `ticket_id` | Yes | - | Ticket ID (e.g., PROJ-043) |
+| `status` | Yes | - | PENDING, IN_PROGRESS, COMPLETED, BLOCKED |
+| `--reason` | No* | - | Reason for change (*required for BLOCKED) |
+| `--branch` | No | auto | Branch name (for IN_PROGRESS) |
+
+**Examples**:
+```
+/update-status PROJ-043 IN_PROGRESS
+/update-status PROJ-043 COMPLETED
+/update-status PROJ-043 BLOCKED --reason "Waiting for API spec"
+/us PROJ-043 IN_PROGRESS --branch feature/PROJ-043-add-auth
+```
+
+**File**: [update-status/COMMAND.md](update-status/COMMAND.md)
 
 ---
 
@@ -223,9 +255,12 @@ Slash commands are building blocks for workflows:
 
 | Workflow | Uses Commands |
 |----------|---------------|
-| Feature Development | `/create-ticket` → `/analyze-coverage` |
-| Bug Fix | `/create-ticket` → testing |
+| Feature Development | `/create-ticket` → `/update-status` → `/analyze-coverage` |
+| Bug Fix | `/create-ticket` → `/update-status` → testing |
+| Code Review Process | `/update-status` (after merge) |
 | Release | `/generate-changelog` |
+| Incident Response | `/create-ticket` (follow-ups) |
+| Migration | `/create-ticket` → `/update-status` |
 
 Workflows **orchestrate** multiple commands; commands are **atomic actions**.
 
