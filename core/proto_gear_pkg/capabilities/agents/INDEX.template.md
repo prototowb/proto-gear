@@ -215,4 +215,43 @@ To add your own specialized agent:
 
 ---
 
+## Directory-Level AGENTS.md Template
+
+When creating directory-specific AGENTS.md files for sub-directories, use this template to maintain the hierarchical architecture:
+
+```markdown
+# AGENTS.md - [Directory Name] Context
+
+> **Inheritance**: This file extends root `/AGENTS.md`
+> **DO NOT** duplicate information from parent AGENTS.md files
+
+## Local Context
+**Purpose**: [What this directory contains]
+**Owner**: [Which core agent owns this domain]
+**Special Rules**: [Directory-specific requirements]
+
+## Agent Instructions
+### When Working Here
+- [Specific instruction 1]
+- [Specific instruction 2]
+- [Reference parent for: general rules]
+
+## Local Patterns
+[Directory-specific patterns and conventions]
+
+## DO NOT
+- Duplicate parent documentation
+- Override security/compliance rules
+- Create conflicting standards
+```
+
+### Key Principles
+
+- **DRY Documentation**: Child AGENTS.md files only contain LOCAL context and MUST NOT duplicate parent information
+- **Context Inheritance**: Each directory inherits rules from parent AGENTS.md files
+- **Local Overrides**: Only directory-specific instructions and patterns belong in child files
+- **Consistency**: All child files follow the same template structure
+
+---
+
 *Proto Gear Agents Index*

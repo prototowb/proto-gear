@@ -24,31 +24,103 @@
 
 **Full reference**: [commands/INDEX.md](commands/INDEX.md)
 
-### How AI Agents Execute Slash Commands
+### How to Recognize Slash Commands
 
-When you see a human type `/command-name`:
+When user input starts with `/`, it's a slash command. Slash commands are **explicit instructions** — different from natural language requests:
 
-1. **Recognize**: Input starts with `/` followed by command name
-2. **Locate**: Read `commands/{command-name}/COMMAND.md`
-3. **Parse**: Extract arguments from user input
-4. **Validate**: Check required args are present, optional values are valid
-5. **Execute**: Follow the "AI Execution Steps" in the command file exactly
-6. **Confirm**: Report completion to user
+| Input Type | Example | AI Response |
+|------------|---------|-------------|
+| **Slash Command** | `/create-ticket "Add auth"` | Execute command exactly as documented |
+| **Natural Language** | "create a ticket for auth" | AI decides how to accomplish |
 
-### Example
+### Slash Command Execution Protocol
+
+When you recognize a slash command:
+
+1. **Parse the input**:
+   - Command name: word after `/` (e.g., `create-ticket`)
+   - Required args: values in quotes (e.g., `"Add user authentication"`)
+   - Optional flags: `--flag value` pairs
+
+2. **Locate command documentation**:
+   ```
+   .proto-gear/commands/{command-name}/COMMAND.md
+   ```
+
+3. **Validate arguments**:
+   - Check required arguments are present
+   - Validate optional values against allowed values
+   - Return error if validation fails
+
+4. **Execute AI Execution Steps**:
+   - Follow the numbered steps in the command's documentation exactly
+   - Use native tools (Read, Edit, Bash) as described
+
+5. **Confirm completion**:
+   - Report the result as specified in the command
+
+### Example Execution
 
 ```
 User: /create-ticket "Add dark mode" --type feature
 
-AI Action:
-1. Read commands/create-ticket/COMMAND.md
-2. Parse: title="Add dark mode", --type=feature
-3. Read PROJECT_STATUS.md, find last_ticket_id=42
-4. Calculate next ID: PROJ-043
-5. Add ticket to Active Tickets table
-6. Increment last_ticket_id to 43
-7. Confirm: "Created ticket PROJ-043: Add dark mode"
+AI:
+1. Parse: command=create-ticket, title="Add dark mode", --type=feature
+2. Read: .proto-gear/commands/create-ticket/COMMAND.md
+3. Validate: title present ✓, --type is valid enum ✓
+4. Execute:
+   - Read PROJECT_STATUS.md → last_ticket_id=42, prefix=PROJ
+   - Calculate: PROJ-043
+   - Edit PROJECT_STATUS.md: add ticket row, increment last_ticket_id
+5. Confirm: "Created ticket PROJ-043: Add dark mode"
 ```
+
+### Slash Command Autocomplete Protocol
+
+> **For AI Agents**: Implement autocomplete when user types `/command...`
+
+**When to Activate**: When user message starts with `/` or user is typing a partial command (e.g., `/cre`, `/ana`, `/gen`).
+
+**Step 1: Match User Input**
+
+When user types a partial command, filter commands where name starts with input:
+- `/cre` → matches `/create-ticket`
+- `/a` → matches `/analyze-coverage`
+
+**Step 2: Suggest to User**
+
+Present matching command(s) with:
+- **Command name**: `/create-ticket`
+- **Short description**: "Create ticket in PROJECT_STATUS.md"
+- **Syntax hint**: `"title" [--type TYPE] [--assignee NAME]`
+
+**Step 3: Argument Autocomplete**
+
+When user types `/create-ticket "title" --`, suggest available flags:
+- `--type` (feature, bugfix, hotfix, task)
+- `--assignee` (agent or person name)
+- `--priority` (low, medium, high, critical)
+
+When user types `/create-ticket "title" --type `, suggest valid values:
+- `feature`, `bugfix`, `hotfix`, `task`
+
+### Command Shortcuts
+
+For efficiency, memorize these shortcuts:
+
+| Shortcut | Full Command | Purpose |
+|----------|--------------|---------|
+| `/ct` | `/create-ticket` | Create ticket |
+| `/ac` | `/analyze-coverage` | Coverage analysis |
+| `/gc` | `/generate-changelog` | Generate changelog |
+
+### Implementation Notes for AI Agents
+
+1. **Cache the command list**: After first read, remember available commands for the session
+2. **Prefix matching**: Match from start of command name (case-insensitive)
+3. **Show shortcuts**: When suggesting, show both full name and shortcut
+4. **Validate early**: Check arguments before executing
+5. **Clear feedback**: Show what command will do before executing
 
 ---
 
