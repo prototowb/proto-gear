@@ -33,6 +33,7 @@ except ImportError:
 
 # Import CLI command handlers
 from . import cli_commands
+from . import status_commands
 
 # File handling helpers
 def detect_existing_environment(project_dir: Path) -> dict:
@@ -1799,6 +1800,83 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Override description for cloned agent'
     )
 
+    # 'status' command
+    status_parser = subparsers.add_parser(
+        'status',
+        help='Show project status from PROJECT_STATUS.md'
+    )
+    status_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Output as JSON (for AI agent consumption)'
+    )
+
+    # 'ticket' command group
+    ticket_parser = subparsers.add_parser(
+        'ticket',
+        help='Manage tickets in PROJECT_STATUS.md'
+    )
+    ticket_subparsers = ticket_parser.add_subparsers(dest='ticket_command', help='Ticket commands')
+
+    # ticket create
+    ticket_create_parser = ticket_subparsers.add_parser(
+        'create',
+        help='Create a new ticket (prints ticket ID to stdout)'
+    )
+    ticket_create_parser.add_argument(
+        'title',
+        type=str,
+        help='Ticket title'
+    )
+    ticket_create_parser.add_argument(
+        '--type',
+        type=str,
+        default='task',
+        choices=sorted(status_commands.VALID_TYPES),
+        help='Ticket type (default: task)'
+    )
+    ticket_create_parser.add_argument(
+        '--assignee',
+        type=str,
+        default='',
+        help='Assignee name (optional)'
+    )
+
+    # ticket update
+    ticket_update_parser = ticket_subparsers.add_parser(
+        'update',
+        help='Update ticket status'
+    )
+    ticket_update_parser.add_argument(
+        'ticket_id',
+        type=str,
+        help='Ticket ID (e.g., PROJ-001)'
+    )
+    ticket_update_parser.add_argument(
+        '--status',
+        type=str,
+        required=True,
+        choices=sorted(status_commands.VALID_STATUSES),
+        help='New status'
+    )
+
+    # ticket list
+    ticket_list_parser = ticket_subparsers.add_parser(
+        'list',
+        help='List tickets'
+    )
+    ticket_list_parser.add_argument(
+        '--status',
+        type=str,
+        default='',
+        help='Filter by status (e.g., IN_PROGRESS, PENDING, COMPLETED)'
+    )
+    ticket_list_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Output as JSON'
+    )
+
     # 'update' command for template updates
     update_parser = subparsers.add_parser(
         'update',
@@ -1950,6 +2028,22 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         elif args.command == 'update':
             sys.exit(cli_commands.cmd_template_update(args))
 
+        # Handle 'status' command
+        elif args.command == 'status':
+            sys.exit(status_commands.cmd_status(args))
+
+        # Handle 'ticket' command
+        elif args.command == 'ticket':
+            if args.ticket_command == 'create':
+                sys.exit(status_commands.cmd_ticket_create(args))
+            elif args.ticket_command == 'update':
+                sys.exit(status_commands.cmd_ticket_update(args))
+            elif args.ticket_command == 'list':
+                sys.exit(status_commands.cmd_ticket_list(args))
+            else:
+                print("Use 'pg ticket --help' to see available commands")
+                sys.exit(1)
+
         # No command provided - show help
         else:
             show_splash_screen()
@@ -1957,6 +2051,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             print(f"{Colors.GRAY}Template generator for AI-powered development collaboration{Colors.ENDC}\n")
             print(f"{Colors.CYAN}Available Commands:{Colors.ENDC}")
             print(f"  {Colors.BOLD}pg init{Colors.ENDC}              - Initialize AI agent templates in your project")
+            print(f"  {Colors.BOLD}pg status{Colors.ENDC}            - Show project status from PROJECT_STATUS.md")
+            print(f"  {Colors.BOLD}pg ticket{Colors.ENDC}            - Manage tickets  (create / update / list)")
             print(f"  {Colors.BOLD}pg capabilities{Colors.ENDC}      - Browse and search available capabilities")
             print(f"  {Colors.BOLD}pg agent{Colors.ENDC}             - Manage agent configurations")
             print(f"  {Colors.BOLD}pg help{Colors.ENDC}              - Show detailed documentation")

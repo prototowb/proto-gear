@@ -1,419 +1,124 @@
-# 🤖 Proto Gear
+# Proto Gear
 
-> AI Agent Framework for Intelligent Development Workflows
+> Model-agnostic coordination scaffolding for human-AI development teams
 
-[![Version](https://img.shields.io/badge/version-0.3.0-blue)](https://github.com/proto-gear/proto-gear)
+[![Version](https://img.shields.io/badge/version-0.8.2-blue)](https://github.com/proto-gear/proto-gear)
 [![Status](https://img.shields.io/badge/status-alpha-orange)](docs/dev/readiness-assessment.md)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-purple)](LICENSE)
-[![Tech Stack Agnostic](https://img.shields.io/badge/stack-agnostic-orange)](#-technology-detection)
 
-> ⚠️ **Alpha Software**: Proto Gear v0.3.0 is alpha-quality software suitable for development and experimentation. Not recommended for production use without thorough testing. See [Readiness Assessment](docs/dev/readiness-assessment.md) for details.
+Proto Gear generates a small set of markdown files that give any AI agent — Claude, GPT-4, Cursor, Copilot, Aider, or anything that can read files — a shared understanding of your project's state, workflow conventions, and available tools. Once initialized, a `pg` CLI lets agents (and humans) manipulate that state reliably via shell commands.
 
-## ⚡ What is Proto Gear?
-
-Proto Gear is a **template generator** that creates collaboration environments for human and AI agents working together via natural language. It provides **workflow patterns**, **sprint management templates**, **ticket tracking**, and **Git workflow conventions** - completely tech stack agnostic and designed to work with any programming language or framework.
-
-**Key Philosophy**: Proto Gear doesn't make tech stack decisions for you or execute code automatically. It creates structured templates that enable AI agents to collaborate with humans using native tools (git, pytest, npm, etc.) guided by clear patterns and workflows.
-
-## ✨ Core Features
-
-- 🤖 **Adaptive Hybrid Agent System**: Template-based patterns for 4 core + 2 flex agents
-- 📊 **Project State Management**: Single source of truth via PROJECT_STATUS.md
-- 🎯 **Sprint-Based Configuration**: Agent patterns adapt to Feature Development, Bug Fixing, Performance, etc.
-- 🎫 **Ticket Tracking Templates**: Structured format for managing development tickets
-- 🌿 **Git Workflow Patterns**: Branching conventions and commit message templates
-- 🧪 **TDD Workflow Guide**: Comprehensive testing patterns and best practices
-- 🔍 **Auto-Detection**: Recognizes your existing tech stack (Node.js, Python, etc.)
-- 🎨 **Beautiful CLI**: Rich terminal interface with interactive wizard
-
-## 🎬 Quick Start
-
-### Installation
-
-```bash
-# Install Proto Gear globally
-pip install proto-gear
-
-# Or install from source
-git clone https://github.com/proto-gear/proto-gear.git
-cd proto-gear
-pip install -e .
-```
-
-### Usage
-
-```bash
-# Navigate to your existing project
-cd my-project
-
-# Initialize AI Agent Framework (interactive wizard)
-pg init
-
-# Or use non-interactive mode with flags
-pg init --no-interactive --with-branching --ticket-prefix MYAPP
-
-# Preview what will be created (dry run)
-pg init --dry-run
-
-# Get help
-pg help
-```
-
-**Note for Windows Users**: If the interactive wizard shows encoding errors, use the non-interactive mode:
-```bash
-pg init --no-interactive --with-branching --ticket-prefix MYAPP
-```
-
-### Interactive Setup Wizard
-
-When you run `pg init`, Proto Gear launches an **enhanced interactive wizard** with:
-
-1. **Beautiful visual panels** - Rich formatted displays with colors and borders
-2. **Arrow key navigation** - Use ↑↓ keys to select options (no more typing y/n!)
-3. **Auto-detection** - Automatically identifies your tech stack and framework
-4. **Input validation** - Real-time feedback on ticket prefix format
-5. **Styled summary table** - Professional configuration overview
-
-**Enhanced Visual Experience:**
-```
-╭─ 📊 Project Detection ────────────────────────────╮
-│                                                   │
-│  Directory    my-nextjs-app                       │
-│  Type         Node.js Project                     │
-│  Framework    Next.js                             │
-│  Git          ✓ Initialized                       │
-│  Remote       ✓ origin                            │
-│                                                   │
-╰───────────────────────────────────────────────────╯
-
-╭─ 📋 Branching & Git Workflow ─────────────────────╮
-│                                                   │
-│  Proto Gear can generate a comprehensive          │
-│  branching strategy document...                   │
-│                                                   │
-│  ✓ Git repository detected - recommended          │
-│                                                   │
-╰───────────────────────────────────────────────────╯
-
-? Generate BRANCHING.md?
-  ❯ ✓ Yes - Generate branching strategy
-    ✗ No - Skip this step
-  (Use arrow keys ↑↓, Enter to select)
-
-╭─ 🎫 Ticket Prefix Configuration ──────────────────╮
-│  Suggested prefix: MYNEXT                         │
-╰───────────────────────────────────────────────────╯
-
-? Enter ticket prefix: APP_
-✓ Using prefix: APP
-
-╭─ 📝 Configuration Summary ────────────────────────╮
-│  ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓      │
-│  ┃ Setting       ┃ Value                 ┃      │
-│  ┃ Project       ┃ my-nextjs-app         ┃      │
-│  ┃ Branching     ┃ ✓ Enabled             ┃      │
-│  ┃ Ticket Prefix ┃ APP                   ┃      │
-│  └───────────────┴───────────────────────┘      │
-│                                                   │
-│  Files to create:                                 │
-│    ✓ AGENTS.md                                    │
-│    ✓ PROJECT_STATUS.md                            │
-│    ✓ BRANCHING.md                                 │
-╰───────────────────────────────────────────────────╯
-
-? Proceed with setup? (Y/n)
-```
-
-**Features:**
-- ✨ **Arrow key selection** - Navigate ↑↓, select with Enter
-- 🎨 **Rich panels & tables** - Beautiful formatted output
-- ✅ **Input validation** - Real-time feedback
-- 🎯 **Smart defaults** - Suggested values
-- 🔄 **Graceful fallback** - Works in any terminal
-
-### What Gets Created?
-
-Proto Gear creates 2-4 key template files depending on your configuration:
-
-1. **`AGENTS.md`** - AI agent collaboration guide with:
-   - Detected project type and framework
-   - Agent role patterns (4 core + 2 flex agents)
-   - Decision-making workflows described as patterns
-   - Context-aware instructions for AI collaboration
-
-2. **`PROJECT_STATUS.md`** - Single source of truth containing:
-   - Current project phase and sprint
-   - Active and completed tickets with status workflow
-   - Sprint type configuration
-   - Recent updates and state management rules
-
-3. **`BRANCHING.md`** (optional) - Git workflow patterns including:
-   - Branch naming conventions (feature/*, bugfix/*, hotfix/*)
-   - Conventional commit message format
-   - Workflow patterns for AI agents to follow
-   - PR templates and merge strategies
-
-4. **`TESTING.md`** (optional) - TDD workflow guide including:
-   - Red-Green-Refactor cycle patterns
-   - Test pyramid structure (Unit/Integration/E2E)
-   - Coverage targets and best practices
-   - CI/CD integration patterns
-
-## 🏗️ Architecture
-
-### Template-Based Agent Collaboration
-
-Proto Gear uses a **pattern-based 4 + 2 agent model** defined in AGENTS.md:
-
-#### Core Agent Patterns (Always Active)
-- **Lead AI**: Reads PROJECT_STATUS.md, coordinates work, updates state
-- **Backend Agent**: Server-side logic patterns, API design, database integration
-- **Frontend Agent**: UI/UX patterns, component development, styling
-- **Testing Agent**: TDD patterns, coverage analysis, quality assurance
-
-#### Flex Agent Patterns (Sprint-Based)
-Two agent slots that adapt based on sprint type configured in PROJECT_STATUS.md:
-- **Documentation Agent**: For feature development and refactoring sprints
-- **Performance Agent**: For performance optimization sprints
-- **Security Agent**: For security-focused sprints
-- **Integration Agent**: For research and integration sprints
-
-#### How It Works
-
-AI agents don't execute code automatically - instead, they:
-1. **Read templates** - AGENTS.md, PROJECT_STATUS.md, TESTING.md, BRANCHING.md
-2. **Follow patterns** - Use decision-making workflows as natural language guides
-3. **Use native tools** - Execute git, pytest, npm, etc. with their own judgment
-4. **Update state** - Modify PROJECT_STATUS.md as work progresses
-5. **Collaborate naturally** - Work with humans through shared context
-
-**Key Insight**: Code blocks in templates are **illustrative patterns**, not executable Python. When you see `def function_name():`, it describes a decision-making process, not a function to call.
-
-### Sprint Types
-
-Proto Gear templates adapt to different development phases:
-- `feature_development` - Building new functionality
-- `bug_fixing` - Resolving issues
-- `performance_optimization` - Speed and efficiency improvements
-- `deployment_prep` - Preparing for release
-- `refactoring` - Code quality improvements
-- `research_integration` - Exploring new technologies
-
-## 📋 Commands
-
-```bash
-# Initialize AI agent templates (interactive wizard)
-pg init
-
-# Initialize with non-interactive mode (for automation)
-pg init --no-interactive --with-branching --with-testing --ticket-prefix MYAPP
-
-# Preview what will be created (dry run)
-pg init --dry-run
-
-# Show detailed documentation
-pg help
-```
-
-### Command Line Options
-
-**`pg init` options:**
-- `--dry-run` - Preview template files without creating them
-- `--with-branching` - Generate BRANCHING.md (skips interactive wizard)
-- `--with-testing` - Generate TESTING.md (skips interactive wizard)
-- `--ticket-prefix PREFIX` - Set custom ticket prefix (skips interactive wizard)
-- `--no-interactive` - Skip wizard completely (use defaults)
-
-## 🤖 How It Works
-
-1. **Detection Phase**
-   - Proto Gear scans your project directory
-   - Detects package.json, requirements.txt, etc.
-   - Identifies your tech stack (Node.js, Python, etc.)
-
-2. **Template Generation Phase**
-   - Creates AGENTS.md with project-specific agent patterns
-   - Creates PROJECT_STATUS.md for state tracking
-   - Creates TESTING.md and BRANCHING.md (if selected)
-   - Does NOT modify your existing code
-
-3. **Collaboration Phase**
-   - AI agents read generated templates for context
-   - Agents follow patterns using native tools (git, pytest, npm, etc.)
-   - Agents update PROJECT_STATUS.md as work progresses
-   - Humans and AI collaborate through shared documentation
-   - No automatic code execution - agents use judgment and ask questions
-
-## 📊 PROJECT_STATUS.md Structure
-
-```yaml
-project_phase: "Development"
-protogear_enabled: true
-framework: "Next.js"
-project_type: "Node.js Project"
-current_sprint: 1
-```
-
-**Sections**:
-- 🎫 Active Tickets
-- ✅ Completed Tickets
-- 📊 Project Analysis
-- 🔄 Recent Updates
-
-## 🎫 Ticket Management
-
-PROJECT_STATUS.md provides a structured format for ticket tracking:
-- Unique IDs (e.g., `PROJ-001`, `PROJ-002`)
-- Type classification (feature, bugfix, hotfix, refactor, etc.)
-- Status workflow (PENDING → IN_PROGRESS → COMPLETED, with BLOCKED/CANCELLED)
-- Git branch association
-- Sprint type configuration for agent adaptation
-
-AI agents read PROJECT_STATUS.md to understand current work and update it as tasks progress.
-
-## 🌿 Git Workflow Patterns
-
-BRANCHING.md (when generated) provides patterns for:
-- Branch naming conventions: `feature/PROJ-001-description`
-- Conventional commit messages: `type(scope): subject`
-- Workflow examples for common tasks
-- PR templates and merge strategies
-
-AI agents follow these patterns using native git commands, not automated scripts.
-
-## 🔧 Technology Detection
-
-Proto Gear automatically detects:
-
-### Node.js Projects
-- package.json presence
-- Frameworks: Next.js, React, Vue.js, Express.js
-- Dependencies analysis
-
-### Python Projects
-- requirements.txt, setup.py, pyproject.toml
-- Frameworks: Django, FastAPI, Flask
-- manage.py for Django projects
-
-### Future Support
-- Ruby (Gemfile)
-- Java (pom.xml, build.gradle)
-- Go (go.mod)
-- Rust (Cargo.toml)
-- PHP (composer.json)
-
-## 🧪 Development & Testing
-
-### For Proto Gear Developers
-
-```bash
-# Install in editable mode
-pip install -e .
-
-# Run development tests
-bash dev-test.sh
-
-# Test template generation
-pg init --dry-run
-
-# Run linting
-python -m flake8 core/
-
-# Run tests with coverage
-python -m pytest --cov=core --cov-report=term-missing
-```
-
-### Direct Python Testing
-
-```bash
-cd proto-gear/core
-python proto_gear.py init --dry-run
-python proto_gear.py help
-```
-
-## 📖 Example: Adding to Existing Project
-
-```bash
-# Navigate to your project
-cd my-nextjs-app
-
-# Initialize Proto Gear
-$ pg init
-
-╔═════════════════════════════════════════════════════════════╗
-║   PROTO GEAR - AI Agent Framework v0.3                     ║
-╚═════════════════════════════════════════════════════════════╝
-
-⚡ AI-Powered Development Workflow Framework ⚡
-
-Agent Framework Setup
-------------------------------
-Current directory: /Users/dev/my-nextjs-app
-Detected: Node.js Project
-Framework: Next.js
-
-✅ SUCCESS: ProtoGear AI Agent Framework integrated!
-
-📄 Template files created:
-  + AGENTS.md
-  + PROJECT_STATUS.md
-  + BRANCHING.md (optional)
-  + TESTING.md (optional)
-
-🚀 Next steps:
-  1. Review AGENTS.md to understand agent collaboration patterns
-  2. Check PROJECT_STATUS.md for ticket tracking and state management
-  3. Share templates with your AI assistant for context
-  4. AI agents read templates and use native tools (git, pytest, npm)
-  5. Update PROJECT_STATUS.md as work progresses
-```
-
-## 📚 Documentation
-
-### For Users
-- **[Getting Started Guide](docs/user/getting-started.md)** - First-time setup and usage
-- **[Template Guide](docs/user/template-guide.md)** - Understanding Proto Gear templates
-- **[Usage Guides](docs/user/guides/)** - Detailed tutorials:
-  - [Template Basics](docs/user/guides/01-template-basics.md)
-  - [AI Agent Usage](docs/user/guides/02-ai-agent-usage.md)
-  - [Human Usage](docs/user/guides/03-human-usage.md)
-  - [Workflow Examples](docs/user/guides/04-workflow-examples.md)
-  - [Troubleshooting](docs/user/guides/05-troubleshooting.md)
-
-### For Contributors
-- **[Project Structure](docs/dev/project-structure.md)** - File organization and architecture
-- **[Branching Strategy](docs/dev/branching-strategy.md)** - Git workflow conventions
-- **[Readiness Assessment](docs/dev/readiness-assessment.md)** - Project status and roadmap
-- **[Universal Capabilities Design](docs/dev/universal-capabilities-design.md)** - Future v0.4.0 features
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
-
-## 🤝 Contributing
-
-We welcome contributions! Proto Gear is focused on being the best AI agent framework for development workflows.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and [docs/dev/branching-strategy.md](docs/dev/branching-strategy.md) for Git workflow conventions.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 🔗 Links
-
-- **GitHub**: [github.com/proto-gear/proto-gear](https://github.com/proto-gear/proto-gear)
-- **Issues**: [Report bugs or request features](https://github.com/proto-gear/proto-gear/issues)
-- **Discussions**: [Join the conversation](https://github.com/proto-gear/proto-gear/discussions)
-
-## 🙏 Credits
-
-Proto Gear evolved from the Agent Framework project, now focused exclusively on providing template-based collaboration environments that enable human and AI agents to work together naturally using structured patterns and native tools - regardless of tech stack.
+**What it is**: A template generator + a thin state-management CLI.
+**What it is not**: A workflow execution engine, an agent runtime, or a code generator.
 
 ---
 
-<p align="center">
-  Made with ❤️ by the Proto Gear Team
-</p>
+## Install
 
-<p align="center">
-  <i>May your sprints be productive and your agents be intelligent!</i>
-</p>
+```bash
+pip install proto-gear
+# or from source
+pip install -e .
+```
+
+---
+
+## Quick start
+
+```bash
+cd my-project
+pg init                                          # interactive wizard
+pg init --no-interactive --with-branching \
+         --ticket-prefix PROJ                    # non-interactive
+```
+
+This writes 2–4 markdown files into your project root:
+
+| File | Purpose |
+|---|---|
+| `AGENTS.md` | Roles, workflow patterns, pre-flight checklist |
+| `PROJECT_STATUS.md` | Sprint state, active tickets, single source of truth |
+| `BRANCHING.md` | Branch naming + commit conventions (optional) |
+| `TESTING.md` | TDD patterns + coverage targets (optional) |
+
+From that point, any AI agent that can read files can follow the coordination protocol — no model-specific plugins required.
+
+---
+
+## State management CLI
+
+Once `PROJECT_STATUS.md` exists, `pg` provides reliable shell commands for reading and writing state. Any AI agent can call these:
+
+```bash
+# Show current project state
+pg status
+pg status --json                                 # machine-readable
+
+# Create a ticket (prints new ID to stdout — capture with $())
+pg ticket create "Add search endpoint" --type feature
+ID=$(pg ticket create "Fix login redirect" --type bugfix)
+echo "Working on $ID"
+
+# Update ticket status
+pg ticket update PROJ-001 --status IN_PROGRESS
+pg ticket update PROJ-001 --status COMPLETED
+
+# List tickets
+pg ticket list
+pg ticket list --status IN_PROGRESS
+pg ticket list --json
+```
+
+The commands parse and write `PROJECT_STATUS.md` directly — no separate database or state file.
+
+---
+
+## How the coordination loop works
+
+1. **Agent reads** `AGENTS.md` → understands roles, checklist, references
+2. **Agent reads** `PROJECT_STATUS.md` → knows sprint, active tickets, next ID
+3. **Agent calls** `pg ticket create "..."` → ticket ID is written to the file, printed to stdout
+4. **Agent works**, commits following `BRANCHING.md` conventions
+5. **Agent calls** `pg ticket update PROJ-XXX --status COMPLETED` → file updated
+6. **Any other agent or human** runs `pg status` → sees current state
+
+Because the protocol is markdown + shell commands, it works identically across Claude Code, Cursor, GitHub Copilot, Aider, and plain terminal sessions.
+
+---
+
+## Technology detection
+
+`pg init` detects your existing stack and tailors placeholder values — it never modifies your code.
+
+Detected stacks: Node.js (Next.js, React, Vue, Express), Python (Django, FastAPI, Flask), Rust, Go, Ruby, PHP, Java/Kotlin, C#.
+
+---
+
+## Other commands
+
+```bash
+pg capabilities list          # browse bundled skills/workflows
+pg capabilities show testing  # details for a specific capability
+pg agent create               # define a custom agent configuration
+pg update                     # refresh templates while preserving ticket data
+pg help                       # full documentation
+```
+
+---
+
+## Development
+
+```bash
+pip install -e .
+python -m pytest
+pg init --dry-run             # smoke test template generation
+```
+
+See [CLAUDE.md](CLAUDE.md) for contributor conventions and [docs/dev/](docs/dev/) for design documents.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).

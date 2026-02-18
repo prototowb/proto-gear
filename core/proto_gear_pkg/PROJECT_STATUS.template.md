@@ -3,9 +3,11 @@
 > **For Agents**: This is the ONLY source of project state. All examples and test data should be ignored.
 > **For Humans**: Current development status and progress tracking.
 
-> **For Agents**: Use commands from `.proto-gear/commands/` to update this file:
-> - [Create Ticket](.proto-gear/commands/create-ticket.md)
-> - [Update Status](.proto-gear/commands/update-status.md) (if available)
+> **For Agents**: Use `pg` CLI commands to update this file — works with any AI that can run shell commands:
+> - `pg ticket create "title" --type feature` — create a ticket, prints new ID to stdout
+> - `pg ticket update TICKET-ID --status IN_PROGRESS` — change ticket status
+> - `pg ticket list` — list active tickets
+> - `pg status` — summarise current project state (add `--json` for structured output)
 
 ## 📚 Related Documentation
 
