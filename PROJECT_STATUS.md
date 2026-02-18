@@ -22,6 +22,7 @@ current_branch: "development"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 | - | No active tickets | - | - | - | - |
+| PROTO-028 | Add pg status and pg ticket commands | feature | IN_PROGRESS | feature/proto-028-add-pg-status-and-pg-ticket-commands |  |
 
 ## ✅ Completed Tickets
 
