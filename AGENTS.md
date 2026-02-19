@@ -50,28 +50,31 @@ Before starting ANY development task, verify:
 
 ### Agent Self-Configuration Protocol
 
-**On first session** with this project, write a redirect reference into your own configuration file (CLAUDE.md, .cursorrules, .windsurfrules, .github/copilot-instructions.md, or equivalent). This ensures you find Proto Gear on every future session.
+> ⚠ **YOUR CONFIG FILE IS A POINTER, NOT A DOCUMENT.**
+> Write ONLY the block below — nothing else about this project.
+> If your entry exceeds ~10 lines, you have written too much. Delete the excess.
+> Architecture, stack, tickets, directory structure, and workflow steps belong in
+> Proto Gear files, not your config.
 
-**What to write** — a structured reference index:
+**On first session**, copy this block verbatim into your config file (CLAUDE.md, .cursorrules, .windsurfrules, .github/copilot-instructions.md, or equivalent):
 
-1. A one-line statement: "This project uses Proto Gear for AI agent coordination."
-2. The reference index below (copy as-is into your config):
+---
+This project uses Proto Gear for AI agent coordination.
 
 | File | Purpose | Read When |
 |------|---------|-----------|
-| `AGENTS.md` | Agent orchestration, workflows, pre-flight checklist | First session or unclear on process |
+| `AGENTS.md` | Agent orchestration, roles, pre-flight checklist | First session or unclear on process |
 | `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
+| `PROJECT_SPECIFICATIONS.md` | Project planning doc — source for architecture decisions | When starting features or design work (if exists) |
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations (if exists) |
 | `.proto-gear/INDEX.md` | Capabilities: commands, skills, workflows | When starting a task (if exists) |
 
-3. Critical rules (include verbatim):
-   - NEVER commit directly to `main` or `development`
-   - Run `pg status` before starting work
-   - Check file frontmatter headers before reading full files
+Rules: never commit to `main`/`development` directly · run `pg status` before starting work
+---
 
-**What NOT to write**: Do not copy project information, ticket lists, architecture details, or workflow steps into your config. Proto Gear files are the single source of truth. Your config is only a pointer.
+**Do not add** project name, tech stack, architecture notes, ticket lists, directory structure, or any other project information. Those live in Proto Gear files.
 
-**On every subsequent session**: Scan your reference index → read frontmatter of listed files → read full content only where needed → execute pre-flight checklist.
+**On every subsequent session**: read your reference index → scan frontmatter headers of listed files → read full content only where needed → execute pre-flight checklist.
 
 ---
 

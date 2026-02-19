@@ -1026,7 +1026,7 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
     return result
 
 
-def setup_agent_framework_only(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
+def setup_agent_framework_only(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None, project_specs_source=None):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -1047,6 +1047,16 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
     if not dry_run:
         try:
             files_created = []
+
+            # Copy project specifications document if provided
+            if project_specs_source:
+                import shutil
+                specs_dest = current_dir / 'PROJECT_SPECIFICATIONS.md'
+                try:
+                    shutil.copy(project_specs_source, specs_dest)
+                    files_created.append('PROJECT_SPECIFICATIONS.md')
+                except (IOError, OSError) as e:
+                    print(f"{Colors.YELLOW}Warning: Could not copy specifications file: {e}{Colors.ENDC}")
 
             # Determine ticket prefix
             if not ticket_prefix:
@@ -1337,6 +1347,22 @@ def interactive_setup_wizard():
     else:
         print(f"Git: {Colors.YELLOW}Not initialized{Colors.ENDC}")
 
+    # Question 0: Project Specifications document
+    specs_dest = current_dir / 'PROJECT_SPECIFICATIONS.md'
+    if not specs_dest.exists():
+        print(f"\n{Colors.CYAN}📄 Project Specifications{Colors.ENDC}")
+        print("-" * 30)
+        print("Do you have a project specifications or planning document?")
+        print(f"{Colors.GRAY}(e.g. PRD, architecture brief, requirements doc){Colors.ENDC}")
+        specs_response = safe_input(f"\n{Colors.BOLD}Provide a specs document? (y/n): {Colors.ENDC}").lower()
+        if specs_response in ['y', 'yes']:
+            specs_path = safe_input(f"{Colors.BOLD}Enter the file path: {Colors.ENDC}").strip()
+            if specs_path and Path(specs_path).exists():
+                config['project_specs_source'] = specs_path
+                print(f"{Colors.GREEN}Will copy to PROJECT_SPECIFICATIONS.md{Colors.ENDC}")
+            else:
+                print(f"{Colors.YELLOW}File not found, skipping.{Colors.ENDC}")
+
     # Question 1: Branching Strategy
     print(f"\n{Colors.CYAN}📋 Branching & Git Workflow{Colors.ENDC}")
     print("-" * 30)
@@ -1428,7 +1454,7 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None):
+def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None, project_specs_source=None):
     """
     Initialize ProtoGear AI Agent Framework in current project
 
@@ -1459,7 +1485,8 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
             with_capabilities=with_capabilities,
             capabilities_config=capabilities_config,
             with_all=with_all,
-            core_templates=core_templates
+            core_templates=core_templates,
+            project_specs_source=project_specs_source
         )
     except KeyboardInterrupt:
         return {'status': 'cancelled'}
@@ -1961,7 +1988,8 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                         with_capabilities=wizard_config.get('with_capabilities', False),
                         capabilities_config=wizard_config.get('capabilities_config'),
                         with_all=wizard_config.get('with_all', False),
-                        core_templates=wizard_config.get('core_templates')
+                        core_templates=wizard_config.get('core_templates'),
+                        project_specs_source=wizard_config.get('project_specs_source')
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")

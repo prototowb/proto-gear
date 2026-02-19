@@ -7,8 +7,9 @@ This project uses Proto Gear for AI agent coordination.
 
 | File | Purpose | Read When |
 |------|---------|-----------|
-| `AGENTS.md` | Agent orchestration, workflows, pre-flight checklist | First session or unclear on process |
+| `AGENTS.md` | Agent orchestration, roles, pre-flight checklist | First session or unclear on process |
 | `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
+| `PROJECT_SPECIFICATIONS.md` | Project planning doc — source for architecture decisions | When starting features or design work (if exists) |
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations (if exists) |
 | `.proto-gear/INDEX.md` | Capabilities: commands, skills, workflows | When starting a task (if exists) |
 

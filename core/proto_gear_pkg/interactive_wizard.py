@@ -1108,6 +1108,67 @@ class RichWizard:
                 self.console.print(f"[green]{CHARS['check']} Using suggested prefix: {suggested_prefix}[/green]\n")
             return suggested_prefix
 
+    def ask_project_specifications(self, current_dir: Path):
+        """
+        Ask user if they have a project specifications document.
+        Returns the source file path string if provided, or None to skip.
+        Skips silently if PROJECT_SPECIFICATIONS.md already exists.
+        """
+        specs_dest = current_dir / 'PROJECT_SPECIFICATIONS.md'
+        if specs_dest.exists():
+            return None  # Already present, nothing to do
+
+        if not QUESTIONARY_AVAILABLE:
+            # Fallback to simple prompts
+            print(f"\n{CHARS['memo']} Project Specifications")
+            print("-" * 50)
+            print("Do you have a project specifications or planning document?")
+            print("(e.g. PRD, architecture brief, requirements doc)")
+            response = input("\nProvide a specs document? (y/n): ").lower().strip()
+            if response not in ['y', 'yes']:
+                return None
+            path = input("Enter the file path: ").strip()
+            if path and Path(path).exists():
+                return path
+            print("File not found, skipping.")
+            return None
+
+        if self.console:
+            self.print_panel(
+                "\n".join([
+                    "",
+                    "If you have a project specifications or planning document",
+                    "[dim](PRD, architecture brief, requirements doc, etc.)[/dim]",
+                    "Proto Gear can copy it here as [bold]PROJECT_SPECIFICATIONS.md[/bold].",
+                    "",
+                    "Agents will use it as the source of truth for architecture decisions.",
+                    ""
+                ]),
+                title=f"{CHARS['memo']} Project Specifications",
+                border_style="cyan"
+            )
+
+        has_specs = questionary.confirm(
+            "Do you have a project specifications or planning document?",
+            default=False,
+            style=PROTO_GEAR_STYLE
+        ).ask()
+
+        if not has_specs:
+            return None
+
+        path = questionary.path(
+            "Enter the path to your specifications document:",
+            style=PROTO_GEAR_STYLE
+        ).ask()
+
+        if path and Path(path).exists():
+            return path
+
+        if self.console:
+            self.console.print("[yellow]File not found, skipping.[/yellow]\n")
+        return None
+
     def show_configuration_summary(self, config: Dict, project_info: Dict, current_dir: Path) -> bool:
         """Display configuration summary and ask for confirmation"""
         preset = config.get('preset', 'custom')
@@ -1330,6 +1391,16 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
 
     git_detected = git_config.get('is_git_repo', False)
 
+    # Ask about project specifications document (before preset selection)
+    config = {}
+    wizard.clear_screen()
+    try:
+        specs_source = wizard.ask_project_specifications(current_dir)
+        if specs_source:
+            config['project_specs_source'] = specs_source
+    except KeyboardInterrupt:
+        return None
+
     # NEW: Ask for preset selection
     while True:
         try:
@@ -1347,8 +1418,10 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
             if continue_with_preset:
                 # User confirmed preset, apply configuration
                 preset_config = PRESETS[preset_key]['config']
-                config = _apply_preset_config(preset_config, git_detected, current_dir)
-                config['preset'] = preset_key
+                preset_result = _apply_preset_config(preset_config, git_detected, current_dir)
+                preset_result['preset'] = preset_key
+                preset_result.update({k: v for k, v in config.items() if k not in preset_result})
+                config = preset_result
 
                 # If branching is enabled, ask for ticket prefix
                 if config.get('with_branching'):
@@ -1369,7 +1442,7 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
             return None
 
     # CUSTOM PATH: Granular selection wizard
-    config = {'preset': 'custom'}
+    config = {'preset': 'custom', **{k: v for k, v in config.items() if k == 'project_specs_source'}}
 
     # Stage 1: Core Templates Selection
     wizard.clear_screen()
