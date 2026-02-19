@@ -1,4 +1,5 @@
-# PROJECT STATUS - 
+<!-- proto-gear | purpose: Current project state — sprint, tickets, blockers | read-when: Every session before starting work | priority: required -->
+# PROJECT STATUS -
 
 > **Single Source of Truth** for project state
 

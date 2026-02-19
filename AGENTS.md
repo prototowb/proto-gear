@@ -1,3 +1,4 @@
+<!-- proto-gear | purpose: Agent orchestration — roles, workflows, pre-flight checklist | read-when: First session or unclear on process | priority: required -->
 # AGENTS.md - Lead AI Development Workflow
 ## Autonomous Project Management & Documentation System
 
@@ -47,41 +48,30 @@ Before starting ANY development task, verify:
 5. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
 6. **ALWAYS read existing files before modifying** - use Read tool first
 
-### Agent Configuration Protocol
+### Agent Self-Configuration Protocol
 
-**RULE**: Do NOT duplicate project context into agent-specific configuration files. Instead, write a **redirect** that points to Proto Gear files.
+**On first session** with this project, write a redirect reference into your own configuration file (CLAUDE.md, .cursorrules, .windsurfrules, .github/copilot-instructions.md, or equivalent). This ensures you find Proto Gear on every future session.
 
-**Affected config files** (do NOT write project information into these):
-- `CLAUDE.md` (Claude Code / Claude)
-- `.cursorrules` (Cursor)
-- `.github/copilot-instructions.md` (GitHub Copilot)
-- `.windsurfrules` (Windsurf)
-- `.aider.conf.yml` (Aider)
-- Any other AI agent configuration file
+**What to write** — a structured reference index:
 
-**What to write instead** — a minimal redirect:
+1. A one-line statement: "This project uses Proto Gear for AI agent coordination."
+2. The reference index below (copy as-is into your config):
 
-```markdown
-# Project Context
+| File | Purpose | Read When |
+|------|---------|-----------|
+| `AGENTS.md` | Agent orchestration, workflows, pre-flight checklist | First session or unclear on process |
+| `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
+| `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations (if exists) |
+| `.proto-gear/INDEX.md` | Capabilities: commands, skills, workflows | When starting a task (if exists) |
 
-This project uses Proto Gear for AI agent coordination.
+3. Critical rules (include verbatim):
+   - NEVER commit directly to `main` or `development`
+   - Run `pg status` before starting work
+   - Check file frontmatter headers before reading full files
 
-## Required Reading (in order)
-1. `AGENTS.md` - Agent roles, workflows, and collaboration patterns
-2. `PROJECT_STATUS.md` - Current sprint, tickets, and project state
-3. `BRANCHING.md` - Git workflow and commit conventions
-4. `.proto-gear/INDEX.md` - Available capabilities (skills, workflows, commands)
+**What NOT to write**: Do not copy project information, ticket lists, architecture details, or workflow steps into your config. Proto Gear files are the single source of truth. Your config is only a pointer.
 
-## Rules
-- Follow AGENTS.md for all development workflows
-- Update PROJECT_STATUS.md when starting/completing work
-- Use slash commands: `/create-ticket`, `/update-status`, etc.
-- Check .proto-gear/ for relevant skills and workflows before starting tasks
-
-Do NOT duplicate project context here. AGENTS.md is the single source of truth.
-```
-
-**Why**: Proto Gear files are the **single source of truth**. Duplicating context into agent configs creates drift, contradictions, and maintenance burden.
+**On every subsequent session**: Scan your reference index → read frontmatter of listed files → read full content only where needed → execute pre-flight checklist.
 
 ---
 
