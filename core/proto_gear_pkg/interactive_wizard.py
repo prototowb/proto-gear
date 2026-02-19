@@ -1351,7 +1351,7 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
                 config['preset'] = preset_key
 
                 # If branching is enabled, ask for ticket prefix
-                if config.get('with_branching') and git_detected:
+                if config.get('with_branching'):
                     wizard.clear_screen()
                     wizard.show_step_header(1, 1, "Git Configuration", project_info, current_dir)
                     try:
@@ -1397,9 +1397,13 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
                 config['with_branching'] = True
                 config['ticket_prefix'] = ticket_prefix
             else:
-                # No git repo but BRANCHING selected - still enable it
+                # No git repo but BRANCHING selected - still enable it, still ask for prefix
+                suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:15]
+                if not suggested_prefix or len(suggested_prefix) < 2:
+                    suggested_prefix = 'PROJ'
+                ticket_prefix = wizard.ask_ticket_prefix(suggested_prefix)
                 config['with_branching'] = True
-                config['ticket_prefix'] = None
+                config['ticket_prefix'] = ticket_prefix
         else:
             # BRANCHING not selected in Stage 1, ask via git workflow options
             git_options = wizard.ask_git_workflow_options(git_config, current_dir)
