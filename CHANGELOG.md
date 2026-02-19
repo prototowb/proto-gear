@@ -5,6 +5,41 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-19
+
+### Added - Agent-Agnostic Self-Configuration Reference System
+
+**Minor Release**: Introduces a universal, agent-agnostic system where AI agents self-configure their own reference index pointing to Proto Gear files, without Proto Gear needing to know which AI tool is running.
+
+#### Scannable Template Headers
+- **HTML comment frontmatter** added to all 8 template files
+  - Format: `<!-- proto-gear | purpose: ... | read-when: ... | priority: ... -->`
+  - Agents scan headers first to decide what to read, without loading full files
+  - Priority levels: `required`, `required-if-exists`, `optional`
+  - Consistent across AGENTS.md, PROJECT_STATUS.md, BRANCHING.md, TESTING.md, CONTRIBUTING.md, SECURITY.md, ARCHITECTURE.md, CODE_OF_CONDUCT.md
+
+#### Agent Self-Configuration Protocol (AGENTS.template.md)
+- **Rewrote** "Agent Configuration Protocol" section into "Agent Self-Configuration Protocol"
+  - Agents now write a **structured reference index** into their own config (CLAUDE.md, .cursorrules, .windsurfrules, .github/copilot-instructions.md, or any equivalent)
+  - Reference index table: File | Purpose | Read When
+  - Three critical rules to include verbatim (no direct commits, run `pg status`, check headers)
+  - Explicitly states what NOT to write (no project info duplication)
+  - Defines subsequent-session workflow: scan index → read headers → read full content only if needed → execute pre-flight
+
+#### Dogfooding Update (CLAUDE.md)
+- Prepended Proto Gear reference index to project's own CLAUDE.md
+- Demonstrates the self-configuration pattern in practice
+- Shows that agent configs should point to Proto Gear, not duplicate it
+
+### Design Principles
+- **Agent-agnostic**: Proto Gear doesn't generate format-specific agent config files
+- **Self-configuring**: Agents write their own redirects based on AGENTS.md instructions
+- **Scannable**: Every Proto Gear file has a one-line header for instant read/skip decisions
+- **Autonomous**: Once configured, agents execute workflows without re-reading AGENTS.md fully
+- **No code changes**: `proto_gear.py` and `pg init` unchanged
+
+---
+
 ## [0.8.2] - 2026-01-06
 
 ### Added - Safe Template Update System

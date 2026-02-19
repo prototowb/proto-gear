@@ -5,7 +5,7 @@ A tech-stack agnostic template generator that creates collaboration environments
 for human and AI agents working together via natural language.
 """
 
-__version__ = "0.8.2"
+__version__ = "0.9.0"
 __author__ = "Proto Gear Team"
 __email__ = "team@protogear.dev"
 
