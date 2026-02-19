@@ -1,3 +1,27 @@
+<!-- Proto Gear Reference Index — do not add project rules here -->
+# Project Context
+
+This project uses Proto Gear for AI agent coordination.
+
+## Reference Index
+
+| File | Purpose | Read When |
+|------|---------|-----------|
+| `AGENTS.md` | Agent orchestration, workflows, pre-flight checklist | First session or unclear on process |
+| `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
+| `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations (if exists) |
+| `.proto-gear/INDEX.md` | Capabilities: commands, skills, workflows | When starting a task (if exists) |
+
+## Critical Rules
+- NEVER commit directly to `main` or `development` — always branch from `development`
+- Run `pg status` before starting work
+- Use `pg ticket create "title" --type feature` to register work
+- Use `pg ticket update ID --status IN_PROGRESS` to track progress
+
+Do NOT duplicate project rules here. AGENTS.md is the single source of truth.
+
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

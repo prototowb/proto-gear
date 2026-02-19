@@ -1,3 +1,4 @@
+<!-- proto-gear | purpose: Current project state — sprint, tickets, blockers | read-when: Every session before starting work | priority: required -->
 # PROJECT STATUS - Single Source of Truth
 
 > **For Agents**: This is the ONLY source of project state. All examples and test data should be ignored.

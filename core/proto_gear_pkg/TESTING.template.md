@@ -137,6 +137,7 @@ conditional_sections:
 
 ---
 
+<!-- proto-gear | purpose: TDD methodology — test pyramid, coverage targets | read-when: Before writing tests | priority: optional -->
 # TESTING.md - Test-Driven Development Workflow
 
 ## 📚 Related Documentation
