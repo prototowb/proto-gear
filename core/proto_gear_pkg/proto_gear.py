@@ -1968,11 +1968,39 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                     sys.exit(0)
             else:
                 # Run with CLI flags (non-interactive)
+                ticket_prefix = args.ticket_prefix
+
+                # If branching is requested but no ticket prefix was given, prompt for one
+                if args.with_branching and not ticket_prefix and not args.no_interactive:
+                    current_dir = Path(".")
+                    suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+                    if not suggested_prefix or len(suggested_prefix) < 2:
+                        suggested_prefix = 'PROJ'
+
+                    print(f"\n{Colors.CYAN}🎫 Ticket Prefix Configuration{Colors.ENDC}")
+                    print("-" * 30)
+                    print(f"Suggested prefix: {Colors.GREEN}{suggested_prefix}{Colors.ENDC}")
+                    print(f"{Colors.GRAY}Examples: PROJ-001, APP-042, MYAPP-123{Colors.ENDC}")
+
+                    response = safe_input(
+                        f"{Colors.BOLD}Enter ticket prefix (press Enter for '{suggested_prefix}'): {Colors.ENDC}"
+                    ).strip().upper()
+
+                    if response and response.isalnum() and 2 <= len(response) <= 10:
+                        ticket_prefix = response
+                    elif response:
+                        print(f"{Colors.YELLOW}Invalid prefix, using suggested: {suggested_prefix}{Colors.ENDC}")
+                        ticket_prefix = suggested_prefix
+                    else:
+                        ticket_prefix = suggested_prefix
+
+                    print(f"Using prefix: {Colors.GREEN}{ticket_prefix}{Colors.ENDC}")
+
                 result = run_simple_protogear_init(
                     dry_run=args.dry_run,
                     force=args.force if hasattr(args, 'force') else False,
                     with_branching=args.with_branching,
-                    ticket_prefix=args.ticket_prefix,
+                    ticket_prefix=ticket_prefix,
                     with_capabilities=args.with_capabilities,
                     with_all=args.all if hasattr(args, 'all') else False
                     )
