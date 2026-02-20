@@ -1516,7 +1516,10 @@ def _apply_preset_config(preset_config: Dict, git_detected: bool, current_dir: P
     config['with_all'] = preset_config.get('with_all', False)
 
     # Core templates (for custom path compatibility)
-    config['core_templates'] = preset_config.get('core', {})
+    # When with_all is True, leave core_templates unset so the with_all branch
+    # in setup_agent_framework_only fires instead of being short-circuited.
+    if not config['with_all']:
+        config['core_templates'] = preset_config.get('core', {})
 
     return config
 
