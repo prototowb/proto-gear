@@ -28,6 +28,7 @@ current_branch: "main"
 
 | ID | Title | Completed | PR/Commit |
 |----|-------|-----------|-----------|
+| PROTO-030 | Fix specs prompt: description stub + incremental wizard + compat | 2026-02-20 | 4212cfb |
 | PROTO-029 | Agent self-config protocol + PROJECT_SPECIFICATIONS.md (v0.9.0) | 2026-02-19 | v0.9.0 |
 | PROTO-028 | Add pg status and pg ticket commands | 2026-02-19 | f5e8969 |
 | PROTO-027 | v0.8.1 UX Improvements & Bug Fixes | 2025-12-19 | v0.8.1 |
@@ -221,6 +222,10 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | Readiness Score | 9.5/10 | Production ready |
 
 ## Recent Updates
+- 2026-02-20: **Post-v0.9.0 bugfixes** (commit 4212cfb)
+  - Specs prompt: description stub instead of file-copy; `run_incremental_wizard` was missing the prompt entirely
+  - `questionary.path` → `questionary.text` for compatibility
+  - AGENTS.md: Architecture Extraction Task — agents extract PROJECT_SPECIFICATIONS.md → PROJECT_ARCHITECTURE.md
 - 2026-02-19: **v0.9.0 Released** - Agent Self-Config Protocol Hardening & PROJECT_SPECIFICATIONS.md
   - Scannable HTML comment headers on all 8 templates
   - Self-config protocol: warning-first, ~10-line cap, inline copy-paste block
