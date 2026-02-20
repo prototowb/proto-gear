@@ -1110,64 +1110,47 @@ class RichWizard:
 
     def ask_project_specifications(self, current_dir: Path):
         """
-        Ask user if they have a project specifications document.
-        Returns the source file path string if provided, or None to skip.
-        Skips silently if PROJECT_SPECIFICATIONS.md already exists.
+        If PROJECT_SPECIFICATIONS.md already exists, return None silently — the agent
+        will handle it (architecture extraction task in AGENTS.md).
+
+        If it does not exist, prompt the user for a short project description.
+        Returns the description string, or None to skip.
         """
         specs_dest = current_dir / 'PROJECT_SPECIFICATIONS.md'
         if specs_dest.exists():
-            return None  # Already present, nothing to do
+            return None  # Agent will extract architecture per AGENTS.md instructions
 
         if not QUESTIONARY_AVAILABLE:
-            # Fallback to simple prompts
-            print(f"\n{CHARS['memo']} Project Specifications")
+            # Fallback to simple prompt
+            print(f"\n{CHARS['memo']} Project Description")
             print("-" * 50)
-            print("Do you have a project specifications or planning document?")
-            print("(e.g. PRD, architecture brief, requirements doc)")
-            response = input("\nProvide a specs document? (y/n): ").lower().strip()
-            if response not in ['y', 'yes']:
-                return None
-            path = input("Enter the file path: ").strip()
-            if path and Path(path).exists():
-                return path
-            print("File not found, skipping.")
-            return None
+            print("No PROJECT_SPECIFICATIONS.md found.")
+            print("Enter a brief description of your project (1-3 sentences).")
+            print("Proto Gear will create a PROJECT_SPECIFICATIONS.md stub for agents to expand.")
+            description = input("\nProject description (or press Enter to skip): ").strip()
+            return description if description else None
 
         if self.console:
             self.print_panel(
                 "\n".join([
                     "",
-                    "If you have a project specifications or planning document",
-                    "[dim](PRD, architecture brief, requirements doc, etc.)[/dim]",
-                    "Proto Gear can copy it here as [bold]PROJECT_SPECIFICATIONS.md[/bold].",
+                    "No [bold]PROJECT_SPECIFICATIONS.md[/bold] found.",
+                    "Enter a brief description — Proto Gear will generate a structured stub.",
                     "",
-                    "Agents will use it as the source of truth for architecture decisions.",
+                    "[dim]Agents will expand it and extract architecture into PROJECT_ARCHITECTURE.md.[/dim]",
                     ""
                 ]),
-                title=f"{CHARS['memo']} Project Specifications",
+                title=f"{CHARS['memo']} Project Description",
                 border_style="cyan"
             )
 
-        has_specs = questionary.confirm(
-            "Do you have a project specifications or planning document?",
-            default=False,
-            style=PROTO_GEAR_STYLE
+        description = questionary.text(
+            "Project description (1-3 sentences, or Enter to skip):",
+            style=PROTO_GEAR_STYLE,
+            instruction="Agents will use this as a starting point"
         ).ask()
 
-        if not has_specs:
-            return None
-
-        path = questionary.path(
-            "Enter the path to your specifications document:",
-            style=PROTO_GEAR_STYLE
-        ).ask()
-
-        if path and Path(path).exists():
-            return path
-
-        if self.console:
-            self.console.print("[yellow]File not found, skipping.[/yellow]\n")
-        return None
+        return description.strip() if description and description.strip() else None
 
     def show_configuration_summary(self, config: Dict, project_info: Dict, current_dir: Path) -> bool:
         """Display configuration summary and ask for confirmation"""
@@ -1397,7 +1380,7 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
     try:
         specs_source = wizard.ask_project_specifications(current_dir)
         if specs_source:
-            config['project_specs_source'] = specs_source
+            config['project_description'] = specs_source
     except KeyboardInterrupt:
         return None
 
@@ -1442,7 +1425,7 @@ def run_enhanced_wizard(project_info: Dict, git_config: Dict, current_dir: Path)
             return None
 
     # CUSTOM PATH: Granular selection wizard
-    config = {'preset': 'custom', **{k: v for k, v in config.items() if k == 'project_specs_source'}}
+    config = {'preset': 'custom', **{k: v for k, v in config.items() if k == 'project_description'}}
 
     # Stage 1: Core Templates Selection
     wizard.clear_screen()
@@ -1613,6 +1596,16 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
             print(f"  {cap_status} .proto-gear/ (capabilities)")
         print()
 
+    # Ask about project specifications document (if not already present)
+    try:
+        specs_source = wizard.ask_project_specifications(current_dir)
+        if specs_source:
+            specs_config = {'project_description': specs_source}
+        else:
+            specs_config = {}
+    except KeyboardInterrupt:
+        return None
+
     # Ask what to do
     if QUESTIONARY_AVAILABLE:
         action_choices = []
@@ -1774,6 +1767,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
                     except KeyboardInterrupt:
                         return None
 
+        config.update(specs_config)
         return config
 
     else:
@@ -1811,6 +1805,7 @@ def run_incremental_wizard(existing_env: Dict, project_info: Dict, git_config: D
         elif choice == '3':
             config['core_templates'] = existing_env['existing_files']
 
+        config.update(specs_config)
         return config
 
     return config

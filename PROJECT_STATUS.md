@@ -8,14 +8,14 @@
 ```yaml
 project_phase: "Production"
 protogear_enabled: true
-protogear_version: "v0.8.1"
+protogear_version: "v0.9.0"
 framework: "Unknown"
 project_type: "Python"
 initialization_date: "2025-11-21"
-last_release: "v0.8.1"
-release_date: "2025-12-19"
+last_release: "v0.9.0"
+release_date: "2026-02-19"
 current_sprint: null
-current_branch: "development"
+current_branch: "main"
 ```
 
 ## 🎫 Active Tickets
@@ -23,17 +23,49 @@ current_branch: "development"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 | - | No active tickets | - | - | - | - |
-| PROTO-028 | Add pg status and pg ticket commands | feature | IN_PROGRESS | feature/proto-028-add-pg-status-and-pg-ticket-commands |  |
 
 ## ✅ Completed Tickets
 
 | ID | Title | Completed | PR/Commit |
 |----|-------|-----------|-----------|
+| PROTO-029 | Agent self-config protocol + PROJECT_SPECIFICATIONS.md (v0.9.0) | 2026-02-19 | v0.9.0 |
+| PROTO-028 | Add pg status and pg ticket commands | 2026-02-19 | f5e8969 |
 | PROTO-027 | v0.8.1 UX Improvements & Bug Fixes | 2025-12-19 | v0.8.1 |
 | PROTO-026 | v0.8.0 Composition Engine & Agent Builder | 2025-12-10 | v0.8.0 |
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-029 Details (RELEASED v0.9.0)
+**Agent Self-Configuration Protocol Hardening & PROJECT_SPECIFICATIONS.md Support** - **✅ COMPLETE**
+
+**Goal**: Fix two real-world issues: agents were still over-writing config files with project context despite the protocol, and there was no workflow for a project's planning/specs document.
+
+**Features Delivered**:
+1. ✅ **Scannable HTML comment headers** - Added `<!-- proto-gear | purpose: ... | read-when: ... | priority: ... -->` to all 8 templates for agent-agnostic frontmatter scanning
+2. ✅ **Hardened self-config protocol** - Warning blockquote first, explicit ~10-line cap, inline copy-paste block removes all ambiguity
+3. ✅ **PROJECT_SPECIFICATIONS.md support** - Referenced in agent config table; `pg init` now prompts to copy an existing specs/PRD document
+4. ✅ **Ticket prefix always prompted** - Wizard now always asks for ticket abbreviation when branching is enabled (removed silent `None` fallback and `git_detected` gate)
+5. ✅ **Dogfooding synced** - AGENTS.md, PROJECT_STATUS.md, BRANCHING.md, TESTING.md, CLAUDE.md all updated
+
+**Files Modified**:
+- `core/proto_gear_pkg/AGENTS.template.md` - Hardened self-config protocol + PROJECT_SPECIFICATIONS.md in table
+- `core/proto_gear_pkg/PROJECT_STATUS.template.md` - Added scannable header
+- `core/proto_gear_pkg/BRANCHING.template.md` - Added scannable header
+- `core/proto_gear_pkg/TESTING.template.md` - Added scannable header (after YAML frontmatter)
+- `core/proto_gear_pkg/CONTRIBUTING.template.md` - Added scannable header
+- `core/proto_gear_pkg/SECURITY.template.md` - Added scannable header
+- `core/proto_gear_pkg/ARCHITECTURE.template.md` - Added scannable header
+- `core/proto_gear_pkg/CODE_OF_CONDUCT.template.md` - Added scannable header
+- `core/proto_gear_pkg/interactive_wizard.py` - Ticket prefix fix (3 code paths) + `ask_project_specifications()` method
+- `core/proto_gear_pkg/proto_gear.py` - CLI ticket prefix prompt + specs prompt + `shutil.copy` logic
+- `pyproject.toml` + `core/proto_gear_pkg/__init__.py` - Version 0.8.2 → 0.9.0
+- `CHANGELOG.md` - v0.9.0 entry
+- `AGENTS.md`, `CLAUDE.md` - Dogfooding sync
+
+**Release**: https://github.com/prototowb/proto-gear/releases/tag/v0.9.0
+
+---
 
 ### PROTO-027 Details (RELEASED v0.8.1)
 **UX Improvements & Critical Bug Fix** - **✅ COMPLETE**
@@ -184,11 +216,17 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 |-----------|--------|-------|
 | ProtoGear Integration | Complete | Agent framework active |
 | Project Structure | Analyzed | 0 directories detected |
-| Current Version | v0.8.0 | Released 2025-12-10 |
-| Test Coverage | 47% | 362 tests passing (302 + 60 new) |
+| Current Version | v0.9.0 | Released 2026-02-19 |
+| Test Coverage | 47% | 362 tests passing |
 | Readiness Score | 9.5/10 | Production ready |
 
 ## Recent Updates
+- 2026-02-19: **v0.9.0 Released** - Agent Self-Config Protocol Hardening & PROJECT_SPECIFICATIONS.md
+  - Scannable HTML comment headers on all 8 templates
+  - Self-config protocol: warning-first, ~10-line cap, inline copy-paste block
+  - PROJECT_SPECIFICATIONS.md: referenced in agent config table + `pg init` prompt to copy specs doc
+  - Ticket prefix always prompted when branching enabled (3 wizard paths fixed)
+  - GitHub Release: https://github.com/prototowb/proto-gear/releases/tag/v0.9.0
 - 2025-12-10: **v0.8.0 Released** 🎉 - Composition Engine & Agent Builder System
   - Complete agent composition engine with automatic dependency resolution
   - 20 capability metadata files with structured dependencies
