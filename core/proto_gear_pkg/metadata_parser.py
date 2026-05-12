@@ -128,6 +128,43 @@ class TemplateMetadata:
         return False
 
 
+PROTO_GEAR_HEADER_PATTERN = re.compile(
+    r'<!--\s*proto-gear:header\s*\n(.*?)\n\s*-->',
+    re.DOTALL,
+)
+
+
+def parse_proto_gear_header(text: str, max_search_chars: int = 8192) -> Optional[Dict[str, Any]]:
+    """
+    Extract the proto-gear:header block from a markdown file.
+
+    The header is a multi-line HTML comment of the form:
+
+        <!-- proto-gear:header
+        purpose: <one-line>
+        read-when: <when to read this file>
+        priority: required|recommended|optional|required-if-exists
+        defines:
+          - <section-id>
+        links:
+          - <related-file.md>
+        -->
+
+    Only the first ``max_search_chars`` of ``text`` are scanned; the header
+    is expected near the top of the file. Returns a dict of parsed fields,
+    or ``None`` if no header is present or the YAML body is malformed.
+    """
+    haystack = text[:max_search_chars]
+    match = PROTO_GEAR_HEADER_PATTERN.search(haystack)
+    if not match:
+        return None
+    try:
+        parsed = yaml.safe_load(match.group(1))
+    except yaml.YAMLError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
 class MetadataParser:
     """Parser for extracting YAML frontmatter from template files."""
 

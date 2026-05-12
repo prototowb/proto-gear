@@ -1,4 +1,16 @@
-<!-- proto-gear | purpose: Current project state — sprint, tickets, blockers | read-when: Every session before starting work | priority: required -->
+<!-- proto-gear:header
+purpose: Current project state — sprint, tickets, blockers
+read-when: Every session before starting work
+priority: required
+defines:
+  - current-state-yaml
+  - active-tickets-table
+  - completed-tickets-table
+  - project-analysis
+  - recent-updates
+links:
+  - AGENTS.md
+-->
 # PROJECT STATUS - Single Source of Truth
 
 > **For Agents**: This is the ONLY source of project state. All examples and test data should be ignored.

@@ -137,7 +137,19 @@ conditional_sections:
 
 ---
 
-<!-- proto-gear | purpose: TDD methodology — test pyramid, coverage targets | read-when: Before writing tests | priority: optional -->
+<!-- proto-gear:header
+purpose: TDD methodology, test pyramid, coverage targets
+read-when: When writing tests or assessing coverage
+priority: recommended
+defines:
+  - red-green-refactor-cycle
+  - test-pyramid
+  - coverage-targets
+  - testing-conventions
+links:
+  - AGENTS.md
+  - .proto-gear/skills/testing
+-->
 # TESTING.md - Test-Driven Development Workflow
 
 ## 📚 Related Documentation

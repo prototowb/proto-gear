@@ -1,4 +1,22 @@
-<!-- proto-gear | purpose: Agent orchestration — roles, workflows, pre-flight checklist | read-when: First session or unclear on process | priority: required -->
+<!-- proto-gear:header
+purpose: Agent orchestration — roles, workflows, pre-flight checklist
+read-when: First session or unclear on process
+priority: required
+defines:
+  - mandatory-reading-list
+  - architecture-extraction-task
+  - pre-flight-checklist
+  - critical-rules
+  - agent-self-configuration-protocol
+  - decision-matrix
+  - agent-roles-4-core-2-flex
+links:
+  - PROJECT_STATUS.md
+  - BRANCHING.md
+  - TESTING.md
+  - .proto-gear/INDEX.md
+  - AGENT_CONTEXT.md
+-->
 # AGENTS.md - Lead AI Development Workflow
 ## Autonomous Project Management & Documentation System
 

@@ -1,4 +1,16 @@
-<!-- proto-gear | purpose: Current project state — sprint, tickets, blockers | read-when: Every session before starting work | priority: required -->
+<!-- proto-gear:header
+purpose: Current project state — sprint, tickets, blockers
+read-when: Every session before starting work
+priority: required
+defines:
+  - current-state-yaml
+  - active-tickets-table
+  - completed-tickets-table
+  - project-analysis
+  - recent-updates
+links:
+  - AGENTS.md
+-->
 # PROJECT STATUS -
 
 > **Single Source of Truth** for project state
@@ -23,6 +35,7 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 | PROTO-031 | Agent Context Manifest + pg sync-context | feature | IN_PROGRESS | feature/PROTO-031-agent-context-manifest | — |
+| PROTO-032 | Structured scannable headers on all core templates | feature | IN_PROGRESS | feature/PROTO-032-structured-headers | — |
 
 ## ✅ Completed Tickets
 
@@ -36,6 +49,38 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-032 Details (IN PROGRESS)
+**Structured `proto-gear:header` block on all core docs** — Phase 1 / Track C of the v0.10.0 indexing rework.
+
+**Problem**: The single-line `<!-- proto-gear | purpose: X | read-when: Y | priority: Z -->` marker said *when* to read a file but nothing about *what's inside*. Agents that opened a 346-line AGENTS.md to find one section had to scroll/grep without any structural hint.
+
+**Delivered**:
+1. ✅ **New header format** — multi-line HTML comment containing YAML, parseable but invisible in rendered markdown, survives template generation (frontmatter-style `---` blocks would be stripped by `metadata_parser`).
+   ```html
+   <!-- proto-gear:header
+   purpose: ...
+   read-when: ...
+   priority: required|recommended|optional|required-if-exists
+   defines:
+     - section-id-1
+   links:
+     - related-file.md
+   -->
+   ```
+2. ✅ **Applied to all 8 templates** in `core/proto_gear_pkg/`: AGENTS, PROJECT_STATUS, BRANCHING, TESTING, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT.
+3. ✅ **Applied to dogfood files**: AGENTS.md, PROJECT_STATUS.md, BRANCHING.md, TESTING.md at repo root.
+4. ✅ **`parse_proto_gear_header()`** in `metadata_parser.py` — first-class API that any future tooling (`pg doctor`, drift checks, `pg suggest`) can consume.
+5. ✅ **15 tests** including a parametrized contract test that every shipped template has a parsable, valid header.
+
+**Why this works**: An agent that opens AGENTS.md now sees in lines 1-17 a YAML manifest naming the seven major sections inside (`mandatory-reading-list`, `pre-flight-checklist`, `critical-rules`, `agent-self-configuration-protocol`, …). The agent can grep directly to the section it needs instead of skimming 346 lines.
+
+**Files Modified**: 8 templates + 4 root dogfood files + `metadata_parser.py` + `PROJECT_STATUS.md`.
+**Files Created**: `tests/test_proto_gear_header.py`.
+
+**Tests**: 398 passing (was 383). 27 pre-existing failures unchanged.
+
+---
 
 ### PROTO-031 Details (IN PROGRESS)
 **Agent Context Manifest + `pg sync-context`** — solving the "agents miss workflows/skills" discoverability problem.
