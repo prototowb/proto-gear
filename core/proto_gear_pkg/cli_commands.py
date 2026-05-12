@@ -112,8 +112,39 @@ def cmd_capabilities_list(args):
         }
 
     if not filtered_caps:
+        if getattr(args, 'json', False):
+            import json
+            print(json.dumps({"capabilities": []}, indent=2))
+            return 0
         print(f"{Colors.YELLOW}No capabilities match the specified filters{Colors.ENDC}")
         print(f"\nTry: pg capabilities list (without filters)")
+        return 0
+
+    # JSON output path (for AI agent consumption)
+    if getattr(args, 'json', False):
+        import json
+        items = []
+        for cap_id in sorted(filtered_caps.keys()):
+            cap = filtered_caps[cap_id]
+            triggers = []
+            contexts = []
+            if cap.relevance:
+                triggers = list(cap.relevance.triggers or [])
+                contexts = list(cap.relevance.contexts or [])
+            items.append({
+                "id": cap_id,
+                "type": cap.type.value if hasattr(cap.type, "value") else str(cap.type),
+                "name": cap.name,
+                "description": cap.description,
+                "category": cap.category,
+                "status": cap.status.value if hasattr(cap.status, "value") else str(cap.status),
+                "version": cap.version,
+                "tags": list(cap.tags or []),
+                "agent_roles": list(cap.agent_roles or []),
+                "triggers": triggers,
+                "contexts": contexts,
+            })
+        print(json.dumps({"capabilities": items}, indent=2))
         return 0
 
     # Group by type

@@ -1716,6 +1716,11 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         choices=['stable', 'beta', 'experimental'],
         help='Filter by status'
     )
+    capabilities_list_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Emit JSON (for AI agent consumption)'
+    )
 
     # capabilities search
     capabilities_search_parser = capabilities_subparsers.add_parser(
@@ -1982,6 +1987,39 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Show what would change without writing files'
     )
 
+    # 'context' command
+    context_parser = subparsers.add_parser(
+        'context',
+        help='Print AGENT_CONTEXT.md to stdout (for piping into agents)'
+    )
+    context_parser.add_argument(
+        '--regenerate',
+        action='store_true',
+        help='Regenerate from current state instead of reading existing file'
+    )
+
+    # 'suggest' command
+    suggest_parser = subparsers.add_parser(
+        'suggest',
+        help='Match user prose against capability triggers; return top matches'
+    )
+    suggest_parser.add_argument(
+        'prose',
+        nargs='+',
+        help='Task description (e.g., "fix login bug")'
+    )
+    suggest_parser.add_argument(
+        '--limit',
+        type=int,
+        default=3,
+        help='Maximum number of suggestions (default: 3)'
+    )
+    suggest_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Emit JSON (for AI agent consumption)'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -2151,6 +2189,44 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             else:
                 print("Use 'pg ticket --help' to see available commands")
                 sys.exit(1)
+
+        # Handle 'context' command
+        elif args.command == 'context':
+            from . import sync_context as sync_context_module
+            project_dir = Path(".")
+            canon = project_dir / "AGENT_CONTEXT.md"
+            if canon.exists() and not args.regenerate:
+                content = canon.read_text(encoding='utf-8')
+            else:
+                content = sync_context_module.generate_agent_context(project_dir)
+            # Force UTF-8 so emoji/Unicode work on Windows consoles.
+            buffer = getattr(sys.stdout, 'buffer', None)
+            if buffer is not None:
+                buffer.write(content.encode('utf-8'))
+            else:
+                sys.stdout.write(content)
+            sys.exit(0)
+
+        # Handle 'suggest' command
+        elif args.command == 'suggest':
+            from . import discovery
+            prose = " ".join(args.prose)
+            matches = discovery.suggest(Path("."), prose, limit=args.limit)
+            if args.json:
+                import json
+                print(json.dumps({"prose": prose, "matches": matches}, indent=2))
+            else:
+                if not matches:
+                    print(f"{Colors.YELLOW}No matching capabilities for: {prose!r}{Colors.ENDC}")
+                    sys.exit(0)
+                print(f"{Colors.CYAN}Top matches for {prose!r}:{Colors.ENDC}")
+                for i, m in enumerate(matches, 1):
+                    triggers_hit = ", ".join(f"`{t}`" for t in m['matched_triggers'])
+                    print(f"  {i}. {Colors.GREEN}{m['id']}{Colors.ENDC} "
+                          f"(score {m['score']}) — {m['description']}")
+                    if triggers_hit:
+                        print(f"     {Colors.GRAY}matched: {triggers_hit}{Colors.ENDC}")
+            sys.exit(0)
 
         # Handle 'sync-context' command
         elif args.command == 'sync-context':

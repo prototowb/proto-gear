@@ -52,8 +52,10 @@ CRITICAL_RULES = [
 
 CLI_COMMANDS: List[Tuple[str, str]] = [
     ("pg status", "Current project state — version, sprint, active tickets"),
+    ("pg context [--regenerate]", "Print this Agent Context to stdout (pipe-friendly)"),
+    ("pg suggest \"<task prose>\" [--json]", "Match a free-form task description to the best-fitting capabilities"),
     ("pg ticket create/update/list", "Manage tickets in PROJECT_STATUS.md"),
-    ("pg capabilities list [--type skill|workflow|command]", "Browse installed capabilities"),
+    ("pg capabilities list [--type ...] [--json]", "Browse capabilities (--json for agent consumption)"),
     ("pg capabilities show <name>", "Show full details of a capability"),
     ("pg capabilities tree <name>", "Show dependency tree of a capability"),
     ("pg agent list", "List configured custom agents (if any)"),

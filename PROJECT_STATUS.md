@@ -36,6 +36,7 @@ current_branch: "main"
 |----|-------|------|--------|--------|----------|
 | PROTO-031 | Agent Context Manifest + pg sync-context | feature | IN_PROGRESS | feature/PROTO-031-agent-context-manifest | — |
 | PROTO-032 | Structured scannable headers on all core templates | feature | IN_PROGRESS | feature/PROTO-032-structured-headers | — |
+| PROTO-033 | pg context, pg suggest, pg capabilities list --json | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 
 ## ✅ Completed Tickets
 
@@ -49,6 +50,29 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-033 Details (IN PROGRESS)
+**Discovery CLI** — Phase 2 / Track D of the v0.10.0 indexing rework. Three commands that let agents in a shell reach the index without doing a file read.
+
+**Delivered**:
+1. ✅ **`pg context [--regenerate]`** — prints `AGENT_CONTEXT.md` to stdout (UTF-8 enforced so emoji work on Windows). Falls back to live regeneration if the file is absent or `--regenerate` is set.
+2. ✅ **`pg suggest "<task prose>" [--limit N] [--json]`** — matches user prose against the `relevance.triggers` field of every installed (or built-in) capability and returns the top N ranked by overlap score. Multi-word triggers outrank single-word.
+3. ✅ **`pg capabilities list --json`** — machine-readable catalog: id, type, name, description, category, status, version, tags, agent_roles, triggers, contexts.
+4. ✅ **`core/proto_gear_pkg/discovery.py`** — backend (`suggest()`, `load_capabilities_for_suggest()`, `_score_capability()`, `_tokenize()`).
+5. ✅ **14 tests** covering tokenization, scoring (substring/multi-word/no-match), project-vs-package fallback, and end-to-end ranking on the real package catalog ("write tests" → testing > docs; "fix login bug" → bug-fix/debugging).
+6. ✅ **CLI cheatsheet updated** — `sync_context.CLI_COMMANDS` now lists the new commands; regenerated AGENT_CONTEXT.md and host configs.
+
+**Sanity checks**:
+- `pg suggest "fix login bug"` → debugging (4), bug-fix (4), hotfix (2).
+- `pg suggest "write tests"` → testing (5), documentation (1).
+- `pg capabilities list --json --type skill` emits well-formed JSON with all 7 skills.
+
+**Files Modified**: `core/proto_gear_pkg/proto_gear.py`, `core/proto_gear_pkg/cli_commands.py`, `core/proto_gear_pkg/sync_context.py`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `PROJECT_STATUS.md`.
+**Files Created**: `core/proto_gear_pkg/discovery.py`, `tests/test_discovery.py`.
+
+**Tests**: 412 passing (was 398). 27 pre-existing failures unchanged.
+
+---
 
 ### PROTO-032 Details (IN PROGRESS)
 **Structured `proto-gear:header` block on all core docs** — Phase 1 / Track C of the v0.10.0 indexing rework.
