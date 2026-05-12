@@ -22,7 +22,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| - | No active tickets | - | - | - | - |
+| PROTO-031 | Agent Context Manifest + pg sync-context | feature | IN_PROGRESS | feature/PROTO-031-agent-context-manifest | — |
 
 ## ✅ Completed Tickets
 
@@ -36,6 +36,43 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-031 Details (IN PROGRESS)
+**Agent Context Manifest + `pg sync-context`** — solving the "agents miss workflows/skills" discoverability problem.
+
+**Problem**: AGENTS.md is 346 lines and is *not* in any agent host's auto-load path (Claude Code loads CLAUDE.md; Cursor loads .cursorrules; etc.). The capability index requires 3+ file reads to reach. Agents either don't read it or are dismissed before reaching it. Triggers in `metadata.yaml` files were never aggregated into a single agent-facing surface.
+
+**Delivered**:
+1. ✅ **`AGENT_CONTEXT.md`** — new ≤120-line auto-generated skim: reference index, capability one-liners with triggers, full trigger→capability map, critical rules, CLI cheatsheet.
+2. ✅ **`AGENT_CONTEXT.template.md`** — template scaffold in `core/proto_gear_pkg/`.
+3. ✅ **`core/proto_gear_pkg/sync_context.py`** — generator + host-config mirror. Manages `<!-- proto-gear:agent-context begin/end -->` region inside `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`. Content outside the markers is preserved.
+4. ✅ **`pg sync-context [--dry-run]`** — new CLI subcommand.
+5. ✅ **`pg init` integration** — every fresh init now runs sync at the end.
+6. ✅ **20 tests** in `tests/test_sync_context.py` (managed-region replace, idempotency, dry-run, content preservation, missing-file rendering).
+7. ✅ **Dogfooded** — own AGENT_CONTEXT.md regenerated; CLAUDE.md, .cursorrules, .windsurfrules, .github/copilot-instructions.md now carry the managed block.
+
+**Why this works**: the index now lives in the file each agent host *actually* auto-loads, so capabilities/triggers/rules arrive in the agent's first prompt without any "go read AGENTS.md" detour.
+
+**Files Modified**:
+- `core/proto_gear_pkg/proto_gear.py` — added `sync-context` subparser + dispatch; hooked `pg init`
+- `PROJECT_STATUS.md` — this entry + dogfood
+- `CLAUDE.md` — managed block prepended (dogfood)
+
+**Files Created**:
+- `core/proto_gear_pkg/sync_context.py`
+- `core/proto_gear_pkg/AGENT_CONTEXT.template.md`
+- `tests/test_sync_context.py`
+- `AGENT_CONTEXT.md` (dogfood — canonical agent context)
+
+**Tests**: 20/20 sync_context tests passing. Full suite: 383 passing (was 362) + 27 pre-existing failures unrelated to this work (stale `test_template_generation.py` — `generate_project_template` API drift, not introduced here).
+
+**Follow-ups (out of scope, captured for later)**:
+- Clean CLAUDE.md: strip the ~500 lines of project bloat below the managed block (Track B).
+- Generate `INDEX.md`/`SKILL.md`/etc. from `metadata.yaml` to remove drift (Track B from enhancement plan).
+- `pg suggest <prose>` for runtime task→capability matching (Track D).
+- `pg doctor` drift detector (Track E).
+
+---
 
 ### PROTO-029 Details (RELEASED v0.9.0)
 **Agent Self-Configuration Protocol Hardening & PROJECT_SPECIFICATIONS.md Support** - **✅ COMPLETE**

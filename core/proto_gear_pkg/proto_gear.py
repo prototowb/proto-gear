@@ -1269,6 +1269,18 @@ current_sprint: null
                 else:
                     print(f"{Colors.YELLOW}! Capability creation had issues: {capability_result.get('errors')}{Colors.ENDC}")
 
+            # Generate AGENT_CONTEXT.md and mirror managed block into host config files
+            try:
+                from . import sync_context as sync_context_module
+                sync_results = sync_context_module.sync_context(current_dir, dry_run=False)
+                if 'error' not in sync_results:
+                    for path_str, action in sync_results.items():
+                        if action in ('created', 'updated'):
+                            files_created.append(path_str)
+                    print(f"{Colors.GREEN}+ Agent Context synced (AGENT_CONTEXT.md + host configs){Colors.ENDC}")
+            except Exception as e:
+                print(f"{Colors.YELLOW}! Agent Context sync failed: {e}{Colors.ENDC}")
+
             return {
                 'status': 'success',
                 'files_created': files_created,
@@ -1959,6 +1971,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Show diff and exit without applying changes'
     )
 
+    # 'sync-context' command
+    sync_context_parser = subparsers.add_parser(
+        'sync-context',
+        help='Regenerate AGENT_CONTEXT.md and mirror into host config files'
+    )
+    sync_context_parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Show what would change without writing files'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -2128,6 +2151,27 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             else:
                 print("Use 'pg ticket --help' to see available commands")
                 sys.exit(1)
+
+        # Handle 'sync-context' command
+        elif args.command == 'sync-context':
+            from . import sync_context as sync_context_module
+            results = sync_context_module.sync_context(Path("."), dry_run=args.dry_run)
+            if 'error' in results:
+                print(f"{Colors.FAIL}Error: {results['error']}{Colors.ENDC}")
+                sys.exit(1)
+            label = "Would sync" if args.dry_run else "Synced"
+            print(f"{Colors.CYAN}{label} Agent Context:{Colors.ENDC}")
+            for path_str, action in results.items():
+                icon = {
+                    'created': '+',
+                    'updated': '~',
+                    'unchanged': '=',
+                    'would_create': '+ (dry)',
+                    'would_update': '~ (dry)',
+                }.get(action, '?')
+                colour = Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update') else Colors.GRAY
+                print(f"  {colour}{icon} {path_str}{Colors.ENDC}  [{action}]")
+            sys.exit(0)
 
         # No command provided - show help
         else:
