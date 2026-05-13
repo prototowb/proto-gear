@@ -113,6 +113,6 @@ When the user's prose contains these keywords, load the matching capability befo
 - **Proto Gear version**: v0.10.0
 - **Last release**: 2026-05-13
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-05-13 12:28
+- **Generated**: 2026-05-13 19:06
 
 <!-- proto-gear:agent-context end -->

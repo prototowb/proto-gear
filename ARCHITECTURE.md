@@ -26,6 +26,25 @@ Proto Gear is a small Python CLI (`pg`) that does two things:
 
 It is **not** a project scaffolder, a runtime, or an LLM client. It does not execute code that lives in capability bundles; capabilities are documentation an agent reads, not Python it runs.
 
+## ⚠️ Where Shippable Code Lives
+
+> **All shippable Python and templates live in `core/proto_gear_pkg/`. Nowhere else.**
+
+**History**: we previously had duplicate files in both `core/` and `core/proto_gear_pkg/`. The result was new features not being available in the installed package, plus persistent sync nightmares between duplicates. The rule below exists because the failure mode was painful.
+
+**What to edit:**
+- ✅ **Templates**: `core/proto_gear_pkg/*.template.md`
+- ✅ **Python code**: `core/proto_gear_pkg/*.py`
+- ✅ **Capabilities**: `core/proto_gear_pkg/capabilities/**/*`
+- ❌ **Never create files directly in `core/`** — they won't be picked up by the installed package.
+
+**Package entry point**: `pyproject.toml` points to `proto_gear_pkg.proto_gear:main`. Anything outside `core/proto_gear_pkg/` is not part of the distributable package.
+
+**After editing**:
+1. Clear the Python cache if behaviour seems stale: `rm -rf core/proto_gear_pkg/__pycache__`
+2. Smoke test: `pg init --dry-run`
+3. Verify changes are visible.
+
 ## Components
 
 ```
