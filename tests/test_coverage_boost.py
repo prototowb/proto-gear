@@ -15,8 +15,18 @@ from proto_gear_pkg.proto_gear import (
     generate_branching_doc,
     copy_capability_templates,
     discover_available_templates,
-    generate_project_template
+    generate_project_template as _generate_project_template_raw,
 )
+
+
+def generate_project_template(template_name, project_dir, context, **kwargs):
+    """Test-local wrapper that unwraps the (Path, action) tuple. See
+    test_template_generation.py for the same shim."""
+    result = _generate_project_template_raw(template_name, project_dir, context, **kwargs)
+    if result is None:
+        return None
+    path, _action = result
+    return path
 
 
 class TestGitConfigWorkflowModes:

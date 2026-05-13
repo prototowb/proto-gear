@@ -42,9 +42,15 @@ class TestCapabilityTemplates(unittest.TestCase):
         self.assertIn('name: "Test-Driven Development"', content)
 
     def test_example_workflow_exists(self):
-        """Verify feature-development workflow exists"""
-        workflow_file = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'workflows' / 'feature-development.template.md'
+        """Verify feature-development workflow exists.
+
+        Workflows moved to a folder-per-capability layout (PROTO-024 era):
+        each lives at workflows/<name>/{WORKFLOW.template.md, metadata.yaml}.
+        """
+        workflow_dir = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'workflows' / 'feature-development'
+        workflow_file = workflow_dir / 'WORKFLOW.template.md'
         self.assertTrue(workflow_file.exists())
+        self.assertTrue((workflow_dir / 'metadata.yaml').exists())
 
         content = workflow_file.read_text(encoding='utf-8')
         self.assertTrue(content.startswith('---'))

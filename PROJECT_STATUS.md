@@ -38,6 +38,7 @@ current_branch: "main"
 | PROTO-032 | Structured scannable headers on all core templates | feature | IN_PROGRESS | feature/PROTO-032-structured-headers | — |
 | PROTO-033 | pg context, pg suggest, pg capabilities list --json | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-034 | pg doctor drift detector | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
+| PROTO-035 | Investigate 6 Windows-env CLI integration test failures | bug | PENDING | — | — |
 
 ## ✅ Completed Tickets
 

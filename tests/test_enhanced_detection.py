@@ -119,7 +119,7 @@ gem 'sqlite3'
         assert result['framework'] == 'Ruby on Rails'
 
     def test_ruby_without_rails(self, tmp_path):
-        """Should detect Ruby project without Rails framework."""
+        """Ruby project without Rails should still be detected; Sinatra is named."""
         (tmp_path / 'Gemfile').write_text("""
 source 'https://rubygems.org'
 gem 'sinatra'
@@ -129,7 +129,8 @@ gem 'sinatra'
 
         assert result['detected'] is True
         assert result['type'] == 'Ruby Project'
-        assert result['framework'] is None
+        # detect_project_structure now identifies Sinatra explicitly (proto_gear.py:440).
+        assert result['framework'] == 'Sinatra'
 
 
 class TestLaravelDetection:

@@ -128,10 +128,11 @@ class TestTemplateDiscovery:
         """Test that we have exactly the expected number of templates"""
         templates = discover_available_templates()
 
-        # As of v0.6.3, we have exactly 8 core templates
+        # 8 core docs + AGENT_CONTEXT (added in PROTO-031)
         expected_templates = {
             'AGENTS', 'PROJECT_STATUS', 'BRANCHING', 'TESTING',
-            'CONTRIBUTING', 'SECURITY', 'ARCHITECTURE', 'CODE_OF_CONDUCT'
+            'CONTRIBUTING', 'SECURITY', 'ARCHITECTURE', 'CODE_OF_CONDUCT',
+            'AGENT_CONTEXT',
         }
 
         discovered_names = set(templates.keys())

@@ -5,8 +5,27 @@ Tests the core template generation functionality and version substitution (v0.6.
 
 import pytest
 from pathlib import Path
-from proto_gear_pkg.proto_gear import generate_project_template, discover_available_templates
+from proto_gear_pkg.proto_gear import (
+    generate_project_template as _generate_project_template_raw,
+    discover_available_templates,
+)
 from proto_gear_pkg import __version__
+
+
+def generate_project_template(template_name, project_dir, context, **kwargs):
+    """
+    Test-local wrapper around proto_gear.generate_project_template.
+
+    The production function returns ``(Path | None, action_str)`` on success
+    and bare ``None`` when the template file doesn't exist. These tests
+    predate the tuple return and treat the result as a single Path-or-None.
+    This wrapper unwraps the tuple so existing assertions stay readable.
+    """
+    result = _generate_project_template_raw(template_name, project_dir, context, **kwargs)
+    if result is None:
+        return None
+    path, _action = result
+    return path
 
 
 class TestTemplateGeneration:
@@ -207,12 +226,12 @@ class TestTemplateGeneration:
         }
 
         # Generate first time
-        result1 = generate_project_template('AGENTS', tmp_path, context1)
+        result1 = generate_project_template('AGENTS', tmp_path, context1, force=True)
         content1 = result1.read_text(encoding='utf-8')
         assert 'project-v1' in content1
 
         # Generate second time (should overwrite)
-        result2 = generate_project_template('AGENTS', tmp_path, context2)
+        result2 = generate_project_template('AGENTS', tmp_path, context2, force=True)
         content2 = result2.read_text(encoding='utf-8')
 
         # Should contain new content
