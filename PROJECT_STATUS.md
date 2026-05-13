@@ -37,6 +37,7 @@ current_branch: "main"
 | PROTO-031 | Agent Context Manifest + pg sync-context | feature | IN_PROGRESS | feature/PROTO-031-agent-context-manifest | — |
 | PROTO-032 | Structured scannable headers on all core templates | feature | IN_PROGRESS | feature/PROTO-032-structured-headers | — |
 | PROTO-033 | pg context, pg suggest, pg capabilities list --json | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
+| PROTO-034 | pg doctor drift detector | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 
 ## ✅ Completed Tickets
 
@@ -50,6 +51,35 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-034 Details (IN PROGRESS)
+**`pg doctor` — drift detector** — Track E of the v0.10.0 indexing rework. Closes the loop between sync generators and the on-disk state by surfacing drift before it bites an agent.
+
+**Problem**: After PROTO-031/032/033 there are now four moving pieces (AGENT_CONTEXT.md, four host files, eight core docs, capability metadata). Any one of them can go stale silently — a hand-edited CLAUDE.md, a renamed capability, a missing header. Nothing tells the user (or an agent) "your index is wrong" until the wrongness causes a failed task.
+
+**Delivered**:
+1. ✅ **`core/proto_gear_pkg/doctor.py`** — four check functions:
+   - `check_agent_context_sync` — regenerate in memory, compare with on-disk AGENT_CONTEXT.md (timestamp ignored).
+   - `check_host_files` — every host file's managed block must equal the canonical block.
+   - `check_core_doc_headers` — every present core doc (AGENTS, PROJECT_STATUS, BRANCHING, TESTING, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT) must carry a `proto-gear:header`.
+   - `check_capabilities` — `.proto-gear/` loads cleanly; flags capabilities with no triggers (won't match `pg suggest`).
+2. ✅ **`Finding` + `DiagnosticsReport` dataclasses** — JSON-serializable; severity (ok / warning / error); fix_hint.
+3. ✅ **`pg doctor [--json] [--fix] [--all]`** — CLI: terse by default (warnings/errors only), `--all` shows passes, `--json` for AI agent consumption, `--fix` auto-invokes `sync-context` when drift is repairable that way. Exit code non-zero on errors.
+4. ✅ **24 tests** in `tests/test_doctor.py`: each check + Finding/Report dataclasses + drift detection (modified AGENT_CONTEXT, injected text in host block, missing host file, missing header, no-trigger capability).
+5. ✅ **`pg doctor` added to CLI cheatsheet** in `sync_context.CLI_COMMANDS`; AGENT_CONTEXT.md and host configs regenerated.
+
+**Real-world output** (run against this repo):
+```
+0 error(s), 4 warning(s), 9 ok
+```
+The 4 warnings are correct findings — CONTRIBUTING.md, SECURITY.md, ARCHITECTURE.md, CODE_OF_CONDUCT.md in the repo root predate PROTO-032's header convention. doctor surfaces this for triage.
+
+**Files Modified**: `core/proto_gear_pkg/proto_gear.py`, `core/proto_gear_pkg/sync_context.py`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, `PROJECT_STATUS.md`.
+**Files Created**: `core/proto_gear_pkg/doctor.py`, `tests/test_doctor.py`.
+
+**Tests**: 437 passing (was 412). 27 pre-existing failures unchanged.
+
+---
 
 ### PROTO-033 Details (IN PROGRESS)
 **Discovery CLI** — Phase 2 / Track D of the v0.10.0 indexing rework. Three commands that let agents in a shell reach the index without doing a file read.

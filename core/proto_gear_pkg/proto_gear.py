@@ -2020,6 +2020,27 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Emit JSON (for AI agent consumption)'
     )
 
+    # 'doctor' command
+    doctor_parser = subparsers.add_parser(
+        'doctor',
+        help='Audit project for proto-gear sync drift'
+    )
+    doctor_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Emit JSON report (for AI agent consumption)'
+    )
+    doctor_parser.add_argument(
+        '--fix',
+        action='store_true',
+        help='Automatically run `sync-context` to repair sync drift'
+    )
+    doctor_parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Show all checks including ones that passed'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -2227,6 +2248,53 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                     if triggers_hit:
                         print(f"     {Colors.GRAY}matched: {triggers_hit}{Colors.ENDC}")
             sys.exit(0)
+
+        # Handle 'doctor' command
+        elif args.command == 'doctor':
+            from . import doctor as doctor_module
+            project_dir = Path(".")
+            report = doctor_module.run_diagnostics(project_dir)
+
+            if args.json:
+                import json
+                print(json.dumps(report.to_dict(), indent=2))
+                sys.exit(0 if report.errors == 0 else 1)
+
+            visible = report.findings if args.all else [
+                f for f in report.findings if f.severity != "ok"
+            ]
+
+            if not visible:
+                print(f"{Colors.GREEN}OK — no proto-gear drift detected.{Colors.ENDC}")
+                print(f"{Colors.GRAY}  ({report.ok} checks passed){Colors.ENDC}")
+                sys.exit(0)
+
+            print(f"{Colors.CYAN}pg doctor — diagnostics{Colors.ENDC}")
+            for f in visible:
+                if f.severity == "error":
+                    badge = f"{Colors.FAIL}ERROR{Colors.ENDC}"
+                elif f.severity == "warning":
+                    badge = f"{Colors.YELLOW}WARN {Colors.ENDC}"
+                else:
+                    badge = f"{Colors.GREEN}OK   {Colors.ENDC}"
+                print(f"  [{badge}] {f.target}: {f.message}")
+                if f.fix_hint:
+                    print(f"         {Colors.GRAY}-> {f.fix_hint}{Colors.ENDC}")
+
+            print(
+                f"\n{report.errors} error(s), {report.warnings} warning(s), "
+                f"{report.ok} ok"
+            )
+
+            if args.fix and doctor_module.fixable_by_sync(report):
+                print(f"\n{Colors.CYAN}Running `pg sync-context` to repair drift...{Colors.ENDC}")
+                from . import sync_context as sync_context_module
+                results = sync_context_module.sync_context(project_dir, dry_run=False)
+                for path_str, action in results.items():
+                    print(f"  {Colors.GREEN}{action}{Colors.ENDC}: {path_str}")
+                print(f"{Colors.GREEN}Re-run `pg doctor` to verify.{Colors.ENDC}")
+
+            sys.exit(0 if report.errors == 0 else 1)
 
         # Handle 'sync-context' command
         elif args.command == 'sync-context':
