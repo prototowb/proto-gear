@@ -300,7 +300,14 @@ def show_help():
         print("\n" + "─" * 80 + "\n")
     except UnicodeEncodeError:
         print("\n" + "-" * 80 + "\n")
-    input(f"{Colors.GREEN}Press Enter to continue...{Colors.ENDC}")
+    # Only pause for the user when stdin is a TTY. Under subprocess / CI,
+    # stdin is closed and input() raises EOFError — `pg help | cat` should
+    # exit cleanly, not crash.
+    if sys.stdin.isatty():
+        try:
+            input(f"{Colors.GREEN}Press Enter to continue...{Colors.ENDC}")
+        except EOFError:
+            pass
 
 
 def print_farewell():
@@ -1608,6 +1615,18 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
 
 def main():
     """Main entry point for Proto Gear AI Agent Framework"""
+    # Force UTF-8 on stdout/stderr so emoji and box-drawing characters
+    # work under subprocess capture on Windows (default cp1252 chokes on
+    # bytes like 0x9d). reconfigure() is Python 3.7+; the try/except
+    # tolerates streams that don't support it (e.g. already-replaced
+    # io.StringIO under some test harnesses).
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
     # Add argument parsing
     parser = argparse.ArgumentParser(
         description="Proto Gear - AI Agent Framework for Development Workflows",
@@ -2065,7 +2084,19 @@ For more information, visit: https://github.com/proto-gear/proto-gear
 
             # Determine if we should use interactive wizard
             # Use interactive if no flags provided (except --dry-run and --force)
-            use_interactive = not args.no_interactive and not args.with_branching and args.ticket_prefix is None and not args.with_capabilities
+            # Auto-detect when we're running under subprocess / CI / piped
+            # output and skip the rich wizard. Checking both streams covers
+            # `pg init` under `subprocess.run(capture_output=True)` (stdin
+            # may be inherited TTY, but stdout is a pipe) as well as
+            # genuine non-TTY shells.
+            terminal_is_interactive = sys.stdin.isatty() and sys.stdout.isatty()
+            use_interactive = (
+                not args.no_interactive
+                and not args.with_branching
+                and args.ticket_prefix is None
+                and not args.with_capabilities
+                and terminal_is_interactive
+            )
 
             if use_interactive:
                 # Run interactive wizard

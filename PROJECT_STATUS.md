@@ -38,7 +38,7 @@ current_branch: "main"
 | PROTO-032 | Structured scannable headers on all core templates | feature | IN_PROGRESS | feature/PROTO-032-structured-headers | — |
 | PROTO-033 | pg context, pg suggest, pg capabilities list --json | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-034 | pg doctor drift detector | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
-| PROTO-035 | Investigate 6 Windows-env CLI integration test failures | bug | PENDING | — | — |
+| PROTO-035 | Investigate 6 Windows-env CLI integration test failures | bug | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-037 | Strip duplicate frontmatter from capability content files | refactor | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | docs | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
@@ -55,6 +55,30 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-035 Details (IN PROGRESS)
+**Windows-environment CLI integration bugs** — the six failures that persisted across PROTO-031..038 were a mix of real production bugs in `pg` and pure test portability issues. All five distinct root causes fixed:
+
+**Bug 1 — `pg help` crashes under subprocess** (production):
+`pg help` ended with bare `input("Press Enter to continue...")`. Under subprocess capture (or any redirected stdin) this raised `EOFError`, caught by the generic top-level handler which logged "An unexpected error occurred" and exited 1. Fix: only call `input()` when `sys.stdin.isatty()`; wrap in try/except EOFError for the rare case where the terminal is a TTY but the stream is in an odd state.
+
+**Bug 2 — `pg init` enters wizard even when not a TTY** (production):
+The flag-based `use_interactive` decision didn't consider whether the terminal was actually interactive. Under `subprocess.run(..., capture_output=True)`, stdin may be inherited from the parent pytest TTY but stdout is a pipe — the wizard would launch and then crash inside `questionary`/`prompt_toolkit` with "Found xterm-256color, while expecting a Windows console." Fix: require both `sys.stdin.isatty()` AND `sys.stdout.isatty()` to launch the wizard.
+
+**Bug 3 — emoji/box-drawing crashes on Windows subprocess** (production):
+`pg` emits UTF-8 (box-drawing `╝` = `\xe2\x95\x9d`, etc.). On Windows, `sys.stdout` defaults to cp1252 under subprocess capture, so attempting to print these bytes raised `UnicodeEncodeError` mid-banner. Fix: call `sys.stdout.reconfigure(encoding='utf-8', errors='replace')` at the top of `main()` so `pg` always emits UTF-8 regardless of console.
+
+**Bug 4 — tests didn't decode subprocess output as UTF-8** (test portability):
+Mirror of Bug 3 from the consumer side. `subprocess.run(..., text=True)` defaults to `locale.getpreferredencoding()`, which is cp1252 on Windows. Every `subprocess.run` in `test_cli_integration.py` now explicitly passes `encoding='utf-8'`. Same fix applied to `Path.read_text()` calls that read generated files.
+
+**Bug 5 — nonexistent cwd raises `NotADirectoryError` on Windows** (test portability):
+`subprocess.run(cwd='/nonexistent/directory/xyz123')` on Windows raises before the process starts; the test had assumed Unix semantics (process starts, then bails). Updated to accept both `(NotADirectoryError, FileNotFoundError)` as legitimate "graceful failure" outcomes for the test's intent.
+
+**Result**: 489 passing, 0 failures. Was 483 / 6.
+
+**Files Modified**: `core/proto_gear_pkg/proto_gear.py` (UTF-8 reconfigure, TTY-aware wizard launch, EOF-safe Press Enter), `tests/test_cli_integration.py` (encoding='utf-8' on all subprocess.run + read_text calls, OS-portable nonexistent-cwd test), `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-037 + PROTO-038 Details (IN PROGRESS)
 **Track B Phase 2** — duplicate-data cleanup. Completes the consolidation begun in PROTO-036.

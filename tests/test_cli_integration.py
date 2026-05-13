@@ -31,6 +31,7 @@ class TestCLIBasics:
             ['pg', '--version'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=10
         )
         # Command should either show version or at least not crash
@@ -42,6 +43,7 @@ class TestCLIBasics:
             ['pg', 'help'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=10
         )
         assert result.returncode == 0
@@ -58,6 +60,7 @@ class TestDryRunMode:
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=30
         )
         assert result.returncode == 0
@@ -73,6 +76,7 @@ class TestDryRunMode:
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=30
         )
         assert result.returncode == 0
@@ -85,6 +89,7 @@ class TestDryRunMode:
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=30
         )
         assert result.returncode == 0
@@ -100,6 +105,7 @@ class TestActualFileGeneration:
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=30,
             input='n\n'  # Answer 'no' to any prompts
         )
@@ -124,6 +130,7 @@ class TestActualFileGeneration:
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=30
         )
 
@@ -131,7 +138,9 @@ class TestActualFileGeneration:
             branching_md = temp_project_dir / 'BRANCHING.md'
             # BRANCHING.md should be created with git workflow
             if branching_md.exists():
-                content = branching_md.read_text()
+                # pg writes UTF-8; force decoding to match (Path.read_text on
+                # Windows defaults to cp1252 which chokes on em-dash etc.).
+                content = branching_md.read_text(encoding='utf-8')
                 assert 'TEST' in content or 'branching' in content.lower()
 
 
@@ -144,22 +153,34 @@ class TestErrorHandling:
             ['pg', 'invalid-command-xyz'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=10
         )
         # Should return non-zero exit code but not crash
         assert result.returncode != 0
 
-    def test_init_in_nonexistent_directory(self):
-        """Test init handles non-existent directories"""
-        result = subprocess.run(
-            ['pg', 'init'],
-            cwd='/nonexistent/directory/xyz123',
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        # Should fail gracefully (not crash)
-        assert result.returncode != 0
+    def test_init_in_nonexistent_directory(self, tmp_path):
+        """Test init handles non-existent directories.
+
+        On Windows, Python's subprocess.run validates cwd before launching
+        and raises NotADirectoryError outright; on Unix it usually starts
+        the process and the process bails. Either failure mode counts as
+        "doesn't crash silently" for the user.
+        """
+        bogus = tmp_path / "nonexistent_subdir_xyz123"
+        try:
+            result = subprocess.run(
+                ['pg', 'init'],
+                cwd=str(bogus),
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                timeout=10,
+            )
+            assert result.returncode != 0
+        except (NotADirectoryError, FileNotFoundError):
+            # OS-level rejection of the cwd is also acceptable.
+            pass
 
 
 class TestCrossPlatformCompatibility:
@@ -172,6 +193,7 @@ class TestCrossPlatformCompatibility:
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=30
         )
         # Should work on any platform
@@ -191,6 +213,7 @@ class TestVersionInformation:
             ['pg', 'help'],
             capture_output=True,
             text=True,
+            encoding='utf-8',
             timeout=10
         )
 
