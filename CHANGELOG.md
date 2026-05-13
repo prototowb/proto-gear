@@ -5,6 +5,79 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-05-13
+
+### Added - Indexing & Discovery System
+
+**Minor Release**: Closes the discoverability gap that left AI agents unable to find skills, workflows, and commands without explicit prompting. Capabilities now surface automatically in every host config file and stay in sync via dedicated tooling.
+
+#### Agent Context Manifest (PROTO-031)
+- New auto-generated **`AGENT_CONTEXT.md`** (~120 lines) — reference index, capability one-liners with triggers, trigger→capability map, critical rules, CLI cheatsheet.
+- New module `core/proto_gear_pkg/sync_context.py` — builder + host-config mirror.
+- New CLI: **`pg sync-context [--dry-run]`** regenerates `AGENT_CONTEXT.md` and mirrors the managed block into `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`. Content outside `<!-- proto-gear:agent-context begin/end -->` markers is preserved.
+- `pg init` now runs sync-context at the end of every fresh init.
+
+#### Structured Scannable Headers (PROTO-032)
+- Multi-line `<!-- proto-gear:header ... -->` block on all 8 core templates (AGENTS, PROJECT_STATUS, BRANCHING, TESTING, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT).
+- Each header lists `defines:` (section IDs) and `links:` (related files) so agents can scan structure before reading 300+ lines.
+- New `metadata_parser.parse_proto_gear_header(text)` API for future tooling.
+
+#### Discovery CLI (PROTO-033)
+- **`pg context [--regenerate]`** — print `AGENT_CONTEXT.md` to stdout (UTF-8 enforced; works under Windows console).
+- **`pg suggest "<prose>" [--limit N] [--json]`** — match user prose against capability triggers; ranked overlap score. Example: `pg suggest "fix login bug"` → debugging, bug-fix, hotfix.
+- **`pg capabilities list --json`** — machine-readable catalog for AI agent consumption.
+- New `core/proto_gear_pkg/discovery.py` backend.
+
+#### Drift Detection (PROTO-034)
+- **`pg doctor [--json] [--fix] [--all]`** — audits 4 surfaces:
+  - `AGENT_CONTEXT.md` vs. live-generated content
+  - host config managed blocks
+  - `proto-gear:header` presence on core docs
+  - capability metadata loads + has triggers
+- `--fix` repairs drift by invoking `sync-context` and `sync-indexes`.
+- Non-zero exit on errors; structured JSON output for CI.
+
+#### Single Source of Truth for Capability Listings (PROTO-036, PROTO-037, PROTO-038)
+- **`pg sync-indexes [--dry-run]`** new subcommand — regenerates `.proto-gear/INDEX.md` and per-type `INDEX.md` files from `metadata.yaml`.
+- New `core/proto_gear_pkg/capability_index_builder.py` — `metadata.yaml` is now the canonical source for every capability listing.
+- Managed `<!-- proto-gear:capability-index begin/end -->` markers in 4 INDEX templates. Hand-written prose around them is preserved.
+- Stripped 17 duplicate frontmatter blocks from `SKILL/WORKFLOW/COMMAND.template.md` files (had drifted from `metadata.yaml`).
+- Folder-normalized `commands/create-ticket.template.md` → `commands/create-ticket/COMMAND.template.md` so all commands follow one layout.
+- Trimmed stale inline capability tables in top-level `capabilities/INDEX.md` (some listed 1 skill when the package ships 7).
+
+### Fixed - Windows Subprocess Bugs (PROTO-035)
+
+- **`pg help`**: bare `input("Press Enter...")` crashed under subprocess. Now only prompts when `sys.stdin.isatty()`.
+- **`pg init`**: launched interactive wizard under `subprocess.run(capture_output=True)` because stdin was inherited TTY but stdout was a pipe. Now requires both `sys.stdin.isatty()` AND `sys.stdout.isatty()`.
+- **Console encoding**: `pg` emits UTF-8 box-drawing chars and emoji. On Windows under subprocess capture, `sys.stdout` defaulted to cp1252 and crashed. `main()` now calls `sys.stdout.reconfigure(encoding='utf-8', errors='replace')` at startup.
+
+### Fixed - Test Suite Drift
+
+- Updated 21 stale tests across `test_template_generation.py` and `test_coverage_boost.py` for the `(Path, action)` tuple return signature of `generate_project_template`.
+- `test_template_count_matches_known_templates`: includes `AGENT_CONTEXT` (added by PROTO-031).
+- `test_example_workflow_exists`: updated for folder-per-capability layout.
+- `test_ruby_without_rails`: detection learned Sinatra; test now expects `framework='Sinatra'` instead of `None`.
+- `test_cli_integration.py`: every `subprocess.run(text=True)` now passes `encoding='utf-8'`; `Path.read_text()` on generated files specifies UTF-8; nonexistent-cwd test accepts `NotADirectoryError` on Windows.
+
+### Fixed - Broken Root Scaffolds
+
+- Replaced 4 broken auto-generated docs (`CONTRIBUTING.md`, `SECURITY.md`, `ARCHITECTURE.md`, `CODE_OF_CONDUCT.md`) — all four had been stuck since v0.3.0 with empty `{{PROJECT_NAME}}` and unresolved `{{GENERATION_DATE}}` / `{{FRAMEWORK}}` placeholders. Rewrote each with proto-gear-specific content.
+
+### Statistics
+
+- **Tests**: 489 passing, 0 failing (was 383/27 at start of cycle)
+- **New modules**: 5 (`sync_context`, `discovery`, `doctor`, `capability_index_builder`, `_strip_capability_frontmatter`)
+- **New CLI commands**: 6 (`pg sync-context`, `pg sync-indexes`, `pg context`, `pg suggest`, `pg doctor`, `pg capabilities list --json`)
+- **Capability metadata files**: 24, all canonical (single source of truth)
+- **Commits**: 8 stacked features + 1 release commit
+
+### Migration
+
+No breaking changes. To benefit from the new system in an existing project:
+1. Re-run `pg init --with-capabilities` (or just `pg sync-context`) to generate `AGENT_CONTEXT.md` and update host configs.
+2. Run `pg doctor` to surface any pre-existing drift.
+3. Run `pg doctor --fix` to repair fixable drift automatically.
+
 ## [0.9.0] - 2026-02-19
 
 ### Added - Agent-Agnostic Self-Configuration Reference System

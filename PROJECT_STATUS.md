@@ -20,12 +20,12 @@ links:
 ```yaml
 project_phase: "Production"
 protogear_enabled: true
-protogear_version: "v0.9.0"
+protogear_version: "v0.10.0"
 framework: "Unknown"
 project_type: "Python"
 initialization_date: "2025-11-21"
 last_release: "v0.9.0"
-release_date: "2026-02-19"
+release_date: "2026-05-13"
 current_sprint: null
 current_branch: "main"
 ```
@@ -34,19 +34,21 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-031 | Agent Context Manifest + pg sync-context | feature | IN_PROGRESS | feature/PROTO-031-agent-context-manifest | — |
-| PROTO-032 | Structured scannable headers on all core templates | feature | IN_PROGRESS | feature/PROTO-032-structured-headers | — |
-| PROTO-033 | pg context, pg suggest, pg capabilities list --json | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
-| PROTO-034 | pg doctor drift detector | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
-| PROTO-035 | Investigate 6 Windows-env CLI integration test failures | bug | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
-| PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
-| PROTO-037 | Strip duplicate frontmatter from capability content files | refactor | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
-| PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | docs | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
+
+_No active tickets — v0.10.0 just shipped._
 
 ## ✅ Completed Tickets
 
 | ID | Title | Completed | PR/Commit |
 |----|-------|-----------|-----------|
+| PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | 2026-05-13 | v0.10.0 |
+| PROTO-037 | Strip duplicate frontmatter from capability content files | 2026-05-13 | v0.10.0 |
+| PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | 2026-05-13 | v0.10.0 |
+| PROTO-035 | Fix 6 Windows-env CLI integration bugs (3 pg fixes + 2 test) | 2026-05-13 | v0.10.0 |
+| PROTO-034 | pg doctor drift detector | 2026-05-13 | v0.10.0 |
+| PROTO-033 | pg context, pg suggest, pg capabilities list --json | 2026-05-13 | v0.10.0 |
+| PROTO-032 | Structured scannable headers on all core templates | 2026-05-13 | v0.10.0 |
+| PROTO-031 | Agent Context Manifest + pg sync-context | 2026-05-13 | v0.10.0 |
 | PROTO-030 | Fix specs prompt: description stub + incremental wizard + compat | 2026-02-20 | 4212cfb |
 | PROTO-029 | Agent self-config protocol + PROJECT_SPECIFICATIONS.md (v0.9.0) | 2026-02-19 | v0.9.0 |
 | PROTO-028 | Add pg status and pg ticket commands | 2026-02-19 | f5e8969 |
