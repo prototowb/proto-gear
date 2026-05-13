@@ -1,38 +1,3 @@
----
-name: "Update Status"
-type: "command"
-slash_command: "/update-status"
-version: "1.0.0"
-description: "Update ticket status in PROJECT_STATUS.md"
-tags: ["ticket", "status", "workflow", "tracking", "progress"]
-category: "project-management"
-arguments:
-  required:
-    - name: "ticket_id"
-      type: "string"
-      description: "Ticket ID (e.g., PROJ-043)"
-    - name: "status"
-      type: "enum"
-      values: ["PENDING", "IN_PROGRESS", "COMPLETED", "BLOCKED"]
-      description: "New status for the ticket"
-  optional:
-    - name: "--reason"
-      type: "string"
-      description: "Reason for status change (required for BLOCKED)"
-    - name: "--branch"
-      type: "string"
-      description: "Branch name (auto-populate when transitioning to IN_PROGRESS)"
-dependencies:
-  - "PROJECT_STATUS.md"
-related:
-  - "commands/create-ticket"
-  - "workflows/feature-development"
-  - "workflows/bug-fix"
-author: "Proto Gear Team"
-last_updated: "2025-01-18"
-status: "stable"
----
-
 # /update-status
 
 > Updates ticket status in PROJECT_STATUS.md

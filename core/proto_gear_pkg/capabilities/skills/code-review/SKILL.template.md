@@ -1,22 +1,3 @@
----
-name: "Code Review"
-type: "skill"
-version: "1.0.0"
-description: "Effective code review practices for quality, learning, and collaboration"
-tags: ["code-review", "quality", "collaboration", "feedback", "best-practices"]
-category: "quality"
-relevance:
-  - trigger: "review|pr|pull request|feedback|check code"
-  - context: "When reviewing pull requests or having your code reviewed"
-patterns: ["constructive-feedback", "checklist-based", "security-first"]
-examples: []
-dependencies: []
-related: ["testing/tdd", "workflows/feature-development"]
-author: "Proto Gear Team"
-last_updated: "2025-11-08"
-status: "stable"
----
-
 # Code Review Skill
 
 ## Overview

@@ -40,6 +40,8 @@ current_branch: "main"
 | PROTO-034 | pg doctor drift detector | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-035 | Investigate 6 Windows-env CLI integration test failures | bug | PENDING | — | — |
 | PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
+| PROTO-037 | Strip duplicate frontmatter from capability content files | refactor | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
+| PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | docs | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 
 ## ✅ Completed Tickets
 
@@ -53,6 +55,31 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-037 + PROTO-038 Details (IN PROGRESS)
+**Track B Phase 2** — duplicate-data cleanup. Completes the consolidation begun in PROTO-036.
+
+**PROTO-037 — strip frontmatter from capability content files**:
+- 17 of 24 `SKILL.template.md` / `WORKFLOW.template.md` / `COMMAND.template.md` files carried a YAML frontmatter block duplicating fields in `metadata.yaml` (often with drift: e.g. `skills/testing` had `last_updated: 2025-12-09` in YAML but `2025-11-05` in frontmatter; `relevance.triggers` was a structured list in metadata.yaml and a single regex string in frontmatter).
+- Verified nothing in `core/proto_gear_pkg/**/*.py` parses capability frontmatter as authoritative (`metadata_parser.parse_template` only handles host-project templates like `AGENTS.template.md`).
+- Removed all 17 frontmatter blocks with `dev/scripts/_strip_capability_frontmatter.py`. Content text untouched.
+- Also folder-normalized the orphan `commands/create-ticket.template.md` → `commands/create-ticket/COMMAND.template.md` so all commands follow the same layout. Without this, `capability_index_builder` produced a broken link to a file that wouldn't get generated.
+- Updated `tests/test_capabilities.py::test_example_{skill,workflow,command}_exists` to assert `metadata.yaml` contains the type/name rather than the .md frontmatter.
+
+**PROTO-038 — trim stale inline tables in capabilities/INDEX.md**:
+- The `## Slash Commands` / `## Skills` / `## Workflows` prose sections each contained a small inline table listing 1–3 capabilities when the package ships 4 / 7 / 13 respectively. Stale for at least a release cycle.
+- Replaced each table with a one-liner pointing readers to (a) the auto-generated **Capability Summary** managed block above and (b) the per-type INDEX.md for deeper detail.
+- Net: -16 lines from the top-level INDEX, single source of truth restored.
+
+**Why this matters**: After PROTO-036, two surfaces still claimed to describe the same capabilities: managed block (auto, canonical) and inline tables (hand, stale). Removing the duplicate eliminates the only remaining "which one is right" question for capability listings.
+
+**Files Modified**: 17 capability content `.template.md` files (frontmatter blocks removed), `capabilities/INDEX.template.md` (3 stale tables replaced with cross-references), `tests/test_capabilities.py`, `PROJECT_STATUS.md`.
+**Files Created**: `dev/scripts/_strip_capability_frontmatter.py` (one-shot, kept for reference).
+**Files Moved**: `commands/create-ticket.template.md` → `commands/create-ticket/COMMAND.template.md`.
+
+**Tests**: 483 passing. Same 6 Windows-env failures (PROTO-035) unchanged.
+
+---
 
 ### PROTO-036 Details (IN PROGRESS)
 **Auto-generated capability INDEX.md — Track B Phase 1** of the v0.10.0 indexing rework. Makes `metadata.yaml` the canonical source for every capability listing, eliminating drift between metadata files and INDEX.md files.

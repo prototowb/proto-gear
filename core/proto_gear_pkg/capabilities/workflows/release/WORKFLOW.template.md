@@ -1,26 +1,3 @@
----
-name: "Release Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Complete workflow for preparing, testing, and deploying software releases"
-tags: ["release", "deployment", "versioning", "changelog", "production"]
-category: "deployment"
-relevance:
-  - trigger: "release|deploy|ship|version|publish"
-  - context: "When ready to release new version to production"
-dependencies:
-  - "skills/testing"
-  - "commands/create-ticket"
-related:
-  - "workflows/hotfix"
-  - "workflows/feature-development"
-steps: 10
-estimated_duration: "2-4 hours"
-author: "Proto Gear Team"
-last_updated: "2025-11-08"
-status: "stable"
----
-
 # Release Workflow
 
 ## Overview

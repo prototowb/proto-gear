@@ -1,26 +1,3 @@
----
-name: "Code Review Process Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Complete PR creation, review, approval, and merge workflow"
-tags: ["pr", "pull-request", "review", "merge", "collaboration"]
-category: "development"
-relevance:
-  - trigger: "code review|pull request|PR|merge|review|approve"
-  - context: "After feature implementation, before merging to main/development"
-dependencies:
-  - "skills/code-review"
-  - "commands/update-status"
-related:
-  - "workflows/feature-development"
-  - "workflows/bug-fix"
-steps: 7
-estimated_duration: "30 min - 4 hours"
-author: "Proto Gear Team"
-last_updated: "2025-01-18"
-status: "stable"
----
-
 # Code Review Process Workflow
 
 ## Overview

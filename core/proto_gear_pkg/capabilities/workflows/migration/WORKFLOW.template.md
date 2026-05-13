@@ -1,25 +1,3 @@
----
-name: "Migration Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Breaking change and data migration workflow with rollback planning"
-tags: ["migration", "breaking-change", "data", "schema", "backwards-compatibility"]
-category: "development"
-relevance:
-  - trigger: "migration|breaking change|schema change|data migration|backwards compatibility"
-  - context: "When introducing breaking changes or migrating data between systems"
-dependencies:
-  - "skills/testing"
-  - "workflows/release"
-related:
-  - "commands/create-ticket"
-steps: 8
-estimated_duration: "1 day - 2 weeks"
-author: "Proto Gear Team"
-last_updated: "2025-01-18"
-status: "stable"
----
-
 # Migration Workflow
 
 ## Overview

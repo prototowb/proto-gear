@@ -1,22 +1,3 @@
----
-name: "Test-Driven Development"
-type: "skill"
-version: "1.0.0"
-description: "TDD methodology with red-green-refactor cycle for quality code"
-tags: ["testing", "tdd", "quality", "red-green-refactor", "coverage"]
-category: "testing"
-relevance:
-  - trigger: "write tests|testing|test coverage|tdd|quality assurance"
-  - context: "Before implementing features, fixing bugs, or refactoring code"
-patterns: []
-examples: []
-dependencies: []
-related: ["workflows/feature-development", "commands/run-tests"]
-author: "Proto Gear Team"
-last_updated: "2025-11-05"
-status: "stable"
----
-
 # Test-Driven Development Skill
 
 ## Overview

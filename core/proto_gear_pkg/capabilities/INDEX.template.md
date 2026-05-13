@@ -26,13 +26,7 @@ _Auto-generated from `metadata.yaml`. Run `pg sync-indexes` to refresh. The pros
 
 > **Explicit invocation** - Human types `/command-name` to trigger
 
-| Command | Syntax | Purpose |
-|---------|--------|---------|
-| `/create-ticket` | `/create-ticket "title" [--type TYPE]` | Create ticket in PROJECT_STATUS.md |
-| `/analyze-coverage` | `/analyze-coverage [--path DIR]` | Analyze test coverage |
-| `/generate-changelog` | `/generate-changelog [--since VER]` | Generate CHANGELOG.md |
-
-**Full reference**: [commands/INDEX.md](commands/INDEX.md)
+For the canonical list of shipped slash commands, see the **Capability Summary** above (auto-generated from `metadata.yaml`) or **[commands/INDEX.md](commands/INDEX.md)** for full per-command syntax tables.
 
 ### How to Recognize Slash Commands
 
@@ -138,11 +132,7 @@ For efficiency, memorize these shortcuts:
 
 > **Implicit activation** - AI applies when contextually relevant (no `/` prefix)
 
-Modular, reusable expertise in specific domains:
-
-| Skill | Description | When Active |
-|-------|-------------|-------------|
-| [testing](skills/testing/SKILL.md) | TDD methodology with red-green-refactor | Writing tests, implementing features, fixing bugs |
+Modular, reusable expertise in specific domains. See the **Capability Summary** above for the full skills list (auto-generated from `metadata.yaml`), or **[skills/INDEX.md](skills/INDEX.md)** for each skill's triggers, contexts, and dependencies.
 
 **Note**: Skills are NOT invoked with `/`. They're expertise you apply based on context.
 
@@ -152,11 +142,7 @@ Modular, reusable expertise in specific domains:
 
 > **Multi-step processes** - May use slash commands as building blocks
 
-| Workflow | Steps | Relevance |
-|----------|-------|-----------|
-| [feature-development](workflows/feature-development/WORKFLOW.md) | 7 | Building new features from concept to deployment |
-
-Workflows orchestrate multiple commands and skills together.
+Workflows orchestrate multiple commands and skills together. See the **Capability Summary** above for the full workflow list, or **[workflows/INDEX.md](workflows/INDEX.md)** for steps, durations, and dependencies per workflow.
 
 ---
 

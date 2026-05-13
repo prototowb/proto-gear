@@ -1,22 +1,3 @@
----
-name: "Debugging & Troubleshooting"
-type: "skill"
-version: "1.0.0"
-description: "Systematic debugging methodology for identifying and fixing software issues"
-tags: ["debugging", "troubleshooting", "problem-solving", "root-cause-analysis", "investigation"]
-category: "debugging"
-relevance:
-  - trigger: "debug|troubleshoot|bug|error|issue|failing|broken|not working"
-  - context: "When code behaves unexpectedly, tests fail, or errors occur"
-patterns: ["scientific-method", "divide-and-conquer", "rubber-duck", "binary-search"]
-examples: []
-dependencies: []
-related: ["testing/tdd", "workflows/bug-fix", "commands/run-tests"]
-author: "Proto Gear Team"
-last_updated: "2025-11-08"
-status: "stable"
----
-
 # Debugging & Troubleshooting Skill
 
 ## Overview

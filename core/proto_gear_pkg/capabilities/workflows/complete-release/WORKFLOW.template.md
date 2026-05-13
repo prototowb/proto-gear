@@ -1,26 +1,3 @@
----
-name: "Complete Release Workflow"
-type: "workflow"
-version: "2.0.0"
-description: "End-to-end release process including PR workflow, versioning, GitHub release, cleanup, and agent handoff"
-tags: ["release", "deployment", "pr", "changelog", "cleanup", "handoff", "gh-cli"]
-category: "deployment"
-relevance:
-  - trigger: "release|deploy|ship|publish|finalize"
-  - context: "When ready to release new version with complete workflow"
-dependencies:
-  - "GitHub CLI (gh) installed"
-  - "Write access to main and development branches"
-related:
-  - "workflows/finalize-release"
-  - "workflows/feature-development"
-steps: 12
-estimated_duration: "1-2 hours"
-author: "Proto Gear Team"
-last_updated: "2025-11-14"
-status: "stable"
----
-
 # Complete Release Workflow
 
 ## Overview

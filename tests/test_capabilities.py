@@ -32,38 +32,37 @@ class TestCapabilityTemplates(unittest.TestCase):
         self.assertTrue((cap_dir / 'agents' / 'INDEX.template.md').exists())
 
     def test_example_skill_exists(self):
-        """Verify testing skill template exists"""
-        skill_file = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'skills' / 'testing' / 'SKILL.template.md'
-        self.assertTrue(skill_file.exists())
+        """Verify testing skill ships with content + canonical metadata.
 
-        # Check it has YAML frontmatter
-        content = skill_file.read_text(encoding='utf-8')
-        self.assertTrue(content.startswith('---'))
-        self.assertIn('name: "Test-Driven Development"', content)
+        Post-PROTO-037: metadata lives only in metadata.yaml (frontmatter
+        was stripped from content templates to eliminate duplication).
+        """
+        skill_dir = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'skills' / 'testing'
+        self.assertTrue((skill_dir / 'SKILL.template.md').exists())
+        meta = (skill_dir / 'metadata.yaml').read_text(encoding='utf-8')
+        self.assertIn('name: "Test-Driven Development"', meta)
+        self.assertIn('type: "skill"', meta)
 
     def test_example_workflow_exists(self):
-        """Verify feature-development workflow exists.
+        """Verify feature-development ships with content + canonical metadata.
 
-        Workflows moved to a folder-per-capability layout (PROTO-024 era):
-        each lives at workflows/<name>/{WORKFLOW.template.md, metadata.yaml}.
+        Post-PROTO-037: metadata.yaml is the single source of truth.
         """
         workflow_dir = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'workflows' / 'feature-development'
-        workflow_file = workflow_dir / 'WORKFLOW.template.md'
-        self.assertTrue(workflow_file.exists())
-        self.assertTrue((workflow_dir / 'metadata.yaml').exists())
-
-        content = workflow_file.read_text(encoding='utf-8')
-        self.assertTrue(content.startswith('---'))
-        self.assertIn('type: "workflow"', content)
+        self.assertTrue((workflow_dir / 'WORKFLOW.template.md').exists())
+        meta = (workflow_dir / 'metadata.yaml').read_text(encoding='utf-8')
+        self.assertIn('type: "workflow"', meta)
 
     def test_example_command_exists(self):
-        """Verify create-ticket command exists"""
-        command_file = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'commands' / 'create-ticket.template.md'
-        self.assertTrue(command_file.exists())
+        """Verify create-ticket ships with content + canonical metadata.
 
-        content = command_file.read_text(encoding='utf-8')
-        self.assertTrue(content.startswith('---'))
-        self.assertIn('type: "command"', content)
+        Post-PROTO-037: create-ticket moved into folder layout, frontmatter
+        stripped from COMMAND.template.md.
+        """
+        command_dir = Path(__file__).parent.parent / 'core' / 'proto_gear_pkg' / 'capabilities' / 'commands' / 'create-ticket'
+        self.assertTrue((command_dir / 'COMMAND.template.md').exists())
+        meta = (command_dir / 'metadata.yaml').read_text(encoding='utf-8')
+        self.assertIn('type: "command"', meta)
 
 
 class TestCopyCapabilityTemplates(unittest.TestCase):

@@ -1,22 +1,3 @@
----
-workflow_name: "Finalize Release"
-category: "Release Management"
-complexity: "Simple"
-estimated_time: "15-30 minutes"
-prerequisites:
-  - "Release workflow completed"
-  - "GitHub release created"
-  - "Tag pushed to remote"
-related_workflows:
-  - "release.template.md"
-related_skills: []
-when_to_use:
-  - "After completing a release and pushing the tag"
-  - "To verify dogfooding installation"
-  - "To ensure development environment is properly configured"
-  - "To check for pending post-release tasks"
----
-
 # Finalize Release Workflow
 
 ## Purpose

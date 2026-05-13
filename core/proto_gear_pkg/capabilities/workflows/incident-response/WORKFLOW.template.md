@@ -1,25 +1,3 @@
----
-name: "Incident Response Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Production issue handling from detection through resolution and post-mortem"
-tags: ["incident", "production", "emergency", "monitoring", "post-mortem"]
-category: "operations"
-relevance:
-  - trigger: "incident|outage|production down|alert|emergency|page|on-call"
-  - context: "When monitoring alerts fire or users report production issues"
-dependencies:
-  - "skills/debugging"
-  - "workflows/hotfix"
-related:
-  - "commands/create-ticket"
-steps: 9
-estimated_duration: "15 min - 8 hours"
-author: "Proto Gear Team"
-last_updated: "2025-01-18"
-status: "stable"
----
-
 # Incident Response Workflow
 
 ## Overview

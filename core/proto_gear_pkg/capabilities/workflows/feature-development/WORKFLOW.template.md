@@ -1,26 +1,3 @@
----
-name: "Feature Development Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Complete workflow for building new features from concept to deployment"
-tags: ["feature", "development", "workflow", "sprint", "tdd"]
-category: "development"
-relevance:
-  - trigger: "new feature|implement feature|build feature|add feature"
-  - context: "Starting work on a new user-facing capability"
-dependencies:
-  - "skills/testing"
-  - "commands/create-ticket"
-related:
-  - "workflows/bug-fix"
-  - "workflows/refactoring"
-steps: 7
-estimated_duration: "2-4 hours per feature"
-author: "Proto Gear Team"
-last_updated: "2025-11-05"
-status: "stable"
----
-
 # Feature Development Workflow
 
 ## Overview

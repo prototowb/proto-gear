@@ -1,27 +1,3 @@
----
-name: "Bug Fix Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Systematic workflow for investigating and fixing software defects"
-tags: ["bug", "fix", "debugging", "workflow", "testing"]
-category: "maintenance"
-relevance:
-  - trigger: "bug|defect|error|issue|broken|not working|failing"
-  - context: "When existing functionality is broken or behaving incorrectly"
-dependencies:
-  - "skills/debugging"
-  - "skills/testing"
-  - "commands/create-ticket"
-related:
-  - "workflows/feature-development"
-  - "workflows/hotfix"
-steps: 8
-estimated_duration: "1-3 hours per bug"
-author: "Proto Gear Team"
-last_updated: "2025-11-08"
-status: "stable"
----
-
 # Bug Fix Workflow
 
 ## Overview

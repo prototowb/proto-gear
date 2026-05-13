@@ -1,31 +1,3 @@
----
-name: "Generate Changelog"
-type: "command"
-slash_command: "/generate-changelog"
-version: "1.1.0"
-description: "Generate or update CHANGELOG.md from git history"
-tags: ["release", "changelog", "documentation", "versioning"]
-category: "release-management"
-arguments:
-  optional:
-    - name: "--since"
-      type: "string"
-      description: "Version tag to start from (e.g., v1.0.0)"
-    - name: "--output"
-      type: "string"
-      default: "CHANGELOG.md"
-      description: "Output file path"
-    - name: "--format"
-      type: "enum"
-      values: ["keepachangelog", "conventional", "github"]
-      default: "keepachangelog"
-      description: "Changelog format"
-dependencies: []
-author: "Proto Gear Team"
-last_updated: "2025-01-15"
-status: "stable"
----
-
 # /generate-changelog
 
 > Generate or update CHANGELOG.md from git history

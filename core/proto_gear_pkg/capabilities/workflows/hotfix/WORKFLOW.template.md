@@ -1,26 +1,3 @@
----
-name: "Hotfix Workflow"
-type: "workflow"
-version: "1.0.0"
-description: "Emergency workflow for critical production bugs requiring immediate fixes"
-tags: ["hotfix", "production", "emergency", "critical", "urgent"]
-category: "maintenance"
-relevance:
-  - trigger: "hotfix|production bug|critical|emergency|urgent fix|outage"
-  - context: "When production is broken and requires immediate fix"
-dependencies:
-  - "skills/debugging"
-  - "skills/testing"
-related:
-  - "workflows/bug-fix"
-  - "workflows/release"
-steps: 9
-estimated_duration: "30 minutes - 2 hours"
-author: "Proto Gear Team"
-last_updated: "2025-11-08"
-status: "stable"
----
-
 # Hotfix Workflow
 
 ## Overview

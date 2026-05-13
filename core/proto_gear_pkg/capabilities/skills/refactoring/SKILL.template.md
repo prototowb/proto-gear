@@ -1,22 +1,3 @@
----
-name: "Refactoring"
-type: "skill"
-version: "1.0.0"
-description: "Systematic code improvement while preserving behavior"
-tags: ["refactoring", "code-quality", "clean-code", "maintainability", "technical-debt"]
-category: "quality"
-relevance:
-  - trigger: "refactor|clean up|improve|simplify|restructure|technical debt"
-  - context: "When code works but needs improvement in structure or readability"
-patterns: ["red-green-refactor", "extract-method", "rename", "simplify"]
-examples: []
-dependencies: ["testing/tdd"]
-related: ["code-review", "testing/tdd"]
-author: "Proto Gear Team"
-last_updated: "2025-11-08"
-status: "stable"
----
-
 # Refactoring Skill
 
 ## Overview

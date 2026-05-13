@@ -1,32 +1,3 @@
----
-name: "Analyze Coverage"
-type: "command"
-slash_command: "/analyze-coverage"
-version: "1.1.0"
-description: "Run and analyze test coverage for the project"
-tags: ["testing", "coverage", "quality", "metrics"]
-category: "testing"
-arguments:
-  optional:
-    - name: "--path"
-      type: "string"
-      default: "."
-      description: "Directory to analyze"
-    - name: "--threshold"
-      type: "number"
-      default: 70
-      description: "Minimum coverage percentage"
-    - name: "--format"
-      type: "enum"
-      values: ["text", "html", "json", "lcov"]
-      default: "text"
-      description: "Output format"
-dependencies: []
-author: "Proto Gear Team"
-last_updated: "2025-01-15"
-status: "stable"
----
-
 # /analyze-coverage
 
 > Run and analyze test coverage for the project
