@@ -39,6 +39,7 @@ current_branch: "main"
 | PROTO-033 | pg context, pg suggest, pg capabilities list --json | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-034 | pg doctor drift detector | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 | PROTO-035 | Investigate 6 Windows-env CLI integration test failures | bug | PENDING | — | — |
+| PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | feature | IN_PROGRESS | feature/PROTO-033-discovery-cli | — |
 
 ## ✅ Completed Tickets
 
@@ -52,6 +53,37 @@ current_branch: "main"
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-036 Details (IN PROGRESS)
+**Auto-generated capability INDEX.md — Track B Phase 1** of the v0.10.0 indexing rework. Makes `metadata.yaml` the canonical source for every capability listing, eliminating drift between metadata files and INDEX.md files.
+
+**Problem**: Every shipped capability has both a `metadata.yaml` (structured fields used by tooling) and a frontmatter block in `SKILL.template.md` / `WORKFLOW.template.md` / `COMMAND.template.md`. Beyond that, each `INDEX.template.md` hand-curates the same data again as prose. Three sources of truth for one fact. Concrete drift in the package today:
+- `skills/testing/metadata.yaml::last_updated` = 2025-12-09
+- `skills/testing/SKILL.template.md::last_updated` = 2025-11-05
+- `relevance.triggers` is a structured list in metadata.yaml and a single regex string in SKILL.template.md — completely different shapes.
+
+**Delivered**:
+1. ✅ **`core/proto_gear_pkg/capability_index_builder.py`** — `render_top_index_block()` + `render_type_index_block()` produce markdown for each INDEX from the capability_metadata loader. `sync_capability_indexes(caps_root)` walks `<root>/INDEX.md`, `skills/INDEX.md`, etc., and replaces only content inside `<!-- proto-gear:capability-index begin -->` / `<!-- proto-gear:capability-index end -->` markers. Outside content is preserved.
+2. ✅ **Managed markers** added to 4 INDEX templates: top-level + skills/workflows/commands. Agents INDEX deliberately skipped (package ships no agent metadata; the file is roadmap docs).
+3. ✅ **`pg sync-indexes [--dry-run]`** new subcommand. `pg sync-context` also calls `sync_capability_indexes` automatically when `.proto-gear/` exists, so the day-to-day flow is one command.
+4. ✅ **`doctor.check_capability_indexes`** — surfaces drift as `capability-index-drift` warnings. Added to `_SYNC_FIXABLE_IDS` so `pg doctor --fix` repairs them along with the others.
+5. ✅ **25 new tests** covering: rendering shape against the package's real capabilities, helpers in isolation, file IO contract (idempotent sync, dry-run preserves bytes, missing markers leaves file untouched), doctor drift detection. Backslash-path bug on Windows fixed by routing all returned keys through `PurePath.as_posix()`.
+
+**Sanity checks**:
+- `pg sync-indexes` on a fresh `.proto-gear/` (mimicked via `shutil.copytree` from the package) reports 4 of 4 updated, 5th says `missing-markers` (agents INDEX, by design).
+- Second sync is fully idempotent — every result reports `unchanged`.
+- `pg doctor` reports 18/18 checks passed (was 13; +5 for the new INDEX checks against this repo's own `.proto-gear/` directory).
+
+**Out of scope (Phase 2 follow-up)**:
+- Strip duplicate SKILL.template.md / WORKFLOW.template.md / COMMAND.template.md frontmatter that overlaps metadata.yaml. Nothing currently parses the frontmatter as authoritative, so the drift is latent rather than active. Doing the strip cleanly requires deciding which display-only fields stay in the content files.
+- Trim the inline tables in capabilities/INDEX.md's "## Slash Commands", "## Skills", "## Workflows" sections that now duplicate the managed block above them.
+
+**Files Modified**: `core/proto_gear_pkg/proto_gear.py`, `core/proto_gear_pkg/sync_context.py`, `core/proto_gear_pkg/doctor.py`, 4 `capabilities/**/INDEX.template.md`, `PROJECT_STATUS.md`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`.
+**Files Created**: `core/proto_gear_pkg/capability_index_builder.py`, `tests/test_capability_index_builder.py`, `dev/scripts/_insert_index_markers.py` (one-shot, kept for reference).
+
+**Tests**: 483 passing (was 458). 6 pre-existing Windows-env failures unchanged (PROTO-035).
+
+---
 
 ### PROTO-034 Details (IN PROGRESS)
 **`pg doctor` — drift detector** — Track E of the v0.10.0 indexing rework. Closes the loop between sync generators and the on-disk state by surfacing drift before it bites an agent.

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import sync_context as sync_context_module
+from . import capability_index_builder
 from .metadata_parser import parse_proto_gear_header
 
 
@@ -226,6 +227,71 @@ def check_capabilities(project_dir: Path) -> List[Finding]:
     return findings
 
 
+def check_capability_indexes(project_dir: Path) -> List[Finding]:
+    """Each INDEX.md under .proto-gear/ must match what the builder produces."""
+    caps_root = project_dir / ".proto-gear"
+    if not caps_root.exists():
+        return []  # not initialized
+    findings: List[Finding] = []
+    try:
+        results = capability_index_builder.sync_capability_indexes(
+            caps_root, dry_run=True
+        )
+    except Exception as e:
+        return [Finding(
+            id="capability-index-error",
+            severity="error",
+            target=".proto-gear/INDEX.md",
+            message=f"INDEX render failed: {e}",
+        )]
+    if "error" in results:
+        return [Finding(
+            id="capability-index-error",
+            severity="error",
+            target=".proto-gear/",
+            message=str(results["error"]),
+        )]
+    for rel, action in results.items():
+        target = f".proto-gear/{rel}"
+        if action == "would_update":
+            findings.append(Finding(
+                id="capability-index-drift",
+                severity="warning",
+                target=target,
+                message="INDEX.md managed block is stale.",
+                fix_hint="Run `pg sync-indexes` to regenerate",
+            ))
+        elif action == "missing-file":
+            # Top-level INDEX missing is a real concern; per-type can be
+            # legitimately absent (e.g. no agents/INDEX.md before agents ship).
+            severity = "warning" if rel == "INDEX.md" else "ok"
+            findings.append(Finding(
+                id="capability-index-file-missing",
+                severity=severity,
+                target=target,
+                message=("Top-level INDEX.md not present in .proto-gear/."
+                         if rel == "INDEX.md"
+                         else f"Optional INDEX.md not present ({rel})."),
+                fix_hint="Run `pg sync-indexes` or `pg init --with-capabilities`",
+            ))
+        elif action == "missing-markers":
+            findings.append(Finding(
+                id="capability-index-no-markers",
+                severity="ok",
+                target=target,
+                message="No proto-gear:capability-index markers — auto-sync skipped.",
+            ))
+        elif action == "unchanged":
+            findings.append(Finding(
+                id="capability-index-sync",
+                severity="ok",
+                target=target,
+                message="In sync.",
+            ))
+        # 'updated' / 'created' shouldn't appear under dry_run=True
+    return findings
+
+
 # ---------- driver ----------
 
 def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
@@ -234,6 +300,7 @@ def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report.findings.extend(check_host_files(project_dir))
     report.findings.extend(check_core_doc_headers(project_dir))
     report.findings.extend(check_capabilities(project_dir))
+    report.findings.extend(check_capability_indexes(project_dir))
     return report
 
 
@@ -243,6 +310,7 @@ _SYNC_FIXABLE_IDS = {
     "host-file-missing",
     "host-block-missing",
     "host-block-drift",
+    "capability-index-drift",
 }
 
 

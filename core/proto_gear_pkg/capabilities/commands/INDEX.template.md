@@ -29,108 +29,13 @@ For faster invocation, use these shortcuts:
 
 ---
 
+<!-- proto-gear:capability-index begin -->
+
 ## Available Slash Commands
 
-### `/create-ticket`
+_Auto-generated from `metadata.yaml`. Run `pg sync-indexes` to refresh. The prose around this marker is hand-written and is preserved across regeneration._
 
-**Syntax**:
-```
-/create-ticket "title" [--type TYPE] [--assignee NAME] [--priority LEVEL]
-```
-
-**Arguments**:
-| Argument | Required | Default | Values |
-|----------|----------|---------|--------|
-| `title` | Yes | - | Any text in quotes |
-| `--type` | No | task | feature, bugfix, hotfix, task |
-| `--assignee` | No | Unassigned | Agent or person name |
-| `--priority` | No | medium | low, medium, high, critical |
-
-**Examples**:
-```
-/create-ticket "Add user authentication"
-/create-ticket "Fix login bug" --type bugfix --priority high
-/create-ticket "Refactor API layer" --type task --assignee "Backend Agent"
-```
-
-**File**: [create-ticket/COMMAND.md](create-ticket/COMMAND.md)
-
----
-
-### `/update-status`
-
-**Syntax**:
-```
-/update-status <TICKET_ID> <STATUS> [--reason REASON] [--branch BRANCH]
-```
-
-**Shortcut**: `/us`
-
-**Arguments**:
-| Argument | Required | Default | Values |
-|----------|----------|---------|--------|
-| `ticket_id` | Yes | - | Ticket ID (e.g., PROJ-043) |
-| `status` | Yes | - | PENDING, IN_PROGRESS, COMPLETED, BLOCKED |
-| `--reason` | No* | - | Reason for change (*required for BLOCKED) |
-| `--branch` | No | auto | Branch name (for IN_PROGRESS) |
-
-**Examples**:
-```
-/update-status PROJ-043 IN_PROGRESS
-/update-status PROJ-043 COMPLETED
-/update-status PROJ-043 BLOCKED --reason "Waiting for API spec"
-/us PROJ-043 IN_PROGRESS --branch feature/PROJ-043-add-auth
-```
-
-**File**: [update-status/COMMAND.md](update-status/COMMAND.md)
-
----
-
-### `/analyze-coverage`
-
-**Syntax**:
-```
-/analyze-coverage [--path DIRECTORY] [--threshold NUMBER]
-```
-
-**Arguments**:
-| Argument | Required | Default | Values |
-|----------|----------|---------|--------|
-| `--path` | No | . | Directory to analyze |
-| `--threshold` | No | 70 | Minimum coverage % |
-
-**Examples**:
-```
-/analyze-coverage
-/analyze-coverage --path src/
-/analyze-coverage --threshold 80
-```
-
-**File**: [analyze-coverage/COMMAND.md](analyze-coverage/COMMAND.md)
-
----
-
-### `/generate-changelog`
-
-**Syntax**:
-```
-/generate-changelog [--since VERSION] [--output FILE]
-```
-
-**Arguments**:
-| Argument | Required | Default | Values |
-|----------|----------|---------|--------|
-| `--since` | No | last tag | Version to start from |
-| `--output` | No | CHANGELOG.md | Output file path |
-
-**Examples**:
-```
-/generate-changelog
-/generate-changelog --since v1.0.0
-/generate-changelog --output docs/CHANGES.md
-```
-
-**File**: [generate-changelog/COMMAND.md](generate-changelog/COMMAND.md)
+<!-- proto-gear:capability-index end -->
 
 ---
 

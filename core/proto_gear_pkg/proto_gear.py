@@ -2041,6 +2041,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Show all checks including ones that passed'
     )
 
+    # 'sync-indexes' command
+    sync_indexes_parser = subparsers.add_parser(
+        'sync-indexes',
+        help='Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml'
+    )
+    sync_indexes_parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Show what would change without writing files'
+    )
+
     args = parser.parse_args()
 
     try:
@@ -2287,11 +2298,19 @@ For more information, visit: https://github.com/proto-gear/proto-gear
             )
 
             if args.fix and doctor_module.fixable_by_sync(report):
-                print(f"\n{Colors.CYAN}Running `pg sync-context` to repair drift...{Colors.ENDC}")
+                print(f"\n{Colors.CYAN}Running sync to repair drift...{Colors.ENDC}")
                 from . import sync_context as sync_context_module
+                from . import capability_index_builder
                 results = sync_context_module.sync_context(project_dir, dry_run=False)
                 for path_str, action in results.items():
                     print(f"  {Colors.GREEN}{action}{Colors.ENDC}: {path_str}")
+                caps_root = project_dir / ".proto-gear"
+                if caps_root.exists():
+                    idx_results = capability_index_builder.sync_capability_indexes(
+                        caps_root, dry_run=False
+                    )
+                    for rel, action in idx_results.items():
+                        print(f"  {Colors.GREEN}{action}{Colors.ENDC}: .proto-gear/{rel}")
                 print(f"{Colors.GREEN}Re-run `pg doctor` to verify.{Colors.ENDC}")
 
             sys.exit(0 if report.errors == 0 else 1)
@@ -2299,7 +2318,9 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         # Handle 'sync-context' command
         elif args.command == 'sync-context':
             from . import sync_context as sync_context_module
-            results = sync_context_module.sync_context(Path("."), dry_run=args.dry_run)
+            from . import capability_index_builder
+            project_dir = Path(".")
+            results = sync_context_module.sync_context(project_dir, dry_run=args.dry_run)
             if 'error' in results:
                 print(f"{Colors.FAIL}Error: {results['error']}{Colors.ENDC}")
                 sys.exit(1)
@@ -2315,6 +2336,46 @@ For more information, visit: https://github.com/proto-gear/proto-gear
                 }.get(action, '?')
                 colour = Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update') else Colors.GRAY
                 print(f"  {colour}{icon} {path_str}{Colors.ENDC}  [{action}]")
+
+            # Also sync capability indexes if .proto-gear/ exists
+            caps_root = project_dir / ".proto-gear"
+            if caps_root.exists():
+                idx_results = capability_index_builder.sync_capability_indexes(
+                    caps_root, dry_run=args.dry_run
+                )
+                if idx_results and 'error' not in idx_results:
+                    print(f"{Colors.CYAN}{label} Capability Indexes:{Colors.ENDC}")
+                    for rel, action in idx_results.items():
+                        colour = (Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update')
+                                  else Colors.GRAY)
+                        print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]")
+            sys.exit(0)
+
+        # Handle 'sync-indexes' command
+        elif args.command == 'sync-indexes':
+            from . import capability_index_builder
+            caps_root = Path(".") / ".proto-gear"
+            if not caps_root.exists():
+                print(f"{Colors.YELLOW}No .proto-gear/ directory in current project — "
+                      f"run `pg init --with-capabilities` first.{Colors.ENDC}")
+                sys.exit(1)
+            results = capability_index_builder.sync_capability_indexes(
+                caps_root, dry_run=args.dry_run
+            )
+            if 'error' in results:
+                print(f"{Colors.FAIL}Error: {results['error']}{Colors.ENDC}")
+                sys.exit(1)
+            label = "Would sync" if args.dry_run else "Synced"
+            print(f"{Colors.CYAN}{label} Capability Indexes:{Colors.ENDC}")
+            for rel, action in results.items():
+                colour = (Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update')
+                          else Colors.GRAY)
+                hint = ""
+                if action == "missing-markers":
+                    hint = "  (no proto-gear:capability-index markers — file skipped)"
+                elif action == "missing-file":
+                    hint = "  (INDEX.md not present)"
+                print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]{hint}")
             sys.exit(0)
 
         # No command provided - show help

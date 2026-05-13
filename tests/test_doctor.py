@@ -12,6 +12,7 @@ from proto_gear_pkg.doctor import (
     check_host_files,
     check_core_doc_headers,
     check_capabilities,
+    check_capability_indexes,
     run_diagnostics,
     fixable_by_sync,
     _normalize,
@@ -215,6 +216,51 @@ class TestCapabilities:
         assert any(f.id == "capability-no-triggers" for f in findings)
 
 
+# ---------- check_capability_indexes ----------
+
+class TestCheckCapabilityIndexes:
+    def test_silent_when_proto_gear_dir_missing(self, tmp_path):
+        assert check_capability_indexes(tmp_path) == []
+
+    def test_in_sync_after_sync_indexes(self, tmp_path):
+        import shutil
+        from proto_gear_pkg.capability_index_builder import sync_capability_indexes
+        pkg_caps = (
+            Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
+        )
+        caps_root = tmp_path / ".proto-gear"
+        shutil.copytree(pkg_caps, caps_root)
+        for f in caps_root.rglob("INDEX.template.md"):
+            f.rename(f.parent / "INDEX.md")
+        sync_capability_indexes(caps_root, dry_run=False)
+        findings = check_capability_indexes(tmp_path)
+        # No drift findings expected for files that have markers.
+        assert not any(f.id == "capability-index-drift" for f in findings)
+
+    def test_drift_detected_when_index_modified(self, tmp_path):
+        import shutil
+        from proto_gear_pkg.capability_index_builder import (
+            sync_capability_indexes, BEGIN_MARKER,
+        )
+        pkg_caps = (
+            Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
+        )
+        caps_root = tmp_path / ".proto-gear"
+        shutil.copytree(pkg_caps, caps_root)
+        for f in caps_root.rglob("INDEX.template.md"):
+            f.rename(f.parent / "INDEX.md")
+        sync_capability_indexes(caps_root, dry_run=False)
+        # Tamper with the skills INDEX inside the managed block.
+        skills_idx = caps_root / "skills" / "INDEX.md"
+        text = skills_idx.read_text(encoding="utf-8")
+        skills_idx.write_text(
+            text.replace(BEGIN_MARKER, BEGIN_MARKER + "\nINJECTED LINE\n", 1),
+            encoding="utf-8",
+        )
+        findings = check_capability_indexes(tmp_path)
+        assert any(f.id == "capability-index-drift" for f in findings)
+
+
 # ---------- run_diagnostics + fixable_by_sync ----------
 
 class TestRunDiagnostics:
@@ -240,6 +286,13 @@ class TestFixableBySync:
     def test_true_when_drift_finding_present(self):
         report = DiagnosticsReport(findings=[
             Finding("agent-context-drift", "warning", "AGENT_CONTEXT.md", "m"),
+        ])
+        assert fixable_by_sync(report) is True
+
+    def test_true_when_capability_index_drift_present(self):
+        report = DiagnosticsReport(findings=[
+            Finding("capability-index-drift", "warning",
+                    ".proto-gear/skills/INDEX.md", "m"),
         ])
         assert fixable_by_sync(report) is True
 

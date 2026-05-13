@@ -12,6 +12,16 @@
 
 ---
 
+<!-- proto-gear:capability-index begin -->
+
+## Capability Summary
+
+_Auto-generated from `metadata.yaml`. Run `pg sync-indexes` to refresh. The prose sections below are hand-written and preserved across regeneration._
+
+<!-- proto-gear:capability-index end -->
+
+---
+
 ## Slash Commands
 
 > **Explicit invocation** - Human types `/command-name` to trigger

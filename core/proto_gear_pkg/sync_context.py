@@ -60,6 +60,7 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ("pg capabilities tree <name>", "Show dependency tree of a capability"),
     ("pg agent list", "List configured custom agents (if any)"),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
+    ("pg sync-indexes", "Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml"),
     ("pg doctor [--fix] [--json]", "Audit project for proto-gear sync drift (use --fix to repair)"),
     ("pg help", "Full CLI help"),
 ]
