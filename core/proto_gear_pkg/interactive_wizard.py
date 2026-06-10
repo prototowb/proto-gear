@@ -533,10 +533,10 @@ class RichWizard:
         available_templates = {}
         if discover_available_templates:
             discovered = discover_available_templates()
-            # Filter out AGENTS and PROJECT_STATUS (always included)
+            # Filter out core files (always included — not optional)
             available_templates = {
                 k: v for k, v in discovered.items()
-                if k not in ['AGENTS', 'PROJECT_STATUS']
+                if k not in ['AGENTS', 'PROJECT_STATUS', 'SESSION_HANDOFF']
             }
         else:
             # Fallback to hardcoded list

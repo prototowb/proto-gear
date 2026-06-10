@@ -128,9 +128,9 @@ class TestTemplateDiscovery:
         """Test that we have exactly the expected number of templates"""
         templates = discover_available_templates()
 
-        # 8 core docs + AGENT_CONTEXT (added in PROTO-031)
+        # 8 core docs + AGENT_CONTEXT (PROTO-031) + SESSION_HANDOFF (living handoff doc)
         expected_templates = {
-            'AGENTS', 'PROJECT_STATUS', 'BRANCHING', 'TESTING',
+            'AGENTS', 'SESSION_HANDOFF', 'PROJECT_STATUS', 'BRANCHING', 'TESTING',
             'CONTRIBUTING', 'SECURITY', 'ARCHITECTURE', 'CODE_OF_CONDUCT',
             'AGENT_CONTEXT',
         }

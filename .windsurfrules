@@ -117,3 +117,21 @@ When the user's prose contains these keywords, load the matching capability befo
 - **Generated**: 2026-06-05 21:44
 
 <!-- proto-gear:agent-context end -->
+
+# Proto Gear Agent Redirect — do not add project rules here
+# Project Context
+
+This project uses Proto Gear for AI agent coordination.
+
+## Required Reading (in order)
+1. `AGENTS.md` — Agent roles, workflows, pre-flight checklist
+2. `PROJECT_STATUS.md` — Current sprint, active tickets, project state
+3. `BRANCHING.md` — Git workflow and commit conventions (if exists)
+
+## Critical Rules
+- NEVER commit directly to `main` or `development` — always branch from `development`
+- Run `pg status` before starting work
+- Use `pg ticket create "title" --type feature` to register work
+- Use `pg ticket update ID --status IN_PROGRESS` to track progress
+
+Do NOT duplicate project rules here. AGENTS.md is the single source of truth.
