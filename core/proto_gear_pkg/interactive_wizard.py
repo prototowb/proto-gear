@@ -217,7 +217,10 @@ CHARS = get_safe_chars()
 
 
 # Custom style for questionary prompts - Clean UX without background colors
-PROTO_GEAR_STYLE = Style([
+# Guarded: without questionary installed, `Style` doesn't exist and an
+# unconditional module-level call crashes the entire package import
+# (PROTO-041). Fallback paths only need the flag, never the style object.
+PROTO_GEAR_STYLE = None if not QUESTIONARY_AVAILABLE else Style([
     ('qmark', 'fg:#5f87d7 bold'),                    # Question mark color
     ('question', 'bold'),                             # Question text
     ('answer', 'fg:#00d787 bold'),                   # User's answer
