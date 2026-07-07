@@ -13,7 +13,7 @@
 | `AGENTS.md` | Agent orchestration, roles, pre-flight checklist | First session or unclear on process |
 | `SESSION_HANDOFF.md` | Rolling session handoff — what just shipped, what's pending | Start of every session — before anything else |
 | `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
-| `PROJECT_SPECIFICATIONS.md` *(not present)* | Project planning doc — source for architecture | Starting features or design work (if exists) |
+| `PROJECT_SPECIFICATIONS.md` | Project planning doc — source for architecture | Starting features or design work (if exists) |
 | `PROJECT_ARCHITECTURE.md` *(not present)* | Project-specific architecture (agent-extracted) | Design decisions (if exists) |
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations |
 | `TESTING.md` | TDD patterns, test pyramid, coverage targets | When writing tests |
@@ -114,6 +114,6 @@ When the user's prose contains these keywords, load the matching capability befo
 - **Proto Gear version**: v0.10.0
 - **Last release**: 2026-05-13
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-06-05 21:44
+- **Generated**: 2026-07-07 11:51
 
 <!-- proto-gear:agent-context end -->

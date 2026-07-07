@@ -34,6 +34,9 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-042 | Split proto_gear.py monolith into cli/ + engine modules (ADR-001 Phase A) | chore | PENDING | chore/proto-042-split-proto-gear-py-monolith-into-cli-en |  |
+| PROTO-043 | Supervision gates as data: gates field in workflow metadata + doctor check | feature | PENDING | feature/proto-043-supervision-gates-as-data-gates-field-in |  |
+| PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | chore | PENDING | chore/proto-044-repo-hygiene-untrack-backup-files-reloca |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -413,6 +416,9 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-019 | Template version fixes (v0.6.3) | 2025-11-14 | - |
 | PROTO-018 | Integration tests for CLI commands (v0.6.4) | 2025-11-14 | - |
 | INIT-001 | ProtoGear Agent Framework integrated | 2025-11-21 | - |
+| PROTO-039 | Vision: PROJECT_SPECIFICATIONS.md — AI-supervised departmental modules | 2026-07-07 | |
+| PROTO-040 | Architecture ADR: evolve proto-gear into departmental module platform | 2026-07-07 | |
+| PROTO-041 | Fix: interactive_wizard crashes on import when questionary missing (Style NameError) | 2026-07-07 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
