@@ -7,8 +7,18 @@
 ## What Just Shipped
 
 Branches (stack, oldest first — each rebases onto the previous once merged):
-`feature/PROTO-039` (docs, unmerged) → `chore/PROTO-042-split-monolith` →
-**`chore/PROTO-046-rehome-module-core` (current HEAD)**.
+`feature/PROTO-039` (docs) → `chore/PROTO-042-split-monolith` →
+`chore/PROTO-046-rehome-module-core` →
+**`feature/PROTO-043-supervision-gates` (current HEAD)**.
+PRs open: #2 (039→development), #3 (042→039), #4 (046→042). PROTO-043 is a new
+branch off PROTO-046, PR to be opened stacked on #4.
+
+**PROTO-043 — supervision gates as data (contract item 5) — COMPLETE.**
+- `0a986e6` `Gate` dataclass + `WorkflowMetadata.gates`; `doctor.
+  check_supervision_gates` (structural: gate needs id+description → error;
+  coverage: release/deploy/publish output with no gate → warning). Dogfooded
+  gates on release, complete-release, hotfix, code-review-process. Gates render
+  in `pg capabilities show`. pg doctor 23/23. 529 tests.
 
 **PROTO-046 — module_core + modules/engineering re-homing (ADR-001 Phase B
 item 5) — COMPLETE.** The package is now cleanly layered:
@@ -54,11 +64,11 @@ test changes (the engine re-exports every moved symbol, so
 
 ## Pending / In Progress
 
-- **PROTO-043** (next): supervision gates as data (contract item 5) — `gates:` in
-  workflow metadata + doctor check.
-- **PROTO-044**: repo hygiene (tracked `.backup` files, root strays).
-- **PROTO-039** (docs: PROJECT_SPECIFICATIONS + ADR-001 + wizard fix) still
-  needs its PR (feature → development → main). This branch stacks on it.
+- **PROTO-044** (next): repo hygiene (tracked `.backup` files, root strays:
+  `integrate_templates.py`, `test_composition_engine.py`,
+  `wizard_demo_walkthrough.md`).
+- **PR stack** (#2 → #3 → #4, + PROTO-043 PR stacked on #4) awaits review; merge
+  bottom-up. GitHub auto-retargets each base as the one below merges.
 - **Deferred polish**: add `pg module` to `sync_context.CLI_COMMANDS` so it
   appears in AGENT_CONTEXT.md — skipped here to avoid dogfood host-file churn;
   fold into the next sync/release pass.
