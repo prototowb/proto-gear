@@ -77,3 +77,9 @@ workflow:
   outputs:
     - "type: merged-code"
     - "type: documentation"
+  gates:
+    - id: "pr-review-approval"
+      description: "A human reviewer approves the pull request before it is merged."
+      before: "merge"
+      approver: "human"
+      required: true

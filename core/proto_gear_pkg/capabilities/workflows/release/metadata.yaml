@@ -64,3 +64,9 @@ workflow:
     - "type: release"
     - "type: deployment"
     - "type: documentation"
+  gates:
+    - id: "release-approval"
+      description: "Human reviews the version bump, changelog, and green test suite and approves before tagging and deploying to production."
+      before: "tag-and-deploy"
+      approver: "human"
+      required: true

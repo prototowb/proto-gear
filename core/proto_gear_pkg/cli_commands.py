@@ -366,6 +366,15 @@ def cmd_capabilities_show(args):
         for conflict in metadata.conflicts:
             print(f"  - {conflict}")
 
+    # Supervision gates (workflows) — explicit human approval points
+    if metadata.workflow and metadata.workflow.gates:
+        print(f"\n{Colors.CYAN}Supervision Gates (human approval):{Colors.ENDC}")
+        for g in metadata.workflow.gates:
+            req = "required" if g.required else "optional"
+            loc = f", before {g.before}" if g.before else ""
+            print(f"  - {Colors.BOLD}{g.id}{Colors.ENDC} ({g.approver}, {req}{loc})")
+            print(f"      {g.description}")
+
     return 0
 
 
