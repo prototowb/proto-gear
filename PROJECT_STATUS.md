@@ -36,7 +36,7 @@ current_branch: "main"
 |----|-------|------|--------|--------|----------|
 | PROTO-043 | Supervision gates as data: gates field in workflow metadata + doctor check | feature | PENDING | feature/proto-043-supervision-gates-as-data-gates-field-in |  |
 | PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | chore | PENDING | chore/proto-044-repo-hygiene-untrack-backup-files-reloca |  |
-| PROTO-046 | Re-home engine into module_core/ + modules/engineering/ (ADR-001 Phase B item 5) | chore | PENDING | chore/proto-046-re-home-engine-into-module-core-modules- |  |
+| PROTO-046 | Re-home engine into module_core/ + modules/engineering/ (ADR-001 Phase B item 5) | chore | IN_PROGRESS | chore/proto-046-re-home-engine-into-module-core-modules- |  |
 
 _No active tickets — v0.10.0 just shipped._
 

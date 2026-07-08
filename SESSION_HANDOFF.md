@@ -6,10 +6,34 @@
 
 ## What Just Shipped
 
-Branch: `chore/PROTO-042-split-monolith` (branched from the `feature/PROTO-039`
-tip; **stacks** on the unmerged PROTO-039 docs branch — rebase onto
-`development` once PROTO-039 lands). `proto_gear.py` is untouched by PROTO-039,
-so the two are independent in content.
+Branches (stack, oldest first — each rebases onto the previous once merged):
+`feature/PROTO-039` (docs, unmerged) → `chore/PROTO-042-split-monolith` →
+**`chore/PROTO-046-rehome-module-core` (current HEAD)**.
+
+**PROTO-046 — module_core re-homing (ADR-001 Phase B item 5) — PART 1 DONE
+(IN_PROGRESS).**
+- `af99831` moved the 7 department-agnostic modules into `module_core/`
+  (capability_metadata, capability_index_builder, sync_context, discovery,
+  doctor, module_manifest, metadata_parser). `git mv` preserved history; all
+  importers + every test's import/patch target updated (no shims); fixed the
+  moved modules' `Path(__file__).parent` → `.parent.parent` for package-root
+  resources (capabilities/, modules/, AGENT_CONTEXT.template.md). 519 green,
+  doctor 19/19, CLI verified.
+- **Remaining (PROTO-046 part 2):** re-home the engineering leaves
+  (`templates`, `detection`, `status_commands`, `template_updater`,
+  `interactive_wizard`) into `modules/engineering/`. **Do this first:** add a
+  `package_root()` helper (returns `Path(proto_gear_pkg.__file__).parent`) and
+  route every bundled-resource lookup through it — `templates.py` alone has 4
+  `Path(__file__).parent` refs to root `.template.md` files + `capabilities/`,
+  which at 2 levels deep would otherwise need brittle `.parent.parent.parent`.
+  Also untangle `interactive_wizard`'s `from .proto_gear import
+  discover_available_templates` inversion into a sibling `from .templates`
+  import. Direct test importers to repoint: test_template_updater,
+  test_update_integration (template_updater); test_essential_integration,
+  test_wizard_focused (interactive_wizard). Use absolute imports
+  (`from proto_gear_pkg.X`) inside moved engineering modules.
+
+### Earlier this session (on `chore/PROTO-042-split-monolith`)
 
 **PROTO-042 — monolith split (ADR-001 Phase A) — COMPLETE.** `proto_gear.py`
 went 2,476 → 695 lines across four commits, each behind green tests with zero
@@ -34,15 +58,9 @@ test changes (the engine re-exports every moved symbol, so
 
 ## Pending / In Progress
 
-- **PROTO-046** (next): re-home the engine into `module_core/` (generic:
-  capability_metadata, capability_index_builder, sync_context, discovery,
-  doctor, module_manifest, metadata_parser) + `modules/engineering/`
-  (engineering: templates, detection?, status_commands, template_updater,
-  interactive_wizard, orchestration). This is ADR-001 Phase B item 5 — a large
-  mechanical move that **breaks direct imports and patch targets across ~15 test
-  files**, so it must be its own PR, moved one module at a time behind green
-  tests (update test imports deliberately; don't rely on the re-export trick —
-  the patched callers move too).
+- **PROTO-046 part 2** (next): engineering-leaf re-homing — see "What Just
+  Shipped" for the exact plan (`package_root()` helper first, then move the 5
+  leaves into `modules/engineering/`).
 - **PROTO-043**: supervision gates as data (contract item 5) — `gates:` in
   workflow metadata + doctor check.
 - **PROTO-044**: repo hygiene (tracked `.backup` files, root strays).
