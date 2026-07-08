@@ -14,7 +14,7 @@ import pytest
 from pathlib import Path
 
 from proto_gear_pkg.agent_config import AgentCapabilities
-from proto_gear_pkg.capability_metadata import load_all_capabilities
+from proto_gear_pkg.module_core.capability_metadata import load_all_capabilities
 from proto_gear_pkg.agent_wizard import (
     validate_capability_selections,
     QUESTIONARY_AVAILABLE

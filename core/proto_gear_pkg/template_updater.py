@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
 
-from .metadata_parser import MetadataParser, TemplateMetadata
+from .module_core.metadata_parser import MetadataParser, TemplateMetadata
 from .ui_helper import Colors
 
 

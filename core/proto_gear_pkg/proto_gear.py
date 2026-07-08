@@ -343,7 +343,7 @@ current_sprint: null
 
             # Generate AGENT_CONTEXT.md and mirror managed block into host config files
             try:
-                from . import sync_context as sync_context_module
+                from .module_core import sync_context as sync_context_module
                 sync_results = sync_context_module.sync_context(current_dir, dry_run=False)
                 if 'error' not in sync_results:
                     for path_str, action in sync_results.items():

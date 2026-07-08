@@ -5,7 +5,7 @@ Tests for the doctor module — pg doctor drift detector (PROTO-034).
 import pytest
 from pathlib import Path
 
-from proto_gear_pkg.doctor import (
+from proto_gear_pkg.module_core.doctor import (
     Finding,
     DiagnosticsReport,
     check_agent_context_sync,
@@ -19,7 +19,7 @@ from proto_gear_pkg.doctor import (
     _normalize,
     CORE_DOC_FILES,
 )
-from proto_gear_pkg.sync_context import (
+from proto_gear_pkg.module_core.sync_context import (
     BEGIN_MARKER,
     END_MARKER,
     HOST_FILES,
@@ -225,7 +225,7 @@ class TestCheckCapabilityIndexes:
 
     def test_in_sync_after_sync_indexes(self, tmp_path):
         import shutil
-        from proto_gear_pkg.capability_index_builder import sync_capability_indexes
+        from proto_gear_pkg.module_core.capability_index_builder import sync_capability_indexes
         pkg_caps = (
             Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
         )
@@ -240,7 +240,7 @@ class TestCheckCapabilityIndexes:
 
     def test_drift_detected_when_index_modified(self, tmp_path):
         import shutil
-        from proto_gear_pkg.capability_index_builder import (
+        from proto_gear_pkg.module_core.capability_index_builder import (
             sync_capability_indexes, BEGIN_MARKER,
         )
         pkg_caps = (
@@ -276,7 +276,7 @@ class TestCheckModules:
         bad.mkdir(parents=True)
         (bad / "module.yaml").write_text("name: NoModuleId\n", encoding="utf-8")
         monkeypatch.setattr(
-            "proto_gear_pkg.doctor.module_manifest.default_modules_root",
+            "proto_gear_pkg.module_core.doctor.module_manifest.default_modules_root",
             lambda: modules_root,
         )
         findings = check_modules(tmp_path)
@@ -286,7 +286,7 @@ class TestCheckModules:
 
     def test_no_modules_dir_is_silent(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
-            "proto_gear_pkg.doctor.module_manifest.default_modules_root",
+            "proto_gear_pkg.module_core.doctor.module_manifest.default_modules_root",
             lambda: tmp_path / "nonexistent",
         )
         assert check_modules(tmp_path) == []

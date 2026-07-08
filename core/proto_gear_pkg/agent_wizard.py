@@ -37,7 +37,7 @@ from .agent_config import (
     AgentValidator,
     create_agent_template
 )
-from .capability_metadata import (
+from .module_core.capability_metadata import (
     load_all_capabilities,
     CapabilityMetadata,
     CapabilityType,
@@ -427,7 +427,7 @@ def validate_capability_selections(
 
     # Check for circular dependencies
     try:
-        from .capability_metadata import CapabilityValidator
+        from .module_core.capability_metadata import CapabilityValidator
         for cap_id in capabilities.all_capabilities():
             cycle = CapabilityValidator.detect_circular_dependencies(cap_id, all_caps)
             if cycle:

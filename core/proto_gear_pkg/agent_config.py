@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import yaml
 
-from .capability_metadata import (
+from .module_core.capability_metadata import (
     load_all_capabilities,
     CompositionEngine,
     CapabilityValidator,

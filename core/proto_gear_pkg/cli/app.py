@@ -233,7 +233,7 @@ def main():
 
         # Handle 'context' command
         elif args.command == 'context':
-            from .. import sync_context as sync_context_module
+            from ..module_core import sync_context as sync_context_module
             project_dir = Path(".")
             canon = project_dir / "AGENT_CONTEXT.md"
             if canon.exists() and not args.regenerate:
@@ -250,7 +250,7 @@ def main():
 
         # Handle 'suggest' command
         elif args.command == 'suggest':
-            from .. import discovery
+            from ..module_core import discovery
             prose = " ".join(args.prose)
             matches = discovery.suggest(Path("."), prose, limit=args.limit)
             if args.json:
@@ -271,7 +271,7 @@ def main():
 
         # Handle 'doctor' command
         elif args.command == 'doctor':
-            from .. import doctor as doctor_module
+            from ..module_core import doctor as doctor_module
             project_dir = Path(".")
             report = doctor_module.run_diagnostics(project_dir)
 
@@ -308,8 +308,8 @@ def main():
 
             if args.fix and doctor_module.fixable_by_sync(report):
                 print(f"\n{Colors.CYAN}Running sync to repair drift...{Colors.ENDC}")
-                from .. import sync_context as sync_context_module
-                from .. import capability_index_builder
+                from ..module_core import sync_context as sync_context_module
+                from ..module_core import capability_index_builder
                 results = sync_context_module.sync_context(project_dir, dry_run=False)
                 for path_str, action in results.items():
                     print(f"  {Colors.GREEN}{action}{Colors.ENDC}: {path_str}")
@@ -326,8 +326,8 @@ def main():
 
         # Handle 'sync-context' command
         elif args.command == 'sync-context':
-            from .. import sync_context as sync_context_module
-            from .. import capability_index_builder
+            from ..module_core import sync_context as sync_context_module
+            from ..module_core import capability_index_builder
             project_dir = Path(".")
             results = sync_context_module.sync_context(project_dir, dry_run=args.dry_run)
             if 'error' in results:
@@ -362,7 +362,7 @@ def main():
 
         # Handle 'sync-indexes' command
         elif args.command == 'sync-indexes':
-            from .. import capability_index_builder
+            from ..module_core import capability_index_builder
             caps_root = Path(".") / ".proto-gear"
             if not caps_root.exists():
                 print(f"{Colors.YELLOW}No .proto-gear/ directory in current project — "

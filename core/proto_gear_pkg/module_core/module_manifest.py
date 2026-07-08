@@ -117,7 +117,8 @@ def load_module_manifest(path: Path) -> ModuleManifest:
 
 def default_modules_root() -> Path:
     """The package-bundled modules/ directory (each subdir is a module)."""
-    return Path(__file__).parent / "modules"
+    # modules/ is a package-root resource; module_core is one level deeper.
+    return Path(__file__).parent.parent / "modules"
 
 
 def discover_modules(modules_root: Optional[Path] = None) -> List[ModuleManifest]:

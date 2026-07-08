@@ -20,7 +20,7 @@ from .agent_config import (
     AgentValidationError,
     create_agent_template
 )
-from .capability_metadata import (
+from .module_core.capability_metadata import (
     load_all_capabilities,
     CapabilityMetadata,
     CapabilityType
@@ -1196,7 +1196,7 @@ def _get_protogear_version() -> str:
 
 def cmd_module_list(args):
     """List departmental modules discovered from module.yaml manifests."""
-    from . import module_manifest
+    from .module_core import module_manifest
 
     try:
         modules = module_manifest.discover_modules()
@@ -1224,7 +1224,7 @@ def cmd_module_list(args):
 
 def cmd_module_show(args):
     """Show a single departmental module's manifest details."""
-    from . import module_manifest
+    from .module_core import module_manifest
 
     try:
         modules = module_manifest.discover_modules()

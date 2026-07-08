@@ -12,7 +12,7 @@ from pathlib import Path
 
 from . import __version__
 from .ui_helper import Colors
-from .metadata_parser import MetadataParser, apply_conditional_content
+from .module_core.metadata_parser import MetadataParser, apply_conditional_content
 
 
 def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force: bool = False, interactive: bool = True) -> tuple:
