@@ -35,7 +35,8 @@ def main():
     # Imported here (not at module top) so this module can be imported and
     # re-exported by proto_gear.py without triggering a circular import.
     from .. import proto_gear as engine
-    from .. import cli_commands, status_commands
+    from .. import cli_commands
+    from ..modules.engineering import status_commands
     from ..ui_helper import Colors
 
     parser = build_parser()

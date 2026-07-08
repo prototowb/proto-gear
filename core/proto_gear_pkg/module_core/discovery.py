@@ -21,8 +21,8 @@ def _project_caps_dir(project_dir: Path) -> Path:
 
 def _package_caps_dir() -> Path:
     """Built-in capabilities shipped with the package."""
-    # capabilities/ is a package-root resource; module_core is one level deeper.
-    return Path(__file__).parent.parent / "capabilities"
+    from ..paths import package_root
+    return package_root() / "capabilities"
 
 
 def load_capabilities_for_suggest(project_dir: Path) -> Dict[str, CapabilityMetadata]:

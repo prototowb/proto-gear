@@ -206,8 +206,8 @@ def generate_agent_context(project_dir: Path) -> str:
     """Render the full AGENT_CONTEXT.md content from current project state."""
     capabilities = _load_capabilities(project_dir / ".proto-gear")
 
-    # AGENT_CONTEXT.template.md is a package-root resource; module_core is deeper.
-    template_file = Path(__file__).parent.parent / "AGENT_CONTEXT.template.md"
+    from ..paths import package_root
+    template_file = package_root() / "AGENT_CONTEXT.template.md"
     template = template_file.read_text(encoding="utf-8")
 
     project_name = project_dir.name or project_dir.resolve().name

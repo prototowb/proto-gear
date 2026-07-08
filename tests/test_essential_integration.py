@@ -14,7 +14,7 @@ from proto_gear_pkg.proto_gear import (
     detect_git_config,
     main
 )
-from proto_gear_pkg.interactive_wizard import (
+from proto_gear_pkg.modules.engineering.interactive_wizard import (
     RichWizard,
     run_enhanced_wizard,
     _apply_preset_config,
@@ -64,7 +64,7 @@ class TestWizardEssentials:
 
     def test_presets_properly_structured(self):
         """Test that all presets have proper structure"""
-        from proto_gear_pkg.interactive_wizard import PRESETS
+        from proto_gear_pkg.modules.engineering.interactive_wizard import PRESETS
         for preset_name, preset_data in PRESETS.items():
             assert 'name' in preset_data
             assert 'description' in preset_data
@@ -145,7 +145,7 @@ class TestPackageIntegration:
         """Test main package imports work"""
         import proto_gear_pkg
         from proto_gear_pkg import proto_gear
-        from proto_gear_pkg import interactive_wizard
+        from proto_gear_pkg.modules.engineering import interactive_wizard
         from proto_gear_pkg import ui_helper
         assert proto_gear is not None
         assert interactive_wizard is not None
@@ -165,12 +165,12 @@ class TestPackageIntegration:
 
     def test_wizard_available(self):
         """Test wizard is importable"""
-        from proto_gear_pkg.interactive_wizard import run_enhanced_wizard
+        from proto_gear_pkg.modules.engineering.interactive_wizard import run_enhanced_wizard
         assert callable(run_enhanced_wizard)
 
     def test_constants_available(self):
         """Test important constants are available"""
-        from proto_gear_pkg.interactive_wizard import PRESETS
+        from proto_gear_pkg.modules.engineering.interactive_wizard import PRESETS
         assert PRESETS is not None
         assert len(PRESETS) > 0
 

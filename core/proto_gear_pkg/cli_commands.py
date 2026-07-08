@@ -1047,7 +1047,7 @@ def cmd_template_update(args):
     Safely updates AGENTS.md and PROJECT_STATUS.md to latest template
     versions while preserving tickets, metrics, and custom configurations.
     """
-    from .template_updater import TemplateUpdater, TemplateUpdateError
+    from .modules.engineering.template_updater import TemplateUpdater, TemplateUpdateError
     import os
 
     # Get templates to update

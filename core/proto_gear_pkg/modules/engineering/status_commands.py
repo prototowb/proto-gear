@@ -230,7 +230,7 @@ def cmd_status(args):
         }, indent=2))
         return 0
 
-    from .ui_helper import Colors
+    from proto_gear_pkg.ui_helper import Colors
     print("\n{}=== Project Status ==={}".format(Colors.CYAN, Colors.ENDC))
     print("  Phase:   {}".format(state.project_phase))
     print("  Sprint:  {}  ({})".format(state.current_sprint, state.sprint_type))
@@ -369,7 +369,7 @@ def cmd_ticket_list(args):
         print("No tickets found.")
         return 0
 
-    from .ui_helper import Colors
+    from proto_gear_pkg.ui_helper import Colors
     STATUS_COLORS = {
         "IN_PROGRESS": Colors.CYAN,
         "PENDING": Colors.GRAY,

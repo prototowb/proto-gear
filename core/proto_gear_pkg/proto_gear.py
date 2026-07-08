@@ -14,7 +14,7 @@ from .ui_helper import Colors
 
 # Try to import enhanced wizard module
 try:
-    from .interactive_wizard import run_enhanced_wizard, run_incremental_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
+    from .modules.engineering.interactive_wizard import run_enhanced_wizard, run_incremental_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
     ENHANCED_WIZARD_AVAILABLE = True
 except ImportError:
     ENHANCED_WIZARD_AVAILABLE = False
@@ -23,15 +23,13 @@ except ImportError:
     run_incremental_wizard = None
 
 # Import CLI command handlers
-from . import cli_commands
-from . import status_commands
 
 # File handling helpers
 
 # Project / environment / git detection lives in detection.py
 # (PROTO-042, ADR-001 Phase A). Re-exported here so direct imports and the
 # proto_gear_pkg.proto_gear.* patch targets used by the tests keep working.
-from .detection import (
+from .modules.engineering.detection import (
     detect_existing_environment,
     detect_project_structure,
     detect_git_config,
@@ -42,7 +40,7 @@ from .detection import (
 # (PROTO-042, ADR-001 Phase A; engineering-module-specific per ADR-001).
 # Re-exported here so setup_agent_framework_only / run_simple_protogear_init
 # and the proto_gear_pkg.proto_gear.* patch targets keep working unchanged.
-from .templates import (
+from .modules.engineering.templates import (
     safe_write_file,
     generate_branching_doc,
     discover_available_templates,

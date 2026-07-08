@@ -10,9 +10,10 @@ is engineering-module-specific and will move to modules/engineering/ in Phase B.
 import os
 from pathlib import Path
 
-from . import __version__
-from .ui_helper import Colors
-from .module_core.metadata_parser import MetadataParser, apply_conditional_content
+from proto_gear_pkg import __version__
+from proto_gear_pkg.ui_helper import Colors
+from proto_gear_pkg.module_core.metadata_parser import MetadataParser, apply_conditional_content
+from proto_gear_pkg.paths import package_root
 
 
 def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force: bool = False, interactive: bool = True) -> tuple:
@@ -84,7 +85,7 @@ def safe_write_file(file_path: Path, content: str, dry_run: bool = False, force:
 
 def generate_branching_doc(project_name, ticket_prefix, git_config, generation_date):
     """Generate BRANCHING.md from template"""
-    template_path = Path(__file__).parent / 'BRANCHING.template.md'
+    template_path = package_root() / 'BRANCHING.template.md'
 
     if not template_path.exists():
         return None
@@ -247,7 +248,7 @@ def discover_available_templates():
     Returns:
         Dict mapping template names to template info
     """
-    template_dir = Path(__file__).parent
+    template_dir = package_root()
     templates = {}
 
     try:
@@ -283,7 +284,7 @@ def generate_project_template(template_name, project_dir, context, dry_run=False
     """
     try:
         # Get template file from package
-        template_file = Path(__file__).parent / f"{template_name}.template.md"
+        template_file = package_root() / f"{template_name}.template.md"
 
         if not template_file.exists():
             print(f"Warning: Template {template_name}.template.md not found")
@@ -367,7 +368,7 @@ def copy_capability_templates(target_dir: Path, project_name: str, version: str 
     }
 
     # Define source and destination
-    source_dir = Path(__file__).parent / 'capabilities'
+    source_dir = package_root() / 'capabilities'
     dest_dir = target_dir / '.proto-gear'
 
     # Parse capabilities config (default to all if not specified)
