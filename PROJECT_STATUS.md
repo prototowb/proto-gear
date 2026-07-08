@@ -36,7 +36,6 @@ current_branch: "main"
 |----|-------|------|--------|--------|----------|
 | PROTO-043 | Supervision gates as data: gates field in workflow metadata + doctor check | feature | PENDING | feature/proto-043-supervision-gates-as-data-gates-field-in |  |
 | PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | chore | PENDING | chore/proto-044-repo-hygiene-untrack-backup-files-reloca |  |
-| PROTO-046 | Re-home engine into module_core/ + modules/engineering/ (ADR-001 Phase B item 5) | chore | IN_PROGRESS | chore/proto-046-re-home-engine-into-module-core-modules- |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -421,6 +420,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-041 | Fix: interactive_wizard crashes on import when questionary missing (Style NameError) | 2026-07-07 | |
 | PROTO-042 | Split proto_gear.py monolith into cli/ + engine modules (ADR-001 Phase A) | 2026-07-08 | |
 | PROTO-045 | Module manifest contract + pg module + doctor check (ADR-001 Phase B foundation) | 2026-07-08 | |
+| PROTO-046 | Re-home engine into module_core/ + modules/engineering/ (ADR-001 Phase B item 5) | 2026-07-09 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

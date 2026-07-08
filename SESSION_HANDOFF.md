@@ -10,28 +10,24 @@ Branches (stack, oldest first — each rebases onto the previous once merged):
 `feature/PROTO-039` (docs, unmerged) → `chore/PROTO-042-split-monolith` →
 **`chore/PROTO-046-rehome-module-core` (current HEAD)**.
 
-**PROTO-046 — module_core re-homing (ADR-001 Phase B item 5) — PART 1 DONE
-(IN_PROGRESS).**
-- `af99831` moved the 7 department-agnostic modules into `module_core/`
-  (capability_metadata, capability_index_builder, sync_context, discovery,
-  doctor, module_manifest, metadata_parser). `git mv` preserved history; all
-  importers + every test's import/patch target updated (no shims); fixed the
-  moved modules' `Path(__file__).parent` → `.parent.parent` for package-root
-  resources (capabilities/, modules/, AGENT_CONTEXT.template.md). 519 green,
-  doctor 19/19, CLI verified.
-- **Remaining (PROTO-046 part 2):** re-home the engineering leaves
-  (`templates`, `detection`, `status_commands`, `template_updater`,
-  `interactive_wizard`) into `modules/engineering/`. **Do this first:** add a
-  `package_root()` helper (returns `Path(proto_gear_pkg.__file__).parent`) and
-  route every bundled-resource lookup through it — `templates.py` alone has 4
-  `Path(__file__).parent` refs to root `.template.md` files + `capabilities/`,
-  which at 2 levels deep would otherwise need brittle `.parent.parent.parent`.
-  Also untangle `interactive_wizard`'s `from .proto_gear import
-  discover_available_templates` inversion into a sibling `from .templates`
-  import. Direct test importers to repoint: test_template_updater,
-  test_update_integration (template_updater); test_essential_integration,
-  test_wizard_focused (interactive_wizard). Use absolute imports
-  (`from proto_gear_pkg.X`) inside moved engineering modules.
+**PROTO-046 — module_core + modules/engineering re-homing (ADR-001 Phase B
+item 5) — COMPLETE.** The package is now cleanly layered:
+- `cli/` — dispatch · `module_core/` — 7 generic modules (capability_metadata,
+  capability_index_builder, sync_context, discovery, doctor, module_manifest,
+  metadata_parser) · `modules/engineering/` — 5 engineering modules (templates,
+  detection, status_commands, template_updater, interactive_wizard) +
+  module.yaml · root — shared (ui_helper, presentation, cli_commands, agent_*)
+  + `proto_gear.py` (entry facade + init orchestration) + `paths.py`.
+- `af99831` module_core move; `370fe79` engineering move. `git mv` preserved
+  history throughout; all importers + test import/patch targets updated at the
+  source (no shims). New `paths.package_root()` is the single depth-independent
+  anchor for bundled resources (capabilities/, modules/, *.template.md) — no
+  more `Path(__file__).parent` arithmetic. `interactive_wizard`'s facade
+  inversion untangled to a sibling `.templates` import.
+- Note: init orchestration (`setup_agent_framework_only` etc.) deliberately
+  stays in `proto_gear.py` — it's the pyproject entry point and the test-patch
+  anchor (`patch('proto_gear_pkg.proto_gear.detect_*')`); moving it buys little
+  and breaks those tests. `agent_*` left at root as a shared subsystem.
 
 ### Earlier this session (on `chore/PROTO-042-split-monolith`)
 
@@ -58,10 +54,7 @@ test changes (the engine re-exports every moved symbol, so
 
 ## Pending / In Progress
 
-- **PROTO-046 part 2** (next): engineering-leaf re-homing — see "What Just
-  Shipped" for the exact plan (`package_root()` helper first, then move the 5
-  leaves into `modules/engineering/`).
-- **PROTO-043**: supervision gates as data (contract item 5) — `gates:` in
+- **PROTO-043** (next): supervision gates as data (contract item 5) — `gates:` in
   workflow metadata + doctor check.
 - **PROTO-044**: repo hygiene (tracked `.backup` files, root strays).
 - **PROTO-039** (docs: PROJECT_SPECIFICATIONS + ADR-001 + wizard fix) still
