@@ -6,6 +6,7 @@ Audits the project for sync drift across:
   2. host config files (CLAUDE.md, .cursorrules, etc.) managed blocks
   3. proto-gear:header presence on core docs (AGENTS.md, etc.)
   4. capability metadata validity
+  5. departmental module manifests (module.yaml) validity
 
 Each check produces a list of Finding records. The dispatcher in proto_gear.py
 turns these into human-readable output or JSON.
@@ -18,6 +19,7 @@ from typing import List, Optional
 
 from . import sync_context as sync_context_module
 from . import capability_index_builder
+from . import module_manifest
 from .metadata_parser import parse_proto_gear_header
 
 
@@ -292,6 +294,43 @@ def check_capability_indexes(project_dir: Path) -> List[Finding]:
     return findings
 
 
+def check_modules(project_dir: Path) -> List[Finding]:
+    """Validate every bundled departmental module manifest (module.yaml).
+
+    Enforces the module contract at the manifest level: each module's manifest
+    must load and declare its required fields. Surface-existence against a host
+    project is intentionally out of scope here — an uninitialised project is
+    already flagged by the context/capability checks — so a synced project with
+    valid manifests reports no drift.
+    """
+    findings: List[Finding] = []
+    root = module_manifest.default_modules_root()
+    if not root.is_dir():
+        return findings
+
+    manifest_files = sorted(root.glob(f"*/{module_manifest.MANIFEST_FILENAME}"))
+    for mpath in manifest_files:
+        target = f"modules/{mpath.parent.name}/{mpath.name}"
+        try:
+            manifest = module_manifest.load_module_manifest(mpath)
+        except module_manifest.ModuleManifestError as exc:
+            findings.append(Finding(
+                id="module-manifest-invalid",
+                severity="error",
+                target=target,
+                message=str(exc),
+                fix_hint="Declare required fields (module, name) in module.yaml",
+            ))
+            continue
+        findings.append(Finding(
+            id="module-manifest-valid",
+            severity="ok",
+            target=target,
+            message=f"Module '{manifest.module}' v{manifest.version} manifest OK.",
+        ))
+    return findings
+
+
 # ---------- driver ----------
 
 def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
@@ -301,6 +340,7 @@ def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report.findings.extend(check_core_doc_headers(project_dir))
     report.findings.extend(check_capabilities(project_dir))
     report.findings.extend(check_capability_indexes(project_dir))
+    report.findings.extend(check_modules(project_dir))
     return report
 
 
