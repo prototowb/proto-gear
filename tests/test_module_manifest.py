@@ -185,6 +185,46 @@ class TestBundledEngineeringModule:
         assert default_modules_root().is_dir()
 
 
+class TestModuleCommands:
+    """pg module list / show handlers (cli_commands)."""
+
+    def _args(self, **kw):
+        import argparse
+        return argparse.Namespace(**kw)
+
+    def test_list_shows_engineering(self, capsys):
+        from proto_gear_pkg import cli_commands
+        rc = cli_commands.cmd_module_list(self._args(json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "engineering" in out
+        assert "Engineering" in out
+
+    def test_list_json(self, capsys):
+        import json
+        from proto_gear_pkg import cli_commands
+        rc = cli_commands.cmd_module_list(self._args(json=True))
+        out = capsys.readouterr().out
+        assert rc == 0
+        data = json.loads(out)
+        assert any(m["module"] == "engineering" for m in data)
+
+    def test_show_engineering(self, capsys):
+        from proto_gear_pkg import cli_commands
+        rc = cli_commands.cmd_module_show(self._args(name="engineering", json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "PROJECT_STATUS.md" in out
+        assert "Contract surfaces" in out
+
+    def test_show_missing_returns_1(self, capsys):
+        from proto_gear_pkg import cli_commands
+        rc = cli_commands.cmd_module_show(self._args(name="nope", json=False))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "not found" in out
+
+
 class TestZeroCoreEditAcceptance:
     """ADR-001 Phase B exit criterion: a toy second module loads unmodified."""
 

@@ -201,6 +201,16 @@ def main():
                 print(f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}")
                 sys.exit(1)
 
+        # Handle 'module' command
+        elif args.command == 'module':
+            if args.module_command == 'list':
+                sys.exit(cli_commands.cmd_module_list(args))
+            elif args.module_command == 'show':
+                sys.exit(cli_commands.cmd_module_show(args))
+            else:
+                print(f"{Colors.YELLOW}Use 'pg module --help' to see available commands{Colors.ENDC}")
+                sys.exit(1)
+
         # Handle 'update' command
         elif args.command == 'update':
             sys.exit(cli_commands.cmd_template_update(args))

@@ -455,4 +455,36 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help='Show what would change without writing files'
     )
 
+    # 'module' command group (departmental modules — ADR-001 Phase B)
+    module_parser = subparsers.add_parser(
+        'module',
+        help='Inspect departmental modules (module.yaml manifests)'
+    )
+    module_subparsers = module_parser.add_subparsers(dest='module_command', help='Module commands')
+
+    module_list_parser = module_subparsers.add_parser(
+        'list',
+        help='List departmental modules discovered from module.yaml manifests'
+    )
+    module_list_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Emit JSON (for AI agent consumption)'
+    )
+
+    module_show_parser = module_subparsers.add_parser(
+        'show',
+        help='Show a departmental module manifest'
+    )
+    module_show_parser.add_argument(
+        'name',
+        type=str,
+        help='Module id (e.g., engineering)'
+    )
+    module_show_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Emit JSON (for AI agent consumption)'
+    )
+
     return parser

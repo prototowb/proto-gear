@@ -1188,3 +1188,70 @@ def _get_protogear_version() -> str:
         return __version__
     except Exception:
         return "0.8.1"  # Fallback
+
+
+# ---------------------------------------------------------------------------
+# Departmental modules (ADR-001 Phase B)
+# ---------------------------------------------------------------------------
+
+def cmd_module_list(args):
+    """List departmental modules discovered from module.yaml manifests."""
+    from . import module_manifest
+
+    try:
+        modules = module_manifest.discover_modules()
+    except module_manifest.ModuleManifestError as e:
+        print(f"{Colors.FAIL}Error loading module manifests: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+        print(json.dumps([m.to_dict() for m in modules], indent=2))
+        return 0
+
+    if not modules:
+        print(f"{Colors.YELLOW}No departmental modules found.{Colors.ENDC}")
+        return 0
+
+    print(f"{Colors.BOLD}{Colors.CYAN}Departmental modules{Colors.ENDC}")
+    for m in modules:
+        print(f"  {Colors.GREEN}{m.module}{Colors.ENDC} "
+              f"{Colors.GRAY}v{m.version}{Colors.ENDC} — {m.name}")
+        if m.description:
+            print(f"      {Colors.GRAY}{m.description.strip()}{Colors.ENDC}")
+    return 0
+
+
+def cmd_module_show(args):
+    """Show a single departmental module's manifest details."""
+    from . import module_manifest
+
+    try:
+        modules = module_manifest.discover_modules()
+    except module_manifest.ModuleManifestError as e:
+        print(f"{Colors.FAIL}Error loading module manifests: {e}{Colors.ENDC}")
+        return 1
+
+    by_id = {m.module: m for m in modules}
+    manifest = by_id.get(args.name)
+    if manifest is None:
+        print(f"{Colors.FAIL}Module '{args.name}' not found.{Colors.ENDC}")
+        available = ", ".join(sorted(by_id)) or "(none)"
+        print(f"{Colors.GRAY}Available: {available}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+        print(json.dumps(manifest.to_dict(), indent=2))
+        return 0
+
+    print(f"{Colors.BOLD}{Colors.CYAN}{manifest.name}{Colors.ENDC} "
+          f"{Colors.GRAY}({manifest.module} v{manifest.version}){Colors.ENDC}")
+    if manifest.description:
+        print(f"  {manifest.description.strip()}")
+    print(f"\n  {Colors.BOLD}Contract surfaces{Colors.ENDC}")
+    print(f"    capabilities_root : {manifest.capabilities_root}")
+    print(f"    state_surface     : {manifest.state_surface or Colors.GRAY + '(none)' + Colors.ENDC}")
+    print(f"    context_manifest  : {manifest.context_manifest}")
+    print(f"    handoff           : {manifest.handoff or Colors.GRAY + '(none)' + Colors.ENDC}")
+    return 0
