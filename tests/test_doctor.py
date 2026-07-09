@@ -13,6 +13,7 @@ from proto_gear_pkg.doctor import (
     check_core_doc_headers,
     check_capabilities,
     check_capability_indexes,
+    check_modules,
     run_diagnostics,
     fixable_by_sync,
     _normalize,
@@ -259,6 +260,36 @@ class TestCheckCapabilityIndexes:
         )
         findings = check_capability_indexes(tmp_path)
         assert any(f.id == "capability-index-drift" for f in findings)
+
+
+class TestCheckModules:
+    def test_bundled_engineering_module_ok(self, tmp_path):
+        findings = check_modules(tmp_path)
+        eng = [f for f in findings if "engineering" in f.target]
+        assert len(eng) == 1
+        assert eng[0].severity == "ok"
+        assert eng[0].id == "module-manifest-valid"
+
+    def test_malformed_manifest_is_error(self, tmp_path, monkeypatch):
+        modules_root = tmp_path / "modules"
+        bad = modules_root / "broken"
+        bad.mkdir(parents=True)
+        (bad / "module.yaml").write_text("name: NoModuleId\n", encoding="utf-8")
+        monkeypatch.setattr(
+            "proto_gear_pkg.doctor.module_manifest.default_modules_root",
+            lambda: modules_root,
+        )
+        findings = check_modules(tmp_path)
+        assert len(findings) == 1
+        assert findings[0].severity == "error"
+        assert findings[0].id == "module-manifest-invalid"
+
+    def test_no_modules_dir_is_silent(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            "proto_gear_pkg.doctor.module_manifest.default_modules_root",
+            lambda: tmp_path / "nonexistent",
+        )
+        assert check_modules(tmp_path) == []
 
 
 # ---------- run_diagnostics + fixable_by_sync ----------

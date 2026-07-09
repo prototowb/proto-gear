@@ -1,0 +1,20 @@
+# Engineering department module — the reference implementation of the module
+# contract (PROJECT_SPECIFICATIONS.md §3). The department-agnostic core reads
+# this file to discover, load, and audit the module without engineering-specific
+# knowledge. Adding another department = another modules/<name>/module.yaml,
+# with zero core edits (ADR-001 Phase B).
+
+module: engineering
+name: Engineering
+description: >-
+  Engineering department module — code, tests, branching, releases, and code
+  review encoded as agent-discoverable capabilities and templates.
+version: 0.1.0
+
+# Contract surfaces (paths are relative to a host project's root, i.e. where the
+# module is initialised by `pg init`).
+contract:
+  capabilities_root: .proto-gear        # item 1 — skills / workflows / commands
+  state_surface: PROJECT_STATUS.md      # item 2 — tickets / sprint state
+  context_manifest: AGENT_CONTEXT.md    # item 3 — agent skim, mirrored to hosts
+  handoff: SESSION_HANDOFF.md           # item 6 — rolling session handoff

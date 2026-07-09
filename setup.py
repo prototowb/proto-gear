@@ -13,6 +13,8 @@ setup(
             "*.yaml",
             "*.yml",
             "capabilities/**/*.md",
+            "modules/**/*.yaml",
+            "modules/**/*.md",
         ],
     },
     include_package_data=True,
