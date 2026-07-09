@@ -22,6 +22,7 @@ def _project_caps_dir(project_dir: Path) -> Path:
 def _package_caps_dir() -> Path:
     """Built-in capabilities shipped with the package."""
     from ..paths import package_root
+
     return package_root() / "capabilities"
 
 
@@ -56,8 +57,9 @@ def _tokenize(text: str) -> List[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
-def _score_capability(prose_tokens: List[str], prose_lower: str,
-                      cap: CapabilityMetadata) -> tuple:
+def _score_capability(
+    prose_tokens: List[str], prose_lower: str, cap: CapabilityMetadata
+) -> tuple:
     """
     Return (score, matched_triggers).
 
@@ -121,14 +123,16 @@ def suggest(project_dir: Path, prose: str, limit: int = 3) -> List[dict]:
         score, matched = _score_capability(prose_tokens, prose_lower, cap)
         if score <= 0:
             continue
-        scored.append({
-            "id": cap_id,
-            "type": cap.type.value if hasattr(cap.type, "value") else str(cap.type),
-            "name": cap.name,
-            "description": cap.description,
-            "score": score,
-            "matched_triggers": matched,
-        })
+        scored.append(
+            {
+                "id": cap_id,
+                "type": cap.type.value if hasattr(cap.type, "value") else str(cap.type),
+                "name": cap.name,
+                "description": cap.description,
+                "score": score,
+                "matched_triggers": matched,
+            }
+        )
 
     scored.sort(key=lambda m: (-m["score"], m["id"]))
     return scored[:limit]

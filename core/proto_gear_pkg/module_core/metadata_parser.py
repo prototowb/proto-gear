@@ -34,7 +34,7 @@ class TemplateMetadata:
         version: str = "1.0.0",
         requires: Optional[Dict[str, Any]] = None,
         conditional_sections: Optional[Dict[str, Dict[str, str]]] = None,
-        raw_metadata: Optional[Dict[str, Any]] = None
+        raw_metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize template metadata.
@@ -91,8 +91,8 @@ class TemplateMetadata:
         matching_sections = {}
 
         for section_name, section_data in self.conditional_sections.items():
-            condition = section_data.get('condition', '')
-            content = section_data.get('content', '')
+            condition = section_data.get("condition", "")
+            content = section_data.get("content", "")
 
             if self._evaluate_condition(condition, project_info):
                 matching_sections[section_name] = content
@@ -129,12 +129,14 @@ class TemplateMetadata:
 
 
 PROTO_GEAR_HEADER_PATTERN = re.compile(
-    r'<!--\s*proto-gear:header\s*\n(.*?)\n\s*-->',
+    r"<!--\s*proto-gear:header\s*\n(.*?)\n\s*-->",
     re.DOTALL,
 )
 
 
-def parse_proto_gear_header(text: str, max_search_chars: int = 8192) -> Optional[Dict[str, Any]]:
+def parse_proto_gear_header(
+    text: str, max_search_chars: int = 8192
+) -> Optional[Dict[str, Any]]:
     """
     Extract the proto-gear:header block from a markdown file.
 
@@ -169,8 +171,7 @@ class MetadataParser:
     """Parser for extracting YAML frontmatter from template files."""
 
     FRONTMATTER_PATTERN = re.compile(
-        r'^---\s*\n(.*?)\n---\s*\n',
-        re.DOTALL | re.MULTILINE
+        r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL | re.MULTILINE
     )
 
     @staticmethod
@@ -191,7 +192,7 @@ class MetadataParser:
             return TemplateMetadata(), template_content
 
         frontmatter_text = match.group(1)
-        content_without_frontmatter = template_content[match.end():]
+        content_without_frontmatter = template_content[match.end() :]
 
         try:
             metadata_dict = yaml.safe_load(frontmatter_text)
@@ -201,11 +202,11 @@ class MetadataParser:
                 return TemplateMetadata(), template_content
 
             metadata = TemplateMetadata(
-                name=metadata_dict.get('name', ''),
-                version=metadata_dict.get('version', '1.0.0'),
-                requires=metadata_dict.get('requires'),
-                conditional_sections=metadata_dict.get('conditional_sections'),
-                raw_metadata=metadata_dict
+                name=metadata_dict.get("name", ""),
+                version=metadata_dict.get("version", "1.0.0"),
+                requires=metadata_dict.get("requires"),
+                conditional_sections=metadata_dict.get("conditional_sections"),
+                raw_metadata=metadata_dict,
             )
 
             return metadata, content_without_frontmatter
@@ -226,7 +227,7 @@ class MetadataParser:
             Tuple of (TemplateMetadata, template_content)
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
             return MetadataParser.parse_template(content)
         except (IOError, OSError):
@@ -237,7 +238,7 @@ class MetadataParser:
 def apply_conditional_content(
     template_content: str,
     conditional_sections: Dict[str, str],
-    placeholder_pattern: str = r'\{\{(\w+)\}\}'
+    placeholder_pattern: str = r"\{\{(\w+)\}\}",
 ) -> str:
     """
     Apply conditional content sections to template by replacing placeholders.
@@ -258,6 +259,6 @@ def apply_conditional_content(
         result = result.replace(placeholder, section_content)
 
     # Remove any remaining unreplaced placeholders (optional sections not provided)
-    result = re.sub(placeholder_pattern, '', result)
+    result = re.sub(placeholder_pattern, "", result)
 
     return result

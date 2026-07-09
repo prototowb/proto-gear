@@ -9,7 +9,6 @@ import pytest
 
 from proto_gear_pkg.module_core.metadata_parser import parse_proto_gear_header
 
-
 VALID_HEADER = """<!-- proto-gear:header
 purpose: Agent orchestration
 read-when: First session
@@ -92,5 +91,8 @@ class TestAllPackagedTemplatesHaveHeader:
         for field in self.REQUIRED_FIELDS:
             assert field in header, f"{filename}: header missing '{field}'"
         assert header["priority"] in {
-            "required", "recommended", "optional", "required-if-exists"
+            "required",
+            "recommended",
+            "optional",
+            "required-if-exists",
         }, f"{filename}: invalid priority '{header['priority']}'"

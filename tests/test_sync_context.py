@@ -111,8 +111,13 @@ class TestGenerateAgentContext:
     def test_no_unresolved_placeholders(self, project):
         content = generate_agent_context(project)
         for placeholder in (
-            "{{PROJECT_NAME}}", "{{REFERENCE_INDEX}}", "{{CAPABILITIES_SKIM}}",
-            "{{TRIGGER_MAP}}", "{{CRITICAL_RULES}}", "{{CLI_COMMANDS}}", "{{PROJECT_META}}"
+            "{{PROJECT_NAME}}",
+            "{{REFERENCE_INDEX}}",
+            "{{CAPABILITIES_SKIM}}",
+            "{{TRIGGER_MAP}}",
+            "{{CRITICAL_RULES}}",
+            "{{CLI_COMMANDS}}",
+            "{{PROJECT_META}}",
         ):
             assert placeholder not in content, f"Unresolved placeholder: {placeholder}"
 

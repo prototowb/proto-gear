@@ -25,6 +25,7 @@ VALID_STATUSES = {"PENDING", "IN_PROGRESS", "COMPLETED", "BLOCKED", "CANCELLED"}
 # File location
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _find_status_file():
     # type: () -> Optional[Path]
     path = Path.cwd() / STATUS_FILE
@@ -34,6 +35,7 @@ def _find_status_file():
 # ─────────────────────────────────────────────────────────────────────────────
 # Parsing
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class ProjectState:
     """
@@ -65,12 +67,16 @@ class ProjectState:
 
         # If ticket_prefix not in YAML block, infer from existing ticket IDs
         if not self.ticket_prefix:
-            m = re.search(r'\|\s*([A-Z][A-Z0-9]+)-(\d+)\s*\|', self.text)
+            m = re.search(r"\|\s*([A-Z][A-Z0-9]+)-(\d+)\s*\|", self.text)
             if m:
                 self.ticket_prefix = m.group(1)
                 # Also infer last_ticket_id from highest seen number
-                nums = [int(n) for n in re.findall(
-                    r'\|\s*' + re.escape(m.group(1)) + r'-(\d+)\s*\|', self.text)]
+                nums = [
+                    int(n)
+                    for n in re.findall(
+                        r"\|\s*" + re.escape(m.group(1)) + r"-(\d+)\s*\|", self.text
+                    )
+                ]
                 if nums and self.last_ticket_id == 0:
                     self.last_ticket_id = max(nums)
             else:
@@ -106,7 +112,12 @@ class ProjectState:
                 continue
             if all(set(c) <= set("-: ") for c in cells):
                 continue  # separator row
-            if not cells[0] or cells[0].startswith("(") or cells[0].startswith("{{") or cells[0] == "-":
+            if (
+                not cells[0]
+                or cells[0].startswith("(")
+                or cells[0].startswith("{{")
+                or cells[0] == "-"
+            ):
                 continue  # placeholder / empty row
             if header and len(cells) >= len(header):
                 rows.append(dict(zip(header, cells[: len(header)])))
@@ -116,6 +127,7 @@ class ProjectState:
 # ─────────────────────────────────────────────────────────────────────────────
 # Mutation helpers — operate on raw text, return updated text
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _set_last_ticket_id(text, new_id):
     # type: (str, int) -> str
@@ -142,7 +154,11 @@ def _find_insert_point(lines, section_name):
                 if all(set(c) <= set("-: ") for c in cells if c):
                     sep_idx = i
                 elif sep_idx is not None:
-                    if cells and not cells[0].startswith("(") and not cells[0].startswith("{{"):
+                    if (
+                        cells
+                        and not cells[0].startswith("(")
+                        and not cells[0].startswith("{{")
+                    ):
                         last_row_idx = i
 
     return last_row_idx if last_row_idx is not None else sep_idx
@@ -205,32 +221,41 @@ def _write(path, text):
 # Command handlers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_status(args):
     # type: (...) -> int
     """pg status — summarise PROJECT_STATUS.md."""
     path = _find_status_file()
     if not path:
-        print("Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr)
+        print(
+            "Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr
+        )
         return 1
 
     state = ProjectState(path)
     next_id = "{}-{:03d}".format(state.ticket_prefix, state.last_ticket_id + 1)
 
     if getattr(args, "json", False):
-        print(json.dumps({
-            "project_phase": state.project_phase,
-            "current_sprint": state.current_sprint,
-            "sprint_type": state.sprint_type,
-            "ticket_prefix": state.ticket_prefix,
-            "last_ticket_id": state.last_ticket_id,
-            "next_ticket_id": next_id,
-            "active": state.active,
-            "completed_count": len(state.completed),
-            "blocked": state.blocked,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "project_phase": state.project_phase,
+                    "current_sprint": state.current_sprint,
+                    "sprint_type": state.sprint_type,
+                    "ticket_prefix": state.ticket_prefix,
+                    "last_ticket_id": state.last_ticket_id,
+                    "next_ticket_id": next_id,
+                    "active": state.active,
+                    "completed_count": len(state.completed),
+                    "blocked": state.blocked,
+                },
+                indent=2,
+            )
+        )
         return 0
 
     from proto_gear_pkg.ui_helper import Colors
+
     print("\n{}=== Project Status ==={}".format(Colors.CYAN, Colors.ENDC))
     print("  Phase:   {}".format(state.project_phase))
     print("  Sprint:  {}  ({})".format(state.current_sprint, state.sprint_type))
@@ -241,17 +266,28 @@ def cmd_status(args):
     if state.blocked:
         print("{}BLOCKED ({}){}".format(Colors.FAIL, len(state.blocked), Colors.ENDC))
         for t in state.blocked:
-            print("  {}{}{}  {}".format(
-                Colors.BOLD, t.get("ID", "?"), Colors.ENDC,
-                t.get("Title", t.get("Blocker", "?"))))
+            print(
+                "  {}{}{}  {}".format(
+                    Colors.BOLD,
+                    t.get("ID", "?"),
+                    Colors.ENDC,
+                    t.get("Title", t.get("Blocker", "?")),
+                )
+            )
         print()
 
     if state.active:
         print("{}ACTIVE ({}){}".format(Colors.CYAN, len(state.active), Colors.ENDC))
         for t in state.active:
-            print("  {}{}{}  [{}]  {}".format(
-                Colors.BOLD, t.get("ID", "?"), Colors.ENDC,
-                t.get("Status", "?"), t.get("Title", "?")))
+            print(
+                "  {}{}{}  [{}]  {}".format(
+                    Colors.BOLD,
+                    t.get("ID", "?"),
+                    Colors.ENDC,
+                    t.get("Status", "?"),
+                    t.get("Title", "?"),
+                )
+            )
         print()
     else:
         print("{}No active tickets.{}\n".format(Colors.GRAY, Colors.ENDC))
@@ -270,7 +306,9 @@ def cmd_ticket_create(args):
     """
     path = _find_status_file()
     if not path:
-        print("Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr)
+        print(
+            "Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr
+        )
         return 1
 
     ticket_type = (getattr(args, "type", None) or "task").lower()
@@ -289,7 +327,8 @@ def cmd_ticket_create(args):
     assignee = getattr(args, "assignee", None) or ""
 
     row = "| {} | {} | {} | PENDING | {} | {} |".format(
-        ticket_id, args.title, ticket_type, branch, assignee)
+        ticket_id, args.title, ticket_type, branch, assignee
+    )
 
     text = _set_last_ticket_id(state.text, new_num)
     text = _append_row(text, "Active Tickets", row)
@@ -304,13 +343,17 @@ def cmd_ticket_update(args):
     """pg ticket update TICKET-ID --status STATUS"""
     path = _find_status_file()
     if not path:
-        print("Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr)
+        print(
+            "Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr
+        )
         return 1
 
     new_status = args.status.upper()
     if new_status not in VALID_STATUSES:
         print(
-            "Error: --status must be one of: {}".format(", ".join(sorted(VALID_STATUSES))),
+            "Error: --status must be one of: {}".format(
+                ", ".join(sorted(VALID_STATUSES))
+            ),
             file=sys.stderr,
         )
         return 1
@@ -332,7 +375,8 @@ def cmd_ticket_update(args):
         if removed:
             today = datetime.now().strftime("%Y-%m-%d")
             comp_row = "| {} | {} | {} | |".format(
-                ticket_id, removed.get("Title", ""), today)
+                ticket_id, removed.get("Title", ""), today
+            )
             text = _append_row(text, "Completed Tickets", comp_row)
     else:
         text = _update_status_inline(text, ticket_id, new_status)
@@ -347,7 +391,9 @@ def cmd_ticket_list(args):
     """pg ticket list [--status STATUS] [--json]"""
     path = _find_status_file()
     if not path:
-        print("Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr)
+        print(
+            "Error: PROJECT_STATUS.md not found. Run 'pg init' first.", file=sys.stderr
+        )
         return 1
 
     state = ProjectState(path)
@@ -356,8 +402,11 @@ def cmd_ticket_list(args):
     if filter_status == "COMPLETED":
         tickets = state.completed
     elif filter_status:
-        tickets = [t for t in state.active + state.blocked
-                   if t.get("Status", "").upper() == filter_status]
+        tickets = [
+            t
+            for t in state.active + state.blocked
+            if t.get("Status", "").upper() == filter_status
+        ]
     else:
         tickets = state.active + state.blocked
 
@@ -370,6 +419,7 @@ def cmd_ticket_list(args):
         return 0
 
     from proto_gear_pkg.ui_helper import Colors
+
     STATUS_COLORS = {
         "IN_PROGRESS": Colors.CYAN,
         "PENDING": Colors.GRAY,
@@ -379,9 +429,16 @@ def cmd_ticket_list(args):
     for t in tickets:
         status = t.get("Status", "")
         color = STATUS_COLORS.get(status, Colors.ENDC)
-        print("{}{}{}  {}{:<12}{}  {}".format(
-            Colors.BOLD, t.get("ID", "?"), Colors.ENDC,
-            color, status, Colors.ENDC,
-            t.get("Title", "?")))
+        print(
+            "{}{}{}  {}{:<12}{}  {}".format(
+                Colors.BOLD,
+                t.get("ID", "?"),
+                Colors.ENDC,
+                color,
+                status,
+                Colors.ENDC,
+                t.get("Title", "?"),
+            )
+        )
 
     return 0

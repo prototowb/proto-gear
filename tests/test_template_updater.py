@@ -11,7 +11,8 @@ from pathlib import Path
 from textwrap import dedent
 
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
 
 from proto_gear_pkg.modules.engineering.template_updater import (
     UserDataExtractor,
@@ -25,10 +26,10 @@ from proto_gear_pkg.modules.engineering.template_updater import (
     ValidationError,
 )
 
-
 # ============================================================================
 # Test Data Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_project_status_content():
@@ -79,11 +80,11 @@ def sample_project_status_content():
 def sample_project_context():
     """Sample project context for placeholders"""
     return {
-        'PROJECT_NAME': 'Test Project',
-        'TICKET_PREFIX': 'TEST',
-        'VERSION': '0.8.2',
-        'MAIN_BRANCH': 'main',
-        'DEV_BRANCH': 'development',
+        "PROJECT_NAME": "Test Project",
+        "TICKET_PREFIX": "TEST",
+        "VERSION": "0.8.2",
+        "MAIN_BRANCH": "main",
+        "DEV_BRANCH": "development",
     }
 
 
@@ -91,62 +92,63 @@ def sample_project_context():
 # UserDataExtractor Tests
 # ============================================================================
 
+
 class TestUserDataExtractor:
     """Tests for UserDataExtractor class"""
 
     def test_extract_project_status_yaml_blocks(self, sample_project_status_content):
         """Extract YAML blocks from PROJECT_STATUS.md"""
         extractor = UserDataExtractor()
-        result = extractor.extract(sample_project_status_content, 'PROJECT_STATUS')
+        result = extractor.extract(sample_project_status_content, "PROJECT_STATUS")
 
-        assert 'current_state' in result.yaml_blocks
-        state = result.yaml_blocks['current_state']
-        assert state['project_phase'] == 'Development'
-        assert state['current_sprint'] == 42
-        assert state['current_branch'] == 'feature/test'
+        assert "current_state" in result.yaml_blocks
+        state = result.yaml_blocks["current_state"]
+        assert state["project_phase"] == "Development"
+        assert state["current_sprint"] == 42
+        assert state["current_branch"] == "feature/test"
 
     def test_extract_active_tickets_table(self, sample_project_status_content):
         """Extract Active Tickets table"""
         extractor = UserDataExtractor()
-        result = extractor.extract(sample_project_status_content, 'PROJECT_STATUS')
+        result = extractor.extract(sample_project_status_content, "PROJECT_STATUS")
 
-        assert 'active_tickets' in result.table_sections
-        active_tickets = result.table_sections['active_tickets']
-        assert 'TEST-001' in active_tickets
-        assert 'TEST-002' in active_tickets
-        assert 'Add feature X' in active_tickets
-        assert 'Alice' in active_tickets
+        assert "active_tickets" in result.table_sections
+        active_tickets = result.table_sections["active_tickets"]
+        assert "TEST-001" in active_tickets
+        assert "TEST-002" in active_tickets
+        assert "Add feature X" in active_tickets
+        assert "Alice" in active_tickets
 
     def test_extract_completed_tickets_table(self, sample_project_status_content):
         """Extract Completed Tickets table"""
         extractor = UserDataExtractor()
-        result = extractor.extract(sample_project_status_content, 'PROJECT_STATUS')
+        result = extractor.extract(sample_project_status_content, "PROJECT_STATUS")
 
-        assert 'completed_tickets' in result.table_sections
-        completed = result.table_sections['completed_tickets']
-        assert 'TEST-000' in completed
-        assert 'Initial setup' in completed
-        assert '2025-01-01' in completed
+        assert "completed_tickets" in result.table_sections
+        completed = result.table_sections["completed_tickets"]
+        assert "TEST-000" in completed
+        assert "Initial setup" in completed
+        assert "2025-01-01" in completed
 
     def test_extract_recent_updates(self, sample_project_status_content):
         """Extract Recent Updates section"""
         extractor = UserDataExtractor()
-        result = extractor.extract(sample_project_status_content, 'PROJECT_STATUS')
+        result = extractor.extract(sample_project_status_content, "PROJECT_STATUS")
 
-        assert 'recent_updates' in result.freeform_sections
-        updates = result.freeform_sections['recent_updates']
-        assert '2025-01-05' in updates
-        assert 'Added feature X' in updates
+        assert "recent_updates" in result.freeform_sections
+        updates = result.freeform_sections["recent_updates"]
+        assert "2025-01-05" in updates
+        assert "Added feature X" in updates
 
     def test_extract_feature_progress(self, sample_project_status_content):
         """Extract Feature Progress table"""
         extractor = UserDataExtractor()
-        result = extractor.extract(sample_project_status_content, 'PROJECT_STATUS')
+        result = extractor.extract(sample_project_status_content, "PROJECT_STATUS")
 
-        assert 'feature_progress' in result.freeform_sections
-        progress = result.freeform_sections['feature_progress']
-        assert 'Authentication' in progress
-        assert '75%' in progress
+        assert "feature_progress" in result.freeform_sections
+        progress = result.freeform_sections["feature_progress"]
+        assert "Authentication" in progress
+        assert "75%" in progress
 
     def test_extraction_handles_missing_sections(self):
         """Gracefully handle missing optional sections"""
@@ -173,15 +175,15 @@ class TestUserDataExtractor:
         """).strip()
 
         extractor = UserDataExtractor()
-        result = extractor.extract(minimal_content, 'PROJECT_STATUS')
+        result = extractor.extract(minimal_content, "PROJECT_STATUS")
 
         # Should extract what's present
-        assert 'current_state' in result.yaml_blocks
-        assert 'active_tickets' in result.table_sections
+        assert "current_state" in result.yaml_blocks
+        assert "active_tickets" in result.table_sections
 
         # Missing sections should be absent (not error)
-        assert 'recent_updates' not in result.freeform_sections
-        assert 'feature_progress' not in result.freeform_sections
+        assert "recent_updates" not in result.freeform_sections
+        assert "feature_progress" not in result.freeform_sections
 
     def test_extraction_handles_corrupted_yaml(self):
         """Preserve raw YAML if parsing fails"""
@@ -210,10 +212,10 @@ class TestUserDataExtractor:
         """).strip()
 
         extractor = UserDataExtractor()
-        result = extractor.extract(corrupted_content, 'PROJECT_STATUS')
+        result = extractor.extract(corrupted_content, "PROJECT_STATUS")
 
         # Should still extract YAML block (as raw string)
-        assert 'current_state' in result.yaml_blocks
+        assert "current_state" in result.yaml_blocks
 
     def test_unsupported_template_raises_error(self):
         """Raise error for unsupported template"""
@@ -228,12 +230,13 @@ class TestUserDataExtractor:
         result = extractor.extract("# AGENTS.md content", "AGENTS")
 
         # Currently returns empty data with note
-        assert result.metadata.get('note') == 'AGENTS.md extraction not yet implemented'
+        assert result.metadata.get("note") == "AGENTS.md extraction not yet implemented"
 
 
 # ============================================================================
 # TemplateMerger Tests
 # ============================================================================
+
 
 class TestTemplateMerger:
     """Tests for TemplateMerger class"""
@@ -265,50 +268,52 @@ class TestTemplateMerger:
         """).strip()
 
         # Create template file
-        template_dir = tmp_path / 'templates'
+        template_dir = tmp_path / "templates"
         template_dir.mkdir()
-        template_file = template_dir / 'PROJECT_STATUS.template.md'
-        template_file.write_text(template_content, encoding='utf-8')
+        template_file = template_dir / "PROJECT_STATUS.template.md"
+        template_file.write_text(template_content, encoding="utf-8")
 
         # Extracted user data
         extracted_data = ExtractedData(
-            yaml_blocks={'current_state': {
-                'project_phase': 'Development',
-                'protogear_version': 'v0.8.1',
-                'current_sprint': 42,
-            }},
+            yaml_blocks={
+                "current_state": {
+                    "project_phase": "Development",
+                    "protogear_version": "v0.8.1",
+                    "current_sprint": 42,
+                }
+            },
             table_sections={
-                'active_tickets': dedent("""
+                "active_tickets": dedent("""
                     | ID | Title | Type | Status | Branch | Assignee |
                     |----|-------|------|--------|--------|----------|
                     | TEST-001 | Feature X | feature | IN_PROGRESS | feature/x | Alice |
                 """).strip(),
-                'completed_tickets': dedent("""
+                "completed_tickets": dedent("""
                     | ID | Title | Completed | PR/Commit |
                     |----|-------|-----------|-----------|
                     | TEST-000 | Setup | 2025-01-01 | abc123 |
                 """).strip(),
             },
             freeform_sections={},
-            metadata={}
+            metadata={},
         )
 
         merger = TemplateMerger(template_dir)
-        merged = merger.merge('PROJECT_STATUS', extracted_data, sample_project_context)
+        merged = merger.merge("PROJECT_STATUS", extracted_data, sample_project_context)
 
         # Verify tickets preserved
-        assert 'TEST-001' in merged
-        assert 'Feature X' in merged
-        assert 'Alice' in merged
-        assert 'TEST-000' in merged
-        assert 'Setup' in merged
+        assert "TEST-001" in merged
+        assert "Feature X" in merged
+        assert "Alice" in merged
+        assert "TEST-000" in merged
+        assert "Setup" in merged
 
         # Verify YAML preserved
-        assert 'current_sprint: 42' in merged
+        assert "current_sprint: 42" in merged
 
         # Verify placeholders replaced
-        assert '{{PROJECT_NAME}}' not in merged
-        assert 'Test Project' in merged
+        assert "{{PROJECT_NAME}}" not in merged
+        assert "Test Project" in merged
 
     def test_merge_updates_static_sections(self, tmp_path, sample_project_context):
         """Merged content uses new template structure"""
@@ -339,26 +344,26 @@ class TestTemplateMerger:
             | - | No tickets | - | - |
         """).strip()
 
-        template_dir = tmp_path / 'templates'
+        template_dir = tmp_path / "templates"
         template_dir.mkdir()
-        template_file = template_dir / 'PROJECT_STATUS.template.md'
-        template_file.write_text(template_content, encoding='utf-8')
+        template_file = template_dir / "PROJECT_STATUS.template.md"
+        template_file.write_text(template_content, encoding="utf-8")
 
         extracted_data = ExtractedData(
-            yaml_blocks={'current_state': {'project_phase': 'Development'}},
+            yaml_blocks={"current_state": {"project_phase": "Development"}},
             table_sections={
-                'active_tickets': '| ID | Title | Type | Status | Branch | Assignee |\n|----|-------|------|--------|--------|----------|\n| - | No tickets | - | - | - | - |',
-                'completed_tickets': '| ID | Title | Completed | PR/Commit |\n|----|-------|-----------|-----------|',
+                "active_tickets": "| ID | Title | Type | Status | Branch | Assignee |\n|----|-------|------|--------|--------|----------|\n| - | No tickets | - | - | - | - |",
+                "completed_tickets": "| ID | Title | Completed | PR/Commit |\n|----|-------|-----------|-----------|",
             },
             freeform_sections={},
-            metadata={}
+            metadata={},
         )
 
         merger = TemplateMerger(template_dir)
-        merged = merger.merge('PROJECT_STATUS', extracted_data, sample_project_context)
+        merged = merger.merge("PROJECT_STATUS", extracted_data, sample_project_context)
 
         # New section should appear
-        assert 'NEW SECTION: State Management Guide' in merged
+        assert "NEW SECTION: State Management Guide" in merged
         assert "This is a new section that didn't exist before" in merged
 
     def test_merge_handles_missing_template(self, tmp_path, sample_project_context):
@@ -366,12 +371,15 @@ class TestTemplateMerger:
         merger = TemplateMerger(tmp_path)
 
         with pytest.raises(MergeError, match="Template file not found"):
-            merger.merge('NONEXISTENT', ExtractedData({}, {}, {}, {}), sample_project_context)
+            merger.merge(
+                "NONEXISTENT", ExtractedData({}, {}, {}, {}), sample_project_context
+            )
 
 
 # ============================================================================
 # DiffGenerator Tests
 # ============================================================================
+
 
 class TestDiffGenerator:
     """Tests for DiffGenerator class"""
@@ -381,41 +389,42 @@ class TestDiffGenerator:
         old_content = "Line 1\nLine 2\nLine 3"
         new_content = "Line 1\nLine 2 Modified\nLine 3\nLine 4"
 
-        diff, stats = DiffGenerator.generate(old_content, new_content, 'test.md')
+        diff, stats = DiffGenerator.generate(old_content, new_content, "test.md")
 
         # Check diff contains expected markers
-        assert '---' in diff  # Old file marker
-        assert '+++' in diff  # New file marker
-        assert 'Line 2 Modified' in diff
-        assert 'Line 4' in diff
+        assert "---" in diff  # Old file marker
+        assert "+++" in diff  # New file marker
+        assert "Line 2 Modified" in diff
+        assert "Line 4" in diff
 
     def test_diff_summary_counts_changes(self):
         """Accurately count added/removed lines"""
         old_content = "Line 1\nLine 2\nLine 3"
         new_content = "Line 1\nLine 2 Modified\nLine 3\nLine 4"
 
-        _, stats = DiffGenerator.generate(old_content, new_content, 'test.md')
+        _, stats = DiffGenerator.generate(old_content, new_content, "test.md")
 
         # Unified diff counts context lines too, so actual counts may vary
-        assert stats['lines_added'] >= 2  # At least Line 2 Modified and Line 4
-        assert stats['lines_removed'] >= 1  # At least old Line 2
-        assert stats['total_lines_old'] == 3
-        assert stats['total_lines_new'] == 4
+        assert stats["lines_added"] >= 2  # At least Line 2 Modified and Line 4
+        assert stats["lines_removed"] >= 1  # At least old Line 2
+        assert stats["total_lines_old"] == 3
+        assert stats["total_lines_new"] == 4
 
     def test_diff_handles_empty_content(self):
         """Handle empty old or new content"""
         old_content = ""
         new_content = "New Line 1\nNew Line 2"
 
-        diff, stats = DiffGenerator.generate(old_content, new_content, 'test.md')
+        diff, stats = DiffGenerator.generate(old_content, new_content, "test.md")
 
-        assert stats['lines_added'] == 2
-        assert stats['lines_removed'] == 0
+        assert stats["lines_added"] == 2
+        assert stats["lines_removed"] == 0
 
 
 # ============================================================================
 # TemplateValidator Tests
 # ============================================================================
+
 
 class TestTemplateValidator:
     """Tests for TemplateValidator class"""
@@ -440,13 +449,13 @@ class TestTemplateValidator:
             | - | None |
         """).strip()
 
-        is_valid, warnings = TemplateValidator.validate(content, 'PROJECT_STATUS')
+        is_valid, warnings = TemplateValidator.validate(content, "PROJECT_STATUS")
 
         assert not is_valid
         assert len(warnings) == 1
-        assert 'Unreplaced placeholders' in warnings[0]
-        assert 'PROJECT_NAME' in warnings[0]
-        assert 'VERSION' in warnings[0]
+        assert "Unreplaced placeholders" in warnings[0]
+        assert "PROJECT_NAME" in warnings[0]
+        assert "VERSION" in warnings[0]
 
     def test_validation_checks_yaml_syntax(self):
         """Detect invalid YAML blocks"""
@@ -460,10 +469,10 @@ class TestTemplateValidator:
             ```
         """).strip()
 
-        is_valid, warnings = TemplateValidator.validate(content, 'PROJECT_STATUS')
+        is_valid, warnings = TemplateValidator.validate(content, "PROJECT_STATUS")
 
         assert not is_valid
-        assert any('YAML block' in w for w in warnings)
+        assert any("YAML block" in w for w in warnings)
 
     def test_validation_checks_table_count(self):
         """Check for minimum required tables in PROJECT_STATUS"""
@@ -481,10 +490,10 @@ class TestTemplateValidator:
             | - | None |
         """).strip()
 
-        is_valid, warnings = TemplateValidator.validate(content, 'PROJECT_STATUS')
+        is_valid, warnings = TemplateValidator.validate(content, "PROJECT_STATUS")
 
         assert not is_valid
-        assert any('Expected at least 2 tables' in w for w in warnings)
+        assert any("Expected at least 2 tables" in w for w in warnings)
 
     def test_validation_passes_for_valid_content(self):
         """Valid content passes validation"""
@@ -509,7 +518,7 @@ class TestTemplateValidator:
             | TEST-000 | Done | 2025-01-01 |
         """).strip()
 
-        is_valid, warnings = TemplateValidator.validate(content, 'PROJECT_STATUS')
+        is_valid, warnings = TemplateValidator.validate(content, "PROJECT_STATUS")
 
         assert is_valid
         assert len(warnings) == 0
@@ -518,6 +527,7 @@ class TestTemplateValidator:
 # ============================================================================
 # TemplateUpdater Integration Tests (Basic)
 # ============================================================================
+
 
 class TestTemplateUpdaterBasic:
     """Basic integration tests for TemplateUpdater"""
@@ -534,11 +544,11 @@ class TestTemplateUpdaterBasic:
         """Raise error if file to update doesn't exist"""
         updater = TemplateUpdater(tmp_path)
 
-        with pytest.raises(Exception, match="File not found|Cannot update non-existent"):
+        with pytest.raises(
+            Exception, match="File not found|Cannot update non-existent"
+        ):
             updater.update_template(
-                'PROJECT_STATUS',
-                {'PROJECT_NAME': 'Test'},
-                dry_run=True
+                "PROJECT_STATUS", {"PROJECT_NAME": "Test"}, dry_run=True
             )
 
 
@@ -546,5 +556,5 @@ class TestTemplateUpdaterBasic:
 # Run Tests
 # ============================================================================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

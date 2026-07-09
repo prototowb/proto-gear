@@ -17,6 +17,7 @@ core/proto_gear_pkg/CODE_OF_CONDUCT.template.md
 core/proto_gear_pkg/CONTRIBUTING.template.md
 core/proto_gear_pkg/PROJECT_STATUS.template.md
 core/proto_gear_pkg/SECURITY.template.md
+core/proto_gear_pkg/SESSION_HANDOFF.template.md
 core/proto_gear_pkg/TESTING.template.md
 core/proto_gear_pkg/__init__.py
 core/proto_gear_pkg/agent-framework.config.yaml

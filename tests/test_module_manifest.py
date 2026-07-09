@@ -58,27 +58,40 @@ class TestParseManifest:
             parse_module_manifest(["not", "a", "mapping"])
 
     def test_flat_surface_fields(self):
-        m = parse_module_manifest({
-            "module": "ops", "name": "Ops",
-            "state_surface": "OPS_QUEUE.md", "handoff": "HANDOFF.md",
-        })
+        m = parse_module_manifest(
+            {
+                "module": "ops",
+                "name": "Ops",
+                "state_surface": "OPS_QUEUE.md",
+                "handoff": "HANDOFF.md",
+            }
+        )
         assert m.state_surface == "OPS_QUEUE.md"
         assert m.handoff == "HANDOFF.md"
 
     def test_nested_contract_block(self):
-        m = parse_module_manifest({
-            "module": "ops", "name": "Ops",
-            "contract": {"state_surface": "OPS_QUEUE.md", "capabilities_root": ".ops"},
-        })
+        m = parse_module_manifest(
+            {
+                "module": "ops",
+                "name": "Ops",
+                "contract": {
+                    "state_surface": "OPS_QUEUE.md",
+                    "capabilities_root": ".ops",
+                },
+            }
+        )
         assert m.state_surface == "OPS_QUEUE.md"
         assert m.capabilities_root == ".ops"
 
     def test_flat_overrides_nested(self):
-        m = parse_module_manifest({
-            "module": "ops", "name": "Ops",
-            "state_surface": "FLAT.md",
-            "contract": {"state_surface": "NESTED.md"},
-        })
+        m = parse_module_manifest(
+            {
+                "module": "ops",
+                "name": "Ops",
+                "state_surface": "FLAT.md",
+                "contract": {"state_surface": "NESTED.md"},
+            }
+        )
         assert m.state_surface == "FLAT.md"
 
     def test_bad_contract_type_raises(self):
@@ -86,7 +99,9 @@ class TestParseManifest:
             parse_module_manifest({"module": "x", "name": "X", "contract": "nope"})
 
     def test_to_dict_serializes_source_path(self, tmp_path):
-        m = parse_module_manifest({"module": "x", "name": "X"}, source_path=tmp_path / "module.yaml")
+        m = parse_module_manifest(
+            {"module": "x", "name": "X"}, source_path=tmp_path / "module.yaml"
+        )
         d = m.to_dict()
         assert d["source_path"] == str(tmp_path / "module.yaml")
         assert d["module"] == "x"
@@ -94,8 +109,13 @@ class TestParseManifest:
 
 class TestLoadManifest:
     def test_load_roundtrip(self, tmp_path):
-        mod_dir = _write_module(tmp_path, "content", name="Content", version="1.2.3",
-                                state_surface="QUEUE.md")
+        mod_dir = _write_module(
+            tmp_path,
+            "content",
+            name="Content",
+            version="1.2.3",
+            state_surface="QUEUE.md",
+        )
         m = load_module_manifest(mod_dir / MANIFEST_FILENAME)
         assert m.module == "content"
         assert m.version == "1.2.3"
@@ -141,9 +161,13 @@ class TestSurfaceValidation:
         (tmp_path / ".proto-gear").mkdir()
         (tmp_path / "AGENT_CONTEXT.md").write_text("x", encoding="utf-8")
         (tmp_path / "PROJECT_STATUS.md").write_text("x", encoding="utf-8")
-        m = parse_module_manifest({
-            "module": "eng", "name": "Eng", "state_surface": "PROJECT_STATUS.md",
-        })
+        m = parse_module_manifest(
+            {
+                "module": "eng",
+                "name": "Eng",
+                "state_surface": "PROJECT_STATUS.md",
+            }
+        )
         assert validate_manifest_surfaces(m, tmp_path) == []
 
     def test_missing_required_surface_reported(self, tmp_path):
@@ -156,9 +180,13 @@ class TestSurfaceValidation:
     def test_declared_optional_surface_must_exist(self, tmp_path):
         (tmp_path / ".proto-gear").mkdir()
         (tmp_path / "AGENT_CONTEXT.md").write_text("x", encoding="utf-8")
-        m = parse_module_manifest({
-            "module": "eng", "name": "Eng", "state_surface": "MISSING.md",
-        })
+        m = parse_module_manifest(
+            {
+                "module": "eng",
+                "name": "Eng",
+                "state_surface": "MISSING.md",
+            }
+        )
         problems = validate_manifest_surfaces(m, tmp_path)
         assert any("state_surface" in p and "MISSING.md" in p for p in problems)
 
@@ -190,10 +218,12 @@ class TestModuleCommands:
 
     def _args(self, **kw):
         import argparse
+
         return argparse.Namespace(**kw)
 
     def test_list_shows_engineering(self, capsys):
         from proto_gear_pkg import cli_commands
+
         rc = cli_commands.cmd_module_list(self._args(json=False))
         out = capsys.readouterr().out
         assert rc == 0
@@ -203,6 +233,7 @@ class TestModuleCommands:
     def test_list_json(self, capsys):
         import json
         from proto_gear_pkg import cli_commands
+
         rc = cli_commands.cmd_module_list(self._args(json=True))
         out = capsys.readouterr().out
         assert rc == 0
@@ -211,6 +242,7 @@ class TestModuleCommands:
 
     def test_show_engineering(self, capsys):
         from proto_gear_pkg import cli_commands
+
         rc = cli_commands.cmd_module_show(self._args(name="engineering", json=False))
         out = capsys.readouterr().out
         assert rc == 0
@@ -219,6 +251,7 @@ class TestModuleCommands:
 
     def test_show_missing_returns_1(self, capsys):
         from proto_gear_pkg import cli_commands
+
         rc = cli_commands.cmd_module_show(self._args(name="nope", json=False))
         out = capsys.readouterr().out
         assert rc == 1
@@ -232,11 +265,19 @@ class TestZeroCoreEditAcceptance:
         # Simulate the package modules/ dir with the real engineering module
         # plus a brand-new toy module — added purely by dropping files in.
         modules_root = tmp_path / "modules"
-        _write_module(modules_root, "engineering", name="Engineering",
-                      state_surface="PROJECT_STATUS.md")
-        _write_module(modules_root, "toy", name="Toy Department",
-                      description="A second module proving the contract",
-                      state_surface="TOY_QUEUE.md")
+        _write_module(
+            modules_root,
+            "engineering",
+            name="Engineering",
+            state_surface="PROJECT_STATUS.md",
+        )
+        _write_module(
+            modules_root,
+            "toy",
+            name="Toy Department",
+            description="A second module proving the contract",
+            state_surface="TOY_QUEUE.md",
+        )
 
         mods = discover_modules(modules_root)
         by_id = {m.module: m for m in mods}

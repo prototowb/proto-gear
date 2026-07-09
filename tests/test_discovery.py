@@ -22,8 +22,9 @@ from proto_gear_pkg.module_core.capability_metadata import (
 )
 
 
-def _make_cap(name: str, triggers: list, cap_type=CapabilityType.SKILL,
-              description: str = "desc") -> CapabilityMetadata:
+def _make_cap(
+    name: str, triggers: list, cap_type=CapabilityType.SKILL, description: str = "desc"
+) -> CapabilityMetadata:
     return CapabilityMetadata(
         name=name,
         type=cap_type,
@@ -64,13 +65,19 @@ class TestScoreCapability:
     def test_multi_word_trigger_outscores_single_word(self):
         cap_multi = _make_cap("M", ["fix login bug"])
         cap_single = _make_cap("S", ["bug"])
-        s_multi, _ = _score_capability(["fix", "login", "bug"], "fix login bug", cap_multi)
-        s_single, _ = _score_capability(["fix", "login", "bug"], "fix login bug", cap_single)
+        s_multi, _ = _score_capability(
+            ["fix", "login", "bug"], "fix login bug", cap_multi
+        )
+        s_single, _ = _score_capability(
+            ["fix", "login", "bug"], "fix login bug", cap_single
+        )
         assert s_multi > s_single
 
     def test_returns_matched_triggers(self):
         cap = _make_cap("T", ["tdd", "write tests", "unrelated"])
-        _, matched = _score_capability(["write", "tests", "now"], "write tests now", cap)
+        _, matched = _score_capability(
+            ["write", "tests", "now"], "write tests now", cap
+        )
         assert "write tests" in matched
         assert "unrelated" not in matched
 
@@ -87,7 +94,8 @@ class TestLoadCapabilitiesForSuggest:
         proj_dir = tmp_path
         skill_dir = proj_dir / ".proto-gear" / "skills" / "custom"
         skill_dir.mkdir(parents=True)
-        (skill_dir / "metadata.yaml").write_text("""
+        (skill_dir / "metadata.yaml").write_text(
+            """
 name: "Custom Skill"
 type: "skill"
 version: "1.0.0"
@@ -107,7 +115,9 @@ agent_roles: []
 relevance:
   triggers: ["custom-trigger"]
   contexts: []
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
         caps = load_capabilities_for_suggest(proj_dir)
         assert "skills/custom" in caps
 

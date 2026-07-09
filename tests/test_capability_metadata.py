@@ -27,13 +27,13 @@ from core.proto_gear_pkg.module_core.capability_metadata import (
     WorkflowMetadata,
     CommandMetadata,
     ValidationError,
-    load_all_capabilities
+    load_all_capabilities,
 )
-
 
 # ============================================================================
 # Test Data Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def valid_skill_metadata():
@@ -51,18 +51,18 @@ def valid_skill_metadata():
         "dependencies": {
             "required": [],
             "optional": ["workflows/feature-development"],
-            "suggested": ["skills/debugging"]
+            "suggested": ["skills/debugging"],
         },
         "conflicts": [],
         "composable_with": ["skills/debugging"],
         "agent_roles": ["Testing Agent"],
         "relevance": {
             "triggers": ["write tests", "testing"],
-            "contexts": ["Before implementing features"]
+            "contexts": ["Before implementing features"],
         },
         "usage_notes": "Works best with testing workflow",
         "required_files": ["TESTING.md"],
-        "optional_files": []
+        "optional_files": [],
     }
 
 
@@ -82,7 +82,7 @@ def valid_workflow_metadata():
         "dependencies": {
             "required": ["skills/debugging", "skills/testing"],
             "optional": [],
-            "suggested": []
+            "suggested": [],
         },
         "conflicts": [],
         "composable_with": ["skills/debugging"],
@@ -90,8 +90,8 @@ def valid_workflow_metadata():
         "workflow": {
             "steps": 9,
             "estimated_duration": "1-3 hours",
-            "outputs": ["type: code", "type: tests"]
-        }
+            "outputs": ["type: code", "type: tests"],
+        },
     }
 
 
@@ -108,19 +108,15 @@ def valid_command_metadata():
         "status": "stable",
         "author": "Proto Gear Team",
         "last_updated": "2025-12-09",
-        "dependencies": {
-            "required": [],
-            "optional": [],
-            "suggested": []
-        },
+        "dependencies": {"required": [], "optional": [], "suggested": []},
         "conflicts": [],
         "composable_with": ["workflows/feature-development"],
         "agent_roles": ["All Agents"],
         "command": {
             "idempotent": False,
             "side_effects": ["PROJECT_STATUS.md"],
-            "prerequisites": ["PROJECT_STATUS.md must exist"]
-        }
+            "prerequisites": ["PROJECT_STATUS.md must exist"],
+        },
     }
 
 
@@ -128,7 +124,7 @@ def valid_command_metadata():
 def temp_metadata_file(tmp_path, valid_skill_metadata):
     """Create temporary metadata.yaml file"""
     metadata_file = tmp_path / "metadata.yaml"
-    with open(metadata_file, 'w') as f:
+    with open(metadata_file, "w") as f:
         yaml.dump(valid_skill_metadata, f)
     return metadata_file
 
@@ -136,6 +132,7 @@ def temp_metadata_file(tmp_path, valid_skill_metadata):
 # ============================================================================
 # Metadata Parsing Tests
 # ============================================================================
+
 
 class TestCapabilityMetadataParser:
     """Tests for CapabilityMetadataParser"""
@@ -155,7 +152,9 @@ class TestCapabilityMetadataParser:
 
     def test_parse_valid_workflow_metadata(self, valid_workflow_metadata):
         """Test parsing valid workflow metadata"""
-        metadata = CapabilityMetadataParser._parse_metadata_dict(valid_workflow_metadata)
+        metadata = CapabilityMetadataParser._parse_metadata_dict(
+            valid_workflow_metadata
+        )
 
         assert metadata.name == "Bug Fix Workflow"
         assert metadata.type == CapabilityType.WORKFLOW
@@ -164,7 +163,7 @@ class TestCapabilityMetadataParser:
         assert metadata.workflow.estimated_duration == "1-3 hours"
 
     def test_parse_valid_command_metadata(self, valid_command_metadata):
-        """Test parsing valid command metadata"""""
+        """Test parsing valid command metadata""" ""
         metadata = CapabilityMetadataParser._parse_metadata_dict(valid_command_metadata)
 
         assert metadata.name == "Create Ticket"
@@ -216,7 +215,7 @@ class TestCapabilityMetadataParser:
     def test_parse_malformed_yaml(self, tmp_path):
         """Test parsing malformed YAML file"""
         bad_file = tmp_path / "bad.yaml"
-        with open(bad_file, 'w') as f:
+        with open(bad_file, "w") as f:
             f.write("{ invalid yaml content [")
 
         with pytest.raises(yaml.YAMLError):
@@ -255,6 +254,7 @@ class TestCapabilityMetadataParser:
 # Metadata Validation Tests
 # ============================================================================
 
+
 class TestCapabilityValidator:
     """Tests for CapabilityValidator"""
 
@@ -284,7 +284,9 @@ class TestCapabilityValidator:
     def test_validate_workflow_without_metadata(self, valid_workflow_metadata):
         """Test validation detects workflow without workflow metadata"""
         del valid_workflow_metadata["workflow"]
-        metadata = CapabilityMetadataParser._parse_metadata_dict(valid_workflow_metadata)
+        metadata = CapabilityMetadataParser._parse_metadata_dict(
+            valid_workflow_metadata
+        )
         warnings = CapabilityValidator.validate_metadata(metadata)
 
         # Parser creates default WorkflowMetadata with steps=0, which triggers warning
@@ -306,14 +308,10 @@ class TestCapabilityValidator:
         metadata = CapabilityMetadataParser._parse_metadata_dict(valid_skill_metadata)
 
         # Create capabilities dict without the dependency
-        all_capabilities = {
-            "skills/testing": metadata
-        }
+        all_capabilities = {"skills/testing": metadata}
 
         errors = CapabilityValidator.validate_dependencies(
-            "skills/testing",
-            metadata,
-            all_capabilities
+            "skills/testing", metadata, all_capabilities
         )
 
         # Should have errors for missing dependencies
@@ -328,13 +326,11 @@ class TestCapabilityValidator:
         all_capabilities = {
             "skills/testing": metadata,
             "workflows/feature-development": metadata,  # Dummy
-            "skills/debugging": metadata  # Dummy
+            "skills/debugging": metadata,  # Dummy
         }
 
         errors = CapabilityValidator.validate_dependencies(
-            "skills/testing",
-            metadata,
-            all_capabilities
+            "skills/testing", metadata, all_capabilities
         )
 
         assert len(errors) == 0
@@ -350,18 +346,14 @@ class TestCapabilityValidator:
         metadata_b_dict["dependencies"] = {
             "required": ["skills/testing"],  # Points back to A
             "optional": [],
-            "suggested": []
+            "suggested": [],
         }
         metadata_b = CapabilityMetadataParser._parse_metadata_dict(metadata_b_dict)
 
-        all_capabilities = {
-            "skills/testing": metadata_a,
-            "skills/b": metadata_b
-        }
+        all_capabilities = {"skills/testing": metadata_a, "skills/b": metadata_b}
 
         cycle = CapabilityValidator.detect_circular_dependencies(
-            "skills/testing",
-            all_capabilities
+            "skills/testing", all_capabilities
         )
 
         assert cycle is not None
@@ -373,6 +365,7 @@ class TestCapabilityValidator:
 # Composition Engine Tests
 # ============================================================================
 
+
 class TestCompositionEngine:
     """Tests for CompositionEngine"""
 
@@ -382,33 +375,33 @@ class TestCompositionEngine:
         metadata.dependencies.required = []
         metadata.dependencies.optional = []
 
-        all_capabilities = {
-            "skills/testing": metadata
-        }
+        all_capabilities = {"skills/testing": metadata}
 
         resolved = CompositionEngine.resolve_dependencies(
-            ["skills/testing"],
-            all_capabilities
+            ["skills/testing"], all_capabilities
         )
 
         assert resolved == {"skills/testing"}
 
-    def test_resolve_dependencies_with_required(self, valid_skill_metadata, valid_workflow_metadata):
+    def test_resolve_dependencies_with_required(
+        self, valid_skill_metadata, valid_workflow_metadata
+    ):
         """Test resolving required dependencies"""
         skill_meta = CapabilityMetadataParser._parse_metadata_dict(valid_skill_metadata)
-        workflow_meta = CapabilityMetadataParser._parse_metadata_dict(valid_workflow_metadata)
+        workflow_meta = CapabilityMetadataParser._parse_metadata_dict(
+            valid_workflow_metadata
+        )
 
         # Workflow requires skill
         workflow_meta.dependencies.required = ["skills/testing"]
 
         all_capabilities = {
             "skills/testing": skill_meta,
-            "workflows/bug-fix": workflow_meta
+            "workflows/bug-fix": workflow_meta,
         }
 
         resolved = CompositionEngine.resolve_dependencies(
-            ["workflows/bug-fix"],
-            all_capabilities
+            ["workflows/bug-fix"], all_capabilities
         )
 
         assert "workflows/bug-fix" in resolved
@@ -419,12 +412,20 @@ class TestCompositionEngine:
         # Create three capabilities with chain dependency
         meta_a_dict = valid_skill_metadata.copy()
         meta_a_dict["name"] = "Skill A"
-        meta_a_dict["dependencies"] = {"required": ["skills/b"], "optional": [], "suggested": []}
+        meta_a_dict["dependencies"] = {
+            "required": ["skills/b"],
+            "optional": [],
+            "suggested": [],
+        }
         meta_a = CapabilityMetadataParser._parse_metadata_dict(meta_a_dict)
 
         meta_b_dict = valid_skill_metadata.copy()
         meta_b_dict["name"] = "Skill B"
-        meta_b_dict["dependencies"] = {"required": ["skills/c"], "optional": [], "suggested": []}
+        meta_b_dict["dependencies"] = {
+            "required": ["skills/c"],
+            "optional": [],
+            "suggested": [],
+        }
         meta_b = CapabilityMetadataParser._parse_metadata_dict(meta_b_dict)
 
         meta_c_dict = valid_skill_metadata.copy()
@@ -432,15 +433,10 @@ class TestCompositionEngine:
         meta_c_dict["dependencies"] = {"required": [], "optional": [], "suggested": []}
         meta_c = CapabilityMetadataParser._parse_metadata_dict(meta_c_dict)
 
-        all_capabilities = {
-            "skills/a": meta_a,
-            "skills/b": meta_b,
-            "skills/c": meta_c
-        }
+        all_capabilities = {"skills/a": meta_a, "skills/b": meta_b, "skills/c": meta_c}
 
         resolved = CompositionEngine.resolve_dependencies(
-            ["skills/a"],
-            all_capabilities
+            ["skills/a"], all_capabilities
         )
 
         assert resolved == {"skills/a", "skills/b", "skills/c"}
@@ -457,24 +453,17 @@ class TestCompositionEngine:
 
         metadata.dependencies.optional = ["skills/optional"]
 
-        all_capabilities = {
-            "skills/testing": metadata,
-            "skills/optional": opt_meta
-        }
+        all_capabilities = {"skills/testing": metadata, "skills/optional": opt_meta}
 
         # Without include_optional
         resolved_without = CompositionEngine.resolve_dependencies(
-            ["skills/testing"],
-            all_capabilities,
-            include_optional=False
+            ["skills/testing"], all_capabilities, include_optional=False
         )
         assert "skills/optional" not in resolved_without
 
         # With include_optional
         resolved_with = CompositionEngine.resolve_dependencies(
-            ["skills/testing"],
-            all_capabilities,
-            include_optional=True
+            ["skills/testing"], all_capabilities, include_optional=True
         )
         assert "skills/optional" in resolved_with
 
@@ -482,14 +471,11 @@ class TestCompositionEngine:
         """Test resolving dependencies when capability doesn't exist"""
         metadata = CapabilityMetadataParser._parse_metadata_dict(valid_skill_metadata)
 
-        all_capabilities = {
-            "skills/testing": metadata
-        }
+        all_capabilities = {"skills/testing": metadata}
 
         with pytest.raises(ValidationError, match="Capability not found"):
             CompositionEngine.resolve_dependencies(
-                ["skills/nonexistent"],
-                all_capabilities
+                ["skills/nonexistent"], all_capabilities
             )
 
     def test_detect_conflicts_none(self, valid_skill_metadata):
@@ -497,14 +483,10 @@ class TestCompositionEngine:
         metadata = CapabilityMetadataParser._parse_metadata_dict(valid_skill_metadata)
         metadata.conflicts = []
 
-        all_capabilities = {
-            "skills/testing": metadata,
-            "skills/debugging": metadata
-        }
+        all_capabilities = {"skills/testing": metadata, "skills/debugging": metadata}
 
         conflicts = CompositionEngine.detect_conflicts(
-            ["skills/testing", "skills/debugging"],
-            all_capabilities
+            ["skills/testing", "skills/debugging"], all_capabilities
         )
 
         assert len(conflicts) == 0
@@ -518,14 +500,10 @@ class TestCompositionEngine:
         meta_b_dict["name"] = "Skill B"
         meta_b = CapabilityMetadataParser._parse_metadata_dict(meta_b_dict)
 
-        all_capabilities = {
-            "skills/a": meta_a,
-            "skills/b": meta_b
-        }
+        all_capabilities = {"skills/a": meta_a, "skills/b": meta_b}
 
         conflicts = CompositionEngine.detect_conflicts(
-            ["skills/a", "skills/b"],
-            all_capabilities
+            ["skills/a", "skills/b"], all_capabilities
         )
 
         assert len(conflicts) == 1
@@ -545,15 +523,10 @@ class TestCompositionEngine:
         meta_c_dict["name"] = "Skill C"
         meta_c = CapabilityMetadataParser._parse_metadata_dict(meta_c_dict)
 
-        all_capabilities = {
-            "skills/a": meta_a,
-            "skills/b": meta_b,
-            "skills/c": meta_c
-        }
+        all_capabilities = {"skills/a": meta_a, "skills/b": meta_b, "skills/c": meta_c}
 
         recommended = CompositionEngine.get_recommended_capabilities(
-            ["skills/a"],
-            all_capabilities
+            ["skills/a"], all_capabilities
         )
 
         assert "skills/b" in recommended
@@ -565,15 +538,14 @@ class TestCompositionEngine:
 # Data Class Tests
 # ============================================================================
 
+
 class TestDataClasses:
     """Tests for data classes"""
 
     def test_capability_dependencies_all_dependencies(self):
         """Test CapabilityDependencies.all_dependencies()"""
         deps = CapabilityDependencies(
-            required=["a", "b"],
-            optional=["c"],
-            suggested=["d"]
+            required=["a", "b"], optional=["c"], suggested=["d"]
         )
 
         all_deps = deps.all_dependencies()
@@ -585,8 +557,7 @@ class TestDataClasses:
     def test_capability_relevance_matches_trigger(self):
         """Test CapabilityRelevance.matches_trigger()"""
         relevance = CapabilityRelevance(
-            triggers=["write tests", "testing", "tdd"],
-            contexts=[]
+            triggers=["write tests", "testing", "tdd"], contexts=[]
         )
 
         assert relevance.matches_trigger("I need to write tests")
@@ -609,10 +580,13 @@ class TestDataClasses:
 # Integration Tests
 # ============================================================================
 
+
 class TestIntegration:
     """Integration tests for complete workflows"""
 
-    def test_load_all_capabilities_from_directory(self, tmp_path, valid_skill_metadata, valid_workflow_metadata):
+    def test_load_all_capabilities_from_directory(
+        self, tmp_path, valid_skill_metadata, valid_workflow_metadata
+    ):
         """Test loading all capabilities from a directory"""
         # Create directory structure
         skills_dir = tmp_path / "skills" / "testing"
@@ -622,10 +596,10 @@ class TestIntegration:
         workflows_dir.mkdir(parents=True)
 
         # Write metadata files
-        with open(skills_dir / "metadata.yaml", 'w') as f:
+        with open(skills_dir / "metadata.yaml", "w") as f:
             yaml.dump(valid_skill_metadata, f)
 
-        with open(workflows_dir / "metadata.yaml", 'w') as f:
+        with open(workflows_dir / "metadata.yaml", "w") as f:
             yaml.dump(valid_workflow_metadata, f)
 
         # Load all capabilities
@@ -635,16 +609,20 @@ class TestIntegration:
         assert "skills/testing" in capabilities
         assert "workflows/bug-fix" in capabilities
 
-    def test_full_composition_workflow(self, tmp_path, valid_skill_metadata, valid_workflow_metadata):
+    def test_full_composition_workflow(
+        self, tmp_path, valid_skill_metadata, valid_workflow_metadata
+    ):
         """Test complete composition workflow"""
         # Setup: Create skills and workflows
         skill_meta = CapabilityMetadataParser._parse_metadata_dict(valid_skill_metadata)
-        workflow_meta = CapabilityMetadataParser._parse_metadata_dict(valid_workflow_metadata)
+        workflow_meta = CapabilityMetadataParser._parse_metadata_dict(
+            valid_workflow_metadata
+        )
         workflow_meta.dependencies.required = ["skills/testing"]
 
         all_capabilities = {
             "skills/testing": skill_meta,
-            "workflows/bug-fix": workflow_meta
+            "workflows/bug-fix": workflow_meta,
         }
 
         # Step 1: Validate metadata
@@ -653,30 +631,23 @@ class TestIntegration:
 
         # Step 2: Validate dependencies
         errors = CapabilityValidator.validate_dependencies(
-            "workflows/bug-fix",
-            workflow_meta,
-            all_capabilities
+            "workflows/bug-fix", workflow_meta, all_capabilities
         )
         assert len(errors) == 0
 
         # Step 3: Resolve dependencies
         resolved = CompositionEngine.resolve_dependencies(
-            ["workflows/bug-fix"],
-            all_capabilities
+            ["workflows/bug-fix"], all_capabilities
         )
         assert "skills/testing" in resolved
 
         # Step 4: Check for conflicts
-        conflicts = CompositionEngine.detect_conflicts(
-            list(resolved),
-            all_capabilities
-        )
+        conflicts = CompositionEngine.detect_conflicts(list(resolved), all_capabilities)
         assert len(conflicts) == 0
 
         # Step 5: Get recommendations
         recommended = CompositionEngine.get_recommended_capabilities(
-            list(resolved),
-            all_capabilities
+            list(resolved), all_capabilities
         )
         assert isinstance(recommended, list)
 

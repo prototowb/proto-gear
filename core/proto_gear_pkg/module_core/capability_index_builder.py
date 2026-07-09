@@ -29,7 +29,6 @@ from .capability_metadata import (
     load_all_capabilities,
 )
 
-
 BEGIN_MARKER = "<!-- proto-gear:capability-index begin -->"
 END_MARKER = "<!-- proto-gear:capability-index end -->"
 
@@ -60,6 +59,7 @@ _TYPE_FILENAME: Dict[CapabilityType, str] = {
 
 
 # ---------- rendering helpers ----------
+
 
 def _cap_dir_name(cap_id: str) -> str:
     """skills/testing -> testing"""
@@ -102,6 +102,7 @@ def _filter_by_type(
 
 
 # ---------- per-type INDEX block ----------
+
 
 def render_type_index_block(
     capabilities: Dict[str, CapabilityMetadata], cap_type: CapabilityType
@@ -164,6 +165,7 @@ def render_type_index_block(
 
 
 # ---------- top-level INDEX block ----------
+
 
 def render_top_index_block(capabilities: Dict[str, CapabilityMetadata]) -> str:
     """Render the managed block for the top-level capabilities/INDEX.md.
@@ -230,7 +232,7 @@ _BLOCK_RE = re.compile(
 class IndexSyncResult:
     path: Path
     action: str  # 'updated' | 'unchanged' | 'would_update' | 'would_create'
-                 # | 'created' | 'missing-file' | 'missing-markers'
+    # | 'created' | 'missing-file' | 'missing-markers'
 
 
 def _replace_or_warn(path: Path, new_block: str, dry_run: bool) -> str:
@@ -292,6 +294,7 @@ def sync_capability_indexes(
 
 
 # ---------- introspection (used by doctor) ----------
+
 
 def extract_managed_block(text: str) -> Optional[str]:
     """Return the BEGIN..END block (inclusive) or None if absent."""

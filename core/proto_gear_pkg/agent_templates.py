@@ -8,193 +8,197 @@ Provides ready-to-use agent configurations for common development roles.
 from datetime import datetime
 from .agent_config import AgentConfiguration, AgentCapabilities
 
-
 # Template definitions
 AGENT_TEMPLATES = {
     "minimal": {
         "name": "Minimal Agent",
         "description": "Minimal agent with just core project management",
         "capabilities": AgentCapabilities(
-            skills=[],
-            workflows=[],
-            commands=["create-ticket"]
+            skills=[], workflows=[], commands=["create-ticket"]
         ),
-        "context_priority": [
-            "PROJECT_STATUS.md",
-            "AGENTS.md"
-        ],
+        "context_priority": ["PROJECT_STATUS.md", "AGENTS.md"],
         "agent_instructions": [
             "Focus on understanding project structure",
             "Read PROJECT_STATUS.md before starting work",
-            "Update ticket status regularly"
+            "Update ticket status regularly",
         ],
         "required_files": ["PROJECT_STATUS.md", "AGENTS.md"],
         "optional_files": [],
-        "tags": ["minimal", "basic"]
+        "tags": ["minimal", "basic"],
     },
-
     "testing-focused": {
         "name": "Testing-Focused Agent",
         "description": "Agent specialized in test-driven development and quality assurance",
         "capabilities": AgentCapabilities(
             skills=["testing", "debugging", "code-review"],
             workflows=["bug-fix", "feature-development"],
-            commands=["analyze-coverage", "create-ticket"]
+            commands=["analyze-coverage", "create-ticket"],
         ),
         "context_priority": [
             "TESTING.md",
             "PROJECT_STATUS.md",
             "test/ directory",
-            "AGENTS.md"
+            "AGENTS.md",
         ],
         "agent_instructions": [
             "Always write tests before implementation (TDD)",
             "Maintain minimum 80% code coverage",
             "Run tests before committing changes",
             "Review test pyramid balance",
-            "Update TESTING.md with new patterns"
+            "Update TESTING.md with new patterns",
         ],
         "required_files": ["TESTING.md", "PROJECT_STATUS.md", "AGENTS.md"],
         "optional_files": ["pytest.ini", "jest.config.js", "coverage/"],
-        "tags": ["testing", "tdd", "quality", "qa"]
+        "tags": ["testing", "tdd", "quality", "qa"],
     },
-
     "backend-developer": {
         "name": "Backend Developer",
         "description": "Full-featured backend development agent with testing and debugging",
         "capabilities": AgentCapabilities(
             skills=["testing", "debugging", "refactoring", "security"],
             workflows=["feature-development", "bug-fix", "release"],
-            commands=["create-ticket", "analyze-coverage"]
+            commands=["create-ticket", "analyze-coverage"],
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
             "TESTING.md",
             "src/ or app/ directory",
             "API documentation",
-            "AGENTS.md"
+            "AGENTS.md",
         ],
         "agent_instructions": [
             "Follow TDD practices for all new features",
             "Validate input at API boundaries",
             "Write comprehensive API documentation",
             "Consider security implications of changes",
-            "Update PROJECT_STATUS.md with progress"
+            "Update PROJECT_STATUS.md with progress",
         ],
         "required_files": ["PROJECT_STATUS.md", "AGENTS.md", "TESTING.md"],
         "optional_files": ["API.md", "SECURITY.md", "requirements.txt", "package.json"],
-        "tags": ["backend", "api", "server", "testing"]
+        "tags": ["backend", "api", "server", "testing"],
     },
-
     "frontend-developer": {
         "name": "Frontend Developer",
         "description": "Frontend development agent with focus on testing and code review",
         "capabilities": AgentCapabilities(
             skills=["testing", "code-review", "refactoring", "performance"],
             workflows=["feature-development", "bug-fix"],
-            commands=["create-ticket", "analyze-coverage"]
+            commands=["create-ticket", "analyze-coverage"],
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
             "TESTING.md",
             "src/components/ or pages/",
             "Design system documentation",
-            "AGENTS.md"
+            "AGENTS.md",
         ],
         "agent_instructions": [
             "Write component tests for all UI components",
             "Follow accessibility best practices (WCAG)",
             "Optimize for performance (Core Web Vitals)",
             "Maintain consistent UI/UX patterns",
-            "Document component APIs and usage"
+            "Document component APIs and usage",
         ],
         "required_files": ["PROJECT_STATUS.md", "AGENTS.md", "TESTING.md"],
         "optional_files": ["CONTRIBUTING.md", "package.json", "tsconfig.json"],
-        "tags": ["frontend", "ui", "components", "testing"]
+        "tags": ["frontend", "ui", "components", "testing"],
     },
-
     "fullstack-developer": {
         "name": "Full-Stack Developer",
         "description": "Complete full-stack development suite with all core capabilities",
         "capabilities": AgentCapabilities(
-            skills=["testing", "debugging", "code-review", "refactoring",
-                    "security", "performance"],
+            skills=[
+                "testing",
+                "debugging",
+                "code-review",
+                "refactoring",
+                "security",
+                "performance",
+            ],
             workflows=["feature-development", "bug-fix", "release"],
-            commands=["create-ticket", "analyze-coverage", "generate-changelog"]
+            commands=["create-ticket", "analyze-coverage", "generate-changelog"],
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
             "TESTING.md",
             "ARCHITECTURE.md",
             "Full codebase",
-            "AGENTS.md"
+            "AGENTS.md",
         ],
         "agent_instructions": [
             "Maintain full-stack awareness in all changes",
             "Write tests for both frontend and backend",
             "Consider API contracts when modifying interfaces",
             "Follow security best practices across stack",
-            "Document architectural decisions"
+            "Document architectural decisions",
         ],
         "required_files": ["PROJECT_STATUS.md", "AGENTS.md", "TESTING.md"],
         "optional_files": ["ARCHITECTURE.md", "SECURITY.md", "API.md"],
-        "tags": ["fullstack", "complete", "comprehensive"]
+        "tags": ["fullstack", "complete", "comprehensive"],
     },
-
     "devops-engineer": {
         "name": "DevOps Engineer",
         "description": "DevOps-focused agent for deployment, release, and infrastructure",
         "capabilities": AgentCapabilities(
             skills=["testing", "security"],
-            workflows=["release", "hotfix", "cicd-setup",
-                      "monitoring-setup", "dependency-update"],
-            commands=["generate-changelog", "create-ticket"]
+            workflows=[
+                "release",
+                "hotfix",
+                "cicd-setup",
+                "monitoring-setup",
+                "dependency-update",
+            ],
+            commands=["generate-changelog", "create-ticket"],
         ),
         "context_priority": [
             "PROJECT_STATUS.md",
             "CI/CD configuration",
             "Infrastructure as Code",
             "Deployment scripts",
-            "AGENTS.md"
+            "AGENTS.md",
         ],
         "agent_instructions": [
             "Follow semantic versioning strictly",
             "Automate all deployment processes",
             "Maintain comprehensive changelog",
             "Monitor system health and performance",
-            "Document infrastructure changes"
+            "Document infrastructure changes",
         ],
         "required_files": ["PROJECT_STATUS.md", "AGENTS.md"],
-        "optional_files": ["CHANGELOG.md", ".github/workflows/", "Dockerfile", "docker-compose.yml"],
-        "tags": ["devops", "deployment", "release", "infrastructure"]
+        "optional_files": [
+            "CHANGELOG.md",
+            ".github/workflows/",
+            "Dockerfile",
+            "docker-compose.yml",
+        ],
+        "tags": ["devops", "deployment", "release", "infrastructure"],
     },
-
     "qa-engineer": {
         "name": "QA Engineer",
         "description": "Quality assurance agent focused on testing and bug fixing",
         "capabilities": AgentCapabilities(
             skills=["testing", "debugging", "code-review"],
             workflows=["bug-fix", "feature-development"],
-            commands=["analyze-coverage", "create-ticket"]
+            commands=["analyze-coverage", "create-ticket"],
         ),
         "context_priority": [
             "TESTING.md",
             "PROJECT_STATUS.md",
             "test/ directory",
             "Bug reports",
-            "AGENTS.md"
+            "AGENTS.md",
         ],
         "agent_instructions": [
             "Write comprehensive test cases for all features",
             "Maintain test documentation and examples",
             "Identify edge cases and boundary conditions",
             "Track and verify bug fixes thoroughly",
-            "Report quality metrics regularly"
+            "Report quality metrics regularly",
         ],
         "required_files": ["TESTING.md", "PROJECT_STATUS.md", "AGENTS.md"],
         "optional_files": ["test-plan.md", "bug-reports/"],
-        "tags": ["qa", "testing", "quality", "bugs"]
-    }
+        "tags": ["qa", "testing", "quality", "bugs"],
+    },
 }
 
 
@@ -216,8 +220,9 @@ def list_templates() -> list:
     return sorted(AGENT_TEMPLATES.keys())
 
 
-def create_agent_from_template(template_name: str, agent_name: str = None,
-                               author: str = None) -> AgentConfiguration:
+def create_agent_from_template(
+    template_name: str, agent_name: str = None, author: str = None
+) -> AgentConfiguration:
     """
     Create an AgentConfiguration from a template.
 
@@ -251,7 +256,7 @@ def create_agent_from_template(template_name: str, agent_name: str = None,
         required_files=template["required_files"],
         optional_files=template["optional_files"],
         tags=template["tags"],
-        status="active"
+        status="active",
     )
 
 

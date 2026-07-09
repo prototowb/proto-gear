@@ -24,7 +24,9 @@ def get_logo_v1():
     # Center the version text within the 61-character width (║...║)
     # 61 total - 2 for borders = 59 usable, center the text
     padding = (59 - len(version_text)) // 2
-    version_line = f"    ║{' ' * padding}{version_text}{' ' * (59 - padding - len(version_text))}║"
+    version_line = (
+        f"    ║{' ' * padding}{version_text}{' ' * (59 - padding - len(version_text))}║"
+    )
 
     return f"""
     ╔═════════════════════════════════════════════════════════════╗
@@ -47,12 +49,13 @@ def get_logo_v1():
     ╚═════════════════════════════════════════════════════════════╝
 """
 
+
 PROTO_GEAR_LOGOS = [get_logo_v1]
 
 
 def clear_screen():
     """Clear the terminal screen"""
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
 
 
 def safe_input(prompt: str, default: str = "", handle_eof: bool = True) -> str:
@@ -86,7 +89,7 @@ def show_splash_screen():
     # Animated logo appearance (with encoding safety)
     print(Colors.CYAN + Colors.BOLD)
     try:
-        for line in logo.split('\n'):
+        for line in logo.split("\n"):
             print(line)
             time.sleep(0.05)
     except UnicodeEncodeError:
@@ -109,9 +112,17 @@ def show_splash_screen():
     print()
     print_centered(Colors.GRAY + "Powered by Adaptive AI Agent System" + Colors.ENDC)
     try:
-        print_centered(Colors.GRAY + "Sprint Management • Ticket Generation • Git Workflow Integration" + Colors.ENDC)
+        print_centered(
+            Colors.GRAY
+            + "Sprint Management • Ticket Generation • Git Workflow Integration"
+            + Colors.ENDC
+        )
     except UnicodeEncodeError:
-        print_centered(Colors.GRAY + "Sprint Management | Ticket Generation | Git Workflow Integration" + Colors.ENDC)
+        print_centered(
+            Colors.GRAY
+            + "Sprint Management | Ticket Generation | Git Workflow Integration"
+            + Colors.ENDC
+        )
 
     try:
         print("\n" + "─" * 80 + "\n")
@@ -124,9 +135,19 @@ def show_help():
     """Show help and documentation"""
     clear_screen()
     try:
-        print(Colors.BOLD + Colors.CYAN + "📖 Proto Gear AI Agent Framework Documentation" + Colors.ENDC)
+        print(
+            Colors.BOLD
+            + Colors.CYAN
+            + "📖 Proto Gear AI Agent Framework Documentation"
+            + Colors.ENDC
+        )
     except UnicodeEncodeError:
-        print(Colors.BOLD + Colors.CYAN + "Proto Gear AI Agent Framework Documentation" + Colors.ENDC)
+        print(
+            Colors.BOLD
+            + Colors.CYAN
+            + "Proto Gear AI Agent Framework Documentation"
+            + Colors.ENDC
+        )
 
     try:
         print("\n" + "─" * 80 + "\n")
@@ -134,43 +155,58 @@ def show_help():
         print("\n" + "-" * 80 + "\n")
 
     sections = [
-        ("What is Proto Gear?", [
-            "Proto Gear is a template generator that creates collaboration environments",
-            "for human and AI agents. It generates markdown templates that define patterns",
-            "for workflows, testing (TDD), branching strategies, and agent coordination."
-        ]),
-        ("Core Templates Generated", [
-            "- AGENTS.md: Agent patterns, roles, and collaboration workflows",
-            "- PROJECT_STATUS.md: Single source of truth for project state",
-            "- TESTING.md: TDD methodology and testing patterns (recommended)",
-            "- BRANCHING.md: Git workflow and commit conventions (optional)",
-            "- CONTRIBUTING.md: Contribution guidelines (optional)",
-            "- SECURITY.md: Security policy and vulnerability reporting (optional)",
-            "- ARCHITECTURE.md: System design documentation (optional)",
-            "- CODE_OF_CONDUCT.md: Community guidelines (optional)",
-            "- .proto-gear/: Universal capabilities system with modular patterns"
-        ]),
-        ("Key Features", [
-            "+ Auto-detection of existing tech stack and frameworks",
-            "+ Tech stack agnostic - works with any language or framework",
-            "+ Natural language collaboration patterns for AI agents",
-            "+ Beautiful interactive CLI wizard with arrow key navigation",
-            "+ Comprehensive TDD workflow documentation",
-            "+ Git branching strategy templates"
-        ]),
-        ("Getting Started", [
-            "1. Navigate to your project directory",
-            "2. Run 'pg init' to initialize agent templates (interactive wizard)",
-            "3. Review generated files (AGENTS.md, PROJECT_STATUS.md, TESTING.md, etc.)",
-            "4. Customize templates to match your project's workflow",
-            "5. AI agents read templates and collaborate via natural language",
-            "6. Update PROJECT_STATUS.md as work progresses"
-        ]),
-        ("Commands", [
-            "pg init           - Initialize AI agent templates in current project",
-            "pg init --dry-run - Preview what will be created",
-            "pg help           - Show this help documentation"
-        ])
+        (
+            "What is Proto Gear?",
+            [
+                "Proto Gear is a template generator that creates collaboration environments",
+                "for human and AI agents. It generates markdown templates that define patterns",
+                "for workflows, testing (TDD), branching strategies, and agent coordination.",
+            ],
+        ),
+        (
+            "Core Templates Generated",
+            [
+                "- AGENTS.md: Agent patterns, roles, and collaboration workflows",
+                "- PROJECT_STATUS.md: Single source of truth for project state",
+                "- TESTING.md: TDD methodology and testing patterns (recommended)",
+                "- BRANCHING.md: Git workflow and commit conventions (optional)",
+                "- CONTRIBUTING.md: Contribution guidelines (optional)",
+                "- SECURITY.md: Security policy and vulnerability reporting (optional)",
+                "- ARCHITECTURE.md: System design documentation (optional)",
+                "- CODE_OF_CONDUCT.md: Community guidelines (optional)",
+                "- .proto-gear/: Universal capabilities system with modular patterns",
+            ],
+        ),
+        (
+            "Key Features",
+            [
+                "+ Auto-detection of existing tech stack and frameworks",
+                "+ Tech stack agnostic - works with any language or framework",
+                "+ Natural language collaboration patterns for AI agents",
+                "+ Beautiful interactive CLI wizard with arrow key navigation",
+                "+ Comprehensive TDD workflow documentation",
+                "+ Git branching strategy templates",
+            ],
+        ),
+        (
+            "Getting Started",
+            [
+                "1. Navigate to your project directory",
+                "2. Run 'pg init' to initialize agent templates (interactive wizard)",
+                "3. Review generated files (AGENTS.md, PROJECT_STATUS.md, TESTING.md, etc.)",
+                "4. Customize templates to match your project's workflow",
+                "5. AI agents read templates and collaborate via natural language",
+                "6. Update PROJECT_STATUS.md as work progresses",
+            ],
+        ),
+        (
+            "Commands",
+            [
+                "pg init           - Initialize AI agent templates in current project",
+                "pg init --dry-run - Preview what will be created",
+                "pg help           - Show this help documentation",
+            ],
+        ),
     ]
 
     for title, content in sections:

@@ -3,21 +3,23 @@ UI Helper - Centralized UI/UX for Proto Gear CLI
 Consolidates print statements into reusable, testable methods
 """
 
+
 # ANSI Color codes
 class Colors:
     """ANSI escape codes for terminal colors"""
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    GRAY = '\033[90m'
-    YELLOW = '\033[93m'
-    MAGENTA = '\033[95m'
+
+    HEADER = "\033[95m"
+    BLUE = "\033[94m"
+    CYAN = "\033[96m"
+    GREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    GRAY = "\033[90m"
+    YELLOW = "\033[93m"
+    MAGENTA = "\033[95m"
 
 
 class UIHelper:
@@ -54,7 +56,7 @@ class UIHelper:
         print(f"{color}{Colors.BOLD}{message}{Colors.ENDC}")
 
     @staticmethod
-    def separator(char='=', length=60):
+    def separator(char="=", length=60):
         """Print separator line"""
         print(char * length)
 
@@ -77,7 +79,9 @@ class UIHelper:
             print(f"{Colors.GRAY}{subtitle}{Colors.ENDC}\n")
 
     @staticmethod
-    def farewell(message: str = "Happy coding! May your builds be swift and your bugs be few."):
+    def farewell(
+        message: str = "Happy coding! May your builds be swift and your bugs be few.",
+    ):
         """Print farewell message"""
         print(f"{Colors.GRAY}{message}{Colors.ENDC}\n")
 
@@ -133,7 +137,7 @@ class UIHelper:
     def box_header(title: str, width: int = 60):
         """Print boxed header"""
         print(f"\n{Colors.BOLD}{Colors.CYAN}{title}{Colors.ENDC}")
-        UIHelper.separator('=', width)
+        UIHelper.separator("=", width)
 
     @staticmethod
     def validation_error(message: str):
