@@ -209,6 +209,10 @@ def main():
             engine.show_help()
             sys.exit(0)
 
+        # Handle 'init-surface' command (module-scoped; honours --module)
+        elif args.command == "init-surface":
+            sys.exit(cli_commands.cmd_module_init_surface(args))
+
         # Handle 'capabilities' command
         elif args.command == "capabilities":
             if args.capabilities_command == "list":

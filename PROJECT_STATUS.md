@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | feature | PENDING | feature/proto-048-multi-module-hosting-pg-module-name-cmd- |  |
 | PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | chore | PENDING | chore/proto-049-sync-pg-module-commands-into-agent-conte |  |
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | chore | PENDING | chore/proto-050-raise-coverage-on-core-business-logic-to |  |
 
@@ -60,6 +59,49 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-048 Details (COMPLETE)
+**Multi-module hosting — `pg --module <name> <cmd>`.** Closes seam **S2** that
+PROTO-047 surfaced: the core had no neutral path to materialise a *non-
+engineering* module's state surface. Engineering's `pg init` (and its template
+engine) correctly live under `modules/engineering/`, but a manifest-only module
+like content had no way to lay down its `CONTENT_QUEUE.md`.
+
+**Delivered**:
+1. ✅ `core/proto_gear_pkg/module_core/module_host.py` — the department-agnostic
+   seam: `resolve_module(name)` (default engineering; unknown → clear error
+   listing available), `state_surface_template_path(manifest)` (locate
+   `<stem>.template.md` in the module dir, then package root), and
+   `render_state_surface(...)` (copy declared template → declared surface,
+   applying a caller-supplied substitution map — none → verbatim — and reporting
+   unresolved `{{placeholders}}`).
+2. ✅ Global `--module <name>` flag on the top-level parser (default
+   engineering, so the single-module case needs no flag).
+3. ✅ `pg --module <name> init-surface [--force] [--dry-run]` — renders the
+   selected module's state surface. `pg --module content init-surface` writes
+   `CONTENT_QUEUE.md`; `pg init-surface` (engineering) writes `PROJECT_STATUS.md`
+   but honestly warns that its 21 placeholders need the richer `pg init`.
+4. ✅ `tests/test_module_host.py` — 21 tests (resolution, template lookup,
+   render matrix incl. force/dry-run/substitutions/unresolved, CLI handler).
+
+**Layer note**: unlike PROTO-047 (which proved the contract by touching *no*
+core), PROTO-048 *is* the core-side work — it adds a new generic `module_core`
+primitive that any department uses. That's the correct layer: the seam is
+department-agnostic; nothing engineering- or content-specific leaked into it.
+
+**Deferred to a follow-up**: seam **S1** (manifest-driven capability/gate
+loading so a module ships its own `capabilities/`). It touches ~15 call sites
+across 6 files and has no consumer until content bundles capabilities — its own
+ticket, not folded into hosting.
+
+**Verification**: full suite **561 passed** (was 540). `pg doctor` 0/0/24 ok.
+`black --check` clean. Manual: content create / dry-run / exists / --force /
+unknown-module / engineering-placeholder-warning all correct.
+
+**Files Created**: `core/proto_gear_pkg/module_core/module_host.py`, `tests/test_module_host.py`.
+**Files Modified**: `core/proto_gear_pkg/cli/parser.py`, `core/proto_gear_pkg/cli/app.py`, `core/proto_gear_pkg/cli_commands.py`, `docs/dev/content-module-design.md` (S2 marked closed), `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-047 Details (COMPLETE)
 **ADR-001 Phase C entry — ship the Content module to falsify the module contract.**
@@ -469,6 +511,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | 2026-07-09 | |
 | PROTO-051 | Black-format the repo and make the CI black --check gate required | 2026-07-09 | |
 | PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | 2026-07-09 | |
+| PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | 2026-07-09 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

@@ -31,6 +31,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         "--version", action="version", version=f"Proto Gear v{__version__}"
     )
 
+    # Global module selector (departmental modules — ADR-001 Phase B → C).
+    # Names which department a module-scoped command targets; omitted means the
+    # default (engineering), so the single-module case needs no flag.
+    parser.add_argument(
+        "--module",
+        type=str,
+        default=None,
+        metavar="NAME",
+        help="Target departmental module (e.g., content). Default: engineering.",
+    )
+
     # Create subcommands
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -76,6 +87,22 @@ For more information, visit: https://github.com/proto-gear/proto-gear
     # 'help' command for detailed documentation
     help_parser = subparsers.add_parser(
         "help", help="Show detailed help and documentation"
+    )
+
+    # 'init-surface' — materialise the selected module's state surface (the
+    # generic, department-agnostic counterpart to engineering's `pg init`).
+    # Targets the module named by the global --module flag (default engineering).
+    init_surface_parser = subparsers.add_parser(
+        "init-surface",
+        help="Render the selected module's state surface (e.g. CONTENT_QUEUE.md)",
+    )
+    init_surface_parser.add_argument(
+        "--force", action="store_true", help="Overwrite the surface if it exists"
+    )
+    init_surface_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview without writing the file",
     )
 
     # 'capabilities' command group
