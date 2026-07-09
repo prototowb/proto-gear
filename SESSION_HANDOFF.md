@@ -6,96 +6,93 @@
 
 ## ▶ Start here (next session)
 
-**All roadmap work through ADR-001 Phase B is merged to `development`. Begin the
-backlog immediately with PROTO-047.**
+**PROTO-047 (Content module) is done and in review as PR #10 → `development`.
+The next ticket is PROTO-048, and PROTO-047 handed it a precise spec.**
 
-1. **PROTO-047 — Phase C: ship a second (Content) module.** This is the real
-   test of the module contract: create `core/proto_gear_pkg/modules/content/`
-   with its own `module.yaml` (state surface = a content queue, e.g.
-   `CONTENT_QUEUE.md`; publish gates as supervision points) and prove it loads +
-   validates with **zero edits to `module_core/`** (the Phase B exit criterion,
-   already covered by an acceptance test in `tests/test_module_manifest.py`).
-   Start by reading `PROJECT_SPECIFICATIONS.md` §3/§6 and ADR-001 action item 7.
-2. Then **PROTO-048** (multi-module hosting: `pg --module <name> <cmd>`; today
-   the CLI implicitly assumes the engineering module), **PROTO-049** (surface
-   `pg module` in `sync_context.CLI_COMMANDS` → AGENT_CONTEXT), **PROTO-050**
-   (raise core coverage to ≥70%).
+1. **First: merge PR #10** (`feature/proto-047-content-module` → `development`)
+   if not already merged, then `git checkout development && git pull` so local
+   `development` tracks the remote (this session already fast-forwarded local
+   `development` from stale `1d7b6fb` to `00b1396`).
+2. **PROTO-048 — multi-module hosting (`pg --module <name> <cmd>`).** PROTO-047's
+   design doc (`docs/dev/content-module-design.md` §6) identified the two exact
+   seams to close — do these, they are no longer open questions:
+   - **S1 — capabilities are single-rooted.**
+     `module_core/doctor.check_supervision_gates` and
+     `module_core/capability_metadata.load_all_capabilities` read one shared
+     `package_root()/capabilities` dir and ignore each manifest's
+     `capabilities_root`. Make capability + gate loading manifest-driven so a
+     module can ship its own capabilities under `modules/<name>/capabilities/`.
+   - **S2 — no per-module init/template-render seam.** `pg init` + the template
+     engine live under `modules/engineering/`; there's no neutral path to render
+     *a* module's state-surface template into a host, so `pg --module content
+     init` can't lay down `CONTENT_QUEUE.md`. Add `pg --module <name> <cmd>`
+     dispatch (default module = engineering, no new flags for the single-module
+     case) + a generic state-surface render seam.
+3. Then **PROTO-049** (surface `pg module` in `sync_context.CLI_COMMANDS` →
+   AGENT_CONTEXT), **PROTO-050** (raise core coverage to ≥70%).
 
 Branch off `development`, PR back to `development` (see Conventions). Run
 `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` (tip `782835b` + PR #8 formatting) holds the full
-  monolith→module-platform refactor. **529 tests green; `pg doctor` 23/23;
-  `black --check` clean; flake8 E9/F-gate clean.**
-- Package layout: `cli/` (dispatch) · `module_core/` (7 generic modules:
-  capability_metadata, capability_index_builder, sync_context, discovery,
-  doctor, module_manifest, metadata_parser) · `modules/engineering/` (5
-  engineering modules + `module.yaml`) · root (shared: ui_helper, presentation,
-  cli_commands, agent_*, `paths.py`) + `proto_gear.py` (entry facade + init
-  orchestration).
-- All feature branches merged and deleted from the remote. No open tickets
-  except the backlog (PROTO-047–050) + PROTO-051 follow-up below.
+- `development` = `00b1396` (origin and local now in sync). Holds the full
+  monolith→module-platform refactor through PROTO-051.
+- **PR #10 open**: `feature/proto-047-content-module` → `development`
+  (Content module). Local branch committed at `07f4b38`.
+- **540 tests green; `pg doctor` 0 err / 0 warn / 24 ok; `black --check` clean;
+  flake8 E9/F-gate clean.** (Test count 529→540 and doctor 23→24 both from the
+  new content module + its 11 acceptance tests.)
+- Package layout unchanged except a new **`modules/content/`** department
+  (manifest + `CONTENT_QUEUE.template.md` + `__init__.py`) — discovered by the
+  generic `discover_modules()` with zero `module_core/` edits.
 
-## Shipped this cycle (all MERGED to development)
+## Shipped this cycle
 
-- **PROTO-039/040/041** — vision (`PROJECT_SPECIFICATIONS.md`), ADR-001, wizard
-  import-crash fix. (PRs #2)
-- **PROTO-042** — monolith split, `proto_gear.py` 2,476→695 lines
-  (`cli/`, `presentation`, `detection`, `templates`). (PR #7, replaced #3)
-- **PROTO-045** — module contract: `module_manifest.py` +
-  `modules/engineering/module.yaml` + `doctor.check_modules` + zero-core-edit
-  acceptance test + `pg module list/show`. (PR #7)
-- **PROTO-046** — re-home into `module_core/` + `modules/engineering/`;
-  `paths.package_root()`. (PR #4)
-- **PROTO-043** — supervision gates as data: `Gate` +
-  `doctor.check_supervision_gates`; gates on release/complete-release/hotfix/
-  code-review-process; shown in `pg capabilities show`. (PR #5)
-- **PROTO-044** — repo hygiene: untracked stale backups, relocated root strays
-  to `dev/scripts/` + `docs/dev/`, gitignored `*.backup`/`*.bak`. (PR #6)
-- **PROTO-051** — black-formatted the whole repo (49 files) to green the CI
-  `black --check` gate. (**PR #8 — merging now with this handoff update.**)
+- **PROTO-047** — Content module (2nd contract implementation, ADR-001 Phase C
+  entry). Manifest + state-surface template + design doc (`docs/dev/
+  content-module-design.md`) + 11 acceptance tests. **In review as PR #10.**
+  Proved the zero-core-edit contract against a real bundled module and surfaced
+  the two seams (S1/S2 above) that scope PROTO-048.
 
 ## Pending / In Progress
 
-- **Backlog (start next session):** PROTO-047 (Phase C Content module) → 048
-  (multi-module hosting) → 049 (cheatsheet sync) → 050 (coverage ≥70%).
-- **PROTO-051 — formatting enforced via git hook, not CI.** This is a private
-  repo without required-status-check / branch-protection support, so black
-  can't be enforced server-side. Instead a version-controlled hook
-  (`dev/hooks/pre-commit`) BLOCKS commits that fail `black --check` / flake8.
-  **Enable once per clone:** `git config core.hooksPath dev/hooks` (already set
-  in this checkout). If black flags a file: `black core/ tests/`.
+- **PR #10 awaiting merge** to `development`.
+- **Backlog:** PROTO-048 (multi-module hosting — close S1/S2) → 049 (cheatsheet
+  sync) → 050 (coverage ≥70%).
+- **Formatting enforced via git hook, not CI.** Private repo, no server-side
+  required checks. A version-controlled hook (`dev/hooks/pre-commit`) blocks
+  commits failing `black --check` / flake8. **Enable once per clone:**
+  `git config core.hooksPath dev/hooks` (already set in this checkout). Fix with
+  `black core/ tests/`.
 
 ## Conventions In Force
 
 - **Layering:** `cli/` (top) → `module_core/` (generic) → `modules/<dept>/`
   (department). Lower never imports higher. Every non-trivial change asks:
-  "generic core, or engineering-specific?" (ARCHITECTURE.md → Target
-  Architecture). New department = new `modules/<name>/module.yaml` — **zero core
-  edits** (enforced by the acceptance test).
+  "generic core, or department-specific?" New department = new
+  `modules/<name>/module.yaml` — **zero core edits** (enforced by the acceptance
+  tests in `test_module_manifest.py` + `test_content_module.py`).
 - **Bundled resources:** resolve via `paths.package_root()`, never
   `Path(__file__).parent` arithmetic.
 - **Supervision gates** are data in workflow `metadata.yaml` (`gates:`);
   `pg doctor` enforces structure + coverage. Release/deploy/publish workflows
   must declare a gate.
 - **Git:** never commit to `main`/`development` directly; branch from
-  `development`, PR back. CI only runs on PRs targeting `main`/`development`, and
-  **`--delete-branch` on a stacked-PR base auto-closes its dependents** — merge
-  bottom-up, or retarget dependents to `development` before merging.
-- **Formatting is gated by the pre-commit hook** (`dev/hooks/pre-commit`, via
-  `core.hooksPath`) — commits fail on `black --check`. Run `black core/ tests/`
-  to fix. Not enforceable in CI (private repo, no required checks).
+  `development`, PR back. CI only runs on PRs targeting `main`/`development`.
+- **Formatting** is gated by the pre-commit hook (see above).
+- **Regen noise:** `AGENT_CONTEXT.md` / host configs (`CLAUDE.md`,
+  `.cursorrules`, `.windsurfrules`, copilot) carry only a `Generated:` timestamp
+  that `pg` rewrites on any run — `git restore` these if they show up as a diff
+  with no content change.
 - SESSION_HANDOFF.md is agent-owned; replace entirely at session end.
 
-## Open Questions (for PROTO-047)
+## Open Questions (for PROTO-048)
 
-- Content module state surface: single `CONTENT_QUEUE.md` table, or a
-  `.proto-gear`-style structured queue? What are its capabilities (draft,
-  review, schedule, publish) and their triggers?
-- Does the toy/real second module expose any missing seam in `module_core`
-  (the falsifier)? If it needs a core edit, the contract is wrong — capture it.
+- When capability loading becomes manifest-driven (S1), does the shared
+  `.proto-gear/` at the host root stay the single capabilities_root for all
+  modules, or does each module get its own subtree? The content manifest
+  currently declares `.proto-gear` — revisit once multi-module hosting lands.
 
 ---
 *Agent-maintained. Replace entirely at session end.*
