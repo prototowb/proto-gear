@@ -1414,3 +1414,70 @@ def cmd_module_show(args):
         f"    handoff           : {manifest.handoff or Colors.GRAY + '(none)' + Colors.ENDC}"
     )
     return 0
+
+
+def cmd_module_init_surface(args):
+    """Materialise the selected module's declared state surface into the project.
+
+    Department-agnostic: renders ``<module>``'s state-surface template (e.g.
+    ``CONTENT_QUEUE.template.md`` → ``CONTENT_QUEUE.md``) via the module_host
+    seam. The target module comes from the global ``--module`` flag (default
+    engineering). This is the manifest-only module's counterpart to engineering's
+    richer ``pg init`` (PROTO-048, closes seam S2).
+    """
+    from .module_core import module_host
+    from .module_core.module_manifest import ModuleManifestError
+
+    try:
+        manifest = module_host.resolve_module(getattr(args, "module", None))
+    except ModuleManifestError as e:
+        print(f"{Colors.FAIL}{e}{Colors.ENDC}")
+        return 1
+
+    result = module_host.render_state_surface(
+        manifest,
+        Path("."),
+        force=getattr(args, "force", False),
+        dry_run=getattr(args, "dry_run", False),
+    )
+    status = result["status"]
+    target = result["target"]
+
+    if status == "no-state-surface":
+        print(
+            f"{Colors.YELLOW}Module '{manifest.module}' declares no state surface — "
+            f"nothing to initialise.{Colors.ENDC}"
+        )
+        return 0
+    if status == "no-template":
+        print(
+            f"{Colors.FAIL}No template found for '{target}' in module "
+            f"'{manifest.module}'.{Colors.ENDC}"
+        )
+        return 1
+    if status == "exists":
+        print(
+            f"{Colors.YELLOW}{target} already exists — pass --force to "
+            f"overwrite.{Colors.ENDC}"
+        )
+        return 1
+
+    verb = {
+        "created": "Created",
+        "overwritten": "Overwrote",
+        "would-create": "Would create",
+        "would-overwrite": "Would overwrite",
+    }.get(status, status)
+    print(
+        f"{Colors.GREEN}{verb} {target}{Colors.ENDC} "
+        f"{Colors.GRAY}(module: {manifest.module}){Colors.ENDC}"
+    )
+
+    if result["unresolved"]:
+        tokens = ", ".join(result["unresolved"])
+        print(
+            f"{Colors.YELLOW}Note: unresolved placeholders remain ({tokens}). "
+            f"This module's state surface needs a richer init than the generic "
+            f"renderer provides.{Colors.ENDC}"
+        )
+    return 0

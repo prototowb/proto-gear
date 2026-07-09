@@ -111,14 +111,17 @@ for PROTO-048.
   loaders ignore it. → **PROTO-048**: make capability + gate loading manifest-
   driven (honour `capabilities_root` per module).
 
-- **S2 — no per-module init / template rendering seam.**
-  `pg init` and the template engine live under `modules/engineering/`
-  (`interactive_wizard`, `detection`, `templates`). There is no generic "render
-  *this* module's state-surface template into a host project" path, so
-  `pg --module content init` can't yet lay down `CONTENT_QUEUE.md`. The
-  engineering engine is correctly *not* in the core, but the core also offers no
-  neutral rendering seam a module can plug into. → **PROTO-048** multi-module
-  hosting (`pg --module <name> <cmd>`).
+- **S2 — no per-module init / template rendering seam.** ✅ **Closed by
+  PROTO-048.** `pg init` and the template engine live under
+  `modules/engineering/` (`interactive_wizard`, `detection`, `templates`), which
+  is correct, but the core offered no neutral "render *this* module's
+  state-surface template into a host" path. PROTO-048 adds
+  `module_core/module_host.py` (`resolve_module` + `render_state_surface`) and a
+  global `--module <name>` flag with `pg --module <name> init-surface`, so
+  `pg --module content init-surface` now lays down `CONTENT_QUEUE.md` verbatim.
+  The seam applies a caller-supplied substitution map (none → verbatim) and
+  reports unresolved `{{placeholders}}`, so engineering's richer, placeholder-
+  driven surface still routes through its own `pg init`.
 
 Both seams are consistent with the contract *as specified* — the manifest surface
 is honoured; it's the *capability plumbing* that's still engineering-routed. That
@@ -132,10 +135,12 @@ contract v1.0.
 test proving the bundled content module is discovered + validated by the core
 with zero `module_core/` edits (alongside engineering).
 
+**Delivered since** (PROTO-048): `pg --module content init-surface` hosting via
+the generic render seam (S2 closed).
+
 **Deferred** (Phase C success criterion, not entry): bundling the four
-capabilities under a manifest-driven `capabilities_root` (needs S1),
-`pg --module content` hosting (needs S2), and an agent operating a real item
-draft → gate → publish with every gate hit logged.
+capabilities under a manifest-driven `capabilities_root` (needs S1), and an
+agent operating a real item draft → gate → publish with every gate hit logged.
 
 ---
 *Living document — revise when S1/S2 land in PROTO-048.*
