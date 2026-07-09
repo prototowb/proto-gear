@@ -90,6 +90,14 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ("pg capabilities show <name>", "Show full details of a capability"),
     ("pg capabilities tree <name>", "Show dependency tree of a capability"),
     ("pg agent list", "List configured custom agents (if any)"),
+    (
+        "pg module list/show [<name>]",
+        "List/inspect departmental modules (module.yaml manifests)",
+    ),
+    (
+        "pg --module <name> init-surface",
+        "Render a module's state surface (e.g. CONTENT_QUEUE.md)",
+    ),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
     (
         "pg sync-indexes",
