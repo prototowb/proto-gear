@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
 
-from proto_gear_pkg.template_updater import TemplateUpdater, TemplateUpdateError
+from proto_gear_pkg.modules.engineering.template_updater import TemplateUpdater, TemplateUpdateError
 
 
 # ============================================================================

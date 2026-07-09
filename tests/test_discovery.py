@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
-from proto_gear_pkg.discovery import (
+from proto_gear_pkg.module_core.discovery import (
     _tokenize,
     _score_capability,
     load_capabilities_for_suggest,
     suggest,
 )
-from proto_gear_pkg.capability_metadata import (
+from proto_gear_pkg.module_core.capability_metadata import (
     CapabilityMetadata,
     CapabilityType,
     CapabilityStatus,

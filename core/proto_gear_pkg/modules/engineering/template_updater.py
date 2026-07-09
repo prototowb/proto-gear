@@ -25,8 +25,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
 
-from .metadata_parser import MetadataParser, TemplateMetadata
-from .ui_helper import Colors
+from proto_gear_pkg.module_core.metadata_parser import MetadataParser, TemplateMetadata
+from proto_gear_pkg.ui_helper import Colors
 
 
 # ============================================================================
@@ -597,7 +597,8 @@ class TemplateUpdater:
             project_dir: Path to project root directory
         """
         self.project_dir = project_dir
-        self.package_dir = Path(__file__).parent
+        from proto_gear_pkg.paths import package_root
+        self.package_dir = package_root()
 
         self.extractor = UserDataExtractor()
         self.merger = TemplateMerger(self.package_dir)

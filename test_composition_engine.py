@@ -6,7 +6,7 @@ Run this script to see the composition engine in action.
 """
 
 from pathlib import Path
-from core.proto_gear_pkg.capability_metadata import (
+from core.proto_gear_pkg.module_core.capability_metadata import (
     load_all_capabilities,
     CompositionEngine,
     CapabilityValidator

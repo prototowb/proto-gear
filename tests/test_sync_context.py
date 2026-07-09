@@ -6,7 +6,7 @@ and host config mirroring (PROTO-031).
 import pytest
 from pathlib import Path
 
-from proto_gear_pkg.sync_context import (
+from proto_gear_pkg.module_core.sync_context import (
     BEGIN_MARKER,
     END_MARKER,
     HOST_FILES,

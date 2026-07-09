@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 
 # Import template discovery from proto_gear module
 try:
-    from .proto_gear import discover_available_templates
+    from .templates import discover_available_templates
 except ImportError:
     # Fallback if running standalone
     discover_available_templates = None

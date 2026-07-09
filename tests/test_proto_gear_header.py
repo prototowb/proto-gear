@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from proto_gear_pkg.metadata_parser import parse_proto_gear_header
+from proto_gear_pkg.module_core.metadata_parser import parse_proto_gear_header
 
 
 VALID_HEADER = """<!-- proto-gear:header

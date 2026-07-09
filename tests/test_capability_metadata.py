@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 import yaml
 
-from core.proto_gear_pkg.capability_metadata import (
+from core.proto_gear_pkg.module_core.capability_metadata import (
     CapabilityMetadata,
     CapabilityMetadataParser,
     CapabilityValidator,

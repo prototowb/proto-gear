@@ -12,7 +12,7 @@ import shutil
 import pytest
 from pathlib import Path
 
-from proto_gear_pkg.capability_index_builder import (
+from proto_gear_pkg.module_core.capability_index_builder import (
     BEGIN_MARKER,
     END_MARKER,
     render_top_index_block,
@@ -21,7 +21,7 @@ from proto_gear_pkg.capability_index_builder import (
     extract_managed_block,
     _replace_or_warn,
 )
-from proto_gear_pkg.capability_metadata import (
+from proto_gear_pkg.module_core.capability_metadata import (
     CapabilityMetadata,
     CapabilityType,
     CapabilityStatus,

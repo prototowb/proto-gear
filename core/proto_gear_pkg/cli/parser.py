@@ -11,7 +11,7 @@ import argparse
 def build_parser() -> argparse.ArgumentParser:
     """Build and return the top-level ``pg`` argument parser."""
     from .. import __version__
-    from .. import status_commands
+    from ..modules.engineering import status_commands
 
     parser = argparse.ArgumentParser(
         description="Proto Gear - AI Agent Framework for Development Workflows",

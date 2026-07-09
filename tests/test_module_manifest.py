@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
 
-from proto_gear_pkg.module_manifest import (
+from proto_gear_pkg.module_core.module_manifest import (
     ModuleManifest,
     ModuleManifestError,
     MANIFEST_FILENAME,

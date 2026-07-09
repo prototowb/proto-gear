@@ -7,7 +7,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from proto_gear_pkg.interactive_wizard import (
+from proto_gear_pkg.modules.engineering.interactive_wizard import (
     RichWizard,
     run_enhanced_wizard,
     _apply_preset_config,
