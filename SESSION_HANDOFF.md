@@ -6,95 +6,93 @@
 
 ## ▶ Start here (next session)
 
-**PROTO-047 (Content module) is merged. PROTO-048 (multi-module hosting) is done
-and in review as PR #11 → `development`. Next up: PROTO-049, then PROTO-050 —
-plus a newly-filed seam S1 ticket (see below).**
+**PROTO-047 & 048 are merged. Two PRs are open for review: #12 (PROTO-049
+cheatsheet sync) and #13 (PROTO-052 manifest-driven capability sources). Only
+PROTO-050 remains from the original backlog.**
 
-1. **First: merge PR #11** (`feature/proto-048-multi-module-hosting` →
-   `development`) if not already merged, then `git checkout development && git
-   pull`.
-2. **PROTO-049 — surface `pg module` + `pg --module … init-surface` in the
-   AGENT_CONTEXT cheatsheet** (`module_core/sync_context.py::CLI_COMMANDS`), then
-   `pg sync-context` to regenerate AGENT_CONTEXT.md + host mirrors. The new
-   commands exist but aren't yet advertised in the agent-facing cheatsheet.
-3. **PROTO-050 — raise core business-logic coverage to ≥70%** (spec Phase A
-   criterion). `module_host.py` is fully covered; check `doctor.py`,
-   `capability_metadata.py`, `templates.py` for gaps.
-4. **NEW — file the S1 ticket** (see below): manifest-driven capability/gate
-   loading. It's the last open seam from the content-module falsification and
-   the real prerequisite for content ever shipping its own capabilities.
+1. **Merge the open PRs** (both branch from `development`, independent):
+   - **PR #12** — PROTO-049 (advertise `pg module` commands in the cheatsheet).
+   - **PR #13** — PROTO-052 (S1 supervision half; content ships its own gated
+     `publish`).
+   ⚠️ **Merge-order conflict**: both touch `PROJECT_STATUS.md` (completed table +
+   a details section). Merge one, then the second will conflict there — resolve
+   by **keeping both** details sections and both completed-table rows. No code
+   conflict (disjoint files).
+   After merging: `git checkout development && git pull`.
+2. **PROTO-050 — raise core coverage to ≥70%** (spec Phase A criterion).
+   ⚠️ **Tooling gap**: `coverage`/`pytest-cov` are NOT installed and
+   `pytest.ini`'s `--cov` addopts aren't taking effect (the suite runs without
+   any coverage output — pytest is reading config elsewhere or ignoring it).
+   First `pip install pytest-cov`, confirm `pytest --cov=core` actually reports,
+   then measure the baseline (last recorded 47%) and target the biggest gaps
+   (`capability_metadata.py`, `templates.py`, `doctor.py`, the wizards).
+3. **Follow-up — S1 listing half** (not yet ticketed): route the *host-side*
+   capability surfaces (`discovery`/`pg suggest`, `sync_context`/AGENT_CONTEXT,
+   `agent_config`, wizard) through `module_host.iter_capability_sources()` so a
+   module's capabilities also surface in suggestions/context — not just the gate
+   audit. Deferred until a module ships non-gate capabilities that need listing.
 
-Branch off `development`, PR back to `development`. Run `pg status` /
-`pg ticket list` first.
+Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `7fafaff` (has PROTO-047). **PR #11 open** for PROTO-048.
-- **561 tests green; `pg doctor` 0 err / 0 warn / 24 ok; `black --check` clean;
-  flake8 E9/F-gate clean.** (540→561 from PROTO-048's 21 `test_module_host.py`.)
-- New generic core primitive: **`module_core/module_host.py`**
-  (`resolve_module` + `render_state_surface`) + global `--module <name>` flag +
-  `pg --module <name> init-surface`. `pg --module content init-surface` writes
-  `CONTENT_QUEUE.md`; engineering keeps its richer `pg init`.
+- `development` = `0932fe6` (has PROTO-047 + 048). **PRs #12 and #13 open.**
+- **566 tests green; `pg doctor` 0 err / 0 warn / 25 ok; `black --check` clean;
+  flake8 E9/F-gate clean.** (562→566 from PROTO-052 tests; doctor 24→25 from the
+  content `publish` gate.)
+- Multi-module platform now spans: manifest (`module.yaml`) → discovery →
+  `pg module list/show` → `pg --module <name> init-surface` (state surface) →
+  per-module bundled `capabilities/` with gate auditing. A department is now a
+  directory of data the core hosts end-to-end.
 
 ## Shipped this cycle
 
-- **PROTO-047** — Content module (2nd contract implementation, ADR-001 Phase C
-  entry). **MERGED** (PR #10). Manifest + `CONTENT_QUEUE.template.md` + design
-  doc + 11 acceptance tests. Proved the zero-core-edit contract and surfaced
-  seams S1/S2.
-- **PROTO-048** — multi-module hosting, closing seam **S2**. **In review as PR
-  #11.** Generic `module_host` render seam + `pg --module <name> init-surface`.
+- **PROTO-047** — Content module (2nd contract impl). **MERGED** (PR #10).
+- **PROTO-048** — multi-module hosting (`pg --module … init-surface`), closes
+  seam **S2**. **MERGED** (PR #11).
+- **PROTO-049** — advertise `pg module` commands in AGENT_CONTEXT cheatsheet.
+  **PR #12 open.**
+- **PROTO-052** — manifest-driven capability sources, closes seam **S1**
+  (supervision half); content ships its own gated `publish` workflow.
+  **PR #13 open.**
 
 ## Pending / In Progress
 
-- **PR #11 awaiting merge** to `development`.
-- **Backlog:** PROTO-049 (cheatsheet sync) → PROTO-050 (coverage ≥70%) → **S1
-  ticket** (below).
-- **Seam S1 — capabilities are single-rooted (the last content-module seam).**
-  `module_core/capability_metadata.load_all_capabilities`,
-  `discovery`, `sync_context`, and `doctor.check_supervision_gates` all read one
-  shared `package_root()/capabilities` dir and ignore each manifest's
-  `capabilities_root` (~15 call sites across 6 files). A module can't yet ship
-  its own capabilities under `modules/<name>/capabilities/`. Deliberately NOT
-  done in PROTO-048 (no consumer until content bundles capabilities; too big to
-  fold in). File it, then it unblocks content's draft/review/schedule/publish
-  capabilities and the Phase C success criterion (agent runs draft → gate →
-  publish). See `docs/dev/content-module-design.md` §6.
+- **PRs #12 + #13 awaiting merge** (mind the PROJECT_STATUS.md conflict above).
+- **PROTO-050** — coverage ≥70% (tooling gap — see step 2).
+- **S1 listing half** — see step 3 (not ticketed yet).
 - **Formatting enforced via git hook, not CI.** `dev/hooks/pre-commit` blocks
-  commits failing `black --check` / flake8. **Enable once per clone:**
+  commits failing `black --check` / flake8. Enable once per clone:
   `git config core.hooksPath dev/hooks` (already set here). Fix: `black core/
   tests/`.
 
 ## Conventions In Force
 
 - **Layering:** `cli/` (top) → `module_core/` (generic) → `modules/<dept>/`
-  (department). Lower never imports higher. Every non-trivial change asks:
-  "generic core, or department-specific?" New department = new
-  `modules/<name>/module.yaml` — **zero core edits** (enforced by the acceptance
-  tests in `test_module_manifest.py` + `test_content_module.py`). Genuinely
-  generic new capability = a `module_core` primitive (e.g. `module_host.py`),
-  never engineering-routed.
+  (department). Lower never imports higher. Generic new capability = a
+  `module_core` primitive (`module_host.py`), never engineering-routed. New
+  department = a `modules/<name>/` directory (manifest + optional
+  `capabilities/` + state-surface template) — **zero core edits** to add one.
 - **Bundled resources:** resolve via `paths.package_root()`, never
   `Path(__file__).parent` arithmetic.
 - **Supervision gates** are data in workflow `metadata.yaml` (`gates:`);
-  `pg doctor` enforces structure + coverage.
+  `pg doctor` enforces structure + coverage across the shared root AND every
+  module's own `capabilities/` (PROTO-052).
 - **Git:** never commit to `main`/`development` directly; branch from
   `development`, PR back. CI runs only on PRs targeting `main`/`development`.
-- **Formatting** is gated by the pre-commit hook (see above).
-- **Regen noise:** `AGENT_CONTEXT.md` / host configs (`CLAUDE.md`,
-  `.cursorrules`, `.windsurfrules`, copilot) carry a `Generated:` timestamp that
-  `pg` rewrites on any run — `git restore` these if they show up as a diff with
-  no content change.
+- **Regen noise:** `AGENT_CONTEXT.md` / host configs carry a `Generated:`
+  timestamp `pg` rewrites on any run — `git restore` them if they show up as a
+  diff with no content change. (Exception: PROTO-049 intentionally changed their
+  *content* — the module commands.)
 - SESSION_HANDOFF.md is agent-owned; replace entirely at session end.
 
-## Open Questions (for the S1 ticket)
+## Open Questions
 
-- When capability loading becomes manifest-driven, does the host's single
-  `.proto-gear/` stay the shared `capabilities_root` for all modules, or does
-  each module namespace its own subtree (e.g. `.proto-gear/content/`)? Both
-  manifests currently declare `.proto-gear`. Decide before wiring loaders to the
-  manifest — it changes whether two modules' capabilities can collide.
+- **S1 listing half**: when host-side listings become multi-source, does the
+  host's single `.proto-gear/` stay the shared capabilities_root, or does each
+  module namespace its own subtree? Both manifests declare `.proto-gear`. Decide
+  before wiring the listing surfaces (it governs whether two modules' capability
+  IDs can collide in `pg suggest` / AGENT_CONTEXT).
 
 ---
 *Agent-maintained. Replace entirely at session end.*

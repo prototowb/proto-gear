@@ -54,6 +54,29 @@ class TestResolveModule:
         assert m.module == "toy"
 
 
+class TestIterCapabilitySources:
+    def test_includes_shared_root_first(self):
+        sources = module_host.iter_capability_sources()
+        assert sources, "expected at least the shared capabilities root"
+        module, path = sources[0]
+        assert module is None
+        assert path.name == "capabilities"
+        assert path.is_dir()
+
+    def test_includes_content_module_bundle(self):
+        # PROTO-052: the content module ships its own capabilities/ (publish).
+        sources = module_host.iter_capability_sources()
+        by_module = {m: p for m, p in sources}
+        assert "content" in by_module
+        assert by_module["content"].name == "capabilities"
+        assert (by_module["content"] / "workflows" / "publish").is_dir()
+
+    def test_skips_modules_without_capabilities(self):
+        # Engineering's caps live at the shared root, not modules/engineering/.
+        sources = module_host.iter_capability_sources()
+        assert "engineering" not in {m for m, _ in sources}
+
+
 class TestStateSurfaceTemplatePath:
     def test_content_template_in_module_dir(self):
         m = module_host.resolve_module("content")
