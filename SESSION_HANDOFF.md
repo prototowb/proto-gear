@@ -61,10 +61,12 @@ Branch off `development`, PR back to `development` (see Conventions). Run
 
 - **Backlog (start next session):** PROTO-047 (Phase C Content module) → 048
   (multi-module hosting) → 049 (cheatsheet sync) → 050 (coverage ≥70%).
-- **PROTO-051 follow-up (repo settings, owner's call):** make the CI
-  `black --check` job a **required** status check via branch protection so
-  formatting can't regress. Note the local pre-commit hook does *not* enforce
-  black — run `black core/ tests/` before pushing until the gate is required.
+- **PROTO-051 — formatting enforced via git hook, not CI.** This is a private
+  repo without required-status-check / branch-protection support, so black
+  can't be enforced server-side. Instead a version-controlled hook
+  (`dev/hooks/pre-commit`) BLOCKS commits that fail `black --check` / flake8.
+  **Enable once per clone:** `git config core.hooksPath dev/hooks` (already set
+  in this checkout). If black flags a file: `black core/ tests/`.
 
 ## Conventions In Force
 
@@ -82,7 +84,9 @@ Branch off `development`, PR back to `development` (see Conventions). Run
   `development`, PR back. CI only runs on PRs targeting `main`/`development`, and
   **`--delete-branch` on a stacked-PR base auto-closes its dependents** — merge
   bottom-up, or retarget dependents to `development` before merging.
-- **Format before push:** `black core/ tests/` (CI gate; hook doesn't catch it).
+- **Formatting is gated by the pre-commit hook** (`dev/hooks/pre-commit`, via
+  `core.hooksPath`) — commits fail on `black --check`. Run `black core/ tests/`
+  to fix. Not enforceable in CI (private repo, no required checks).
 - SESSION_HANDOFF.md is agent-owned; replace entirely at session end.
 
 ## Open Questions (for PROTO-047)

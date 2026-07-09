@@ -27,12 +27,15 @@ Thanks for your interest in contributing. Proto Gear is a small Python CLI that 
 ```bash
 git clone https://github.com/<your-fork>/proto-gear
 cd proto-gear
-pip install -e .[dev]    # editable install + dev deps
-pytest                    # run the test suite
-pg init --dry-run         # smoke test the CLI
+pip install -e .[dev]              # editable install + dev deps
+git config core.hooksPath dev/hooks  # enable the pre-commit hook (once per clone)
+pytest                             # run the test suite
+pg init --dry-run                  # smoke test the CLI
 ```
 
 Editable install means changes to `core/proto_gear_pkg/**` take effect immediately — no reinstall needed.
+
+The pre-commit hook (`dev/hooks/pre-commit`) blocks commits that fail `black --check` or the flake8 syntax gate. It's the enforcement point for formatting: this is a private repo without required-status-check support, so CI can't gate merges. Run `black core/ tests/` to fix formatting.
 
 ### Project layout
 
