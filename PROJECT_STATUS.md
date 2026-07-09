@@ -34,6 +34,10 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | feature | PENDING | feature/proto-047-adr-001-phase-c-ship-a-second-content-mo |  |
+| PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | feature | PENDING | feature/proto-048-multi-module-hosting-pg-module-name-cmd- |  |
+| PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | chore | PENDING | chore/proto-049-sync-pg-module-commands-into-agent-conte |  |
+| PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | chore | PENDING | chore/proto-050-raise-coverage-on-core-business-logic-to |  |
 
 _No active tickets — v0.10.0 just shipped._
 
