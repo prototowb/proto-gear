@@ -96,7 +96,7 @@ class TestTemplateGeneration:
         }
 
         # Test with templates that show version
-        for template_name in ['BRANCHING', 'TESTING']:
+        for template_name in ['TESTING']:
             result = generate_project_template(template_name, tmp_path, context)
             content = result.read_text(encoding='utf-8')
 

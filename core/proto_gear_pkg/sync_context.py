@@ -29,6 +29,8 @@ HOST_FILES = [
 CORE_FILES: List[Tuple[str, str, str]] = [
     ("AGENTS.md", "Agent orchestration, roles, pre-flight checklist",
      "First session or unclear on process"),
+    ("SESSION_HANDOFF.md", "Rolling session handoff — what just shipped, what's pending",
+     "Start of every session — before anything else"),
     ("PROJECT_STATUS.md", "Current sprint, active tickets, project state",
      "Every session before starting work"),
     ("PROJECT_SPECIFICATIONS.md", "Project planning doc — source for architecture",

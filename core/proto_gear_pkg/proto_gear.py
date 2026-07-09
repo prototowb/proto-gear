@@ -45,8 +45,9 @@ def detect_existing_environment(project_dir: Path) -> dict:
     - existing_files: list - List of existing Proto Gear files
     - existing_capabilities: bool - True if .proto-gear/ directory exists
     """
-    proto_gear_files = ['AGENTS.md', 'PROJECT_STATUS.md', 'BRANCHING.md', 'TESTING.md',
-                        'CONTRIBUTING.md', 'SECURITY.md', 'ARCHITECTURE.md', 'CODE_OF_CONDUCT.md']
+    proto_gear_files = ['AGENTS.md', 'SESSION_HANDOFF.md', 'PROJECT_STATUS.md', 'BRANCHING.md',
+                        'TESTING.md', 'CONTRIBUTING.md', 'SECURITY.md', 'ARCHITECTURE.md',
+                        'CODE_OF_CONDUCT.md']
 
     existing_files = []
     for filename in proto_gear_files:
@@ -670,18 +671,26 @@ def generate_branching_doc(project_name, ticket_prefix, git_config, generation_d
 """
 
         # Determine values based on Git configuration
+        dev = git_config['dev_branch']
+        main = git_config['main_branch']
         if git_config['has_remote']:
             remote_requires_pr = "\n- **Pull Requests**: Required for merging"
             remote_requires_tests = " and pass tests"
             remote_via_pr = " (via pull request)"
-            merge_method = " (via pull request)"
             remote_origin = f" origin"
             if_remote = ""
-            remote_push_during = "5. **Push to remote**: `git push -u origin your-branch-name` (enables backup)"
-            remote_push_before_pr = "\n4. **Push to remote**: `git push -u origin feature-branch`\n5. **Create pull request**: On GitHub/GitLab"
-            local_merge_steps = ""
-            remote_push_step = "\n5. Push to remote: git push -u origin feature/branch"
-            remote_create_pr_or_local_merge = "\n6. Create pull request on GitHub/GitLab"
+            push_dev_info = f"\n- **Push**: `git push origin {dev}` after each feature merge"
+            remote_push_during = f"4. **Push to remote**: `git push -u origin your-branch-name` (enables backup)"
+            example_post_merge = (
+                f"git push origin {dev}\n\n"
+                f"# Open a PR on GitHub: {dev} → {main}\n"
+                f"# Never merge {main} locally — the PR merge on GitHub is the only path\n"
+            )
+            before_merge_steps = (
+                f"\n4. **Merge to `{dev}`**: `git checkout {dev} && git merge feature-branch`"
+                f"\n5. **Push development**: `git push origin {dev}`"
+                f"\n6. **Ship to main**: Open a PR on GitHub from `{dev}` → `{main}`; merge there — never locally"
+            )
             remote_handling_section = f"""## Working with Remote Repository
 
 This project has a remote repository configured ({git_config['remote_name']}).
@@ -696,28 +705,30 @@ git branch -vv
 ```
 
 ### Creating Pull Requests
-1. Push your branch to remote
-2. Go to your repository on GitHub/GitLab
-3. Create pull request from your branch to `{{{{DEV_BRANCH}}}}`
-4. Request review if required
-5. Merge after approval"""
-            remote_push_reminder = "\n✅ Push to remote regularly"
-            remote_create_pr_reminder = "\n✅ Create PR for review"
-            remote_force_push_reminder = "\n❌ Force push to shared branches"
+1. Merge feature branch to `{dev}` locally
+2. Push `{dev}` to remote: `git push origin {dev}`
+3. Open a PR on GitHub from `{dev}` → `{main}`
+4. Merge after approval — never merge `{main}` locally"""
+            quick_remote_rules = (
+                f"✅ Push origin {dev} after merging a feature branch\n"
+                f"✅ Merge {dev} → {main} via PR on GitHub only\n"
+            )
+            quick_never_remote = (
+                f"❌ Merge {main} locally (not even fast-forward)\n"
+                f"❌ Force-push to {main} or {dev}\n"
+            )
             ticket_tracking = "GitHub Issues or PROJECT_STATUS.md"
         else:
             # Local-only development
             remote_requires_pr = ""
             remote_requires_tests = ""
             remote_via_pr = ""
-            merge_method = " (locally)"
             remote_origin = ""
             if_remote = " (if remote configured)"
+            push_dev_info = ""
             remote_push_during = ""
-            remote_push_before_pr = ""
-            local_merge_steps = "\n4. **Merge locally**: `git checkout {{DEV_BRANCH}} && git merge feature-branch --no-ff`"
-            remote_push_step = ""
-            remote_create_pr_or_local_merge = "\n6. Merge locally to {{DEV_BRANCH}}"
+            example_post_merge = ""
+            before_merge_steps = f"\n4. **Merge locally**: `git checkout {dev} && git merge feature-branch`"
             remote_handling_section = """## Local Development (No Remote)
 
 This project does not have a remote repository configured.
@@ -729,7 +740,7 @@ git checkout -b feature/{{TICKET_PREFIX}}-XXX-description
 
 # When done, merge to development
 git checkout {{DEV_BRANCH}}
-git merge feature/{{TICKET_PREFIX}}-XXX-description --no-ff
+git merge feature/{{TICKET_PREFIX}}-XXX-description
 
 # Delete feature branch
 git branch -d feature/{{TICKET_PREFIX}}-XXX-description
@@ -741,35 +752,31 @@ If you want to add a remote repository:
 git remote add origin <repository-url>
 git push -u origin {{DEV_BRANCH}}
 ```"""
-            remote_push_reminder = ""
-            remote_create_pr_reminder = ""
-            remote_force_push_reminder = ""
+            quick_remote_rules = ""
+            quick_never_remote = ""
             ticket_tracking = "PROJECT_STATUS.md"
 
         # Replace all placeholders
         content = template.replace('{{PROJECT_NAME}}', project_name)
         content = content.replace('{{VERSION}}', __version__)
         content = content.replace('{{TICKET_PREFIX}}', ticket_prefix)
-        content = content.replace('{{MAIN_BRANCH}}', git_config['main_branch'])
-        content = content.replace('{{DEV_BRANCH}}', git_config['dev_branch'])
+        content = content.replace('{{MAIN_BRANCH}}', main)
+        content = content.replace('{{DEV_BRANCH}}', dev)
         content = content.replace('{{GENERATION_DATE}}', generation_date)
         content = content.replace('{{WORKFLOW_MODE}}', workflow_mode_desc)
         content = content.replace('{{WORKFLOW_RECOMMENDATIONS}}', workflow_recommendations)
         content = content.replace('{{REMOTE_REQUIRES_PR}}', remote_requires_pr)
         content = content.replace('{{REMOTE_REQUIRES_TESTS}}', remote_requires_tests)
         content = content.replace('{{REMOTE_VIA_PR}}', remote_via_pr)
-        content = content.replace('{{MERGE_METHOD}}', merge_method)
         content = content.replace('{{REMOTE_ORIGIN}}', remote_origin)
         content = content.replace('{{IF_REMOTE}}', if_remote)
+        content = content.replace('{{PUSH_DEV_INFO}}', push_dev_info)
         content = content.replace('{{REMOTE_PUSH_DURING}}', remote_push_during)
-        content = content.replace('{{REMOTE_PUSH_BEFORE_PR}}', remote_push_before_pr)
-        content = content.replace('{{LOCAL_MERGE_STEPS}}', local_merge_steps)
-        content = content.replace('{{REMOTE_PUSH_STEP}}', remote_push_step)
-        content = content.replace('{{REMOTE_CREATE_PR_OR_LOCAL_MERGE}}', remote_create_pr_or_local_merge)
+        content = content.replace('{{EXAMPLE_POST_MERGE}}', example_post_merge)
+        content = content.replace('{{BEFORE_MERGE_STEPS}}', before_merge_steps)
         content = content.replace('{{REMOTE_HANDLING_SECTION}}', remote_handling_section)
-        content = content.replace('{{REMOTE_PUSH_REMINDER}}', remote_push_reminder)
-        content = content.replace('{{REMOTE_CREATE_PR_REMINDER}}', remote_create_pr_reminder)
-        content = content.replace('{{REMOTE_FORCE_PUSH_REMINDER}}', remote_force_push_reminder)
+        content = content.replace('{{QUICK_REMOTE_RULES}}', quick_remote_rules)
+        content = content.replace('{{QUICK_NEVER_REMOTE}}', quick_never_remote)
         content = content.replace('{{TICKET_TRACKING}}', ticket_tracking)
 
         return content
@@ -1153,6 +1160,38 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
                 if output_file or action == 'would_create':
                     files_created.append('AGENTS.md')
 
+            # Create SESSION_HANDOFF.md (only if doesn't exist — agent-owned content, never clobber)
+            handoff_file = current_dir / 'SESSION_HANDOFF.md'
+            if not handoff_file.exists():
+                handoff_content = f"""# SESSION_HANDOFF — {current_dir.resolve().name}
+
+> **Read this before anything else.** This file captures what's true right now.
+> **At session end**: replace the contents entirely — do not append.
+> This is a rolling "current state" snapshot, not a log.
+
+## What Just Shipped
+
+*No previous session — starting fresh.*
+
+## Pending / In Progress
+
+*Nothing pending.*
+
+## Conventions In Force
+
+*No session-specific conventions. See AGENTS.md for standing rules.*
+
+## Open Questions
+
+*None.*
+
+---
+*Agent-maintained. Replace entirely at session end.*
+"""
+                action, written = safe_write_file(handoff_file, handoff_content, dry_run=dry_run, force=force, interactive=True)
+                if written or action == 'would_create':
+                    files_created.append('SESSION_HANDOFF.md')
+
             # Create PROJECT_STATUS.md (only if doesn't exist or explicitly selected)
             status_file = current_dir / 'PROJECT_STATUS.md'
             should_create_status = (
@@ -1215,7 +1254,7 @@ current_sprint: null
                 if isinstance(core_templates, dict):
                     # Dict format: {template_name: bool}
                     for template_name, should_generate in core_templates.items():
-                        if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                        if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS', 'SESSION_HANDOFF']:
                             # Skip if already created (e.g., BRANCHING from with_branching flag)
                             if f"{template_name}.md" not in files_created:
                                 templates_to_generate.append(template_name)
@@ -1223,7 +1262,7 @@ current_sprint: null
                     # List format from incremental wizard: ['BRANCHING.md', 'TESTING.md']
                     for template in core_templates:
                         template_name = template.replace('.md', '')
-                        if template_name not in ['AGENTS', 'PROJECT_STATUS']:
+                        if template_name not in ['AGENTS', 'PROJECT_STATUS', 'SESSION_HANDOFF']:
                             # Skip if already created
                             if template not in files_created:
                                 templates_to_generate.append(template_name)

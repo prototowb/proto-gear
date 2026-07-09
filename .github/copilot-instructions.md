@@ -118,24 +118,20 @@ When the user's prose contains these keywords, load the matching capability befo
 
 <!-- proto-gear:agent-context end -->
 
----
+<!-- Proto Gear Agent Redirect — do not add project rules here -->
+# Project Context
 
-# CLAUDE.md — Claude Code Host Config
+This project uses Proto Gear for AI agent coordination.
 
-This file is what Claude Code auto-loads. **AGENTS.md is the canonical entry point** for any agent working in this repository. Everything below the managed block above only points back to canonical sources — do not add project guidance, conventions, or architecture content here. It will drift.
+## Required Reading (in order)
+1. `AGENTS.md` — Agent roles, workflows, pre-flight checklist
+2. `PROJECT_STATUS.md` — Current sprint, active tickets, project state
+3. `BRANCHING.md` — Git workflow and commit conventions (if exists)
 
-## Where to find things
+## Critical Rules
+- NEVER commit directly to `main` or `development` — always branch from `development`
+- Run `pg status` before starting work
+- Use `pg ticket create "title" --type feature` to register work
+- Use `pg ticket update ID --status IN_PROGRESS` to track progress
 
-| Topic                       | Read                                              |
-|-----------------------------|---------------------------------------------------|
-| 🤖 Auto-loaded quick index  | AGENT_CONTEXT.md (mirrored in the block above)    |
-| Agent orchestration (full)  | AGENTS.md                                         |
-| Project state, tickets      | PROJECT_STATUS.md                                 |
-| Architecture, modules       | ARCHITECTURE.md                                   |
-| Dev setup, branches, PRs    | CONTRIBUTING.md                                   |
-| Git workflow full spec      | BRANCHING.md + docs/dev/branching-strategy.md     |
-| Test patterns               | TESTING.md                                        |
-| 🚨 Release procedure        | docs/dev/release-workflow.md                      |
-| Readiness assessment        | docs/dev/readiness-assessment.md                  |
-
-Run `pg context` to print the agent index. Run `pg doctor` to check drift. Run `pg sync-context` (or `pg doctor --fix`) to repair.
+Do NOT duplicate project rules here. AGENTS.md is the single source of truth.

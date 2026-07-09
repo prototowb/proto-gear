@@ -11,6 +11,7 @@ defines:
   - decision-matrix
   - agent-roles-4-core-2-flex
 links:
+  - SESSION_HANDOFF.md
   - PROJECT_STATUS.md
   - BRANCHING.md
   - TESTING.md
@@ -26,29 +27,31 @@ links:
 
 **READ THESE FILES FIRST** using the Read tool before proceeding with any task:
 
-1. **`PROJECT_STATUS.md`** (REQUIRED) - Current project state, active tickets, sprint info
+1. **`SESSION_HANDOFF.md`** (REQUIRED, READ FIRST) - Rolling handoff from the previous session. What just shipped, what's pending, conventions in force. **Replace contents at the end of each session** — this is "what's true right now," not an append-only log.
+
+2. **`PROJECT_STATUS.md`** (REQUIRED) - Current project state, active tickets, sprint info
    - **Update this file** when completing tickets or changing project state
 
-2. **`BRANCHING.md`** (REQUIRED if git repo) - Git workflow and commit conventions
+3. **`BRANCHING.md`** (REQUIRED if git repo) - Git workflow and commit conventions
    - Follow: branch naming (`feature/TICKET-XXX-description`)
    - Follow: commit format (`type(scope): subject`)
    - **ALWAYS create feature branches** - never commit to main or development directly
 
-3. **`PROJECT_SPECIFICATIONS.md`** (REQUIRED IF EXISTS) - Project planning and architecture source
+4. **`PROJECT_SPECIFICATIONS.md`** (REQUIRED IF EXISTS) - Project planning and architecture source
    - **On first session**: extract architecture into `PROJECT_ARCHITECTURE.md` (see below)
    - If the file is a stub (brief description only), expand it with the user before extracting
 
-4. **`TESTING.md`** (RECOMMENDED) - Test-Driven Development workflow
+5. **`TESTING.md`** (RECOMMENDED) - Test-Driven Development workflow
    - Follow: Red-Green-Refactor cycle, test pyramid, coverage targets
    - **Write tests before implementation** when following TDD
 
-5. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
+6. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
    - Check: available skills, workflows, slash commands, and specialized agents
 
-6. **`CONTRIBUTING.md`** (OPTIONAL) - Contribution guidelines
-7. **`SECURITY.md`** (OPTIONAL) - Security policy and vulnerability reporting
-8. **`PROJECT_ARCHITECTURE.md`** (OPTIONAL) - Project-specific architecture (agent-generated from PROJECT_SPECIFICATIONS.md)
-9. **`CODE_OF_CONDUCT.md`** (OPTIONAL) - Community guidelines
+7. **`CONTRIBUTING.md`** (OPTIONAL) - Contribution guidelines
+8. **`SECURITY.md`** (OPTIONAL) - Security policy and vulnerability reporting
+9. **`PROJECT_ARCHITECTURE.md`** (OPTIONAL) - Project-specific architecture (agent-generated from PROJECT_SPECIFICATIONS.md)
+10. **`CODE_OF_CONDUCT.md`** (OPTIONAL) - Community guidelines
 
 ### Architecture Extraction Task
 
@@ -62,7 +65,8 @@ When `PROJECT_SPECIFICATIONS.md` is present and `PROJECT_ARCHITECTURE.md` does n
 ### Pre-Flight Checklist
 
 Before starting ANY development task, verify:
-- [ ] **FIRST**: Check if `.proto-gear/INDEX.md` exists - if yes, read it to discover available capabilities
+- [ ] **FIRST**: Read SESSION_HANDOFF.md — know what just shipped and what's pending
+- [ ] Check if `.proto-gear/INDEX.md` exists - if yes, read it to discover available capabilities
 - [ ] Read PROJECT_STATUS.md - know current sprint and active tickets
 - [ ] Read BRANCHING.md (if exists) - understand git workflow
 - [ ] Read TESTING.md (if exists) - understand testing requirements
@@ -95,6 +99,7 @@ This project uses Proto Gear for AI agent coordination.
 
 | File | Purpose | Read When |
 |------|---------|-----------|
+| `SESSION_HANDOFF.md` | Rolling session handoff — what just shipped, what's pending | Start of every session — before anything else |
 | `AGENTS.md` | Agent orchestration, roles, pre-flight checklist | First session or unclear on process |
 | `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
 | `PROJECT_SPECIFICATIONS.md` | Project planning doc — source for architecture decisions | When starting features or design work (if exists) |

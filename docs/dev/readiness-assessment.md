@@ -1,8 +1,29 @@
 # Proto Gear - Readiness Assessment
 
-**Current Version**: v0.8.0 (Production Ready)
-**Assessment Date**: 2025-12-10
-**Previous Assessment**: v0.7.3 (2025-12-09)
+**Current Version**: v0.10.0 (Production Ready)
+**Assessment Date**: 2026-05-13
+**Previous Assessment**: v0.8.0 (2025-12-10)
+
+> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system documented in the *v0.10.0 Update* section below). A full per-category rescore is captured for a future session — none of the v0.8.0 scores would *decrease*.
+
+## v0.10.0 Update (2026-05-13)
+
+**Shipped**: Indexing & Discovery System — 6 new CLI commands, 5 new modules, 489/489 tests passing (was 383/27 at the start of the cycle), single source of truth for capability metadata.
+
+**Net change since v0.8.0**:
+- ✅ Test count nearly doubled (256 → 489) with zero failures
+- ✅ All 27 pre-existing stale tests fixed (template_generation, coverage_boost, discovery, template_discovery, capabilities, enhanced_detection)
+- ✅ 6 Windows-environment CLI bugs fixed (subprocess stdin / cp1252 console / wizard launch under non-TTY stdout)
+- ✅ Drift detection (`pg doctor`) — first time the project has automated drift surfaces for its own dogfooded files
+- ✅ Single source of truth for capability listings (metadata.yaml canonical; INDEX.md auto-generated)
+- ✅ All 4 root scaffold docs (CONTRIBUTING/SECURITY/ARCHITECTURE/CODE_OF_CONDUCT) rewritten with proto-gear-specific content (they had been broken templates since v0.3.0)
+
+**PROTO tickets closed in this release**: PROTO-031 through PROTO-038 (8 total).
+
+**Next category to revisit when rescoring**:
+- *Documentation* (now has structured `proto-gear:header` block on all 8 templates + AGENT_CONTEXT.md auto-loaded into every host config)
+- *Test Coverage* (489 passing, full Windows + Linux parity in CI)
+- *User Experience* (agents now discover capabilities without explicit prompting; doctor surfaces drift; sync commands repair it)
 
 ---
 
