@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | feature | PENDING | feature/proto-047-adr-001-phase-c-ship-a-second-content-mo |  |
 | PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | feature | PENDING | feature/proto-048-multi-module-hosting-pg-module-name-cmd- |  |
 | PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | chore | PENDING | chore/proto-049-sync-pg-module-commands-into-agent-conte |  |
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | chore | PENDING | chore/proto-050-raise-coverage-on-core-business-logic-to |  |
@@ -61,6 +60,49 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-047 Details (COMPLETE)
+**ADR-001 Phase C entry — ship the Content module to falsify the module contract.**
+
+The Content module is the **second** implementation of the module contract
+(PROJECT_SPECIFICATIONS.md §3). Its job is to prove the department-agnostic
+`module_core/` discovers, loads, and audits a brand-new department through the
+same interfaces as engineering — with **zero `module_core/` edits** (the Phase B
+exit criterion, now proven against a real bundled module, not just the tmp_path
+toy in `test_module_manifest.py`).
+
+**Delivered**:
+1. ✅ `core/proto_gear_pkg/modules/content/module.yaml` — manifest declaring the
+   content contract surfaces: `state_surface: CONTENT_QUEUE.md`,
+   `context_manifest: AGENT_CONTEXT.md`, `handoff: SESSION_HANDOFF.md`.
+2. ✅ `modules/content/CONTENT_QUEUE.template.md` — the content state surface
+   (draft → review → scheduled → published) with the `content-approval`
+   supervision gate recorded in an "Approved by" column.
+3. ✅ `modules/content/__init__.py` — module docstring.
+4. ✅ `docs/dev/content-module-design.md` — the ADR-001 **action-item-7** design
+   doc: contract mapping, capability/gate design, and the **seam analysis**.
+5. ✅ `tests/test_content_module.py` — 11 acceptance tests: bundled module is
+   discovered alongside engineering, surfaces validate, `doctor.check_modules`
+   reports it valid, `pg module list/show content` render it.
+
+**Falsifier payoff (open question answered)**: the second module surfaced **two
+real core seams**, captured for **PROTO-048** (fixing them now would be a core
+edit and defeat the zero-core-edit proof):
+- **S1** — capabilities + gate checks read from one shared
+  `package_root()/capabilities`, ignoring each manifest's `capabilities_root`; a
+  module can't yet ship its own capabilities.
+- **S2** — no neutral per-module init/template-render seam, so
+  `pg --module content init` can't lay down `CONTENT_QUEUE.md` yet.
+Contract *surfaces* (items 2/3/4/6) work unmodified today; only capability
+*plumbing* (items 1/5) is still engineering-routed.
+
+**Verification**: `pg doctor --all` → 0 errors, 0 warnings, **24 ok** (was 23;
+content manifest adds one). Full suite **540 passed** (was 529). `black --check`
+clean. `git status` confirms no `module_core/` changes.
+
+**Files Created**: `core/proto_gear_pkg/modules/content/{module.yaml,__init__.py,CONTENT_QUEUE.template.md}`, `docs/dev/content-module-design.md`, `tests/test_content_module.py`.
+
+---
 
 ### PROTO-035 Details (IN PROGRESS)
 **Windows-environment CLI integration bugs** — the six failures that persisted across PROTO-031..038 were a mix of real production bugs in `pg` and pure test portability issues. All five distinct root causes fixed:
@@ -426,6 +468,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-043 | Supervision gates as data: gates field in workflow metadata + doctor check | 2026-07-09 | |
 | PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | 2026-07-09 | |
 | PROTO-051 | Black-format the repo and make the CI black --check gate required | 2026-07-09 | |
+| PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | 2026-07-09 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
