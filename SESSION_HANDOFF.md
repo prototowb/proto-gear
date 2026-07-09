@@ -7,11 +7,19 @@
 ## What Just Shipped
 
 Branches (stack, oldest first — each rebases onto the previous once merged):
-`feature/PROTO-039` (docs) → `chore/PROTO-042-split-monolith` →
-`chore/PROTO-046-rehome-module-core` →
-**`feature/PROTO-043-supervision-gates` (current HEAD)**.
-PRs open: #2 (039→development), #3 (042→039), #4 (046→042). PROTO-043 is a new
-branch off PROTO-046, PR to be opened stacked on #4.
+`feature/PROTO-039` → `chore/PROTO-042-split-monolith` →
+`chore/PROTO-046-rehome-module-core` → `feature/PROTO-043-supervision-gates` →
+**`chore/PROTO-044-repo-hygiene` (current HEAD)**.
+PRs: #2 (039→development), #3 (042→039), #4 (046→042), #5 (043→046), #6
+(044→043). **All open, merge bottom-up (#2 first).**
+
+**PROTO-044 — repo hygiene — COMPLETE.**
+- `02ebb2f` removed stale tracked backups (AGENTS.md.backup,
+  PROJECT_STATUS.md.backup); relocated root strays →
+  `dev/scripts/integrate_templates.py`,
+  `dev/scripts/composition_engine_demo.py` (was `test_composition_engine.py` —
+  a demo, not a test; the `test_` prefix made pytest collect it),
+  `docs/dev/wizard_demo_walkthrough.md`; gitignored `*.backup`/`*.bak`.
 
 **PROTO-043 — supervision gates as data (contract item 5) — COMPLETE.**
 - `0a986e6` `Gate` dataclass + `WorkflowMetadata.gates`; `doctor.
@@ -64,11 +72,13 @@ test changes (the engine re-exports every moved symbol, so
 
 ## Pending / In Progress
 
-- **PROTO-044** (next): repo hygiene (tracked `.backup` files, root strays:
-  `integrate_templates.py`, `test_composition_engine.py`,
-  `wizard_demo_walkthrough.md`).
-- **PR stack** (#2 → #3 → #4, + PROTO-043 PR stacked on #4) awaits review; merge
-  bottom-up. GitHub auto-retargets each base as the one below merges.
+- **No open tickets.** All roadmap work through ADR-001 Phase B + contract
+  item 5 is done. The 5-PR stack (#2→#6) awaits human review; merge bottom-up,
+  GitHub auto-retargets each base as the one below merges.
+- **Next candidates** (unticketed): ADR-001 Phase C (second/Content module to
+  falsify the contract); `pg --module <name> <cmd>` multi-module hosting; the
+  deferred `pg module` → AGENT_CONTEXT cheatsheet sync; raise coverage toward
+  the spec's ≥70% on core business logic.
 - **Deferred polish**: add `pg module` to `sync_context.CLI_COMMANDS` so it
   appears in AGENT_CONTEXT.md — skipped here to avoid dogfood host-file churn;
   fold into the next sync/release pass.

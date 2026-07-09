@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | chore | PENDING | chore/proto-044-repo-hygiene-untrack-backup-files-reloca |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -421,6 +420,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-045 | Module manifest contract + pg module + doctor check (ADR-001 Phase B foundation) | 2026-07-08 | |
 | PROTO-046 | Re-home engine into module_core/ + modules/engineering/ (ADR-001 Phase B item 5) | 2026-07-09 | |
 | PROTO-043 | Supervision gates as data: gates field in workflow metadata + doctor check | 2026-07-09 | |
+| PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | 2026-07-09 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
