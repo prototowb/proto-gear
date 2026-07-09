@@ -126,6 +126,13 @@ class TestGenerateAgentContext:
         assert BEGIN_MARKER in content
         assert END_MARKER in content
 
+    def test_cheatsheet_lists_module_commands(self, project):
+        # PROTO-049: pg module + pg --module init-surface must be advertised in
+        # the agent-facing CLI cheatsheet, not just implemented.
+        content = generate_agent_context(project)
+        assert "pg module list/show" in content
+        assert "pg --module <name> init-surface" in content
+
     def test_reads_version_from_status(self, project):
         content = generate_agent_context(project)
         assert "v0.9.0" in content
