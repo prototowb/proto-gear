@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | chore | PENDING | chore/proto-049-sync-pg-module-commands-into-agent-conte |  |
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | chore | PENDING | chore/proto-050-raise-coverage-on-core-business-logic-to |  |
 
 _No active tickets — v0.10.0 just shipped._
@@ -59,6 +58,27 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-049 Details (COMPLETE)
+**Sync `pg module` commands into the AGENT_CONTEXT cheatsheet.** The PROTO-048
+commands existed but weren't advertised in the agent-facing CLI cheatsheet, so a
+fresh agent session wouldn't know multi-module hosting exists.
+
+**Delivered**:
+1. ✅ Two new entries in `module_core/sync_context.py::CLI_COMMANDS`:
+   `pg module list/show [<name>]` and `pg --module <name> init-surface`.
+2. ✅ Ran `pg sync-context` — regenerated `AGENT_CONTEXT.md` and mirrored the
+   managed block into all four host configs (`CLAUDE.md`, `.cursorrules`,
+   `.windsurfrules`, `.github/copilot-instructions.md`).
+3. ✅ `tests/test_sync_context.py::test_cheatsheet_lists_module_commands` — locks
+   in that both commands appear in generated context so they can't silently drop.
+
+**Verification**: full suite **562 passed** (was 561). `pg doctor` 0/0/24 ok
+(host files back in sync — no drift). `black --check` clean.
+
+**Files Modified**: `core/proto_gear_pkg/module_core/sync_context.py`, `tests/test_sync_context.py`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-048 Details (COMPLETE)
 **Multi-module hosting — `pg --module <name> <cmd>`.** Closes seam **S2** that
@@ -512,6 +532,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-051 | Black-format the repo and make the CI black --check gate required | 2026-07-09 | |
 | PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | 2026-07-09 | |
 | PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | 2026-07-09 | |
+| PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | 2026-07-09 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
