@@ -401,60 +401,68 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
       * structural — every declared gate must have an id + description;
       * coverage — a workflow that produces a release/deployment/publish output
         must declare at least one gate, so approval points are never implied.
-    Validates the package-bundled capabilities (the committed source of truth),
-    mirroring check_modules.
+    Audits the package-bundled capabilities (the committed source of truth) —
+    the shared root AND every module's own ``capabilities/`` bundle, so a module
+    that ships its own gated workflow (e.g. content's publish) is enforced the
+    same as engineering's (seam S1). Module-owned capabilities are targeted as
+    ``<module>/<cap_id>`` to disambiguate.
     """
-    from ..paths import package_root
     from .capability_metadata import load_all_capabilities, CapabilityType
+    from . import module_host
 
     findings: List[Finding] = []
-    caps_dir = package_root() / "capabilities"
-    try:
-        caps = load_all_capabilities(caps_dir)
-    except Exception:
-        # capability load failures are reported by check_capabilities
-        return findings
 
-    for cap_id, meta in sorted(caps.items()):
-        if getattr(meta, "type", None) != CapabilityType.WORKFLOW or not meta.workflow:
+    for module, caps_dir in module_host.iter_capability_sources():
+        try:
+            caps = load_all_capabilities(caps_dir)
+        except Exception:
+            # capability load failures are reported by check_capabilities
             continue
-        gates = meta.workflow.gates
 
-        for g in gates:
-            if not g.id or not g.description:
+        for cap_id, meta in sorted(caps.items()):
+            if (
+                getattr(meta, "type", None) != CapabilityType.WORKFLOW
+                or not meta.workflow
+            ):
+                continue
+            gates = meta.workflow.gates
+            target = cap_id if module is None else f"{module}/{cap_id}"
+
+            for g in gates:
+                if not g.id or not g.description:
+                    findings.append(
+                        Finding(
+                            id="gate-malformed",
+                            severity="error",
+                            target=target,
+                            message="supervision gate missing id and/or description.",
+                            fix_hint="Give every gates: entry an id and a description",
+                        )
+                    )
+
+            risky = any(
+                any(tok in str(o).lower() for tok in _RISK_OUTPUT_TOKENS)
+                for o in meta.workflow.outputs
+            )
+            if risky and not gates:
                 findings.append(
                     Finding(
-                        id="gate-malformed",
-                        severity="error",
-                        target=cap_id,
-                        message="supervision gate missing id and/or description.",
-                        fix_hint="Give every gates: entry an id and a description",
+                        id="gate-missing",
+                        severity="warning",
+                        target=target,
+                        message="produces a release/deployment but declares no supervision gate.",
+                        fix_hint="Declare the human approval point under workflow.gates (contract item 5)",
                     )
                 )
-
-        risky = any(
-            any(tok in str(o).lower() for tok in _RISK_OUTPUT_TOKENS)
-            for o in meta.workflow.outputs
-        )
-        if risky and not gates:
-            findings.append(
-                Finding(
-                    id="gate-missing",
-                    severity="warning",
-                    target=cap_id,
-                    message="produces a release/deployment but declares no supervision gate.",
-                    fix_hint="Declare the human approval point under workflow.gates (contract item 5)",
+            elif gates:
+                findings.append(
+                    Finding(
+                        id="gate-ok",
+                        severity="ok",
+                        target=target,
+                        message=f"{len(gates)} supervision gate(s) declared.",
+                    )
                 )
-            )
-        elif gates:
-            findings.append(
-                Finding(
-                    id="gate-ok",
-                    severity="ok",
-                    target=cap_id,
-                    message=f"{len(gates)} supervision gate(s) declared.",
-                )
-            )
     return findings
 
 

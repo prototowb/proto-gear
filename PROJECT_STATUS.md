@@ -60,6 +60,42 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
 
+### PROTO-052 Details (COMPLETE)
+**Manifest-driven capability sources — modules ship their own `capabilities/`
+(seam S1, supervision half).** PROTO-047 surfaced S1: gate auditing read only
+the shared `package_root()/capabilities`, so a department couldn't ship its own
+gated capability. This closes the supervision-critical half.
+
+**Delivered**:
+1. ✅ `module_host.iter_capability_sources()` — enumerates every *bundled*
+   capability dir: the shared root (source `None`) + each
+   `modules/<name>/capabilities/` that exists. The source-side counterpart to
+   the manifest's `capabilities_root`.
+2. ✅ `doctor.check_supervision_gates` rewired to audit gates across **all**
+   sources (was: shared root only). Module-owned capabilities target as
+   `<module>/<cap_id>` to disambiguate.
+3. ✅ Demonstration: `modules/content/capabilities/workflows/publish/` — the
+   content module's own `publish` workflow with the `content-approval` gate.
+   `pg doctor` now reports `content/workflows/publish: 1 supervision gate(s)
+   declared` (25 ok, was 24).
+4. ✅ Tests: 3 for `iter_capability_sources`, 2 for module-owned gate auditing +
+   namespacing; existing gate unit tests pinned to a single fake source.
+
+**Scope note**: this is the *supervision* half of S1 (the half with product
+value — gates are the whole point). The *listing* half — routing host-side
+capability surfaces (`discovery`/`pg suggest`, `sync_context`/AGENT_CONTEXT,
+`agent_config`, wizard) through the same sources — is deferred until a module
+ships non-gate capabilities that need listing. Captured in
+`docs/dev/content-module-design.md` §6.
+
+**Verification**: full suite **566 passed** (was 562). `pg doctor` 0/0/25 ok.
+`black --check` clean.
+
+**Files Created**: `core/proto_gear_pkg/modules/content/capabilities/workflows/publish/{metadata.yaml,WORKFLOW.template.md}`.
+**Files Modified**: `core/proto_gear_pkg/module_core/module_host.py`, `core/proto_gear_pkg/module_core/doctor.py`, `tests/test_module_host.py`, `tests/test_supervision_gates.py`, `docs/dev/content-module-design.md` (S1 marked closed), `PROJECT_STATUS.md`.
+
+---
+
 ### PROTO-048 Details (COMPLETE)
 **Multi-module hosting — `pg --module <name> <cmd>`.** Closes seam **S2** that
 PROTO-047 surfaced: the core had no neutral path to materialise a *non-
@@ -512,6 +548,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-051 | Black-format the repo and make the CI black --check gate required | 2026-07-09 | |
 | PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | 2026-07-09 | |
 | PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | 2026-07-09 | |
+| PROTO-052 | Manifest-driven capability sources: modules ship their own capabilities/ (seam S1) | 2026-07-10 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

@@ -103,13 +103,20 @@ fixed here, because fixing them would be a core edit and would defeat the
 zero-core-edit proof this ticket exists to make. They are the concrete backlog
 for PROTO-048.
 
-- **S1 — capabilities are single-rooted, not per-module.**
-  `doctor.check_supervision_gates` and `capability_metadata.load_all_capabilities`
-  read from one shared `package_root()/capabilities` directory. A module cannot
-  yet ship its own capabilities under `modules/<name>/capabilities/` and have
-  them discovered/gated. The manifest *declares* `capabilities_root`, but the
-  loaders ignore it. → **PROTO-048**: make capability + gate loading manifest-
-  driven (honour `capabilities_root` per module).
+- **S1 — capabilities are single-rooted, not per-module.** ✅ **Closed by
+  PROTO-052** (supervision half). Previously `doctor.check_supervision_gates`
+  read only the shared `package_root()/capabilities` directory, so a module
+  couldn't ship its own gated capabilities. PROTO-052 adds
+  `module_host.iter_capability_sources()` — the shared root (source `None`) plus
+  every `modules/<name>/capabilities/` — and rewires the gate audit to iterate
+  all of them, targeting module-owned capabilities as `<module>/<cap_id>`. The
+  content module now ships `modules/content/capabilities/workflows/publish/`
+  with the `content-approval` gate, and `pg doctor` enforces it
+  (`content/workflows/publish: 1 supervision gate(s) declared`). Remaining
+  follow-up: route the *host-side* capability listings (`discovery`,
+  `sync_context`, `agent_config`, wizard) through the same sources so a
+  module's capabilities also surface in `pg suggest` / AGENT_CONTEXT — deferred
+  until a module ships non-gate capabilities that need listing.
 
 - **S2 — no per-module init / template rendering seam.** ✅ **Closed by
   PROTO-048.** `pg init` and the template engine live under

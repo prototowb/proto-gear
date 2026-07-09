@@ -16,7 +16,7 @@ like content works through this seam alone.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from .module_manifest import (
     ModuleManifest,
@@ -27,6 +27,10 @@ from .module_manifest import (
 # The department a bare ``pg <cmd>`` (no --module) targets. Engineering is
 # module #1 and the historical default, so the single-module case needs no flag.
 DEFAULT_MODULE = "engineering"
+
+# A bundled capability directory and the module that owns it (None = the shared
+# package-root capabilities/ home). See :func:`iter_capability_sources`.
+CapabilitySource = Tuple[Optional[str], Path]
 
 
 def resolve_module(
@@ -45,6 +49,42 @@ def resolve_module(
         available = ", ".join(sorted(by_id)) or "(none)"
         raise ModuleManifestError(f"unknown module '{target}'. Available: {available}")
     return manifest
+
+
+def iter_capability_sources(
+    modules_root: Optional[Path] = None,
+) -> List["CapabilitySource"]:
+    """Return every *bundled* capability directory, across all modules (seam S1).
+
+    Historically the package shipped one shared ``capabilities/`` directory at
+    the package root, and every loader (doctor gate audit, discovery, sync) read
+    only that. A departmental module could not ship its *own* capabilities and
+    have them discovered — the falsifier seam **S1** from
+    ``docs/dev/content-module-design.md``.
+
+    This is the source-side counterpart to the manifest's ``capabilities_root``:
+    the package-root ``capabilities/`` is the shared/engineering home (source
+    ``None``), and each ``modules/<name>/capabilities/`` that exists contributes
+    that module's own bundle (source ``<name>``). Callers that must audit or list
+    *all* bundled capabilities iterate this instead of hard-coding one directory.
+
+    Returns a list of ``(module, dir)`` pairs; ``module`` is ``None`` for the
+    shared root. Order is shared-first, then modules sorted by id.
+    """
+    from ..paths import package_root
+
+    sources: List["CapabilitySource"] = []
+    shared = package_root() / "capabilities"
+    if shared.is_dir():
+        sources.append((None, shared))
+
+    for manifest in discover_modules(modules_root):
+        if manifest.source_path is None:
+            continue
+        caps_dir = Path(manifest.source_path).parent / "capabilities"
+        if caps_dir.is_dir():
+            sources.append((manifest.module, caps_dir))
+    return sources
 
 
 def state_surface_template_path(manifest: ModuleManifest) -> Optional[Path]:

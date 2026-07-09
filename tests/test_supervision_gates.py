@@ -118,6 +118,23 @@ def _fake_workflow(outputs, gates):
     return SimpleNamespace(type=CapabilityType.WORKFLOW, workflow=wf)
 
 
+def _single_source(monkeypatch, tmp_path, caps):
+    """Pin gate auditing to one fake capability source returning ``caps``.
+
+    check_supervision_gates iterates every bundled source (shared root + each
+    module's capabilities/); these unit tests want the gate *logic* in isolation,
+    so we collapse to a single source and feed it a controlled capability dict.
+    """
+    monkeypatch.setattr(
+        "proto_gear_pkg.module_core.module_host.iter_capability_sources",
+        lambda modules_root=None: [(None, tmp_path)],
+    )
+    monkeypatch.setattr(
+        "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
+        lambda _d: caps,
+    )
+
+
 class TestCheckSupervisionGates:
     def test_real_package_is_green(self, tmp_path):
         """The bundled workflows declare their gates; no warnings or errors."""
@@ -129,10 +146,19 @@ class TestCheckSupervisionGates:
         assert "workflows/release" in targets
         assert "workflows/code-review-process" in targets
 
+    def test_module_owned_gate_is_audited(self, tmp_path):
+        """Seam S1: content's own publish workflow gate is discovered + audited."""
+        findings = doctor.check_supervision_gates(tmp_path)
+        ok_targets = {f.target for f in findings if f.id == "gate-ok"}
+        assert "content/workflows/publish" in ok_targets
+        # and it's namespaced by module, not colliding with the shared root
+        assert not any(f.target == "workflows/publish" for f in findings)
+
     def test_risky_output_without_gate_warns(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
-            lambda _d: {"workflows/deployer": _fake_workflow(["type: deployment"], [])},
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {"workflows/deployer": _fake_workflow(["type: deployment"], [])},
         )
         findings = doctor.check_supervision_gates(tmp_path)
         assert len(findings) == 1
@@ -140,16 +166,18 @@ class TestCheckSupervisionGates:
         assert findings[0].severity == "warning"
 
     def test_non_risky_without_gate_is_silent(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
-            lambda _d: {"workflows/docs": _fake_workflow(["type: documentation"], [])},
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {"workflows/docs": _fake_workflow(["type: documentation"], [])},
         )
         assert doctor.check_supervision_gates(tmp_path) == []
 
     def test_malformed_gate_is_error(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
-            lambda _d: {
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
                 "workflows/x": _fake_workflow(
                     ["type: release"], [Gate(id="", description="")]
                 )
@@ -159,9 +187,10 @@ class TestCheckSupervisionGates:
         assert any(f.id == "gate-malformed" and f.severity == "error" for f in findings)
 
     def test_declared_gate_reports_ok(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
-            lambda _d: {
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
                 "workflows/x": _fake_workflow(
                     ["type: release"], [Gate(id="g", description="approve")]
                 )
@@ -169,3 +198,20 @@ class TestCheckSupervisionGates:
         )
         findings = doctor.check_supervision_gates(tmp_path)
         assert [f.id for f in findings] == ["gate-ok"]
+
+    def test_module_source_namespaces_target(self, tmp_path, monkeypatch):
+        """A gate from a module source is targeted <module>/<cap_id>."""
+        monkeypatch.setattr(
+            "proto_gear_pkg.module_core.module_host.iter_capability_sources",
+            lambda modules_root=None: [("content", tmp_path)],
+        )
+        monkeypatch.setattr(
+            "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
+            lambda _d: {
+                "workflows/publish": _fake_workflow(
+                    ["type: publish"], [Gate(id="content-approval", description="ok")]
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert [f.target for f in findings] == ["content/workflows/publish"]
