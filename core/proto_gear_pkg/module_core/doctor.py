@@ -7,6 +7,7 @@ Audits the project for sync drift across:
   3. proto-gear:header presence on core docs (AGENTS.md, etc.)
   4. capability metadata validity
   5. departmental module manifests (module.yaml) validity
+  6. supervision gates declared in workflow metadata (contract item 5)
 
 Each check produces a list of Finding records. The dispatcher in proto_gear.py
 turns these into human-readable output or JSON.
@@ -331,6 +332,69 @@ def check_modules(project_dir: Path) -> List[Finding]:
     return findings
 
 
+# Workflow outputs that denote an irreversible / externally-visible effect and
+# therefore warrant an explicit human supervision gate (contract item 5).
+_RISK_OUTPUT_TOKENS = ("release", "deploy", "publish")
+
+
+def check_supervision_gates(project_dir: Path) -> List[Finding]:
+    """Audit supervision gates declared in bundled workflow capabilities.
+
+    Two rules (PROJECT_SPECIFICATIONS.md §4, contract item 5):
+      * structural — every declared gate must have an id + description;
+      * coverage — a workflow that produces a release/deployment/publish output
+        must declare at least one gate, so approval points are never implied.
+    Validates the package-bundled capabilities (the committed source of truth),
+    mirroring check_modules.
+    """
+    from ..paths import package_root
+    from .capability_metadata import load_all_capabilities, CapabilityType
+
+    findings: List[Finding] = []
+    caps_dir = package_root() / "capabilities"
+    try:
+        caps = load_all_capabilities(caps_dir)
+    except Exception:
+        # capability load failures are reported by check_capabilities
+        return findings
+
+    for cap_id, meta in sorted(caps.items()):
+        if getattr(meta, "type", None) != CapabilityType.WORKFLOW or not meta.workflow:
+            continue
+        gates = meta.workflow.gates
+
+        for g in gates:
+            if not g.id or not g.description:
+                findings.append(Finding(
+                    id="gate-malformed",
+                    severity="error",
+                    target=cap_id,
+                    message="supervision gate missing id and/or description.",
+                    fix_hint="Give every gates: entry an id and a description",
+                ))
+
+        risky = any(
+            any(tok in str(o).lower() for tok in _RISK_OUTPUT_TOKENS)
+            for o in meta.workflow.outputs
+        )
+        if risky and not gates:
+            findings.append(Finding(
+                id="gate-missing",
+                severity="warning",
+                target=cap_id,
+                message="produces a release/deployment but declares no supervision gate.",
+                fix_hint="Declare the human approval point under workflow.gates (contract item 5)",
+            ))
+        elif gates:
+            findings.append(Finding(
+                id="gate-ok",
+                severity="ok",
+                target=cap_id,
+                message=f"{len(gates)} supervision gate(s) declared.",
+            ))
+    return findings
+
+
 # ---------- driver ----------
 
 def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
@@ -341,6 +405,7 @@ def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report.findings.extend(check_capabilities(project_dir))
     report.findings.extend(check_capability_indexes(project_dir))
     report.findings.extend(check_modules(project_dir))
+    report.findings.extend(check_supervision_gates(project_dir))
     return report
 
 

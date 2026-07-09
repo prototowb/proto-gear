@@ -66,3 +66,9 @@ workflow:
     - "type: code"
     - "type: tests"
     - "type: hotfix-release"
+  gates:
+    - id: "hotfix-deploy-approval"
+      description: "Human approves the emergency fix and its scope before it is deployed to production."
+      before: "deploy"
+      approver: "human"
+      required: true

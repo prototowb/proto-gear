@@ -76,18 +76,45 @@ class CapabilityRelevance:
 
 
 @dataclass
+class Gate:
+    """A supervision point — an explicit human approval within a workflow.
+
+    Gates make the supervision model (PROJECT_SPECIFICATIONS.md §4) machine-
+    readable: "agent proposes, human approves at declared gates". Declared as
+    data so tooling (pg doctor) can enforce that a workflow with irreversible
+    effects doesn't leave its approval points implied.
+    """
+    id: str
+    description: str
+    before: str = ""          # step/action the gate guards (freeform, optional)
+    approver: str = "human"   # who must approve
+    required: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "description": self.description,
+            "before": self.before,
+            "approver": self.approver,
+            "required": self.required,
+        }
+
+
+@dataclass
 class WorkflowMetadata:
     """Workflow-specific metadata"""
     steps: int = 0
     estimated_duration: str = ""
     outputs: List[str] = field(default_factory=list)
+    gates: List[Gate] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format"""
         return {
             "steps": self.steps,
             "estimated_duration": self.estimated_duration,
-            "outputs": self.outputs
+            "outputs": self.outputs,
+            "gates": [g.to_dict() for g in self.gates],
         }
 
 
@@ -303,10 +330,21 @@ class CapabilityMetadataParser:
 
         if capability_type == CapabilityType.WORKFLOW:
             workflow_data = data.get("workflow", {})
+            gates = []
+            for g in (workflow_data.get("gates") or []):
+                if isinstance(g, dict):
+                    gates.append(Gate(
+                        id=str(g.get("id", "")),
+                        description=str(g.get("description", "")),
+                        before=str(g.get("before", "")),
+                        approver=str(g.get("approver", "human")),
+                        required=bool(g.get("required", True)),
+                    ))
             workflow = WorkflowMetadata(
                 steps=workflow_data.get("steps", 0),
                 estimated_duration=workflow_data.get("estimated_duration", ""),
-                outputs=workflow_data.get("outputs", [])
+                outputs=workflow_data.get("outputs", []),
+                gates=gates,
             )
 
         if capability_type == CapabilityType.COMMAND:
