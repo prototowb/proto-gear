@@ -25,18 +25,20 @@ from .module_core.capability_metadata import (
     CompositionEngine,
     CapabilityValidator,
     CapabilityMetadata,
-    ValidationError as CapabilityValidationError
+    ValidationError as CapabilityValidationError,
 )
 
 
 class AgentValidationError(Exception):
     """Raised when agent configuration validation fails"""
+
     pass
 
 
 @dataclass
 class AgentCapabilities:
     """Agent capability composition"""
+
     skills: List[str] = field(default_factory=list)
     workflows: List[str] = field(default_factory=list)
     commands: List[str] = field(default_factory=list)
@@ -58,7 +60,7 @@ class AgentCapabilities:
         return {
             "skills": self.skills,
             "workflows": self.workflows,
-            "commands": self.commands
+            "commands": self.commands,
         }
 
 
@@ -105,15 +107,15 @@ class AgentConfiguration:
             "required_files": self.required_files,
             "optional_files": self.optional_files,
             "tags": self.tags,
-            "status": self.status
+            "status": self.status,
         }
 
 
 class AgentConfigParser:
     """Parser for agent configuration files"""
 
-    VERSION_PATTERN = re.compile(r'^\d+\.\d+\.\d+$')
-    DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+    VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
+    DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
     @staticmethod
     def parse_agent_file(file_path: Path) -> AgentConfiguration:
@@ -134,7 +136,7 @@ class AgentConfigParser:
         if not file_path.exists():
             raise FileNotFoundError(f"Agent configuration file not found: {file_path}")
 
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if not isinstance(data, dict):
@@ -181,8 +183,7 @@ class AgentConfigParser:
         # Validate date format
         if not AgentConfigParser.DATE_PATTERN.match(created):
             raise AgentValidationError(
-                f"Invalid date format '{created}' in {source}. "
-                f"Must be YYYY-MM-DD"
+                f"Invalid date format '{created}' in {source}. " f"Must be YYYY-MM-DD"
             )
 
         # Parse capabilities
@@ -190,7 +191,7 @@ class AgentConfigParser:
         capabilities = AgentCapabilities(
             skills=capabilities_data.get("skills", []),
             workflows=capabilities_data.get("workflows", []),
-            commands=capabilities_data.get("commands", [])
+            commands=capabilities_data.get("commands", []),
         )
 
         # Validate at least one capability
@@ -231,7 +232,7 @@ class AgentConfigParser:
             required_files=required_files,
             optional_files=optional_files,
             tags=tags,
-            status=status
+            status=status,
         )
 
     @staticmethod
@@ -255,8 +256,7 @@ class AgentValidator:
 
     @staticmethod
     def validate_agent(
-        agent: AgentConfiguration,
-        all_capabilities: Dict[str, CapabilityMetadata]
+        agent: AgentConfiguration, all_capabilities: Dict[str, CapabilityMetadata]
     ) -> Tuple[List[str], List[str]]:
         """
         Validate agent configuration completely.
@@ -294,8 +294,7 @@ class AgentValidator:
         # Detect conflicts
         try:
             conflicts = CompositionEngine.detect_conflicts(
-                agent.capabilities.all_capabilities(),
-                all_capabilities
+                agent.capabilities.all_capabilities(), all_capabilities
             )
             if conflicts:
                 for c1, c2, reason in conflicts:
@@ -305,10 +304,14 @@ class AgentValidator:
 
         # Warnings for missing optional elements
         if not agent.context_priority:
-            warnings.append("No context_priority specified - agent won't know what to focus on")
+            warnings.append(
+                "No context_priority specified - agent won't know what to focus on"
+            )
 
         if not agent.agent_instructions:
-            warnings.append("No agent_instructions specified - agent won't have specific guidance")
+            warnings.append(
+                "No agent_instructions specified - agent won't have specific guidance"
+            )
 
         if not agent.author:
             warnings.append("No author specified")
@@ -316,8 +319,7 @@ class AgentValidator:
         # Warn if too many capabilities
         try:
             resolved = CompositionEngine.resolve_dependencies(
-                agent.capabilities.all_capabilities(),
-                all_capabilities
+                agent.capabilities.all_capabilities(), all_capabilities
             )
             if len(resolved) > 15:
                 warnings.append(
@@ -331,8 +333,7 @@ class AgentValidator:
 
     @staticmethod
     def get_recommendations(
-        agent: AgentConfiguration,
-        all_capabilities: Dict[str, CapabilityMetadata]
+        agent: AgentConfiguration, all_capabilities: Dict[str, CapabilityMetadata]
     ) -> List[str]:
         """
         Get capability recommendations for an agent.
@@ -346,8 +347,7 @@ class AgentValidator:
         """
         try:
             return CompositionEngine.get_recommended_capabilities(
-                agent.capabilities.all_capabilities(),
-                all_capabilities
+                agent.capabilities.all_capabilities(), all_capabilities
             )
         except Exception:
             return []
@@ -477,7 +477,7 @@ class AgentManager:
 
         # Save to file
         agent_file = self.agents_dir / f"{agent_name}.yaml"
-        with open(agent_file, 'w', encoding='utf-8') as f:
+        with open(agent_file, "w", encoding="utf-8") as f:
             yaml.dump(agent.to_dict(), f, default_flow_style=False, sort_keys=False)
 
     def delete_agent(self, agent_name: str):
@@ -497,10 +497,7 @@ class AgentManager:
 
 
 def create_agent_template(
-    name: str,
-    description: str,
-    capabilities: AgentCapabilities,
-    author: str = ""
+    name: str, description: str, capabilities: AgentCapabilities, author: str = ""
 ) -> AgentConfiguration:
     """
     Create a new agent configuration from template.
@@ -526,15 +523,15 @@ def create_agent_template(
         context_priority=[
             "Read PROJECT_STATUS.md for current work",
             "Review relevant files for the task",
-            "Check for existing patterns in codebase"
+            "Check for existing patterns in codebase",
         ],
         agent_instructions=[
             "Follow project conventions and best practices",
             "Update PROJECT_STATUS.md as work progresses",
-            "Write clear, maintainable code"
+            "Write clear, maintainable code",
         ],
         required_files=["PROJECT_STATUS.md"],
         optional_files=[],
         tags=[],
-        status="active"
+        status="active",
     )

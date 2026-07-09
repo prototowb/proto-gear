@@ -14,7 +14,7 @@ from proto_gear_pkg.modules.engineering.interactive_wizard import (
     PRESETS,
     get_safe_chars,
     QUESTIONARY_AVAILABLE,
-    RICH_AVAILABLE
+    RICH_AVAILABLE,
 )
 
 
@@ -25,9 +25,9 @@ class TestWizardCoreFlow:
         """Test project info panel creation"""
         wizard = RichWizard()
         result = wizard.create_project_info_panel(
-            {'detected': True, 'type': 'Python', 'framework': 'Flask'},
-            {'is_git_repo': True, 'has_remote': True, 'remote_name': 'origin'},
-            Path('.')
+            {"detected": True, "type": "Python", "framework": "Flask"},
+            {"is_git_repo": True, "has_remote": True, "remote_name": "origin"},
+            Path("."),
         )
         assert result is not None
 
@@ -35,9 +35,9 @@ class TestWizardCoreFlow:
         """Test safe character mapping"""
         chars = get_safe_chars()
         assert isinstance(chars, dict)
-        assert 'check' in chars
-        assert 'cross' in chars
-        assert 'bullet' in chars
+        assert "check" in chars
+        assert "cross" in chars
+        assert "bullet" in chars
 
     def test_wizard_clear_screen(self):
         """Test clear screen method"""
@@ -53,9 +53,7 @@ class TestWizardCoreFlow:
         """Test step header display"""
         wizard = RichWizard()
         wizard.show_step_header(
-            1, 3, "Test Step",
-            {'type': 'Python'},
-            Path('.')
+            1, 3, "Test Step", {"type": "Python"}, Path(".")
         )  # Should not raise error
 
 
@@ -65,42 +63,36 @@ class TestPresetApplication:
     def test_apply_full_preset_with_git(self, tmp_path):
         """Test full preset with git"""
         config = _apply_preset_config(
-            PRESETS['full']['config'],
-            git_detected=True,
-            current_dir=tmp_path
+            PRESETS["full"]["config"], git_detected=True, current_dir=tmp_path
         )
-        assert config['with_all'] is True
-        assert config['with_branching'] is True
-        assert config['with_capabilities'] is True
+        assert config["with_all"] is True
+        assert config["with_branching"] is True
+        assert config["with_capabilities"] is True
 
     def test_apply_quick_preset_without_git(self, tmp_path):
         """Test quick preset without git"""
         config = _apply_preset_config(
-            PRESETS['quick']['config'],
-            git_detected=False,
-            current_dir=tmp_path
+            PRESETS["quick"]["config"], git_detected=False, current_dir=tmp_path
         )
-        assert config['with_branching'] is False  # auto becomes False
+        assert config["with_branching"] is False  # auto becomes False
 
     def test_apply_minimal_preset_always_no_branching(self, tmp_path):
         """Test minimal preset never has branching"""
         config = _apply_preset_config(
-            PRESETS['minimal']['config'],
+            PRESETS["minimal"]["config"],
             git_detected=True,  # Even with git
-            current_dir=tmp_path
+            current_dir=tmp_path,
         )
-        assert config['with_branching'] is False
+        assert config["with_branching"] is False
 
     def test_preset_core_templates(self, tmp_path):
         """Test preset includes core templates"""
         config = _apply_preset_config(
-            PRESETS['quick']['config'],
-            git_detected=True,
-            current_dir=tmp_path
+            PRESETS["quick"]["config"], git_detected=True, current_dir=tmp_path
         )
-        assert 'core_templates' in config
-        assert 'AGENTS' in config['core_templates']
-        assert 'PROJECT_STATUS' in config['core_templates']
+        assert "core_templates" in config
+        assert "AGENTS" in config["core_templates"]
+        assert "PROJECT_STATUS" in config["core_templates"]
 
 
 class TestWizardCustomFlow:
@@ -109,8 +101,8 @@ class TestWizardCustomFlow:
     def test_wizard_handles_custom_config(self):
         """Test wizard can accept custom configuration"""
         wizard = RichWizard()
-        wizard.config['custom_key'] = 'custom_value'
-        assert wizard.config['custom_key'] == 'custom_value'
+        wizard.config["custom_key"] = "custom_value"
+        assert wizard.config["custom_key"] == "custom_value"
 
 
 class TestWizardEdgeCases:
@@ -119,14 +111,14 @@ class TestWizardEdgeCases:
     def test_wizard_config_mutable(self):
         """Test wizard config can be modified"""
         wizard = RichWizard()
-        wizard.config['test'] = 'value'
-        assert wizard.config['test'] == 'value'
+        wizard.config["test"] = "value"
+        assert wizard.config["test"] == "value"
 
     def test_all_presets_have_required_config(self):
         """Test all presets have valid config"""
         for preset_key, preset in PRESETS.items():
-            assert 'config' in preset
-            config = preset['config']
+            assert "config" in preset
+            config = preset["config"]
             # Check that config exists and is a dictionary (or None for custom preset)
             if config is not None:
                 assert isinstance(config, dict)
@@ -134,13 +126,15 @@ class TestWizardEdgeCases:
 
     def test_preset_config_full_has_with_all(self):
         """Test full preset has with_all"""
-        assert PRESETS['full']['config'].get('with_all') is True
+        assert PRESETS["full"]["config"].get("with_all") is True
 
     def test_preset_config_minimal_no_capabilities(self):
         """Test minimal preset has no capabilities"""
-        minimal_config = PRESETS['minimal']['config']
+        minimal_config = PRESETS["minimal"]["config"]
         # Check for capabilities configuration (can be 'capabilities' or 'with_capabilities')
-        has_capabilities = minimal_config.get('with_capabilities', minimal_config.get('capabilities', False))
+        has_capabilities = minimal_config.get(
+            "with_capabilities", minimal_config.get("capabilities", False)
+        )
         assert has_capabilities is False
 
     def test_wizard_initialization_creates_empty_config(self):
@@ -149,5 +143,5 @@ class TestWizardEdgeCases:
         assert wizard.config == {}
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

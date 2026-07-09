@@ -28,28 +28,32 @@ from dataclasses import dataclass
 from proto_gear_pkg.module_core.metadata_parser import MetadataParser, TemplateMetadata
 from proto_gear_pkg.ui_helper import Colors
 
-
 # ============================================================================
 # Exception Classes
 # ============================================================================
 
+
 class TemplateUpdateError(Exception):
     """Base exception for template update errors"""
+
     pass
 
 
 class ExtractionError(TemplateUpdateError):
     """Failed to extract user data from existing file"""
+
     pass
 
 
 class MergeError(TemplateUpdateError):
     """Failed to merge new template with user data"""
+
     pass
 
 
 class ValidationError(TemplateUpdateError):
     """Merged content failed validation"""
+
     pass
 
 
@@ -57,9 +61,11 @@ class ValidationError(TemplateUpdateError):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ExtractedData:
     """Container for extracted user data"""
+
     yaml_blocks: Dict[str, Any]
     table_sections: Dict[str, str]
     freeform_sections: Dict[str, str]
@@ -69,6 +75,7 @@ class ExtractedData:
 @dataclass
 class UpdateResult:
     """Result of a template update operation"""
+
     success: bool
     template_name: str
     backup_created: bool
@@ -82,6 +89,7 @@ class UpdateResult:
 # ============================================================================
 # User Data Extractor
 # ============================================================================
+
 
 class UserDataExtractor:
     """
@@ -103,52 +111,60 @@ class UserDataExtractor:
             Dictionary of template-specific extraction patterns
         """
         return {
-            'PROJECT_STATUS': {
-                'yaml_blocks': [
+            "PROJECT_STATUS": {
+                "yaml_blocks": [
                     # Current state YAML block
-                    ('current_state', r'```yaml\s*\nproject_phase:.*?\n```', re.DOTALL),
+                    ("current_state", r"```yaml\s*\nproject_phase:.*?\n```", re.DOTALL),
                 ],
-                'table_sections': [
+                "table_sections": [
                     # Active tickets table
-                    ('active_tickets',
-                     r'##\s*🎫\s*Active Tickets\s*\n\n(.*?)(?=\n##|\Z)',
-                     re.DOTALL),
+                    (
+                        "active_tickets",
+                        r"##\s*🎫\s*Active Tickets\s*\n\n(.*?)(?=\n##|\Z)",
+                        re.DOTALL,
+                    ),
                     # Completed tickets table
-                    ('completed_tickets',
-                     r'##\s*✅\s*Completed Tickets\s*\n\n(.*?)(?=\n##|\Z)',
-                     re.DOTALL),
+                    (
+                        "completed_tickets",
+                        r"##\s*✅\s*Completed Tickets\s*\n\n(.*?)(?=\n##|\Z)",
+                        re.DOTALL,
+                    ),
                     # Blocked tickets table (optional)
-                    ('blocked_tickets',
-                     r'##\s*🚫\s*Blocked Tickets\s*\n\n(.*?)(?=\n##|\Z)',
-                     re.DOTALL),
+                    (
+                        "blocked_tickets",
+                        r"##\s*🚫\s*Blocked Tickets\s*\n\n(.*?)(?=\n##|\Z)",
+                        re.DOTALL,
+                    ),
                 ],
-                'freeform_sections': [
+                "freeform_sections": [
                     # Recent updates section
-                    ('recent_updates',
-                     r'##\s*🔄\s*Recent Updates\s*\n\n(.*?)(?=\n##|\Z)',
-                     re.DOTALL),
+                    (
+                        "recent_updates",
+                        r"##\s*🔄\s*Recent Updates\s*\n\n(.*?)(?=\n##|\Z)",
+                        re.DOTALL,
+                    ),
                     # Feature progress
-                    ('feature_progress',
-                     r'##\s*📊\s*Feature Progress\s*\n\n(.*?)(?=\n##|\Z)',
-                     re.DOTALL),
+                    (
+                        "feature_progress",
+                        r"##\s*📊\s*Feature Progress\s*\n\n(.*?)(?=\n##|\Z)",
+                        re.DOTALL,
+                    ),
                 ],
             },
-            'AGENTS': {
-                'agent_configs': [
+            "AGENTS": {
+                "agent_configs": [
                     # Custom core agent configurations
-                    ('core_agents',
-                     r'{{CORE_AGENT_1}}.*?{{CORE_AGENT_4}}',
-                     re.DOTALL),
+                    ("core_agents", r"{{CORE_AGENT_1}}.*?{{CORE_AGENT_4}}", re.DOTALL),
                     # Custom flex agent assignments
-                    ('flex_agents',
-                     r'{{FLEX_AGENT_1}}.*?{{FLEX_AGENT_5}}',
-                     re.DOTALL),
+                    ("flex_agents", r"{{FLEX_AGENT_1}}.*?{{FLEX_AGENT_5}}", re.DOTALL),
                 ],
-                'directory_configs': [
+                "directory_configs": [
                     # Directory-specific agent notes
-                    ('directory_agents',
-                     r'{{DIR1}}/AGENTS\.md.*?{{DIR3}}/AGENTS\.md',
-                     re.DOTALL),
+                    (
+                        "directory_agents",
+                        r"{{DIR1}}/AGENTS\.md.*?{{DIR3}}/AGENTS\.md",
+                        re.DOTALL,
+                    ),
                 ],
             },
         }
@@ -175,9 +191,9 @@ class UserDataExtractor:
         patterns = self.extraction_patterns[template_name]
 
         try:
-            if template_name == 'PROJECT_STATUS':
+            if template_name == "PROJECT_STATUS":
                 return self._extract_project_status(content, patterns)
-            elif template_name == 'AGENTS':
+            elif template_name == "AGENTS":
                 return self._extract_agents(content, patterns)
             else:
                 raise ExtractionError(f"Unsupported template: {template_name}")
@@ -186,9 +202,7 @@ class UserDataExtractor:
             raise ExtractionError(f"Failed to extract data from {template_name}: {e}")
 
     def _extract_project_status(
-        self,
-        content: str,
-        patterns: Dict[str, Any]
+        self, content: str, patterns: Dict[str, Any]
     ) -> ExtractedData:
         """
         Extract user data from PROJECT_STATUS.md.
@@ -205,14 +219,16 @@ class UserDataExtractor:
         freeform_sections = {}
 
         # Extract YAML blocks
-        for name, pattern, flags in patterns.get('yaml_blocks', []):
+        for name, pattern, flags in patterns.get("yaml_blocks", []):
             match = re.search(pattern, content, flags)
             if match:
                 yaml_content = match.group(0)
                 # Parse YAML to validate
                 try:
                     # Extract YAML between ```yaml and ```
-                    yaml_text = re.search(r'```yaml\s*\n(.*?)\n```', yaml_content, re.DOTALL)
+                    yaml_text = re.search(
+                        r"```yaml\s*\n(.*?)\n```", yaml_content, re.DOTALL
+                    )
                     if yaml_text:
                         parsed = yaml.safe_load(yaml_text.group(1))
                         yaml_blocks[name] = parsed
@@ -221,13 +237,13 @@ class UserDataExtractor:
                     yaml_blocks[name] = yaml_content
 
         # Extract table sections
-        for name, pattern, flags in patterns.get('table_sections', []):
+        for name, pattern, flags in patterns.get("table_sections", []):
             match = re.search(pattern, content, flags)
             if match:
                 table_sections[name] = match.group(1).strip()
 
         # Extract freeform sections
-        for name, pattern, flags in patterns.get('freeform_sections', []):
+        for name, pattern, flags in patterns.get("freeform_sections", []):
             match = re.search(pattern, content, flags)
             if match:
                 freeform_sections[name] = match.group(1).strip()
@@ -236,14 +252,10 @@ class UserDataExtractor:
             yaml_blocks=yaml_blocks,
             table_sections=table_sections,
             freeform_sections=freeform_sections,
-            metadata={}
+            metadata={},
         )
 
-    def _extract_agents(
-        self,
-        content: str,
-        patterns: Dict[str, Any]
-    ) -> ExtractedData:
+    def _extract_agents(self, content: str, patterns: Dict[str, Any]) -> ExtractedData:
         """
         Extract user data from AGENTS.md.
 
@@ -262,13 +274,14 @@ class UserDataExtractor:
             yaml_blocks={},
             table_sections={},
             freeform_sections={},
-            metadata={'note': 'AGENTS.md extraction not yet implemented'}
+            metadata={"note": "AGENTS.md extraction not yet implemented"},
         )
 
 
 # ============================================================================
 # Template Merger
 # ============================================================================
+
 
 class TemplateMerger:
     """
@@ -291,7 +304,7 @@ class TemplateMerger:
         self,
         template_name: str,
         extracted_data: ExtractedData,
-        project_context: Dict[str, str]
+        project_context: Dict[str, str],
     ) -> str:
         """
         Merge new template with extracted user data.
@@ -318,9 +331,9 @@ class TemplateMerger:
             content = self._replace_placeholders(content, project_context)
 
             # 4. Insert user data (template-specific)
-            if template_name == 'PROJECT_STATUS':
+            if template_name == "PROJECT_STATUS":
                 content = self._merge_project_status(content, extracted_data)
-            elif template_name == 'AGENTS':
+            elif template_name == "AGENTS":
                 content = self._merge_agents(content, extracted_data)
 
             return content
@@ -344,13 +357,9 @@ class TemplateMerger:
         if not template_path.exists():
             raise MergeError(f"Template file not found: {template_path}")
 
-        return template_path.read_text(encoding='utf-8')
+        return template_path.read_text(encoding="utf-8")
 
-    def _replace_placeholders(
-        self,
-        content: str,
-        context: Dict[str, str]
-    ) -> str:
+    def _replace_placeholders(self, content: str, context: Dict[str, str]) -> str:
         """
         Replace template placeholders with project-specific values.
 
@@ -367,11 +376,7 @@ class TemplateMerger:
 
         return content
 
-    def _merge_project_status(
-        self,
-        template: str,
-        data: ExtractedData
-    ) -> str:
+    def _merge_project_status(self, template: str, data: ExtractedData) -> str:
         """
         Merge PROJECT_STATUS.md with user data.
 
@@ -385,41 +390,37 @@ class TemplateMerger:
         content = template
 
         # Replace YAML blocks
-        if 'current_state' in data.yaml_blocks:
-            state_data = data.yaml_blocks['current_state']
+        if "current_state" in data.yaml_blocks:
+            state_data = data.yaml_blocks["current_state"]
             # Format as YAML block
             yaml_str = yaml.dump(state_data, default_flow_style=False, sort_keys=False)
             yaml_block = f"```yaml\n{yaml_str}```"
 
             # Find and replace the YAML block in template
-            pattern = r'```yaml\s*\nproject_phase:.*?\n```'
+            pattern = r"```yaml\s*\nproject_phase:.*?\n```"
             content = re.sub(pattern, yaml_block, content, flags=re.DOTALL)
 
         # Replace ticket tables
-        if 'active_tickets' in data.table_sections:
+        if "active_tickets" in data.table_sections:
             # Find the Active Tickets section and replace table content
-            pattern = r'(##\s*🎫\s*Active Tickets\s*\n\n)(.*?)(?=\n##|\Z)'
-            replacement = r'\1' + data.table_sections['active_tickets']
+            pattern = r"(##\s*🎫\s*Active Tickets\s*\n\n)(.*?)(?=\n##|\Z)"
+            replacement = r"\1" + data.table_sections["active_tickets"]
             content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
-        if 'completed_tickets' in data.table_sections:
-            pattern = r'(##\s*✅\s*Completed Tickets\s*\n\n)(.*?)(?=\n##|\Z)'
-            replacement = r'\1' + data.table_sections['completed_tickets']
+        if "completed_tickets" in data.table_sections:
+            pattern = r"(##\s*✅\s*Completed Tickets\s*\n\n)(.*?)(?=\n##|\Z)"
+            replacement = r"\1" + data.table_sections["completed_tickets"]
             content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
         # Replace freeform sections
-        if 'recent_updates' in data.freeform_sections:
-            pattern = r'(##\s*🔄\s*Recent Updates\s*\n\n)(.*?)(?=\n##|\Z)'
-            replacement = r'\1' + data.freeform_sections['recent_updates']
+        if "recent_updates" in data.freeform_sections:
+            pattern = r"(##\s*🔄\s*Recent Updates\s*\n\n)(.*?)(?=\n##|\Z)"
+            replacement = r"\1" + data.freeform_sections["recent_updates"]
             content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
         return content
 
-    def _merge_agents(
-        self,
-        template: str,
-        data: ExtractedData
-    ) -> str:
+    def _merge_agents(self, template: str, data: ExtractedData) -> str:
         """
         Merge AGENTS.md with user data.
 
@@ -438,6 +439,7 @@ class TemplateMerger:
 # Diff Generator
 # ============================================================================
 
+
 class DiffGenerator:
     """
     Generates unified diffs with color coding and statistics.
@@ -445,9 +447,7 @@ class DiffGenerator:
 
     @staticmethod
     def generate(
-        old_content: str,
-        new_content: str,
-        filename: str
+        old_content: str, new_content: str, filename: str
     ) -> Tuple[str, Dict[str, int]]:
         """
         Generate colored unified diff.
@@ -464,24 +464,26 @@ class DiffGenerator:
         new_lines = new_content.splitlines(keepends=True)
 
         # Generate unified diff
-        diff = list(difflib.unified_diff(
-            old_lines,
-            new_lines,
-            fromfile=f'{filename}.old',
-            tofile=f'{filename}.new',
-            lineterm=''
-        ))
+        diff = list(
+            difflib.unified_diff(
+                old_lines,
+                new_lines,
+                fromfile=f"{filename}.old",
+                tofile=f"{filename}.new",
+                lineterm="",
+            )
+        )
 
         # Color the diff
         colored_diff = []
         for line in diff:
-            if line.startswith('+++') or line.startswith('---'):
+            if line.startswith("+++") or line.startswith("---"):
                 colored_diff.append(Colors.BOLD + line + Colors.ENDC)
-            elif line.startswith('+'):
+            elif line.startswith("+"):
                 colored_diff.append(Colors.GREEN + line + Colors.ENDC)
-            elif line.startswith('-'):
+            elif line.startswith("-"):
                 colored_diff.append(Colors.FAIL + line + Colors.ENDC)
-            elif line.startswith('@@'):
+            elif line.startswith("@@"):
                 colored_diff.append(Colors.CYAN + line + Colors.ENDC)
             else:
                 colored_diff.append(line)
@@ -489,13 +491,11 @@ class DiffGenerator:
         # Calculate statistics
         stats = DiffGenerator.calculate_stats(old_content, new_content, diff)
 
-        return '\n'.join(colored_diff), stats
+        return "\n".join(colored_diff), stats
 
     @staticmethod
     def calculate_stats(
-        old_content: str,
-        new_content: str,
-        diff: List[str]
+        old_content: str, new_content: str, diff: List[str]
     ) -> Dict[str, int]:
         """
         Calculate diff statistics.
@@ -509,25 +509,24 @@ class DiffGenerator:
             Dictionary with lines_added, lines_removed, etc.
         """
         lines_added = sum(
-            1 for line in diff
-            if line.startswith('+') and not line.startswith('+++')
+            1 for line in diff if line.startswith("+") and not line.startswith("+++")
         )
         lines_removed = sum(
-            1 for line in diff
-            if line.startswith('-') and not line.startswith('---')
+            1 for line in diff if line.startswith("-") and not line.startswith("---")
         )
 
         return {
-            'lines_added': lines_added,
-            'lines_removed': lines_removed,
-            'total_lines_old': len(old_content.splitlines()),
-            'total_lines_new': len(new_content.splitlines()),
+            "lines_added": lines_added,
+            "lines_removed": lines_removed,
+            "total_lines_old": len(old_content.splitlines()),
+            "total_lines_new": len(new_content.splitlines()),
         }
 
 
 # ============================================================================
 # Template Validator
 # ============================================================================
+
 
 class TemplateValidator:
     """
@@ -549,7 +548,7 @@ class TemplateValidator:
         warnings = []
 
         # Check for unreplaced placeholders
-        placeholders = re.findall(r'\{\{(\w+)\}\}', content)
+        placeholders = re.findall(r"\{\{(\w+)\}\}", content)
         if placeholders:
             unique_placeholders = set(placeholders)
             warnings.append(
@@ -557,7 +556,7 @@ class TemplateValidator:
             )
 
         # Check YAML validity
-        yaml_blocks = re.findall(r'```yaml\s*\n(.*?)\n```', content, re.DOTALL)
+        yaml_blocks = re.findall(r"```yaml\s*\n(.*?)\n```", content, re.DOTALL)
         for i, block in enumerate(yaml_blocks):
             try:
                 yaml.safe_load(block)
@@ -565,9 +564,9 @@ class TemplateValidator:
                 warnings.append(f"YAML block {i+1} invalid: {e}")
 
         # Template-specific validation
-        if template_name == 'PROJECT_STATUS':
+        if template_name == "PROJECT_STATUS":
             # Check for required tables
-            tables = re.findall(r'\|.*?\|.*?\n\|[-:| ]+\|', content)
+            tables = re.findall(r"\|.*?\|.*?\n\|[-:| ]+\|", content)
             if len(tables) < 2:
                 warnings.append(
                     "Expected at least 2 tables (Active Tickets, Completed Tickets)"
@@ -580,6 +579,7 @@ class TemplateValidator:
 # ============================================================================
 # Main Template Updater
 # ============================================================================
+
 
 class TemplateUpdater:
     """
@@ -598,6 +598,7 @@ class TemplateUpdater:
         """
         self.project_dir = project_dir
         from proto_gear_pkg.paths import package_root
+
         self.package_dir = package_root()
 
         self.extractor = UserDataExtractor()
@@ -608,7 +609,7 @@ class TemplateUpdater:
         template_name: str,
         project_context: Dict[str, str],
         dry_run: bool = False,
-        force: bool = False
+        force: bool = False,
     ) -> UpdateResult:
         """
         Update a single template file.
@@ -636,16 +637,14 @@ class TemplateUpdater:
 
         try:
             # 1. Read current file
-            old_content = file_path.read_text(encoding='utf-8')
+            old_content = file_path.read_text(encoding="utf-8")
 
             # 2. Extract user data
             extracted_data = self.extractor.extract(old_content, template_name)
 
             # 3. Merge with new template
             new_content = self.merger.merge(
-                template_name,
-                extracted_data,
-                project_context
+                template_name, extracted_data, project_context
             )
 
             # 4. Validate merged content
@@ -653,19 +652,19 @@ class TemplateUpdater:
 
             # 5. Generate diff
             diff_text, stats = DiffGenerator.generate(
-                old_content,
-                new_content,
-                filename
+                old_content, new_content, filename
             )
 
             # 6. Create backup and write (if not dry-run)
             backup_created = False
             backup_path = None
 
-            if not dry_run and (force or self._confirm_update(diff_text, stats, filename)):
+            if not dry_run and (
+                force or self._confirm_update(diff_text, stats, filename)
+            ):
                 backup_path = self._create_backup(file_path)
                 backup_created = True
-                file_path.write_text(new_content, encoding='utf-8')
+                file_path.write_text(new_content, encoding="utf-8")
 
             # Success = operation completed, even if there are warnings
             # (Warnings are informational, not failures)
@@ -674,10 +673,10 @@ class TemplateUpdater:
                 template_name=template_name,
                 backup_created=backup_created,
                 backup_path=backup_path,
-                lines_added=stats['lines_added'],
-                lines_removed=stats['lines_removed'],
+                lines_added=stats["lines_added"],
+                lines_removed=stats["lines_removed"],
                 warnings=warnings,
-                errors=[]
+                errors=[],
             )
 
         except Exception as e:
@@ -689,7 +688,7 @@ class TemplateUpdater:
                 lines_added=0,
                 lines_removed=0,
                 warnings=[],
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _create_backup(self, file_path: Path) -> Path:
@@ -702,16 +701,13 @@ class TemplateUpdater:
         Returns:
             Path to backup file
         """
-        backup_path = file_path.with_suffix('.md.bak')
-        content = file_path.read_text(encoding='utf-8')
-        backup_path.write_text(content, encoding='utf-8')
+        backup_path = file_path.with_suffix(".md.bak")
+        content = file_path.read_text(encoding="utf-8")
+        backup_path.write_text(content, encoding="utf-8")
         return backup_path
 
     def _confirm_update(
-        self,
-        diff_text: str,
-        stats: Dict[str, int],
-        filename: str
+        self, diff_text: str, stats: Dict[str, int], filename: str
     ) -> bool:
         """
         Show diff preview and prompt user for confirmation.
@@ -724,8 +720,14 @@ class TemplateUpdater:
         Returns:
             True if user confirms, False otherwise
         """
-        print(f"\n{Colors.CYAN}+-- Template Update Preview: {filename} " + "-" * (40 - len(filename)) + f"+{Colors.ENDC}")
-        print(f"{Colors.CYAN}|{Colors.ENDC} Changes: {Colors.GREEN}+{stats['lines_added']}{Colors.ENDC} lines, {Colors.FAIL}-{stats['lines_removed']}{Colors.ENDC} lines")
+        print(
+            f"\n{Colors.CYAN}+-- Template Update Preview: {filename} "
+            + "-" * (40 - len(filename))
+            + f"+{Colors.ENDC}"
+        )
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} Changes: {Colors.GREEN}+{stats['lines_added']}{Colors.ENDC} lines, {Colors.FAIL}-{stats['lines_removed']}{Colors.ENDC} lines"
+        )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
         print(f"{Colors.BOLD}=== Unified Diff ==={Colors.ENDC}")
@@ -733,10 +735,16 @@ class TemplateUpdater:
         print()
 
         while True:
-            response = input(f"{Colors.GREEN}Apply update? [y/N]: {Colors.ENDC}").strip().lower()
-            if response in ['y', 'yes']:
+            response = (
+                input(f"{Colors.GREEN}Apply update? [y/N]: {Colors.ENDC}")
+                .strip()
+                .lower()
+            )
+            if response in ["y", "yes"]:
                 return True
-            elif response in ['n', 'no', '']:
+            elif response in ["n", "no", ""]:
                 return False
             else:
-                print(f"{Colors.FAIL}Invalid choice. Please enter 'y' or 'n'.{Colors.ENDC}")
+                print(
+                    f"{Colors.FAIL}Invalid choice. Please enter 'y' or 'n'.{Colors.ENDC}"
+                )

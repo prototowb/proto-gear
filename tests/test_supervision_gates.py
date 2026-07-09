@@ -36,7 +36,11 @@ def _workflow_dict(gates=None):
         "conflicts": [],
         "composable_with": [],
         "agent_roles": [],
-        "workflow": {"steps": 3, "estimated_duration": "1h", "outputs": ["type: release"]},
+        "workflow": {
+            "steps": 3,
+            "estimated_duration": "1h",
+            "outputs": ["type: release"],
+        },
     }
     if gates is not None:
         d["workflow"]["gates"] = gates
@@ -45,10 +49,19 @@ def _workflow_dict(gates=None):
 
 class TestGateParsing:
     def test_gates_parsed(self):
-        m = CapabilityMetadataParser._parse_metadata_dict(_workflow_dict(gates=[
-            {"id": "release-approval", "description": "approve before deploy",
-             "before": "deploy", "approver": "human", "required": True},
-        ]))
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {
+                        "id": "release-approval",
+                        "description": "approve before deploy",
+                        "before": "deploy",
+                        "approver": "human",
+                        "required": True,
+                    },
+                ]
+            )
+        )
         assert len(m.workflow.gates) == 1
         g = m.workflow.gates[0]
         assert isinstance(g, Gate)
@@ -63,9 +76,13 @@ class TestGateParsing:
         assert m.workflow.gates == []
 
     def test_gate_defaults(self):
-        m = CapabilityMetadataParser._parse_metadata_dict(_workflow_dict(gates=[
-            {"id": "g1", "description": "d"},
-        ]))
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {"id": "g1", "description": "d"},
+                ]
+            )
+        )
         g = m.workflow.gates[0]
         assert g.approver == "human"
         assert g.required is True
@@ -73,16 +90,24 @@ class TestGateParsing:
 
     def test_malformed_gate_is_lenient(self):
         # Parsing must not crash on a gate missing id/description; doctor flags it.
-        m = CapabilityMetadataParser._parse_metadata_dict(_workflow_dict(gates=[
-            {"description": "no id here"},
-        ]))
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {"description": "no id here"},
+                ]
+            )
+        )
         assert m.workflow.gates[0].id == ""
         assert m.workflow.gates[0].description == "no id here"
 
     def test_to_dict_includes_gates(self):
-        m = CapabilityMetadataParser._parse_metadata_dict(_workflow_dict(gates=[
-            {"id": "g1", "description": "d"},
-        ]))
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {"id": "g1", "description": "d"},
+                ]
+            )
+        )
         wd = m.workflow.to_dict()
         assert "gates" in wd
         assert wd["gates"][0]["id"] == "g1"
@@ -124,8 +149,11 @@ class TestCheckSupervisionGates:
     def test_malformed_gate_is_error(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
-            lambda _d: {"workflows/x": _fake_workflow(
-                ["type: release"], [Gate(id="", description="")])},
+            lambda _d: {
+                "workflows/x": _fake_workflow(
+                    ["type: release"], [Gate(id="", description="")]
+                )
+            },
         )
         findings = doctor.check_supervision_gates(tmp_path)
         assert any(f.id == "gate-malformed" and f.severity == "error" for f in findings)
@@ -133,8 +161,11 @@ class TestCheckSupervisionGates:
     def test_declared_gate_reports_ok(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
-            lambda _d: {"workflows/x": _fake_workflow(
-                ["type: release"], [Gate(id="g", description="approve")])},
+            lambda _d: {
+                "workflows/x": _fake_workflow(
+                    ["type: release"], [Gate(id="g", description="approve")]
+                )
+            },
         )
         findings = doctor.check_supervision_gates(tmp_path)
         assert [f.id for f in findings] == ["gate-ok"]

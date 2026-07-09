@@ -58,7 +58,9 @@ class ModuleManifest:
         return d
 
 
-def parse_module_manifest(data: dict, source_path: Optional[Path] = None) -> ModuleManifest:
+def parse_module_manifest(
+    data: dict, source_path: Optional[Path] = None
+) -> ModuleManifest:
     """Build a :class:`ModuleManifest` from a parsed mapping.
 
     Raises :class:`ModuleManifestError` if required fields are missing or the
@@ -118,6 +120,7 @@ def load_module_manifest(path: Path) -> ModuleManifest:
 def default_modules_root() -> Path:
     """The package-bundled modules/ directory (each subdir is a module)."""
     from ..paths import package_root
+
     return package_root() / "modules"
 
 

@@ -22,6 +22,7 @@ import yaml
 
 class CapabilityType(Enum):
     """Types of capabilities"""
+
     SKILL = "skill"
     WORKFLOW = "workflow"
     COMMAND = "command"
@@ -30,6 +31,7 @@ class CapabilityType(Enum):
 
 class CapabilityStatus(Enum):
     """Status of a capability"""
+
     STABLE = "stable"
     BETA = "beta"
     EXPERIMENTAL = "experimental"
@@ -39,6 +41,7 @@ class CapabilityStatus(Enum):
 @dataclass
 class CapabilityDependencies:
     """Structured capability dependencies"""
+
     required: List[str] = field(default_factory=list)
     optional: List[str] = field(default_factory=list)
     suggested: List[str] = field(default_factory=list)
@@ -52,13 +55,14 @@ class CapabilityDependencies:
         return {
             "required": self.required,
             "optional": self.optional,
-            "suggested": self.suggested
+            "suggested": self.suggested,
         }
 
 
 @dataclass
 class CapabilityRelevance:
     """When and where a capability is relevant"""
+
     triggers: List[str] = field(default_factory=list)
     contexts: List[str] = field(default_factory=list)
 
@@ -69,10 +73,7 @@ class CapabilityRelevance:
 
     def to_dict(self) -> Dict[str, List[str]]:
         """Convert to dictionary format"""
-        return {
-            "triggers": self.triggers,
-            "contexts": self.contexts
-        }
+        return {"triggers": self.triggers, "contexts": self.contexts}
 
 
 @dataclass
@@ -84,10 +85,11 @@ class Gate:
     data so tooling (pg doctor) can enforce that a workflow with irreversible
     effects doesn't leave its approval points implied.
     """
+
     id: str
     description: str
-    before: str = ""          # step/action the gate guards (freeform, optional)
-    approver: str = "human"   # who must approve
+    before: str = ""  # step/action the gate guards (freeform, optional)
+    approver: str = "human"  # who must approve
     required: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
@@ -103,6 +105,7 @@ class Gate:
 @dataclass
 class WorkflowMetadata:
     """Workflow-specific metadata"""
+
     steps: int = 0
     estimated_duration: str = ""
     outputs: List[str] = field(default_factory=list)
@@ -121,6 +124,7 @@ class WorkflowMetadata:
 @dataclass
 class CommandMetadata:
     """Command-specific metadata"""
+
     idempotent: bool = True
     side_effects: List[str] = field(default_factory=list)
     prerequisites: List[str] = field(default_factory=list)
@@ -130,7 +134,7 @@ class CommandMetadata:
         return {
             "idempotent": self.idempotent,
             "side_effects": self.side_effects,
-            "prerequisites": self.prerequisites
+            "prerequisites": self.prerequisites,
         }
 
 
@@ -186,7 +190,7 @@ class CapabilityMetadata:
             "agent_roles": self.agent_roles,
             "usage_notes": self.usage_notes,
             "required_files": self.required_files,
-            "optional_files": self.optional_files
+            "optional_files": self.optional_files,
         }
 
         if self.relevance:
@@ -203,6 +207,7 @@ class CapabilityMetadata:
 
 class ValidationError(Exception):
     """Raised when metadata validation fails"""
+
     pass
 
 
@@ -210,15 +215,20 @@ class CapabilityMetadataParser:
     """Parser for capability metadata files"""
 
     REQUIRED_FIELDS = [
-        "name", "type", "version", "description", "category",
-        "tags", "status", "author", "last_updated"
+        "name",
+        "type",
+        "version",
+        "description",
+        "category",
+        "tags",
+        "status",
+        "author",
+        "last_updated",
     ]
 
-    COMPOSITION_FIELDS = [
-        "dependencies", "conflicts", "composable_with", "agent_roles"
-    ]
+    COMPOSITION_FIELDS = ["dependencies", "conflicts", "composable_with", "agent_roles"]
 
-    VERSION_PATTERN = re.compile(r'^\d+\.\d+\.\d+$')
+    VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 
     @staticmethod
     def parse_metadata_file(file_path: Path) -> CapabilityMetadata:
@@ -239,16 +249,20 @@ class CapabilityMetadataParser:
         if not file_path.exists():
             raise FileNotFoundError(f"Metadata file not found: {file_path}")
 
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if not isinstance(data, dict):
-            raise ValidationError(f"Metadata file must contain YAML dictionary: {file_path}")
+            raise ValidationError(
+                f"Metadata file must contain YAML dictionary: {file_path}"
+            )
 
         return CapabilityMetadataParser._parse_metadata_dict(data, str(file_path))
 
     @staticmethod
-    def _parse_metadata_dict(data: Dict[str, Any], source: str = "") -> CapabilityMetadata:
+    def _parse_metadata_dict(
+        data: Dict[str, Any], source: str = ""
+    ) -> CapabilityMetadata:
         """
         Parse metadata dictionary into CapabilityMetadata object.
 
@@ -307,7 +321,7 @@ class CapabilityMetadataParser:
         dependencies = CapabilityDependencies(
             required=dependencies_data.get("required", []),
             optional=dependencies_data.get("optional", []),
-            suggested=dependencies_data.get("suggested", [])
+            suggested=dependencies_data.get("suggested", []),
         )
 
         # Parse composition fields
@@ -321,7 +335,7 @@ class CapabilityMetadataParser:
         if relevance_data:
             relevance = CapabilityRelevance(
                 triggers=relevance_data.get("triggers", []),
-                contexts=relevance_data.get("contexts", [])
+                contexts=relevance_data.get("contexts", []),
             )
 
         # Parse type-specific metadata
@@ -331,15 +345,17 @@ class CapabilityMetadataParser:
         if capability_type == CapabilityType.WORKFLOW:
             workflow_data = data.get("workflow", {})
             gates = []
-            for g in (workflow_data.get("gates") or []):
+            for g in workflow_data.get("gates") or []:
                 if isinstance(g, dict):
-                    gates.append(Gate(
-                        id=str(g.get("id", "")),
-                        description=str(g.get("description", "")),
-                        before=str(g.get("before", "")),
-                        approver=str(g.get("approver", "human")),
-                        required=bool(g.get("required", True)),
-                    ))
+                    gates.append(
+                        Gate(
+                            id=str(g.get("id", "")),
+                            description=str(g.get("description", "")),
+                            before=str(g.get("before", "")),
+                            approver=str(g.get("approver", "human")),
+                            required=bool(g.get("required", True)),
+                        )
+                    )
             workflow = WorkflowMetadata(
                 steps=workflow_data.get("steps", 0),
                 estimated_duration=workflow_data.get("estimated_duration", ""),
@@ -352,7 +368,7 @@ class CapabilityMetadataParser:
             command = CommandMetadata(
                 idempotent=command_data.get("idempotent", True),
                 side_effects=command_data.get("side_effects", []),
-                prerequisites=command_data.get("prerequisites", [])
+                prerequisites=command_data.get("prerequisites", []),
             )
 
         return CapabilityMetadata(
@@ -375,7 +391,7 @@ class CapabilityMetadataParser:
             optional_files=data.get("optional_files", []),
             workflow=workflow,
             command=command,
-            raw_metadata=data
+            raw_metadata=data,
         )
 
     @staticmethod
@@ -430,7 +446,9 @@ class CapabilityValidator:
         if not metadata.tags:
             warnings.append("Tags list is empty (recommended to have at least one tag)")
         if not metadata.agent_roles:
-            warnings.append("Agent roles list is empty (which agents benefit from this?)")
+            warnings.append(
+                "Agent roles list is empty (which agents benefit from this?)"
+            )
 
         # Validate workflow-specific requirements
         if metadata.type == CapabilityType.WORKFLOW:
@@ -450,7 +468,7 @@ class CapabilityValidator:
     def validate_dependencies(
         capability_id: str,
         metadata: CapabilityMetadata,
-        all_capabilities: Dict[str, CapabilityMetadata]
+        all_capabilities: Dict[str, CapabilityMetadata],
     ) -> List[str]:
         """
         Validate that all dependencies exist and are resolvable.
@@ -475,8 +493,7 @@ class CapabilityValidator:
 
     @staticmethod
     def detect_circular_dependencies(
-        capability_id: str,
-        all_capabilities: Dict[str, CapabilityMetadata]
+        capability_id: str, all_capabilities: Dict[str, CapabilityMetadata]
     ) -> Optional[List[str]]:
         """
         Detect circular dependency chains.
@@ -488,7 +505,10 @@ class CapabilityValidator:
         Returns:
             List forming circular dependency chain if found, None otherwise
         """
-        def find_cycle(current: str, visited: Set[str], path: List[str]) -> Optional[List[str]]:
+
+        def find_cycle(
+            current: str, visited: Set[str], path: List[str]
+        ) -> Optional[List[str]]:
             if current in visited:
                 # Found cycle - return the cycle path
                 cycle_start = path.index(current)
@@ -518,7 +538,7 @@ class CompositionEngine:
     def resolve_dependencies(
         capabilities: List[str],
         all_capabilities: Dict[str, CapabilityMetadata],
-        include_optional: bool = False
+        include_optional: bool = False,
     ) -> Set[str]:
         """
         Resolve all dependencies for a list of capabilities.
@@ -562,8 +582,7 @@ class CompositionEngine:
 
     @staticmethod
     def detect_conflicts(
-        capabilities: List[str],
-        all_capabilities: Dict[str, CapabilityMetadata]
+        capabilities: List[str], all_capabilities: Dict[str, CapabilityMetadata]
     ) -> List[Tuple[str, str, str]]:
         """
         Detect conflicts between capabilities.
@@ -583,7 +602,7 @@ class CompositionEngine:
 
             metadata1 = all_capabilities[cap1]
 
-            for cap2 in capabilities[i + 1:]:
+            for cap2 in capabilities[i + 1 :]:
                 if cap2 in metadata1.conflicts:
                     reason = f"'{cap1}' conflicts with '{cap2}'"
                     conflicts.append((cap1, cap2, reason))
@@ -592,8 +611,7 @@ class CompositionEngine:
 
     @staticmethod
     def get_recommended_capabilities(
-        capabilities: List[str],
-        all_capabilities: Dict[str, CapabilityMetadata]
+        capabilities: List[str], all_capabilities: Dict[str, CapabilityMetadata]
     ) -> List[str]:
         """
         Get recommended capabilities based on composable_with metadata.
@@ -639,7 +657,7 @@ def load_all_capabilities(capabilities_dir: Path) -> Dict[str, CapabilityMetadat
 
             # Generate capability ID from path (e.g., "skills/testing")
             rel_path = metadata_file.parent.relative_to(capabilities_dir)
-            cap_id = str(rel_path).replace('\\', '/')
+            cap_id = str(rel_path).replace("\\", "/")
 
             capabilities[cap_id] = metadata
 

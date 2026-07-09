@@ -38,6 +38,7 @@ current_branch: "main"
 | PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | feature | PENDING | feature/proto-048-multi-module-hosting-pg-module-name-cmd- |  |
 | PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | chore | PENDING | chore/proto-049-sync-pg-module-commands-into-agent-conte |  |
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | chore | PENDING | chore/proto-050-raise-coverage-on-core-business-logic-to |  |
+| PROTO-051 | Black-format the repo and make the CI black --check gate required | chore | PENDING | chore/proto-051-black-format-the-repo-and-make-the-ci-bl |  |
 
 _No active tickets — v0.10.0 just shipped._
 

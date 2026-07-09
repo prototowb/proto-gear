@@ -44,7 +44,7 @@ def main():
 
     try:
         # Handle 'init' command
-        if args.command == 'init':
+        if args.command == "init":
             engine.show_splash_screen()
 
             # Check if Proto Gear is already initialized
@@ -71,47 +71,64 @@ def main():
                 # Run interactive wizard
                 try:
                     # Check if this is an incremental update (Proto Gear already initialized)
-                    if existing_env['is_existing'] and engine.ENHANCED_WIZARD_AVAILABLE and engine.run_incremental_wizard:
+                    if (
+                        existing_env["is_existing"]
+                        and engine.ENHANCED_WIZARD_AVAILABLE
+                        and engine.run_incremental_wizard
+                    ):
                         # Run incremental wizard for updating existing environment
                         project_info = engine.detect_project_structure(current_dir)
                         git_config = engine.detect_git_config()
 
-                        wizard_config = engine.run_incremental_wizard(existing_env, project_info, git_config, current_dir)
+                        wizard_config = engine.run_incremental_wizard(
+                            existing_env, project_info, git_config, current_dir
+                        )
 
-                        if wizard_config is None or not wizard_config.get('confirmed'):
-                            print(f"\n{Colors.YELLOW}Update cancelled by user.{Colors.ENDC}")
+                        if wizard_config is None or not wizard_config.get("confirmed"):
+                            print(
+                                f"\n{Colors.YELLOW}Update cancelled by user.{Colors.ENDC}"
+                            )
                             sys.exit(0)
 
                     # Fresh initialization - use enhanced wizard if available
-                    elif engine.ENHANCED_WIZARD_AVAILABLE and engine.QUESTIONARY_AVAILABLE:
+                    elif (
+                        engine.ENHANCED_WIZARD_AVAILABLE
+                        and engine.QUESTIONARY_AVAILABLE
+                    ):
                         # Get project info for enhanced wizard
                         project_info = engine.detect_project_structure(current_dir)
                         git_config = engine.detect_git_config()
 
-                        wizard_config = engine.run_enhanced_wizard(project_info, git_config, current_dir)
+                        wizard_config = engine.run_enhanced_wizard(
+                            project_info, git_config, current_dir
+                        )
 
-                        if wizard_config is None or not wizard_config.get('confirmed'):
-                            print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
+                        if wizard_config is None or not wizard_config.get("confirmed"):
+                            print(
+                                f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}"
+                            )
                             sys.exit(0)
                     else:
                         # Fallback to simple wizard
                         wizard_config = engine.interactive_setup_wizard()
 
-                        if not wizard_config.get('confirmed'):
-                            print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
+                        if not wizard_config.get("confirmed"):
+                            print(
+                                f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}"
+                            )
                             sys.exit(0)
 
                     # Run setup with wizard configuration
                     result = engine.run_simple_protogear_init(
                         dry_run=args.dry_run,
-                        force=args.force if hasattr(args, 'force') else False,
-                        with_branching=wizard_config.get('with_branching', False),
-                        ticket_prefix=wizard_config.get('ticket_prefix'),
-                        with_capabilities=wizard_config.get('with_capabilities', False),
-                        capabilities_config=wizard_config.get('capabilities_config'),
-                        with_all=wizard_config.get('with_all', False),
-                        core_templates=wizard_config.get('core_templates'),
-                        project_description=wizard_config.get('project_description')
+                        force=args.force if hasattr(args, "force") else False,
+                        with_branching=wizard_config.get("with_branching", False),
+                        ticket_prefix=wizard_config.get("ticket_prefix"),
+                        with_capabilities=wizard_config.get("with_capabilities", False),
+                        capabilities_config=wizard_config.get("capabilities_config"),
+                        with_all=wizard_config.get("with_all", False),
+                        core_templates=wizard_config.get("core_templates"),
+                        project_description=wizard_config.get("project_description"),
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -121,25 +138,41 @@ def main():
                 ticket_prefix = args.ticket_prefix
 
                 # If branching is requested but no ticket prefix was given, prompt for one
-                if args.with_branching and not ticket_prefix and not args.no_interactive:
+                if (
+                    args.with_branching
+                    and not ticket_prefix
+                    and not args.no_interactive
+                ):
                     current_dir = Path(".")
-                    suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+                    suggested_prefix = (
+                        current_dir.name.upper().replace("-", "").replace("_", "")[:6]
+                    )
                     if not suggested_prefix or len(suggested_prefix) < 2:
-                        suggested_prefix = 'PROJ'
+                        suggested_prefix = "PROJ"
 
                     print(f"\n{Colors.CYAN}🎫 Ticket Prefix Configuration{Colors.ENDC}")
                     print("-" * 30)
-                    print(f"Suggested prefix: {Colors.GREEN}{suggested_prefix}{Colors.ENDC}")
-                    print(f"{Colors.GRAY}Examples: PROJ-001, APP-042, MYAPP-123{Colors.ENDC}")
+                    print(
+                        f"Suggested prefix: {Colors.GREEN}{suggested_prefix}{Colors.ENDC}"
+                    )
+                    print(
+                        f"{Colors.GRAY}Examples: PROJ-001, APP-042, MYAPP-123{Colors.ENDC}"
+                    )
 
-                    response = engine.safe_input(
-                        f"{Colors.BOLD}Enter ticket prefix (press Enter for '{suggested_prefix}'): {Colors.ENDC}"
-                    ).strip().upper()
+                    response = (
+                        engine.safe_input(
+                            f"{Colors.BOLD}Enter ticket prefix (press Enter for '{suggested_prefix}'): {Colors.ENDC}"
+                        )
+                        .strip()
+                        .upper()
+                    )
 
                     if response and response.isalnum() and 2 <= len(response) <= 10:
                         ticket_prefix = response
                     elif response:
-                        print(f"{Colors.YELLOW}Invalid prefix, using suggested: {suggested_prefix}{Colors.ENDC}")
+                        print(
+                            f"{Colors.YELLOW}Invalid prefix, using suggested: {suggested_prefix}{Colors.ENDC}"
+                        )
                         ticket_prefix = suggested_prefix
                     else:
                         ticket_prefix = suggested_prefix
@@ -148,142 +181,165 @@ def main():
 
                 result = engine.run_simple_protogear_init(
                     dry_run=args.dry_run,
-                    force=args.force if hasattr(args, 'force') else False,
+                    force=args.force if hasattr(args, "force") else False,
                     with_branching=args.with_branching,
                     ticket_prefix=ticket_prefix,
                     with_capabilities=args.with_capabilities,
-                    with_all=args.all if hasattr(args, 'all') else False
-                    )
+                    with_all=args.all if hasattr(args, "all") else False,
+                )
 
-            if result['status'] == 'success':
-                print(f"\n{Colors.GREEN}ProtoGear AI Agent Framework initialized!{Colors.ENDC}")
-            elif result['status'] == 'cancelled':
-                print(f"\n{Colors.YELLOW}Initialization cancelled by user.{Colors.ENDC}")
+            if result["status"] == "success":
+                print(
+                    f"\n{Colors.GREEN}ProtoGear AI Agent Framework initialized!{Colors.ENDC}"
+                )
+            elif result["status"] == "cancelled":
+                print(
+                    f"\n{Colors.YELLOW}Initialization cancelled by user.{Colors.ENDC}"
+                )
             else:
-                print(f"\n{Colors.FAIL}Initialization failed: {result.get('error', 'Unknown error')}{Colors.ENDC}")
+                print(
+                    f"\n{Colors.FAIL}Initialization failed: {result.get('error', 'Unknown error')}{Colors.ENDC}"
+                )
                 sys.exit(1)
 
             sys.exit(0)
 
         # Handle 'help' command
-        elif args.command == 'help':
+        elif args.command == "help":
             engine.show_help()
             sys.exit(0)
 
         # Handle 'capabilities' command
-        elif args.command == 'capabilities':
-            if args.capabilities_command == 'list':
+        elif args.command == "capabilities":
+            if args.capabilities_command == "list":
                 sys.exit(cli_commands.cmd_capabilities_list(args))
-            elif args.capabilities_command == 'search':
+            elif args.capabilities_command == "search":
                 sys.exit(cli_commands.cmd_capabilities_search(args))
-            elif args.capabilities_command == 'show':
+            elif args.capabilities_command == "show":
                 sys.exit(cli_commands.cmd_capabilities_show(args))
-            elif args.capabilities_command == 'tree':
+            elif args.capabilities_command == "tree":
                 sys.exit(cli_commands.cmd_capabilities_tree(args))
             else:
-                print(f"{Colors.YELLOW}Use 'pg capabilities --help' to see available commands{Colors.ENDC}")
+                print(
+                    f"{Colors.YELLOW}Use 'pg capabilities --help' to see available commands{Colors.ENDC}"
+                )
                 sys.exit(1)
 
         # Handle 'agent' command
-        elif args.command == 'agent':
-            if args.agent_command == 'create':
+        elif args.command == "agent":
+            if args.agent_command == "create":
                 sys.exit(cli_commands.cmd_agent_create(args))
-            elif args.agent_command == 'list':
+            elif args.agent_command == "list":
                 sys.exit(cli_commands.cmd_agent_list(args))
-            elif args.agent_command == 'show':
+            elif args.agent_command == "show":
                 sys.exit(cli_commands.cmd_agent_show(args))
-            elif args.agent_command == 'validate':
+            elif args.agent_command == "validate":
                 sys.exit(cli_commands.cmd_agent_validate(args))
-            elif args.agent_command == 'delete':
+            elif args.agent_command == "delete":
                 sys.exit(cli_commands.cmd_agent_delete(args))
-            elif args.agent_command == 'clone':
+            elif args.agent_command == "clone":
                 sys.exit(cli_commands.cmd_agent_clone(args))
             else:
-                print(f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}")
+                print(
+                    f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}"
+                )
                 sys.exit(1)
 
         # Handle 'module' command
-        elif args.command == 'module':
-            if args.module_command == 'list':
+        elif args.command == "module":
+            if args.module_command == "list":
                 sys.exit(cli_commands.cmd_module_list(args))
-            elif args.module_command == 'show':
+            elif args.module_command == "show":
                 sys.exit(cli_commands.cmd_module_show(args))
             else:
-                print(f"{Colors.YELLOW}Use 'pg module --help' to see available commands{Colors.ENDC}")
+                print(
+                    f"{Colors.YELLOW}Use 'pg module --help' to see available commands{Colors.ENDC}"
+                )
                 sys.exit(1)
 
         # Handle 'update' command
-        elif args.command == 'update':
+        elif args.command == "update":
             sys.exit(cli_commands.cmd_template_update(args))
 
         # Handle 'status' command
-        elif args.command == 'status':
+        elif args.command == "status":
             sys.exit(status_commands.cmd_status(args))
 
         # Handle 'ticket' command
-        elif args.command == 'ticket':
-            if args.ticket_command == 'create':
+        elif args.command == "ticket":
+            if args.ticket_command == "create":
                 sys.exit(status_commands.cmd_ticket_create(args))
-            elif args.ticket_command == 'update':
+            elif args.ticket_command == "update":
                 sys.exit(status_commands.cmd_ticket_update(args))
-            elif args.ticket_command == 'list':
+            elif args.ticket_command == "list":
                 sys.exit(status_commands.cmd_ticket_list(args))
             else:
                 print("Use 'pg ticket --help' to see available commands")
                 sys.exit(1)
 
         # Handle 'context' command
-        elif args.command == 'context':
+        elif args.command == "context":
             from ..module_core import sync_context as sync_context_module
+
             project_dir = Path(".")
             canon = project_dir / "AGENT_CONTEXT.md"
             if canon.exists() and not args.regenerate:
-                content = canon.read_text(encoding='utf-8')
+                content = canon.read_text(encoding="utf-8")
             else:
                 content = sync_context_module.generate_agent_context(project_dir)
             # Force UTF-8 so emoji/Unicode work on Windows consoles.
-            buffer = getattr(sys.stdout, 'buffer', None)
+            buffer = getattr(sys.stdout, "buffer", None)
             if buffer is not None:
-                buffer.write(content.encode('utf-8'))
+                buffer.write(content.encode("utf-8"))
             else:
                 sys.stdout.write(content)
             sys.exit(0)
 
         # Handle 'suggest' command
-        elif args.command == 'suggest':
+        elif args.command == "suggest":
             from ..module_core import discovery
+
             prose = " ".join(args.prose)
             matches = discovery.suggest(Path("."), prose, limit=args.limit)
             if args.json:
                 import json
+
                 print(json.dumps({"prose": prose, "matches": matches}, indent=2))
             else:
                 if not matches:
-                    print(f"{Colors.YELLOW}No matching capabilities for: {prose!r}{Colors.ENDC}")
+                    print(
+                        f"{Colors.YELLOW}No matching capabilities for: {prose!r}{Colors.ENDC}"
+                    )
                     sys.exit(0)
                 print(f"{Colors.CYAN}Top matches for {prose!r}:{Colors.ENDC}")
                 for i, m in enumerate(matches, 1):
-                    triggers_hit = ", ".join(f"`{t}`" for t in m['matched_triggers'])
-                    print(f"  {i}. {Colors.GREEN}{m['id']}{Colors.ENDC} "
-                          f"(score {m['score']}) — {m['description']}")
+                    triggers_hit = ", ".join(f"`{t}`" for t in m["matched_triggers"])
+                    print(
+                        f"  {i}. {Colors.GREEN}{m['id']}{Colors.ENDC} "
+                        f"(score {m['score']}) — {m['description']}"
+                    )
                     if triggers_hit:
                         print(f"     {Colors.GRAY}matched: {triggers_hit}{Colors.ENDC}")
             sys.exit(0)
 
         # Handle 'doctor' command
-        elif args.command == 'doctor':
+        elif args.command == "doctor":
             from ..module_core import doctor as doctor_module
+
             project_dir = Path(".")
             report = doctor_module.run_diagnostics(project_dir)
 
             if args.json:
                 import json
+
                 print(json.dumps(report.to_dict(), indent=2))
                 sys.exit(0 if report.errors == 0 else 1)
 
-            visible = report.findings if args.all else [
-                f for f in report.findings if f.severity != "ok"
-            ]
+            visible = (
+                report.findings
+                if args.all
+                else [f for f in report.findings if f.severity != "ok"]
+            )
 
             if not visible:
                 print(f"{Colors.GREEN}OK — no proto-gear drift detected.{Colors.ENDC}")
@@ -311,6 +367,7 @@ def main():
                 print(f"\n{Colors.CYAN}Running sync to repair drift...{Colors.ENDC}")
                 from ..module_core import sync_context as sync_context_module
                 from ..module_core import capability_index_builder
+
                 results = sync_context_module.sync_context(project_dir, dry_run=False)
                 for path_str, action in results.items():
                     print(f"  {Colors.GREEN}{action}{Colors.ENDC}: {path_str}")
@@ -320,31 +377,40 @@ def main():
                         caps_root, dry_run=False
                     )
                     for rel, action in idx_results.items():
-                        print(f"  {Colors.GREEN}{action}{Colors.ENDC}: .proto-gear/{rel}")
+                        print(
+                            f"  {Colors.GREEN}{action}{Colors.ENDC}: .proto-gear/{rel}"
+                        )
                 print(f"{Colors.GREEN}Re-run `pg doctor` to verify.{Colors.ENDC}")
 
             sys.exit(0 if report.errors == 0 else 1)
 
         # Handle 'sync-context' command
-        elif args.command == 'sync-context':
+        elif args.command == "sync-context":
             from ..module_core import sync_context as sync_context_module
             from ..module_core import capability_index_builder
+
             project_dir = Path(".")
-            results = sync_context_module.sync_context(project_dir, dry_run=args.dry_run)
-            if 'error' in results:
+            results = sync_context_module.sync_context(
+                project_dir, dry_run=args.dry_run
+            )
+            if "error" in results:
                 print(f"{Colors.FAIL}Error: {results['error']}{Colors.ENDC}")
                 sys.exit(1)
             label = "Would sync" if args.dry_run else "Synced"
             print(f"{Colors.CYAN}{label} Agent Context:{Colors.ENDC}")
             for path_str, action in results.items():
                 icon = {
-                    'created': '+',
-                    'updated': '~',
-                    'unchanged': '=',
-                    'would_create': '+ (dry)',
-                    'would_update': '~ (dry)',
-                }.get(action, '?')
-                colour = Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update') else Colors.GRAY
+                    "created": "+",
+                    "updated": "~",
+                    "unchanged": "=",
+                    "would_create": "+ (dry)",
+                    "would_update": "~ (dry)",
+                }.get(action, "?")
+                colour = (
+                    Colors.GREEN
+                    if action in ("created", "updated", "would_create", "would_update")
+                    else Colors.GRAY
+                )
                 print(f"  {colour}{icon} {path_str}{Colors.ENDC}  [{action}]")
 
             # Also sync capability indexes if .proto-gear/ exists
@@ -353,33 +419,43 @@ def main():
                 idx_results = capability_index_builder.sync_capability_indexes(
                     caps_root, dry_run=args.dry_run
                 )
-                if idx_results and 'error' not in idx_results:
+                if idx_results and "error" not in idx_results:
                     print(f"{Colors.CYAN}{label} Capability Indexes:{Colors.ENDC}")
                     for rel, action in idx_results.items():
-                        colour = (Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update')
-                                  else Colors.GRAY)
+                        colour = (
+                            Colors.GREEN
+                            if action
+                            in ("created", "updated", "would_create", "would_update")
+                            else Colors.GRAY
+                        )
                         print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]")
             sys.exit(0)
 
         # Handle 'sync-indexes' command
-        elif args.command == 'sync-indexes':
+        elif args.command == "sync-indexes":
             from ..module_core import capability_index_builder
+
             caps_root = Path(".") / ".proto-gear"
             if not caps_root.exists():
-                print(f"{Colors.YELLOW}No .proto-gear/ directory in current project — "
-                      f"run `pg init --with-capabilities` first.{Colors.ENDC}")
+                print(
+                    f"{Colors.YELLOW}No .proto-gear/ directory in current project — "
+                    f"run `pg init --with-capabilities` first.{Colors.ENDC}"
+                )
                 sys.exit(1)
             results = capability_index_builder.sync_capability_indexes(
                 caps_root, dry_run=args.dry_run
             )
-            if 'error' in results:
+            if "error" in results:
                 print(f"{Colors.FAIL}Error: {results['error']}{Colors.ENDC}")
                 sys.exit(1)
             label = "Would sync" if args.dry_run else "Synced"
             print(f"{Colors.CYAN}{label} Capability Indexes:{Colors.ENDC}")
             for rel, action in results.items():
-                colour = (Colors.GREEN if action in ('created', 'updated', 'would_create', 'would_update')
-                          else Colors.GRAY)
+                colour = (
+                    Colors.GREEN
+                    if action in ("created", "updated", "would_create", "would_update")
+                    else Colors.GRAY
+                )
                 hint = ""
                 if action == "missing-markers":
                     hint = "  (no proto-gear:capability-index markers — file skipped)"
@@ -391,15 +467,31 @@ def main():
         # No command provided - show help
         else:
             engine.show_splash_screen()
-            print(f"{Colors.GREEN}Welcome to Proto Gear AI Agent Framework!{Colors.ENDC}")
-            print(f"{Colors.GRAY}Template generator for AI-powered development collaboration{Colors.ENDC}\n")
+            print(
+                f"{Colors.GREEN}Welcome to Proto Gear AI Agent Framework!{Colors.ENDC}"
+            )
+            print(
+                f"{Colors.GRAY}Template generator for AI-powered development collaboration{Colors.ENDC}\n"
+            )
             print(f"{Colors.CYAN}Available Commands:{Colors.ENDC}")
-            print(f"  {Colors.BOLD}pg init{Colors.ENDC}              - Initialize AI agent templates in your project")
-            print(f"  {Colors.BOLD}pg status{Colors.ENDC}            - Show project status from PROJECT_STATUS.md")
-            print(f"  {Colors.BOLD}pg ticket{Colors.ENDC}            - Manage tickets  (create / update / list)")
-            print(f"  {Colors.BOLD}pg capabilities{Colors.ENDC}      - Browse and search available capabilities")
-            print(f"  {Colors.BOLD}pg agent{Colors.ENDC}             - Manage agent configurations")
-            print(f"  {Colors.BOLD}pg help{Colors.ENDC}              - Show detailed documentation")
+            print(
+                f"  {Colors.BOLD}pg init{Colors.ENDC}              - Initialize AI agent templates in your project"
+            )
+            print(
+                f"  {Colors.BOLD}pg status{Colors.ENDC}            - Show project status from PROJECT_STATUS.md"
+            )
+            print(
+                f"  {Colors.BOLD}pg ticket{Colors.ENDC}            - Manage tickets  (create / update / list)"
+            )
+            print(
+                f"  {Colors.BOLD}pg capabilities{Colors.ENDC}      - Browse and search available capabilities"
+            )
+            print(
+                f"  {Colors.BOLD}pg agent{Colors.ENDC}             - Manage agent configurations"
+            )
+            print(
+                f"  {Colors.BOLD}pg help{Colors.ENDC}              - Show detailed documentation"
+            )
             print(f"\n{Colors.GRAY}Run 'pg --help' for more options{Colors.ENDC}\n")
             engine.print_farewell()
 

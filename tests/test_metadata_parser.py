@@ -7,7 +7,7 @@ from pathlib import Path
 from core.proto_gear_pkg.module_core.metadata_parser import (
     TemplateMetadata,
     MetadataParser,
-    apply_conditional_content
+    apply_conditional_content,
 )
 
 
@@ -30,14 +30,18 @@ class TestTemplateMetadata:
             name="Test Template",
             version="2.0.0",
             requires={"project_type": ["Python"]},
-            conditional_sections={"section1": {"condition": "test", "content": "content"}},
-            raw_metadata={"key": "value"}
+            conditional_sections={
+                "section1": {"condition": "test", "content": "content"}
+            },
+            raw_metadata={"key": "value"},
         )
 
         assert metadata.name == "Test Template"
         assert metadata.version == "2.0.0"
         assert metadata.requires == {"project_type": ["Python"]}
-        assert metadata.conditional_sections == {"section1": {"condition": "test", "content": "content"}}
+        assert metadata.conditional_sections == {
+            "section1": {"condition": "test", "content": "content"}
+        }
         assert metadata.raw_metadata == {"key": "value"}
 
     def test_meets_requirements_no_requirements(self):
@@ -49,27 +53,21 @@ class TestTemplateMetadata:
 
     def test_meets_requirements_matching_type(self):
         """Template should meet requirements when project type matches."""
-        metadata = TemplateMetadata(
-            requires={"project_type": ["Python", "Node.js"]}
-        )
+        metadata = TemplateMetadata(requires={"project_type": ["Python", "Node.js"]})
         project_info = {"project_type": "Python"}
 
         assert metadata.meets_requirements(project_info) is True
 
     def test_meets_requirements_any_type(self):
         """Template with 'Any' should accept any project type."""
-        metadata = TemplateMetadata(
-            requires={"project_type": ["Any"]}
-        )
+        metadata = TemplateMetadata(requires={"project_type": ["Any"]})
         project_info = {"project_type": "Ruby"}
 
         assert metadata.meets_requirements(project_info) is True
 
     def test_meets_requirements_non_matching_type(self):
         """Template should not meet requirements when project type doesn't match."""
-        metadata = TemplateMetadata(
-            requires={"project_type": ["Python"]}
-        )
+        metadata = TemplateMetadata(requires={"project_type": ["Python"]})
         project_info = {"project_type": "Node.js"}
 
         assert metadata.meets_requirements(project_info) is False
@@ -79,39 +77,47 @@ class TestTemplateMetadata:
         metadata = TemplateMetadata()
 
         # Test matching condition
-        assert metadata._evaluate_condition(
-            "project_type == 'Python'",
-            {"project_type": "Python"}
-        ) is True
+        assert (
+            metadata._evaluate_condition(
+                "project_type == 'Python'", {"project_type": "Python"}
+            )
+            is True
+        )
 
         # Test non-matching condition
-        assert metadata._evaluate_condition(
-            "project_type == 'Python'",
-            {"project_type": "Node.js"}
-        ) is False
+        assert (
+            metadata._evaluate_condition(
+                "project_type == 'Python'", {"project_type": "Node.js"}
+            )
+            is False
+        )
 
     def test_evaluate_condition_with_double_quotes(self):
         """Should handle conditions with double quotes."""
         metadata = TemplateMetadata()
 
-        assert metadata._evaluate_condition(
-            'project_type == "Python"',
-            {"project_type": "Python"}
-        ) is True
+        assert (
+            metadata._evaluate_condition(
+                'project_type == "Python"', {"project_type": "Python"}
+            )
+            is True
+        )
 
     def test_evaluate_condition_invalid_format(self):
         """Should return False for unrecognized condition formats."""
         metadata = TemplateMetadata()
 
-        assert metadata._evaluate_condition(
-            "project_type > 5",
-            {"project_type": "Python"}
-        ) is False
+        assert (
+            metadata._evaluate_condition("project_type > 5", {"project_type": "Python"})
+            is False
+        )
 
-        assert metadata._evaluate_condition(
-            "invalid condition",
-            {"project_type": "Python"}
-        ) is False
+        assert (
+            metadata._evaluate_condition(
+                "invalid condition", {"project_type": "Python"}
+            )
+            is False
+        )
 
     def test_evaluate_condition_empty(self):
         """Should return False for empty conditions."""
@@ -125,12 +131,12 @@ class TestTemplateMetadata:
             conditional_sections={
                 "python_specific": {
                     "condition": "project_type == 'Python'",
-                    "content": "Python content"
+                    "content": "Python content",
                 },
                 "nodejs_specific": {
                     "condition": "project_type == 'Node.js'",
-                    "content": "Node.js content"
-                }
+                    "content": "Node.js content",
+                },
             }
         )
 
@@ -144,23 +150,22 @@ class TestTemplateMetadata:
             conditional_sections={
                 "python_specific": {
                     "condition": "project_type == 'Python'",
-                    "content": "Python content"
+                    "content": "Python content",
                 },
                 "framework_specific": {
                     "condition": "framework == 'Django'",
-                    "content": "Django content"
-                }
+                    "content": "Django content",
+                },
             }
         )
 
-        result = metadata.get_conditional_content({
-            "project_type": "Python",
-            "framework": "Django"
-        })
+        result = metadata.get_conditional_content(
+            {"project_type": "Python", "framework": "Django"}
+        )
 
         assert result == {
             "python_specific": "Python content",
-            "framework_specific": "Django content"
+            "framework_specific": "Django content",
         }
 
     def test_get_conditional_content_no_matches(self):
@@ -169,7 +174,7 @@ class TestTemplateMetadata:
             conditional_sections={
                 "python_specific": {
                     "condition": "project_type == 'Python'",
-                    "content": "Python content"
+                    "content": "Python content",
                 }
             }
         )
@@ -276,7 +281,10 @@ conditional_sections:
         assert metadata.name == "Testing Workflow"
         assert "python_examples" in metadata.conditional_sections
         assert "nodejs_examples" in metadata.conditional_sections
-        assert "Python-specific content" in metadata.conditional_sections["python_examples"]["content"]
+        assert (
+            "Python-specific content"
+            in metadata.conditional_sections["python_examples"]["content"]
+        )
 
     def test_parse_template_file_not_found(self):
         """Should handle file not found gracefully."""
@@ -302,10 +310,7 @@ class TestApplyConditionalContent:
     def test_apply_multiple_sections(self):
         """Should replace multiple placeholders."""
         template = "{{section1}}\n\nMiddle\n\n{{section2}}"
-        sections = {
-            "section1": "First section",
-            "section2": "Second section"
-        }
+        sections = {"section1": "First section", "section2": "Second section"}
 
         result = apply_conditional_content(template, sections)
 
@@ -334,11 +339,9 @@ class TestApplyConditionalContent:
     def test_apply_multiline_content(self):
         """Should correctly handle multiline content."""
         template = "Start\n\n{{examples}}\n\nEnd"
-        sections = {
-            "examples": """Line 1
+        sections = {"examples": """Line 1
 Line 2
-Line 3"""
-        }
+Line 3"""}
 
         result = apply_conditional_content(template, sections)
 

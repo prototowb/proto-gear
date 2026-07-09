@@ -23,7 +23,6 @@ from . import capability_index_builder
 from . import module_manifest
 from .metadata_parser import parse_proto_gear_header
 
-
 # Same set the templates ship — kept local so doctor doesn't import from tests.
 CORE_DOC_FILES = [
     "AGENTS.md",
@@ -42,9 +41,9 @@ _GENERATED_LINE = re.compile(r"^- \*\*Generated\*\*:.*$", re.MULTILINE)
 
 @dataclass
 class Finding:
-    id: str            # short slug: "agent-context-drift", "host-block-missing", ...
-    severity: str      # "ok" | "warning" | "error"
-    target: str        # file path or capability id
+    id: str  # short slug: "agent-context-drift", "host-block-missing", ...
+    severity: str  # "ok" | "warning" | "error"
+    target: str  # file path or capability id
     message: str
     fix_hint: str = ""
 
@@ -70,7 +69,11 @@ class DiagnosticsReport:
 
     def to_dict(self) -> dict:
         return {
-            "summary": {"ok": self.ok, "warnings": self.warnings, "errors": self.errors},
+            "summary": {
+                "ok": self.ok,
+                "warnings": self.warnings,
+                "errors": self.errors,
+            },
             "findings": [f.to_dict() for f in self.findings],
         }
 
@@ -82,28 +85,39 @@ def _normalize(text: str) -> str:
 
 # ---------- individual checks ----------
 
+
 def check_agent_context_sync(project_dir: Path) -> List[Finding]:
     canon = project_dir / "AGENT_CONTEXT.md"
     if not canon.exists():
-        return [Finding(
-            id="agent-context-missing",
-            severity="error",
-            target="AGENT_CONTEXT.md",
-            message="AGENT_CONTEXT.md not found — agents have no index to read.",
-            fix_hint="Run `pg sync-context` to generate it",
-        )]
+        return [
+            Finding(
+                id="agent-context-missing",
+                severity="error",
+                target="AGENT_CONTEXT.md",
+                message="AGENT_CONTEXT.md not found — agents have no index to read.",
+                fix_hint="Run `pg sync-context` to generate it",
+            )
+        ]
     existing = canon.read_text(encoding="utf-8")
     regenerated = sync_context_module.generate_agent_context(project_dir)
     if _normalize(existing) == _normalize(regenerated):
-        return [Finding(id="agent-context-sync", severity="ok",
-                        target="AGENT_CONTEXT.md", message="In sync.")]
-    return [Finding(
-        id="agent-context-drift",
-        severity="warning",
-        target="AGENT_CONTEXT.md",
-        message="AGENT_CONTEXT.md does not match current project state.",
-        fix_hint="Run `pg sync-context` to regenerate",
-    )]
+        return [
+            Finding(
+                id="agent-context-sync",
+                severity="ok",
+                target="AGENT_CONTEXT.md",
+                message="In sync.",
+            )
+        ]
+    return [
+        Finding(
+            id="agent-context-drift",
+            severity="warning",
+            target="AGENT_CONTEXT.md",
+            message="AGENT_CONTEXT.md does not match current project state.",
+            fix_hint="Run `pg sync-context` to regenerate",
+        )
+    ]
 
 
 def check_host_files(project_dir: Path) -> List[Finding]:
@@ -111,50 +125,62 @@ def check_host_files(project_dir: Path) -> List[Finding]:
     regenerated = sync_context_module.generate_agent_context(project_dir)
     canon_block = sync_context_module._extract_managed_block(regenerated)
     if not canon_block:
-        return [Finding(
-            id="agent-context-template-broken",
-            severity="error",
-            target="AGENT_CONTEXT.template.md",
-            message="Template missing BEGIN/END markers — sync is impossible.",
-        )]
+        return [
+            Finding(
+                id="agent-context-template-broken",
+                severity="error",
+                target="AGENT_CONTEXT.template.md",
+                message="Template missing BEGIN/END markers — sync is impossible.",
+            )
+        ]
     canon_norm = _normalize(canon_block)
 
     for hf in sync_context_module.HOST_FILES:
         path = project_dir / hf
         if not path.exists():
-            findings.append(Finding(
-                id="host-file-missing",
-                severity="warning",
-                target=hf,
-                message=f"{hf} not present — agents reading this host won't see the index.",
-                fix_hint="Run `pg sync-context` to create it",
-            ))
+            findings.append(
+                Finding(
+                    id="host-file-missing",
+                    severity="warning",
+                    target=hf,
+                    message=f"{hf} not present — agents reading this host won't see the index.",
+                    fix_hint="Run `pg sync-context` to create it",
+                )
+            )
             continue
         block = sync_context_module._extract_managed_block(
             path.read_text(encoding="utf-8")
         )
         if not block:
-            findings.append(Finding(
-                id="host-block-missing",
-                severity="warning",
-                target=hf,
-                message=f"{hf} exists but has no managed proto-gear block.",
-                fix_hint="Run `pg sync-context` to insert it",
-            ))
+            findings.append(
+                Finding(
+                    id="host-block-missing",
+                    severity="warning",
+                    target=hf,
+                    message=f"{hf} exists but has no managed proto-gear block.",
+                    fix_hint="Run `pg sync-context` to insert it",
+                )
+            )
             continue
         if _normalize(block) != canon_norm:
-            findings.append(Finding(
-                id="host-block-drift",
-                severity="warning",
-                target=hf,
-                message=f"{hf} managed block does not match AGENT_CONTEXT.",
-                fix_hint="Run `pg sync-context` to refresh",
-            ))
+            findings.append(
+                Finding(
+                    id="host-block-drift",
+                    severity="warning",
+                    target=hf,
+                    message=f"{hf} managed block does not match AGENT_CONTEXT.",
+                    fix_hint="Run `pg sync-context` to refresh",
+                )
+            )
         else:
-            findings.append(Finding(
-                id="host-block-sync", severity="ok",
-                target=hf, message="In sync.",
-            ))
+            findings.append(
+                Finding(
+                    id="host-block-sync",
+                    severity="ok",
+                    target=hf,
+                    message="In sync.",
+                )
+            )
     return findings
 
 
@@ -167,32 +193,38 @@ def check_core_doc_headers(project_dir: Path) -> List[Finding]:
         try:
             text = path.read_text(encoding="utf-8")
         except Exception as e:
-            findings.append(Finding(
-                id="core-doc-read-error",
-                severity="error",
-                target=fname,
-                message=f"Could not read {fname}: {e}",
-            ))
+            findings.append(
+                Finding(
+                    id="core-doc-read-error",
+                    severity="error",
+                    target=fname,
+                    message=f"Could not read {fname}: {e}",
+                )
+            )
             continue
         header = parse_proto_gear_header(text)
         if header is None:
-            findings.append(Finding(
-                id="missing-proto-gear-header",
-                severity="warning",
-                target=fname,
-                message=f"{fname} is missing the proto-gear:header block.",
-                fix_hint=(
-                    "Add a `<!-- proto-gear:header ... -->` block "
-                    "(see core/proto_gear_pkg/*.template.md for shape)"
-                ),
-            ))
+            findings.append(
+                Finding(
+                    id="missing-proto-gear-header",
+                    severity="warning",
+                    target=fname,
+                    message=f"{fname} is missing the proto-gear:header block.",
+                    fix_hint=(
+                        "Add a `<!-- proto-gear:header ... -->` block "
+                        "(see core/proto_gear_pkg/*.template.md for shape)"
+                    ),
+                )
+            )
         else:
-            findings.append(Finding(
-                id="proto-gear-header-ok",
-                severity="ok",
-                target=fname,
-                message="Header present.",
-            ))
+            findings.append(
+                Finding(
+                    id="proto-gear-header-ok",
+                    severity="ok",
+                    target=fname,
+                    message="Header present.",
+                )
+            )
     return findings
 
 
@@ -203,30 +235,37 @@ def check_capabilities(project_dir: Path) -> List[Finding]:
     findings: List[Finding] = []
     try:
         from .capability_metadata import load_all_capabilities
+
         caps = load_all_capabilities(caps_dir)
     except Exception as e:
-        return [Finding(
-            id="capabilities-load-error",
-            severity="error",
-            target=".proto-gear/",
-            message=f"Capability load failed: {e}",
-        )]
+        return [
+            Finding(
+                id="capabilities-load-error",
+                severity="error",
+                target=".proto-gear/",
+                message=f"Capability load failed: {e}",
+            )
+        ]
     if not caps:
-        return [Finding(
-            id="capabilities-empty",
-            severity="warning",
-            target=".proto-gear/",
-            message="Capabilities directory present but empty — no skills, workflows, or commands loaded.",
-        )]
+        return [
+            Finding(
+                id="capabilities-empty",
+                severity="warning",
+                target=".proto-gear/",
+                message="Capabilities directory present but empty — no skills, workflows, or commands loaded.",
+            )
+        ]
     for cap_id, cap in caps.items():
         if not cap.relevance or not cap.relevance.triggers:
-            findings.append(Finding(
-                id="capability-no-triggers",
-                severity="warning",
-                target=cap_id,
-                message="Capability declares no triggers — won't match `pg suggest`.",
-                fix_hint=f"Add `relevance.triggers: [...]` to {cap_id}/metadata.yaml",
-            ))
+            findings.append(
+                Finding(
+                    id="capability-no-triggers",
+                    severity="warning",
+                    target=cap_id,
+                    message="Capability declares no triggers — won't match `pg suggest`.",
+                    fix_hint=f"Add `relevance.triggers: [...]` to {cap_id}/metadata.yaml",
+                )
+            )
     return findings
 
 
@@ -241,56 +280,70 @@ def check_capability_indexes(project_dir: Path) -> List[Finding]:
             caps_root, dry_run=True
         )
     except Exception as e:
-        return [Finding(
-            id="capability-index-error",
-            severity="error",
-            target=".proto-gear/INDEX.md",
-            message=f"INDEX render failed: {e}",
-        )]
+        return [
+            Finding(
+                id="capability-index-error",
+                severity="error",
+                target=".proto-gear/INDEX.md",
+                message=f"INDEX render failed: {e}",
+            )
+        ]
     if "error" in results:
-        return [Finding(
-            id="capability-index-error",
-            severity="error",
-            target=".proto-gear/",
-            message=str(results["error"]),
-        )]
+        return [
+            Finding(
+                id="capability-index-error",
+                severity="error",
+                target=".proto-gear/",
+                message=str(results["error"]),
+            )
+        ]
     for rel, action in results.items():
         target = f".proto-gear/{rel}"
         if action == "would_update":
-            findings.append(Finding(
-                id="capability-index-drift",
-                severity="warning",
-                target=target,
-                message="INDEX.md managed block is stale.",
-                fix_hint="Run `pg sync-indexes` to regenerate",
-            ))
+            findings.append(
+                Finding(
+                    id="capability-index-drift",
+                    severity="warning",
+                    target=target,
+                    message="INDEX.md managed block is stale.",
+                    fix_hint="Run `pg sync-indexes` to regenerate",
+                )
+            )
         elif action == "missing-file":
             # Top-level INDEX missing is a real concern; per-type can be
             # legitimately absent (e.g. no agents/INDEX.md before agents ship).
             severity = "warning" if rel == "INDEX.md" else "ok"
-            findings.append(Finding(
-                id="capability-index-file-missing",
-                severity=severity,
-                target=target,
-                message=("Top-level INDEX.md not present in .proto-gear/."
-                         if rel == "INDEX.md"
-                         else f"Optional INDEX.md not present ({rel})."),
-                fix_hint="Run `pg sync-indexes` or `pg init --with-capabilities`",
-            ))
+            findings.append(
+                Finding(
+                    id="capability-index-file-missing",
+                    severity=severity,
+                    target=target,
+                    message=(
+                        "Top-level INDEX.md not present in .proto-gear/."
+                        if rel == "INDEX.md"
+                        else f"Optional INDEX.md not present ({rel})."
+                    ),
+                    fix_hint="Run `pg sync-indexes` or `pg init --with-capabilities`",
+                )
+            )
         elif action == "missing-markers":
-            findings.append(Finding(
-                id="capability-index-no-markers",
-                severity="ok",
-                target=target,
-                message="No proto-gear:capability-index markers — auto-sync skipped.",
-            ))
+            findings.append(
+                Finding(
+                    id="capability-index-no-markers",
+                    severity="ok",
+                    target=target,
+                    message="No proto-gear:capability-index markers — auto-sync skipped.",
+                )
+            )
         elif action == "unchanged":
-            findings.append(Finding(
-                id="capability-index-sync",
-                severity="ok",
-                target=target,
-                message="In sync.",
-            ))
+            findings.append(
+                Finding(
+                    id="capability-index-sync",
+                    severity="ok",
+                    target=target,
+                    message="In sync.",
+                )
+            )
         # 'updated' / 'created' shouldn't appear under dry_run=True
     return findings
 
@@ -315,20 +368,24 @@ def check_modules(project_dir: Path) -> List[Finding]:
         try:
             manifest = module_manifest.load_module_manifest(mpath)
         except module_manifest.ModuleManifestError as exc:
-            findings.append(Finding(
-                id="module-manifest-invalid",
-                severity="error",
-                target=target,
-                message=str(exc),
-                fix_hint="Declare required fields (module, name) in module.yaml",
-            ))
+            findings.append(
+                Finding(
+                    id="module-manifest-invalid",
+                    severity="error",
+                    target=target,
+                    message=str(exc),
+                    fix_hint="Declare required fields (module, name) in module.yaml",
+                )
+            )
             continue
-        findings.append(Finding(
-            id="module-manifest-valid",
-            severity="ok",
-            target=target,
-            message=f"Module '{manifest.module}' v{manifest.version} manifest OK.",
-        ))
+        findings.append(
+            Finding(
+                id="module-manifest-valid",
+                severity="ok",
+                target=target,
+                message=f"Module '{manifest.module}' v{manifest.version} manifest OK.",
+            )
+        )
     return findings
 
 
@@ -365,37 +422,44 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
 
         for g in gates:
             if not g.id or not g.description:
-                findings.append(Finding(
-                    id="gate-malformed",
-                    severity="error",
-                    target=cap_id,
-                    message="supervision gate missing id and/or description.",
-                    fix_hint="Give every gates: entry an id and a description",
-                ))
+                findings.append(
+                    Finding(
+                        id="gate-malformed",
+                        severity="error",
+                        target=cap_id,
+                        message="supervision gate missing id and/or description.",
+                        fix_hint="Give every gates: entry an id and a description",
+                    )
+                )
 
         risky = any(
             any(tok in str(o).lower() for tok in _RISK_OUTPUT_TOKENS)
             for o in meta.workflow.outputs
         )
         if risky and not gates:
-            findings.append(Finding(
-                id="gate-missing",
-                severity="warning",
-                target=cap_id,
-                message="produces a release/deployment but declares no supervision gate.",
-                fix_hint="Declare the human approval point under workflow.gates (contract item 5)",
-            ))
+            findings.append(
+                Finding(
+                    id="gate-missing",
+                    severity="warning",
+                    target=cap_id,
+                    message="produces a release/deployment but declares no supervision gate.",
+                    fix_hint="Declare the human approval point under workflow.gates (contract item 5)",
+                )
+            )
         elif gates:
-            findings.append(Finding(
-                id="gate-ok",
-                severity="ok",
-                target=cap_id,
-                message=f"{len(gates)} supervision gate(s) declared.",
-            ))
+            findings.append(
+                Finding(
+                    id="gate-ok",
+                    severity="ok",
+                    target=cap_id,
+                    message=f"{len(gates)} supervision gate(s) declared.",
+                )
+            )
     return findings
 
 
 # ---------- driver ----------
+
 
 def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report = DiagnosticsReport()

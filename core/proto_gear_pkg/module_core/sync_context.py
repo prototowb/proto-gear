@@ -14,7 +14,6 @@ from datetime import datetime
 
 from .. import __version__
 
-
 BEGIN_MARKER = "<!-- proto-gear:agent-context begin -->"
 END_MARKER = "<!-- proto-gear:agent-context end -->"
 
@@ -27,48 +26,85 @@ HOST_FILES = [
 
 # (filename, purpose, read-when)
 CORE_FILES: List[Tuple[str, str, str]] = [
-    ("AGENTS.md", "Agent orchestration, roles, pre-flight checklist",
-     "First session or unclear on process"),
-    ("SESSION_HANDOFF.md", "Rolling session handoff — what just shipped, what's pending",
-     "Start of every session — before anything else"),
-    ("PROJECT_STATUS.md", "Current sprint, active tickets, project state",
-     "Every session before starting work"),
-    ("PROJECT_SPECIFICATIONS.md", "Project planning doc — source for architecture",
-     "Starting features or design work (if exists)"),
-    ("PROJECT_ARCHITECTURE.md", "Project-specific architecture (agent-extracted)",
-     "Design decisions (if exists)"),
-    ("BRANCHING.md", "Git workflow, branch naming, commit format",
-     "Before any git operations"),
-    ("TESTING.md", "TDD patterns, test pyramid, coverage targets",
-     "When writing tests"),
-    (".proto-gear/INDEX.md", "Capability catalog (full reference)",
-     "When the skim below is insufficient"),
+    (
+        "AGENTS.md",
+        "Agent orchestration, roles, pre-flight checklist",
+        "First session or unclear on process",
+    ),
+    (
+        "SESSION_HANDOFF.md",
+        "Rolling session handoff — what just shipped, what's pending",
+        "Start of every session — before anything else",
+    ),
+    (
+        "PROJECT_STATUS.md",
+        "Current sprint, active tickets, project state",
+        "Every session before starting work",
+    ),
+    (
+        "PROJECT_SPECIFICATIONS.md",
+        "Project planning doc — source for architecture",
+        "Starting features or design work (if exists)",
+    ),
+    (
+        "PROJECT_ARCHITECTURE.md",
+        "Project-specific architecture (agent-extracted)",
+        "Design decisions (if exists)",
+    ),
+    (
+        "BRANCHING.md",
+        "Git workflow, branch naming, commit format",
+        "Before any git operations",
+    ),
+    (
+        "TESTING.md",
+        "TDD patterns, test pyramid, coverage targets",
+        "When writing tests",
+    ),
+    (
+        ".proto-gear/INDEX.md",
+        "Capability catalog (full reference)",
+        "When the skim below is insufficient",
+    ),
 ]
 
 CRITICAL_RULES = [
     "NEVER commit directly to `main` or `development` — always branch from `development`",
     "Run `pg status` before starting work to see active tickets and current sprint",
-    "Use `pg ticket create \"title\" --type feature` to register new work",
+    'Use `pg ticket create "title" --type feature` to register new work',
     "Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket",
 ]
 
 CLI_COMMANDS: List[Tuple[str, str]] = [
     ("pg status", "Current project state — version, sprint, active tickets"),
     ("pg context [--regenerate]", "Print this Agent Context to stdout (pipe-friendly)"),
-    ("pg suggest \"<task prose>\" [--json]", "Match a free-form task description to the best-fitting capabilities"),
+    (
+        'pg suggest "<task prose>" [--json]',
+        "Match a free-form task description to the best-fitting capabilities",
+    ),
     ("pg ticket create/update/list", "Manage tickets in PROJECT_STATUS.md"),
-    ("pg capabilities list [--type ...] [--json]", "Browse capabilities (--json for agent consumption)"),
+    (
+        "pg capabilities list [--type ...] [--json]",
+        "Browse capabilities (--json for agent consumption)",
+    ),
     ("pg capabilities show <name>", "Show full details of a capability"),
     ("pg capabilities tree <name>", "Show dependency tree of a capability"),
     ("pg agent list", "List configured custom agents (if any)"),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
-    ("pg sync-indexes", "Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml"),
-    ("pg doctor [--fix] [--json]", "Audit project for proto-gear sync drift (use --fix to repair)"),
+    (
+        "pg sync-indexes",
+        "Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml",
+    ),
+    (
+        "pg doctor [--fix] [--json]",
+        "Audit project for proto-gear sync drift (use --fix to repair)",
+    ),
     ("pg help", "Full CLI help"),
 ]
 
 
 # ---------- builders ----------
+
 
 def _load_capabilities(proto_gear_dir: Path) -> dict:
     """Return Dict[cap_id, CapabilityMetadata]; empty on missing dir or load error."""
@@ -76,6 +112,7 @@ def _load_capabilities(proto_gear_dir: Path) -> dict:
         return {}
     try:
         from .capability_metadata import load_all_capabilities
+
         return load_all_capabilities(proto_gear_dir)
     except Exception:
         return {}
@@ -96,8 +133,10 @@ def _cap_type(cap) -> str:
 
 def _build_capabilities_skim(capabilities: dict) -> str:
     if not capabilities:
-        return ("_No capabilities installed. Run `pg init --with-capabilities` "
-                "to add them, or check `.proto-gear/`._")
+        return (
+            "_No capabilities installed. Run `pg init --with-capabilities` "
+            "to add them, or check `.proto-gear/`._"
+        )
 
     by_type: Dict[str, list] = {"skill": [], "workflow": [], "command": []}
     for cap_id, cap in capabilities.items():
@@ -189,24 +228,28 @@ def _build_project_meta(project_dir: Path, capabilities: dict) -> str:
             counts[t] += 1
 
     project_name = project_dir.name or project_dir.resolve().name
-    return "\n".join([
-        f"- **Project**: {project_name}",
-        f"- **Tech / type**: {info['project_type']}",
-        f"- **Proto Gear version**: {info['version']}",
-        f"- **Last release**: {info['last_release']}",
-        f"- **Capabilities installed**: "
-        f"{counts['skill']} skills, {counts['workflow']} workflows, {counts['command']} commands",
-        f"- **Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-    ])
+    return "\n".join(
+        [
+            f"- **Project**: {project_name}",
+            f"- **Tech / type**: {info['project_type']}",
+            f"- **Proto Gear version**: {info['version']}",
+            f"- **Last release**: {info['last_release']}",
+            f"- **Capabilities installed**: "
+            f"{counts['skill']} skills, {counts['workflow']} workflows, {counts['command']} commands",
+            f"- **Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        ]
+    )
 
 
 # ---------- generation + sync ----------
+
 
 def generate_agent_context(project_dir: Path) -> str:
     """Render the full AGENT_CONTEXT.md content from current project state."""
     capabilities = _load_capabilities(project_dir / ".proto-gear")
 
     from ..paths import package_root
+
     template_file = package_root() / "AGENT_CONTEXT.template.md"
     template = template_file.read_text(encoding="utf-8")
 

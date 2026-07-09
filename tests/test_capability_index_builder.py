@@ -30,12 +30,21 @@ from proto_gear_pkg.module_core.capability_metadata import (
     load_all_capabilities,
 )
 
+PACKAGE_CAPS_ROOT = (
+    Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
+)
 
-PACKAGE_CAPS_ROOT = Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
 
-
-def _make_cap(name, cap_type=CapabilityType.SKILL, triggers=None, deps=None,
-              version="1.0.0", description="desc", category="test", tags=None):
+def _make_cap(
+    name,
+    cap_type=CapabilityType.SKILL,
+    triggers=None,
+    deps=None,
+    version="1.0.0",
+    description="desc",
+    category="test",
+    tags=None,
+):
     return CapabilityMetadata(
         name=name,
         type=cap_type,
@@ -46,7 +55,8 @@ def _make_cap(name, cap_type=CapabilityType.SKILL, triggers=None, deps=None,
         status=CapabilityStatus.STABLE,
         author="t",
         last_updated="2026-01-01",
-        dependencies=deps or CapabilityDependencies(required=[], optional=[], suggested=[]),
+        dependencies=deps
+        or CapabilityDependencies(required=[], optional=[], suggested=[]),
         conflicts=[],
         composable_with=[],
         agent_roles=[],
@@ -55,6 +65,7 @@ def _make_cap(name, cap_type=CapabilityType.SKILL, triggers=None, deps=None,
 
 
 # ---------- shape tests on the package's own capabilities ----------
+
 
 class TestRenderingAgainstPackage:
     """The package ships 7 skills + 13 workflows + 4 commands. Render and inspect."""
@@ -98,6 +109,7 @@ class TestRenderingAgainstPackage:
 
 # ---------- rendering helpers in isolation ----------
 
+
 class TestRenderingPureHelpers:
     def test_skill_block_lists_trigger_strings(self):
         cap = _make_cap("Test Skill", triggers=["alpha", "beta"])
@@ -136,6 +148,7 @@ class TestRenderingPureHelpers:
 
 # ---------- sync_capability_indexes (file IO) ----------
 
+
 class TestSyncCapabilityIndexes:
     @pytest.fixture
     def synced_caps_root(self, tmp_path):
@@ -160,8 +173,11 @@ class TestSyncCapabilityIndexes:
         results = sync_capability_indexes(synced_caps_root, dry_run=False)
         # Every file we touched should now report unchanged or missing.
         for rel, action in results.items():
-            assert action in ("unchanged", "missing-markers", "missing-file"), \
-                f"{rel} -> {action}"
+            assert action in (
+                "unchanged",
+                "missing-markers",
+                "missing-file",
+            ), f"{rel} -> {action}"
 
     def test_dry_run_reports_would_update_without_writing(self, synced_caps_root):
         idx_top = synced_caps_root / "INDEX.md"
@@ -197,6 +213,7 @@ class TestSyncCapabilityIndexes:
 
 # ---------- _replace_or_warn helper ----------
 
+
 class TestReplaceOrWarn:
     def test_missing_file_reported(self, tmp_path):
         action = _replace_or_warn(tmp_path / "nope.md", "block", dry_run=True)
@@ -205,7 +222,9 @@ class TestReplaceOrWarn:
     def test_missing_markers_reported(self, tmp_path):
         f = tmp_path / "x.md"
         f.write_text("no markers here\n", encoding="utf-8")
-        action = _replace_or_warn(f, BEGIN_MARKER + "\nnew\n" + END_MARKER, dry_run=True)
+        action = _replace_or_warn(
+            f, BEGIN_MARKER + "\nnew\n" + END_MARKER, dry_run=True
+        )
         assert action == "missing-markers"
 
     def test_replace_round_trip(self, tmp_path):

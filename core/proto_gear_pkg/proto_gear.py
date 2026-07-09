@@ -14,7 +14,13 @@ from .ui_helper import Colors
 
 # Try to import enhanced wizard module
 try:
-    from .modules.engineering.interactive_wizard import run_enhanced_wizard, run_incremental_wizard, QUESTIONARY_AVAILABLE, RICH_AVAILABLE
+    from .modules.engineering.interactive_wizard import (
+        run_enhanced_wizard,
+        run_incremental_wizard,
+        QUESTIONARY_AVAILABLE,
+        RICH_AVAILABLE,
+    )
+
     ENHANCED_WIZARD_AVAILABLE = True
 except ImportError:
     ENHANCED_WIZARD_AVAILABLE = False
@@ -34,7 +40,6 @@ from .modules.engineering.detection import (
     detect_project_structure,
     detect_git_config,
 )
-
 
 # Template generation + capability installation live in templates.py
 # (PROTO-042, ADR-001 Phase A; engineering-module-specific per ADR-001).
@@ -64,7 +69,17 @@ from .presentation import (
 )
 
 
-def setup_agent_framework_only(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None, project_description=None):
+def setup_agent_framework_only(
+    dry_run=False,
+    force=False,
+    with_branching=False,
+    ticket_prefix=None,
+    with_capabilities=False,
+    capabilities_config=None,
+    with_all=False,
+    core_templates=None,
+    project_description=None,
+):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
 
@@ -77,9 +92,9 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
     # Detect project structure
     project_info = detect_project_structure(current_dir)
 
-    if project_info['detected']:
+    if project_info["detected"]:
         print(f"Detected: {project_info['type']} project")
-        if project_info.get('framework'):
+        if project_info.get("framework"):
             print(f"Framework: {project_info['framework']}")
 
     if not dry_run:
@@ -88,7 +103,7 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
 
             # Write PROJECT_SPECIFICATIONS.md stub from user-provided description
             if project_description:
-                specs_dest = current_dir / 'PROJECT_SPECIFICATIONS.md'
+                specs_dest = current_dir / "PROJECT_SPECIFICATIONS.md"
                 stub_content = f"""# PROJECT_SPECIFICATIONS.md
 
 ## Project Overview
@@ -124,16 +139,20 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
 > `PROJECT_ARCHITECTURE.md` supersedes any generic `ARCHITECTURE.md` template.
 """
                 try:
-                    specs_dest.write_text(stub_content, encoding='utf-8')
-                    files_created.append('PROJECT_SPECIFICATIONS.md')
+                    specs_dest.write_text(stub_content, encoding="utf-8")
+                    files_created.append("PROJECT_SPECIFICATIONS.md")
                 except (IOError, OSError) as e:
-                    print(f"{Colors.YELLOW}Warning: Could not create specifications stub: {e}{Colors.ENDC}")
+                    print(
+                        f"{Colors.YELLOW}Warning: Could not create specifications stub: {e}{Colors.ENDC}"
+                    )
 
             # Determine ticket prefix
             if not ticket_prefix:
                 # Try to derive from project name
-                project_name = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
-                ticket_prefix = project_name if project_name else 'PROJ'
+                project_name = (
+                    current_dir.name.upper().replace("-", "").replace("_", "")[:6]
+                )
+                ticket_prefix = project_name if project_name else "PROJ"
 
             # Optionally create BRANCHING.md
             branching_reference = ""
@@ -143,49 +162,61 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
                     current_dir.name,
                     ticket_prefix,
                     git_config,
-                    datetime.now().strftime('%Y-%m-%d')
+                    datetime.now().strftime("%Y-%m-%d"),
                 )
 
                 if branching_content:
-                    branching_file = current_dir / 'BRANCHING.md'
-                    action, written = safe_write_file(branching_file, branching_content, dry_run=dry_run, force=force, interactive=True)
-                    if written or action == 'would_create':
-                        files_created.append('BRANCHING.md')
+                    branching_file = current_dir / "BRANCHING.md"
+                    action, written = safe_write_file(
+                        branching_file,
+                        branching_content,
+                        dry_run=dry_run,
+                        force=force,
+                        interactive=True,
+                    )
+                    if written or action == "would_create":
+                        files_created.append("BRANCHING.md")
                     branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
 
             # Create AGENTS.md (only if doesn't exist or explicitly selected)
-            agents_file = current_dir / 'AGENTS.md'
-            should_create_agents = (
-                not agents_file.exists() or  # Fresh install
-                (core_templates and 'AGENTS' in [t.replace('.md', '') for t in (core_templates if isinstance(core_templates, list) else [])])  # Explicitly selected
-            )
+            agents_file = current_dir / "AGENTS.md"
+            should_create_agents = not agents_file.exists() or (  # Fresh install
+                core_templates
+                and "AGENTS"
+                in [
+                    t.replace(".md", "")
+                    for t in (
+                        core_templates if isinstance(core_templates, list) else []
+                    )
+                ]
+            )  # Explicitly selected
 
             if should_create_agents:
                 # Use template-based generation instead of hardcoded content
                 template_context = {
-                    'PROJECT_NAME': current_dir.name,
-                    'TICKET_PREFIX': ticket_prefix,
-                    'DATE': datetime.now().strftime('%Y-%m-%d'),
-                    'YEAR': datetime.now().strftime('%Y'),
-                    'VERSION': __version__,
-                    'PROJECT_TYPE': project_info.get('type', 'Unknown'),
-                    'FRAMEWORK': project_info.get('framework', 'Unknown'),
+                    "PROJECT_NAME": current_dir.name,
+                    "TICKET_PREFIX": ticket_prefix,
+                    "DATE": datetime.now().strftime("%Y-%m-%d"),
+                    "YEAR": datetime.now().strftime("%Y"),
+                    "VERSION": __version__,
+                    "PROJECT_TYPE": project_info.get("type", "Unknown"),
+                    "FRAMEWORK": project_info.get("framework", "Unknown"),
                 }
 
                 output_file, action = generate_project_template(
-                    'AGENTS',
+                    "AGENTS",
                     current_dir,
                     template_context,
                     dry_run=dry_run,
                     force=force,
-                    interactive=True
+                    interactive=True,
                 )
 
-                if output_file or action == 'would_create':
-                    files_created.append('AGENTS.md')
+                if output_file or action == "would_create":
+                    files_created.append("AGENTS.md")
 
             # Create SESSION_HANDOFF.md (only if doesn't exist — agent-owned content, never clobber)
-            handoff_file = current_dir / 'SESSION_HANDOFF.md'
+            handoff_file = current_dir / "SESSION_HANDOFF.md"
             if not handoff_file.exists():
                 handoff_content = f"""# SESSION_HANDOFF — {current_dir.resolve().name}
 
@@ -212,16 +243,28 @@ def setup_agent_framework_only(dry_run=False, force=False, with_branching=False,
 ---
 *Agent-maintained. Replace entirely at session end.*
 """
-                action, written = safe_write_file(handoff_file, handoff_content, dry_run=dry_run, force=force, interactive=True)
-                if written or action == 'would_create':
-                    files_created.append('SESSION_HANDOFF.md')
+                action, written = safe_write_file(
+                    handoff_file,
+                    handoff_content,
+                    dry_run=dry_run,
+                    force=force,
+                    interactive=True,
+                )
+                if written or action == "would_create":
+                    files_created.append("SESSION_HANDOFF.md")
 
             # Create PROJECT_STATUS.md (only if doesn't exist or explicitly selected)
-            status_file = current_dir / 'PROJECT_STATUS.md'
-            should_create_status = (
-                not status_file.exists() or  # Fresh install
-                (core_templates and 'PROJECT_STATUS' in [t.replace('.md', '') for t in (core_templates if isinstance(core_templates, list) else [])])  # Explicitly selected
-            )
+            status_file = current_dir / "PROJECT_STATUS.md"
+            should_create_status = not status_file.exists() or (  # Fresh install
+                core_templates
+                and "PROJECT_STATUS"
+                in [
+                    t.replace(".md", "")
+                    for t in (
+                        core_templates if isinstance(core_templates, list) else []
+                    )
+                ]
+            )  # Explicitly selected
 
             if should_create_status:
                 status_content = f"""# PROJECT STATUS - {current_dir.name}
@@ -258,17 +301,23 @@ current_sprint: null
 ---
 *Maintained by ProtoGear Agent Framework*
 """
-                action, written = safe_write_file(status_file, status_content, dry_run=dry_run, force=force, interactive=True)
-                if written or action == 'would_create':
-                    files_created.append('PROJECT_STATUS.md')
+                action, written = safe_write_file(
+                    status_file,
+                    status_content,
+                    dry_run=dry_run,
+                    force=force,
+                    interactive=True,
+                )
+                if written or action == "would_create":
+                    files_created.append("PROJECT_STATUS.md")
 
             # Generate additional templates based on selections
             template_context = {
-                'PROJECT_NAME': current_dir.name,
-                'TICKET_PREFIX': ticket_prefix,
-                'DATE': datetime.now().strftime('%Y-%m-%d'),
-                'YEAR': datetime.now().strftime('%Y'),
-                'VERSION': __version__
+                "PROJECT_NAME": current_dir.name,
+                "TICKET_PREFIX": ticket_prefix,
+                "DATE": datetime.now().strftime("%Y-%m-%d"),
+                "YEAR": datetime.now().strftime("%Y"),
+                "VERSION": __version__,
             }
 
             templates_to_generate = []
@@ -278,35 +327,45 @@ current_sprint: null
                 if isinstance(core_templates, dict):
                     # Dict format: {template_name: bool}
                     for template_name, should_generate in core_templates.items():
-                        if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS', 'SESSION_HANDOFF']:
+                        if should_generate and template_name not in [
+                            "AGENTS",
+                            "PROJECT_STATUS",
+                            "SESSION_HANDOFF",
+                        ]:
                             # Skip if already created (e.g., BRANCHING from with_branching flag)
                             if f"{template_name}.md" not in files_created:
                                 templates_to_generate.append(template_name)
                 elif isinstance(core_templates, list):
                     # List format from incremental wizard: ['BRANCHING.md', 'TESTING.md']
                     for template in core_templates:
-                        template_name = template.replace('.md', '')
-                        if template_name not in ['AGENTS', 'PROJECT_STATUS', 'SESSION_HANDOFF']:
+                        template_name = template.replace(".md", "")
+                        if template_name not in [
+                            "AGENTS",
+                            "PROJECT_STATUS",
+                            "SESSION_HANDOFF",
+                        ]:
                             # Skip if already created
                             if template not in files_created:
                                 templates_to_generate.append(template_name)
 
             # Priority 2: Handle --all flag (CLI)
             elif with_all:
-                templates_to_generate.extend([
-                    'TESTING',
-                    'BRANCHING',
-                    'CONTRIBUTING',
-                    'SECURITY',
-                    'ARCHITECTURE',
-                    'CODE_OF_CONDUCT'
-                ])
+                templates_to_generate.extend(
+                    [
+                        "TESTING",
+                        "BRANCHING",
+                        "CONTRIBUTING",
+                        "SECURITY",
+                        "ARCHITECTURE",
+                        "CODE_OF_CONDUCT",
+                    ]
+                )
 
             # Priority 3: Legacy behavior for with_branching
             elif with_branching:
-                templates_to_generate.append('TESTING')
-                if 'BRANCHING' not in [f.replace('.md', '') for f in files_created]:
-                    templates_to_generate.append('BRANCHING')
+                templates_to_generate.append("TESTING")
+                if "BRANCHING" not in [f.replace(".md", "") for f in files_created]:
+                    templates_to_generate.append("BRANCHING")
 
             # Generate all selected templates
             for template_name in templates_to_generate:
@@ -316,10 +375,10 @@ current_sprint: null
                     template_context,
                     dry_run=dry_run,
                     force=force,
-                    interactive=True
+                    interactive=True,
                 )
 
-                if output_file or action == 'would_create':
+                if output_file or action == "would_create":
                     files_created.append(f"{template_name}.md")
 
             # Create capabilities if requested
@@ -328,37 +387,48 @@ current_sprint: null
                     current_dir,
                     current_dir.name,
                     dry_run=False,
-                    capabilities_config=capabilities_config
+                    capabilities_config=capabilities_config,
                 )
 
-                if capability_result['status'] == 'success':
-                    files_created.extend(capability_result['files_created'])
-                    print(f"{Colors.GREEN}+ Capability system created in .proto-gear/{Colors.ENDC}")
-                elif capability_result['status'] == 'warning':
-                    print(f"{Colors.YELLOW}! {capability_result['errors'][0]}{Colors.ENDC}")
+                if capability_result["status"] == "success":
+                    files_created.extend(capability_result["files_created"])
+                    print(
+                        f"{Colors.GREEN}+ Capability system created in .proto-gear/{Colors.ENDC}"
+                    )
+                elif capability_result["status"] == "warning":
+                    print(
+                        f"{Colors.YELLOW}! {capability_result['errors'][0]}{Colors.ENDC}"
+                    )
                 else:
-                    print(f"{Colors.YELLOW}! Capability creation had issues: {capability_result.get('errors')}{Colors.ENDC}")
+                    print(
+                        f"{Colors.YELLOW}! Capability creation had issues: {capability_result.get('errors')}{Colors.ENDC}"
+                    )
 
             # Generate AGENT_CONTEXT.md and mirror managed block into host config files
             try:
                 from .module_core import sync_context as sync_context_module
-                sync_results = sync_context_module.sync_context(current_dir, dry_run=False)
-                if 'error' not in sync_results:
+
+                sync_results = sync_context_module.sync_context(
+                    current_dir, dry_run=False
+                )
+                if "error" not in sync_results:
                     for path_str, action in sync_results.items():
-                        if action in ('created', 'updated'):
+                        if action in ("created", "updated"):
                             files_created.append(path_str)
-                    print(f"{Colors.GREEN}+ Agent Context synced (AGENT_CONTEXT.md + host configs){Colors.ENDC}")
+                    print(
+                        f"{Colors.GREEN}+ Agent Context synced (AGENT_CONTEXT.md + host configs){Colors.ENDC}"
+                    )
             except Exception as e:
                 print(f"{Colors.YELLOW}! Agent Context sync failed: {e}{Colors.ENDC}")
 
             return {
-                'status': 'success',
-                'files_created': files_created,
-                'mode': 'agent-framework-only'
+                "status": "success",
+                "files_created": files_created,
+                "mode": "agent-framework-only",
             }
 
         except Exception as e:
-            return {'status': 'error', 'error': str(e)}
+            return {"status": "error", "error": str(e)}
     else:
         print(f"\n{Colors.YELLOW}Dry run - files that would be created:{Colors.ENDC}")
         print("  - AGENTS.md (AI agent integration guide)")
@@ -372,30 +442,40 @@ current_sprint: null
         # Priority 1: Use core_templates if provided (from wizard)
         if core_templates and isinstance(core_templates, dict):
             for template_name, should_generate in core_templates.items():
-                if should_generate and template_name not in ['AGENTS', 'PROJECT_STATUS', 'BRANCHING']:
+                if should_generate and template_name not in [
+                    "AGENTS",
+                    "PROJECT_STATUS",
+                    "BRANCHING",
+                ]:
                     templates_shown.append(template_name)
 
         # Priority 2: Handle --all flag (CLI)
         elif with_all:
-            templates_shown = ['TESTING', 'CONTRIBUTING', 'SECURITY', 'ARCHITECTURE', 'CODE_OF_CONDUCT']
+            templates_shown = [
+                "TESTING",
+                "CONTRIBUTING",
+                "SECURITY",
+                "ARCHITECTURE",
+                "CODE_OF_CONDUCT",
+            ]
             if with_branching:
                 # BRANCHING already shown above
                 pass
             else:
-                templates_shown.insert(0, 'BRANCHING')
+                templates_shown.insert(0, "BRANCHING")
 
         # Show template descriptions
         template_descriptions = {
-            'TESTING': 'TDD patterns and best practices',
-            'BRANCHING': 'Git workflow and commit conventions',
-            'CONTRIBUTING': 'Contribution guidelines',
-            'SECURITY': 'Security policy and vulnerability reporting',
-            'ARCHITECTURE': 'System design documentation',
-            'CODE_OF_CONDUCT': 'Community guidelines'
+            "TESTING": "TDD patterns and best practices",
+            "BRANCHING": "Git workflow and commit conventions",
+            "CONTRIBUTING": "Contribution guidelines",
+            "SECURITY": "Security policy and vulnerability reporting",
+            "ARCHITECTURE": "System design documentation",
+            "CODE_OF_CONDUCT": "Community guidelines",
         }
 
         for template_name in templates_shown:
-            desc = template_descriptions.get(template_name, 'Project template')
+            desc = template_descriptions.get(template_name, "Project template")
             print(f"  - {template_name}.md ({desc})")
 
         # Show capability files if requested
@@ -404,17 +484,21 @@ current_sprint: null
                 current_dir,
                 current_dir.name,
                 dry_run=True,
-                capabilities_config=capabilities_config
+                capabilities_config=capabilities_config,
             )
 
-        return {'status': 'success', 'dry_run': True}
+        return {"status": "success", "dry_run": True}
 
 
 def interactive_setup_wizard():
     """Interactive wizard for configuring ProtoGear setup"""
-    print(f"\n{Colors.BOLD}{Colors.CYAN}ProtoGear Interactive Setup Wizard{Colors.ENDC}")
+    print(
+        f"\n{Colors.BOLD}{Colors.CYAN}ProtoGear Interactive Setup Wizard{Colors.ENDC}"
+    )
     print("=" * 60)
-    print(f"{Colors.GRAY}Let's configure AI-powered development workflow for your project{Colors.ENDC}")
+    print(
+        f"{Colors.GRAY}Let's configure AI-powered development workflow for your project{Colors.ENDC}"
+    )
     print("=" * 60)
 
     config = {}
@@ -427,52 +511,59 @@ def interactive_setup_wizard():
     print("-" * 30)
     print(f"Directory: {Colors.BOLD}{current_dir.absolute()}{Colors.ENDC}")
 
-    if project_info['detected']:
+    if project_info["detected"]:
         print(f"Type: {Colors.GREEN}{project_info['type']}{Colors.ENDC}")
-        if project_info.get('framework'):
+        if project_info.get("framework"):
             print(f"Framework: {Colors.GREEN}{project_info['framework']}{Colors.ENDC}")
     else:
         print(f"Type: {Colors.YELLOW}Generic Project{Colors.ENDC}")
 
     # Check Git configuration
     git_config = detect_git_config()
-    if git_config['is_git_repo']:
+    if git_config["is_git_repo"]:
         print(f"Git: {Colors.GREEN}Initialized{Colors.ENDC}")
-        if git_config['has_remote']:
+        if git_config["has_remote"]:
             print(f"Remote: {Colors.GREEN}{git_config['remote_name']}{Colors.ENDC}")
             # Show GitHub CLI status
-            if git_config['has_gh_cli']:
-                print(f"GitHub CLI: {Colors.GREEN}Installed{Colors.ENDC} (automated PRs available)")
+            if git_config["has_gh_cli"]:
+                print(
+                    f"GitHub CLI: {Colors.GREEN}Installed{Colors.ENDC} (automated PRs available)"
+                )
             else:
-                print(f"GitHub CLI: {Colors.YELLOW}Not detected{Colors.ENDC} (manual PRs via web)")
+                print(
+                    f"GitHub CLI: {Colors.YELLOW}Not detected{Colors.ENDC} (manual PRs via web)"
+                )
         else:
             print(f"Remote: {Colors.YELLOW}None (local-only){Colors.ENDC}")
 
         # Display workflow mode
         workflow_modes = {
-            'local_only': (Colors.YELLOW, 'Local-Only Workflow'),
-            'remote_manual': (Colors.CYAN, 'Remote Workflow (Manual PRs)'),
-            'remote_automated': (Colors.GREEN, 'Remote Workflow (Automated PRs)')
+            "local_only": (Colors.YELLOW, "Local-Only Workflow"),
+            "remote_manual": (Colors.CYAN, "Remote Workflow (Manual PRs)"),
+            "remote_automated": (Colors.GREEN, "Remote Workflow (Automated PRs)"),
         }
         mode_color, mode_desc = workflow_modes.get(
-            git_config.get('workflow_mode', 'local_only'),
-            (Colors.GRAY, 'Unknown')
+            git_config.get("workflow_mode", "local_only"), (Colors.GRAY, "Unknown")
         )
         print(f"Workflow Mode: {mode_color}{mode_desc}{Colors.ENDC}")
     else:
         print(f"Git: {Colors.YELLOW}Not initialized{Colors.ENDC}")
 
     # Question 0: Project Specifications document
-    specs_dest = current_dir / 'PROJECT_SPECIFICATIONS.md'
+    specs_dest = current_dir / "PROJECT_SPECIFICATIONS.md"
     if not specs_dest.exists():
         print(f"\n{Colors.CYAN}📄 Project Description{Colors.ENDC}")
         print("-" * 30)
         print("No PROJECT_SPECIFICATIONS.md found.")
         print("Enter a brief description of your project (1-3 sentences).")
-        print(f"{Colors.GRAY}Proto Gear will create a stub for agents to expand.{Colors.ENDC}")
-        description = safe_input(f"\n{Colors.BOLD}Project description (or Enter to skip): {Colors.ENDC}").strip()
+        print(
+            f"{Colors.GRAY}Proto Gear will create a stub for agents to expand.{Colors.ENDC}"
+        )
+        description = safe_input(
+            f"\n{Colors.BOLD}Project description (or Enter to skip): {Colors.ENDC}"
+        ).strip()
         if description:
-            config['project_description'] = description
+            config["project_description"] = description
 
     # Question 1: Branching Strategy
     print(f"\n{Colors.CYAN}📋 Branching & Git Workflow{Colors.ENDC}")
@@ -485,65 +576,81 @@ def interactive_setup_wizard():
     print("  • Workflow examples for AI agents")
     print("  • PR templates and merge strategies")
 
-    if git_config['is_git_repo']:
-        print(f"\n{Colors.GREEN}✓ Git repository detected - branching strategy recommended{Colors.ENDC}")
+    if git_config["is_git_repo"]:
+        print(
+            f"\n{Colors.GREEN}✓ Git repository detected - branching strategy recommended{Colors.ENDC}"
+        )
     else:
-        print(f"\n{Colors.YELLOW}⚠ No Git repository - you can still generate the strategy for future use{Colors.ENDC}")
+        print(
+            f"\n{Colors.YELLOW}⚠ No Git repository - you can still generate the strategy for future use{Colors.ENDC}"
+        )
 
     while True:
-        response = safe_input(f"\n{Colors.BOLD}Generate BRANCHING.md? (y/n): {Colors.ENDC}").lower()
-        if response in ['y', 'yes']:
-            config['with_branching'] = True
+        response = safe_input(
+            f"\n{Colors.BOLD}Generate BRANCHING.md? (y/n): {Colors.ENDC}"
+        ).lower()
+        if response in ["y", "yes"]:
+            config["with_branching"] = True
             break
-        elif response in ['n', 'no']:
-            config['with_branching'] = False
+        elif response in ["n", "no"]:
+            config["with_branching"] = False
             break
         else:
             print(f"{Colors.YELLOW}Please enter 'y' or 'n'{Colors.ENDC}")
 
     # Question 2: Ticket Prefix (only if branching enabled)
-    if config['with_branching']:
+    if config["with_branching"]:
         print(f"\n{Colors.CYAN}🎫 Ticket Prefix Configuration{Colors.ENDC}")
         print("-" * 30)
         print("Tickets and branches use a prefix for identification.")
         print(f"{Colors.GRAY}Examples: PROJ-001, APP-042, MYAPP-123{Colors.ENDC}")
 
         # Suggest a prefix based on project name
-        suggested_prefix = current_dir.name.upper().replace('-', '').replace('_', '')[:6]
+        suggested_prefix = (
+            current_dir.name.upper().replace("-", "").replace("_", "")[:6]
+        )
         if not suggested_prefix or len(suggested_prefix) < 2:
-            suggested_prefix = 'PROJ'
+            suggested_prefix = "PROJ"
 
         print(f"\nSuggested prefix: {Colors.GREEN}{suggested_prefix}{Colors.ENDC}")
 
-        response = safe_input(f"{Colors.BOLD}Enter ticket prefix (press Enter for '{suggested_prefix}'): {Colors.ENDC}").strip().upper()
+        response = (
+            safe_input(
+                f"{Colors.BOLD}Enter ticket prefix (press Enter for '{suggested_prefix}'): {Colors.ENDC}"
+            )
+            .strip()
+            .upper()
+        )
 
         if response:
             # Validate prefix (alphanumeric, 2-10 chars)
             if response.isalnum() and 2 <= len(response) <= 10:
-                config['ticket_prefix'] = response
+                config["ticket_prefix"] = response
             else:
-                print(f"{Colors.YELLOW}Invalid prefix. Using suggested: {suggested_prefix}{Colors.ENDC}")
-                config['ticket_prefix'] = suggested_prefix
+                print(
+                    f"{Colors.YELLOW}Invalid prefix. Using suggested: {suggested_prefix}{Colors.ENDC}"
+                )
+                config["ticket_prefix"] = suggested_prefix
         else:
-            config['ticket_prefix'] = suggested_prefix
+            config["ticket_prefix"] = suggested_prefix
 
         print(f"Using prefix: {Colors.GREEN}{config['ticket_prefix']}{Colors.ENDC}")
     else:
-        config['ticket_prefix'] = None
+        config["ticket_prefix"] = None
 
     # Summary
     print(f"\n{Colors.BOLD}{Colors.CYAN}📝 Configuration Summary{Colors.ENDC}")
     print("=" * 60)
     print(f"Project: {Colors.BOLD}{current_dir.name}{Colors.ENDC}")
     print(f"Type: {project_info.get('type', 'Generic')}")
-    if project_info.get('framework'):
+    if project_info.get("framework"):
         print(f"Framework: {project_info['framework']}")
 
     print(f"\n{Colors.CYAN}Files to be created:{Colors.ENDC}")
     print(f"  {Colors.GREEN}✓{Colors.ENDC} AGENTS.md (AI agent integration guide)")
     print(f"  {Colors.GREEN}✓{Colors.ENDC} PROJECT_STATUS.md (Project state tracking)")
 
-    if config['with_branching']:
+    if config["with_branching"]:
         print(f"  {Colors.GREEN}✓{Colors.ENDC} BRANCHING.md (Git workflow conventions)")
         print(f"\nTicket Prefix: {Colors.BOLD}{config['ticket_prefix']}{Colors.ENDC}")
     else:
@@ -552,12 +659,14 @@ def interactive_setup_wizard():
     # Confirmation
     print()
     while True:
-        response = safe_input(f"{Colors.BOLD}Proceed with setup? (y/n): {Colors.ENDC}").lower()
-        if response in ['y', 'yes']:
-            config['confirmed'] = True
+        response = safe_input(
+            f"{Colors.BOLD}Proceed with setup? (y/n): {Colors.ENDC}"
+        ).lower()
+        if response in ["y", "yes"]:
+            config["confirmed"] = True
             break
-        elif response in ['n', 'no']:
-            config['confirmed'] = False
+        elif response in ["n", "no"]:
+            config["confirmed"] = False
             break
         else:
             print(f"{Colors.YELLOW}Please enter 'y' or 'n'{Colors.ENDC}")
@@ -565,7 +674,17 @@ def interactive_setup_wizard():
     return config
 
 
-def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, ticket_prefix=None, with_capabilities=False, capabilities_config=None, with_all=False, core_templates=None, project_description=None):
+def run_simple_protogear_init(
+    dry_run=False,
+    force=False,
+    with_branching=False,
+    ticket_prefix=None,
+    with_capabilities=False,
+    capabilities_config=None,
+    with_all=False,
+    core_templates=None,
+    project_description=None,
+):
     """
     Initialize ProtoGear AI Agent Framework in current project
 
@@ -583,7 +702,9 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
 
     print(f"\n{Colors.BOLD}ProtoGear AI Agent Framework Initialization{Colors.ENDC}")
     print("=" * 60)
-    print(f"{Colors.GRAY}Adding AI-powered development workflow to your project{Colors.ENDC}")
+    print(
+        f"{Colors.GRAY}Adding AI-powered development workflow to your project{Colors.ENDC}"
+    )
     print("=" * 60)
 
     # Directly run agent framework setup (no menu)
@@ -597,28 +718,34 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
             capabilities_config=capabilities_config,
             with_all=with_all,
             core_templates=core_templates,
-            project_description=project_description
+            project_description=project_description,
         )
     except KeyboardInterrupt:
-        return {'status': 'cancelled'}
+        return {"status": "cancelled"}
 
     # Show results
-    if result['status'] == 'success':
-        if result.get('dry_run'):
-            print(f"\n{Colors.GREEN}SUCCESS: Dry run completed successfully!{Colors.ENDC}")
+    if result["status"] == "success":
+        if result.get("dry_run"):
+            print(
+                f"\n{Colors.GREEN}SUCCESS: Dry run completed successfully!{Colors.ENDC}"
+            )
         else:
-            print(f"\n{Colors.GREEN}SUCCESS: ProtoGear AI Agent Framework integrated!{Colors.ENDC}")
+            print(
+                f"\n{Colors.GREEN}SUCCESS: ProtoGear AI Agent Framework integrated!{Colors.ENDC}"
+            )
 
-            if result.get('files_created'):
+            if result.get("files_created"):
                 print(f"\n{Colors.CYAN}Files created:{Colors.ENDC}")
 
                 # Separate template files from capability files
                 template_files = []
                 capability_files = []
 
-                for file in result['files_created']:
+                for file in result["files_created"]:
                     # Handle both forward and backslash separators
-                    if file.startswith('.proto-gear/') or file.startswith('.proto-gear\\'):
+                    if file.startswith(".proto-gear/") or file.startswith(
+                        ".proto-gear\\"
+                    ):
                         capability_files.append(file)
                     else:
                         template_files.append(file)
@@ -629,13 +756,27 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
 
                 # Show capabilities summary if any
                 if capability_files:
-                    print(f"\n{Colors.CYAN}Capabilities installed ({len(capability_files)} files):{Colors.ENDC}")
+                    print(
+                        f"\n{Colors.CYAN}Capabilities installed ({len(capability_files)} files):{Colors.ENDC}"
+                    )
                     print(f"  + .proto-gear/ directory with:")
 
                     # Categorize capability files (handle both separators)
-                    skills = [f for f in capability_files if '/skills/' in f or '\\skills\\' in f]
-                    workflows = [f for f in capability_files if '/workflows/' in f or '\\workflows\\' in f]
-                    commands = [f for f in capability_files if '/commands/' in f or '\\commands\\' in f]
+                    skills = [
+                        f
+                        for f in capability_files
+                        if "/skills/" in f or "\\skills\\" in f
+                    ]
+                    workflows = [
+                        f
+                        for f in capability_files
+                        if "/workflows/" in f or "\\workflows\\" in f
+                    ]
+                    commands = [
+                        f
+                        for f in capability_files
+                        if "/commands/" in f or "\\commands\\" in f
+                    ]
 
                     if skills:
                         print(f"    • {len(skills)} skill(s)")
@@ -646,36 +787,43 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
 
             # Dynamic next steps based on what was created
             print(f"\n{Colors.YELLOW}Next steps:{Colors.ENDC}")
-            files = result.get('files_created', [])
+            files = result.get("files_created", [])
             step = 1
 
-            if 'AGENTS.md' in files:
-                print(f"  {step}. Review AGENTS.md to understand AI agent patterns and workflows")
+            if "AGENTS.md" in files:
+                print(
+                    f"  {step}. Review AGENTS.md to understand AI agent patterns and workflows"
+                )
                 step += 1
 
-            if 'PROJECT_STATUS.md' in files:
+            if "PROJECT_STATUS.md" in files:
                 print(f"  {step}. Check PROJECT_STATUS.md for project state tracking")
                 step += 1
 
-            if 'TESTING.md' in files:
+            if "TESTING.md" in files:
                 print(f"  {step}. Review TESTING.md for TDD methodology")
                 step += 1
 
-            if 'BRANCHING.md' in files:
+            if "BRANCHING.md" in files:
                 print(f"  {step}. Follow BRANCHING.md conventions for Git workflow")
                 step += 1
 
             # Check if capabilities were installed
-            has_capabilities = any(f.startswith('.proto-gear/') or f.startswith('.proto-gear\\') for f in files)
+            has_capabilities = any(
+                f.startswith(".proto-gear/") or f.startswith(".proto-gear\\")
+                for f in files
+            )
             if has_capabilities:
-                print(f"  {step}. Explore .proto-gear/ for available skills, workflows, and commands")
+                print(
+                    f"  {step}. Explore .proto-gear/ for available skills, workflows, and commands"
+                )
                 step += 1
 
-            print(f"  {step}. AI agents will read these templates and collaborate naturally")
+            print(
+                f"  {step}. AI agents will read these templates and collaborate naturally"
+            )
 
     return result
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -687,7 +835,6 @@ def run_simple_protogear_init(dry_run=False, force=False, with_branching=False, 
 # pyproject.toml and ``from proto_gear_pkg.proto_gear import main``.
 # ---------------------------------------------------------------------------
 from .cli import main
-
 
 if __name__ == "__main__":
     main()

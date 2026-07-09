@@ -18,12 +18,12 @@ from .agent_config import (
     AgentConfiguration,
     AgentCapabilities,
     AgentValidationError,
-    create_agent_template
+    create_agent_template,
 )
 from .module_core.capability_metadata import (
     load_all_capabilities,
     CapabilityMetadata,
-    CapabilityType
+    CapabilityType,
 )
 
 ui = UIHelper()
@@ -42,7 +42,9 @@ def get_agents_dir() -> Path:
     return agents_dir
 
 
-def get_close_matches(query: str, options: List[str], n: int = 3, cutoff: float = 0.6) -> List[str]:
+def get_close_matches(
+    query: str, options: List[str], n: int = 3, cutoff: float = 0.6
+) -> List[str]:
     """
     Get close matches for a query string using fuzzy matching.
 
@@ -64,6 +66,7 @@ def get_close_matches(query: str, options: List[str], n: int = 3, cutoff: float 
 # Capabilities Commands
 # ============================================================================
 
+
 def cmd_capabilities_list(args):
     """List all available capabilities"""
     caps_dir = get_capabilities_dir()
@@ -82,47 +85,52 @@ def cmd_capabilities_list(args):
     filtered_caps = all_caps.copy()
 
     # Filter by type
-    if hasattr(args, 'type') and args.type:
+    if hasattr(args, "type") and args.type:
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
-            if v.type.value == args.type
+            k: v for k, v in filtered_caps.items() if v.type.value == args.type
         }
 
     # Filter by tag
-    if hasattr(args, 'tag') and args.tag:
+    if hasattr(args, "tag") and args.tag:
         tag_lower = args.tag.lower()
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
+            k: v
+            for k, v in filtered_caps.items()
             if any(tag_lower in tag.lower() for tag in v.tags)
         }
 
     # Filter by role
-    if hasattr(args, 'role') and args.role:
+    if hasattr(args, "role") and args.role:
         role_lower = args.role.lower()
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
-            if v.agent_roles and any(role_lower in role.lower() for role in v.agent_roles)
+            k: v
+            for k, v in filtered_caps.items()
+            if v.agent_roles
+            and any(role_lower in role.lower() for role in v.agent_roles)
         }
 
     # Filter by status
-    if hasattr(args, 'status') and args.status:
+    if hasattr(args, "status") and args.status:
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
-            if v.status.value == args.status
+            k: v for k, v in filtered_caps.items() if v.status.value == args.status
         }
 
     if not filtered_caps:
-        if getattr(args, 'json', False):
+        if getattr(args, "json", False):
             import json
+
             print(json.dumps({"capabilities": []}, indent=2))
             return 0
-        print(f"{Colors.YELLOW}No capabilities match the specified filters{Colors.ENDC}")
+        print(
+            f"{Colors.YELLOW}No capabilities match the specified filters{Colors.ENDC}"
+        )
         print(f"\nTry: pg capabilities list (without filters)")
         return 0
 
     # JSON output path (for AI agent consumption)
-    if getattr(args, 'json', False):
+    if getattr(args, "json", False):
         import json
+
         items = []
         for cap_id in sorted(filtered_caps.keys()):
             cap = filtered_caps[cap_id]
@@ -131,19 +139,27 @@ def cmd_capabilities_list(args):
             if cap.relevance:
                 triggers = list(cap.relevance.triggers or [])
                 contexts = list(cap.relevance.contexts or [])
-            items.append({
-                "id": cap_id,
-                "type": cap.type.value if hasattr(cap.type, "value") else str(cap.type),
-                "name": cap.name,
-                "description": cap.description,
-                "category": cap.category,
-                "status": cap.status.value if hasattr(cap.status, "value") else str(cap.status),
-                "version": cap.version,
-                "tags": list(cap.tags or []),
-                "agent_roles": list(cap.agent_roles or []),
-                "triggers": triggers,
-                "contexts": contexts,
-            })
+            items.append(
+                {
+                    "id": cap_id,
+                    "type": (
+                        cap.type.value if hasattr(cap.type, "value") else str(cap.type)
+                    ),
+                    "name": cap.name,
+                    "description": cap.description,
+                    "category": cap.category,
+                    "status": (
+                        cap.status.value
+                        if hasattr(cap.status, "value")
+                        else str(cap.status)
+                    ),
+                    "version": cap.version,
+                    "tags": list(cap.tags or []),
+                    "agent_roles": list(cap.agent_roles or []),
+                    "triggers": triggers,
+                    "contexts": contexts,
+                }
+            )
         print(json.dumps({"capabilities": items}, indent=2))
         return 0
 
@@ -165,55 +181,79 @@ def cmd_capabilities_list(args):
 
     if skills:
         # Box header
-        print(f"{Colors.CYAN}+-- SKILLS ({len(skills)}) " + "-" * 45 + f"+{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}+-- SKILLS ({len(skills)}) " + "-" * 45 + f"+{Colors.ENDC}"
+        )
         for cap_id in sorted(skills.keys()):
             metadata = skills[cap_id]
             # Extract short ID (e.g., "skills/testing" -> "testing")
-            short_id = cap_id.split('/')[-1]
+            short_id = cap_id.split("/")[-1]
             status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
-            status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            status_color = (
+                Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            )
             # Format: | [OK] short-id          Full Name
-            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
-                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} "
+                + f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}"
+            )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     if workflows:
         # Box header
-        print(f"{Colors.CYAN}+-- WORKFLOWS ({len(workflows)}) " + "-" * 42 + f"+{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}+-- WORKFLOWS ({len(workflows)}) "
+            + "-" * 42
+            + f"+{Colors.ENDC}"
+        )
         for cap_id in sorted(workflows.keys()):
             metadata = workflows[cap_id]
-            short_id = cap_id.split('/')[-1]
+            short_id = cap_id.split("/")[-1]
             status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
-            status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
-                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+            status_color = (
+                Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            )
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} "
+                + f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}"
+            )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     if commands:
         # Box header
-        print(f"{Colors.CYAN}+-- COMMANDS ({len(commands)}) " + "-" * 43 + f"+{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}+-- COMMANDS ({len(commands)}) "
+            + "-" * 43
+            + f"+{Colors.ENDC}"
+        )
         for cap_id in sorted(commands.keys()):
             metadata = commands[cap_id]
-            short_id = cap_id.split('/')[-1]
+            short_id = cap_id.split("/")[-1]
             status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
-            status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
-                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+            status_color = (
+                Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            )
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} "
+                + f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}"
+            )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     # Summary
     filters_applied = []
-    if hasattr(args, 'type') and args.type:
+    if hasattr(args, "type") and args.type:
         filters_applied.append(f"type={args.type}")
-    if hasattr(args, 'tag') and args.tag:
+    if hasattr(args, "tag") and args.tag:
         filters_applied.append(f"tag={args.tag}")
-    if hasattr(args, 'role') and args.role:
+    if hasattr(args, "role") and args.role:
         filters_applied.append(f"role={args.role}")
-    if hasattr(args, 'status') and args.status:
+    if hasattr(args, "status") and args.status:
         filters_applied.append(f"status={args.status}")
 
     if filters_applied:
-        print(f"{Colors.BOLD}Showing: {len(filtered_caps)} of {len(all_caps)} capabilities{Colors.ENDC}")
+        print(
+            f"{Colors.BOLD}Showing: {len(filtered_caps)} of {len(all_caps)} capabilities{Colors.ENDC}"
+        )
         print(f"{Colors.GRAY}Filters: {', '.join(filters_applied)}{Colors.ENDC}")
     else:
         print(f"{Colors.BOLD}Total: {len(all_caps)} capabilities{Colors.ENDC}")
@@ -237,22 +277,28 @@ def cmd_capabilities_search(args):
     # Search in name, description, tags, and trigger keywords
     matches = []
     for cap_id, metadata in all_caps.items():
-        if (query in metadata.name.lower() or
-            query in metadata.description.lower() or
-            any(query in tag.lower() for tag in metadata.tags) or
-            (metadata.relevance and metadata.relevance.matches_trigger(query))):
+        if (
+            query in metadata.name.lower()
+            or query in metadata.description.lower()
+            or any(query in tag.lower() for tag in metadata.tags)
+            or (metadata.relevance and metadata.relevance.matches_trigger(query))
+        ):
             matches.append((cap_id, metadata))
 
     if not matches:
         print(f"{Colors.YELLOW}No capabilities found matching '{query}'{Colors.ENDC}")
         return 0
 
-    print(f"\n{Colors.HEADER}=== Search Results for '{query}' ({len(matches)} found) ==={Colors.ENDC}\n")
+    print(
+        f"\n{Colors.HEADER}=== Search Results for '{query}' ({len(matches)} found) ==={Colors.ENDC}\n"
+    )
 
     for cap_id, metadata in sorted(matches, key=lambda x: x[0]):
         print(f"{Colors.CYAN}{metadata.name}{Colors.ENDC} ({cap_id})")
         print(f"  {metadata.description}")
-        print(f"  Status: {metadata.status.value} | Tags: {', '.join(metadata.tags[:5])}")
+        print(
+            f"  Status: {metadata.status.value} | Tags: {', '.join(metadata.tags[:5])}"
+        )
         print()
 
     return 0
@@ -292,7 +338,7 @@ def cmd_capabilities_show(args):
         # Suggest similar capabilities using fuzzy matching
         all_cap_ids = list(all_caps.keys())
         # Also extract short names for matching
-        short_names = [cap_id.split('/')[-1] for cap_id in all_cap_ids]
+        short_names = [cap_id.split("/")[-1] for cap_id in all_cap_ids]
         all_searchable = all_cap_ids + short_names
 
         suggestions = get_close_matches(name, all_searchable, n=3, cutoff=0.6)
@@ -300,8 +346,10 @@ def cmd_capabilities_show(args):
             print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
             for suggestion in suggestions[:3]:
                 # If it's a short name, find the full ID
-                if '/' not in suggestion:
-                    matching_ids = [cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")]
+                if "/" not in suggestion:
+                    matching_ids = [
+                        cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")
+                    ]
                     full_id = matching_ids[0] if matching_ids else suggestion
                 else:
                     full_id = suggestion
@@ -413,7 +461,7 @@ def cmd_capabilities_tree(args):
         # Suggest similar capabilities using fuzzy matching
         all_cap_ids = list(all_caps.keys())
         # Also extract short names for matching
-        short_names = [cid.split('/')[-1] for cid in all_cap_ids]
+        short_names = [cid.split("/")[-1] for cid in all_cap_ids]
         all_searchable = all_cap_ids + short_names
 
         suggestions = get_close_matches(cap_id, all_searchable, n=3, cutoff=0.6)
@@ -421,8 +469,10 @@ def cmd_capabilities_tree(args):
             print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
             for suggestion in suggestions[:3]:
                 # If it's a short name, find the full ID
-                if '/' not in suggestion:
-                    matching_ids = [cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")]
+                if "/" not in suggestion:
+                    matching_ids = [
+                        cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")
+                    ]
                     full_id = matching_ids[0] if matching_ids else suggestion
                 else:
                     full_id = suggestion
@@ -438,12 +488,20 @@ def cmd_capabilities_tree(args):
         return 1
 
     # Print header with box
-    print(f"\n{Colors.CYAN}+-- Dependency Tree: {metadata.name} " + "-" * (40 - len(metadata.name)) + f"+{Colors.ENDC}")
+    print(
+        f"\n{Colors.CYAN}+-- Dependency Tree: {metadata.name} "
+        + "-" * (40 - len(metadata.name))
+        + f"+{Colors.ENDC}"
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Show capability info
-    print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}{full_id}{Colors.ENDC} - {metadata.description}")
-    print(f"{Colors.CYAN}|{Colors.ENDC} Type: {metadata.type.value} | Status: {metadata.status.value}")
+    print(
+        f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}{full_id}{Colors.ENDC} - {metadata.description}"
+    )
+    print(
+        f"{Colors.CYAN}|{Colors.ENDC} Type: {metadata.type.value} | Status: {metadata.status.value}"
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Show dependencies
@@ -451,7 +509,9 @@ def cmd_capabilities_tree(args):
 
     if metadata.dependencies.required:
         has_dependencies = True
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Required Dependencies:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Required Dependencies:{Colors.ENDC}"
+        )
         for dep in metadata.dependencies.required:
             dep_name = all_caps[dep].name if dep in all_caps else dep
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
@@ -459,7 +519,9 @@ def cmd_capabilities_tree(args):
 
     if metadata.dependencies.optional:
         has_dependencies = True
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Optional Dependencies:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Optional Dependencies:{Colors.ENDC}"
+        )
         for dep in metadata.dependencies.optional:
             dep_name = all_caps[dep].name if dep in all_caps else dep
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
@@ -467,7 +529,9 @@ def cmd_capabilities_tree(args):
 
     if metadata.dependencies.suggested:
         has_dependencies = True
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Suggested Capabilities:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Suggested Capabilities:{Colors.ENDC}"
+        )
         for dep in metadata.dependencies.suggested:
             dep_name = all_caps[dep].name if dep in all_caps else dep
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
@@ -475,24 +539,34 @@ def cmd_capabilities_tree(args):
 
     # Show composable capabilities
     if metadata.composable_with:
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Composable With:{Colors.ENDC} {len(metadata.composable_with)} capabilities")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Composable With:{Colors.ENDC} {len(metadata.composable_with)} capabilities"
+        )
         for comp in metadata.composable_with[:5]:
             comp_name = all_caps[comp].name if comp in all_caps else comp
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {comp} ({comp_name})")
         if len(metadata.composable_with) > 5:
-            print(f"{Colors.CYAN}|{Colors.ENDC}   ... and {len(metadata.composable_with) - 5} more")
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC}   ... and {len(metadata.composable_with) - 5} more"
+            )
         print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Show conflicts
     if metadata.conflicts:
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.WARNING}Conflicts With:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.WARNING}Conflicts With:{Colors.ENDC}"
+        )
         for conflict in metadata.conflicts:
-            conflict_name = all_caps[conflict].name if conflict in all_caps else conflict
+            conflict_name = (
+                all_caps[conflict].name if conflict in all_caps else conflict
+            )
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {conflict} ({conflict_name})")
         print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     if not has_dependencies and not metadata.composable_with and not metadata.conflicts:
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.GRAY}No dependencies or relationships defined{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.GRAY}No dependencies or relationships defined{Colors.ENDC}"
+        )
         print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Print footer
@@ -509,6 +583,7 @@ def cmd_capabilities_tree(args):
 # ============================================================================
 # Agent Commands
 # ============================================================================
+
 
 def cmd_agent_list(args):
     """List all configured agents"""
@@ -533,11 +608,17 @@ def cmd_agent_list(args):
         return 0
 
     # Print header with box
-    print(f"\n{Colors.CYAN}+-- Configured Agents ({len(agents)}) " + "-" * 40 + f"+{Colors.ENDC}")
+    print(
+        f"\n{Colors.CYAN}+-- Configured Agents ({len(agents)}) "
+        + "-" * 40
+        + f"+{Colors.ENDC}"
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Print table header
-    print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}NAME{' ' * 16}CAPABILITIES  STATUS{Colors.ENDC}        ")
+    print(
+        f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}NAME{' ' * 16}CAPABILITIES  STATUS{Colors.ENDC}        "
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC} " + "-" * 54)
 
     # Print agents in table format
@@ -570,8 +651,10 @@ def cmd_agent_list(args):
         cap_padding = " " * (14 - len(cap_text))
 
         # Print row
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.CYAN}{name_display}{Colors.ENDC}"
-              f"{name_padding}{cap_text}{cap_padding}{status_icon} {status_text}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.CYAN}{name_display}{Colors.ENDC}"
+            f"{name_padding}{cap_text}{cap_padding}{status_icon} {status_text}"
+        )
 
     # Print footer
     print(f"{Colors.CYAN}|{Colors.ENDC}")
@@ -719,7 +802,9 @@ def cmd_agent_validate(args):
     if not errors and not warnings:
         print(f"{Colors.GREEN}Agent configuration is valid!{Colors.ENDC}")
     elif not errors:
-        print(f"{Colors.GREEN}Agent configuration is valid (with warnings){Colors.ENDC}")
+        print(
+            f"{Colors.GREEN}Agent configuration is valid (with warnings){Colors.ENDC}"
+        )
     else:
         print(f"{Colors.FAIL}Agent configuration has errors{Colors.ENDC}")
         return 1
@@ -745,9 +830,11 @@ def cmd_agent_delete(args):
 
     # Confirm deletion unless --force
     if not args.force:
-        print(f"{Colors.WARNING}Are you sure you want to delete agent '{agent_name}'?{Colors.ENDC}")
+        print(
+            f"{Colors.WARNING}Are you sure you want to delete agent '{agent_name}'?{Colors.ENDC}"
+        )
         response = input(f"Type 'yes' to confirm: ").strip().lower()
-        if response != 'yes':
+        if response != "yes":
             print(f"{Colors.YELLOW}Deletion cancelled.{Colors.ENDC}")
             return 0
 
@@ -764,7 +851,9 @@ def cmd_agent_delete(args):
         return 1
 
 
-def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[AgentConfiguration]:
+def _create_from_template(
+    args, agents_dir: Path, caps_dir: Path
+) -> Optional[AgentConfiguration]:
     """
     Create agent from template.
 
@@ -779,9 +868,11 @@ def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[Ag
     from .agent_templates import create_agent_from_template, get_template
 
     template_name = args.template
-    agent_name = args.name if hasattr(args, 'name') and args.name else None
-    author = args.author if hasattr(args, 'author') and args.author else None
-    description = args.description if hasattr(args, 'description') and args.description else None
+    agent_name = args.name if hasattr(args, "name") and args.name else None
+    author = args.author if hasattr(args, "author") and args.author else None
+    description = (
+        args.description if hasattr(args, "description") and args.description else None
+    )
 
     # Check if template exists
     template = get_template(template_name)
@@ -798,7 +889,9 @@ def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[Ag
         if description:
             agent.description = description
 
-        print(f"\n{Colors.GREEN}[OK] Agent created from template: {template_name}{Colors.ENDC}")
+        print(
+            f"\n{Colors.GREEN}[OK] Agent created from template: {template_name}{Colors.ENDC}"
+        )
         print(f"  Name: {agent.name}")
         print(f"  Capabilities: {len(agent.capabilities.all_capabilities())}")
 
@@ -809,7 +902,9 @@ def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[Ag
         return None
 
 
-def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[AgentConfiguration]:
+def _create_quick_agent(
+    args, agents_dir: Path, caps_dir: Path
+) -> Optional[AgentConfiguration]:
     """
     Create agent from command-line arguments (quick mode).
 
@@ -824,7 +919,7 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
     from datetime import datetime
 
     # Validate required arguments
-    if not hasattr(args, 'name') or not args.name:
+    if not hasattr(args, "name") or not args.name:
         print(f"{Colors.FAIL}Agent name is required in quick mode{Colors.ENDC}")
         print(f"Usage: pg agent create <name> --capabilities cap1,cap2,cap3")
         return None
@@ -835,7 +930,7 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
         return None
 
     # Parse capabilities (comma-separated)
-    cap_list = [c.strip() for c in args.capabilities.split(',')]
+    cap_list = [c.strip() for c in args.capabilities.split(",")]
 
     # Load all capabilities for validation
     try:
@@ -867,7 +962,7 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
             if cap in all_caps:
                 metadata = all_caps[cap]
                 # Extract short name from full path if needed
-                short_name = cap.split('/')[-1] if '/' in cap else cap
+                short_name = cap.split("/")[-1] if "/" in cap else cap
                 if metadata.type.value == "skill":
                     skills.append(short_name)
                 elif metadata.type.value == "workflow":
@@ -886,11 +981,14 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
         return None
 
     # Get description
-    description = args.description if hasattr(args, 'description') and args.description else \
-                 f"Custom agent with {len(cap_list)} capabilities"
+    description = (
+        args.description
+        if hasattr(args, "description") and args.description
+        else f"Custom agent with {len(cap_list)} capabilities"
+    )
 
     # Get author
-    author = args.author if hasattr(args, 'author') and args.author else "User"
+    author = args.author if hasattr(args, "author") and args.author else "User"
 
     # Create agent configuration
     agent = AgentConfiguration(
@@ -900,22 +998,22 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
         created=datetime.now().strftime("%Y-%m-%d"),
         author=author,
         capabilities=AgentCapabilities(
-            skills=skills,
-            workflows=workflows,
-            commands=commands
+            skills=skills, workflows=workflows, commands=commands
         ),
         context_priority=["PROJECT_STATUS.md", "AGENTS.md"],
         agent_instructions=[],
         required_files=["PROJECT_STATUS.md", "AGENTS.md"],
         optional_files=[],
         tags=["custom", "quick-create"],
-        status="active"
+        status="active",
     )
 
     print(f"\n{Colors.GREEN}[OK] Quick agent created{Colors.ENDC}")
     print(f"  Name: {agent.name}")
-    print(f"  Capabilities: {len(agent.capabilities.all_capabilities())} " +
-          f"({len(skills)} skills, {len(workflows)} workflows, {len(commands)} commands)")
+    print(
+        f"  Capabilities: {len(agent.capabilities.all_capabilities())} "
+        + f"({len(skills)} skills, {len(workflows)} workflows, {len(commands)} commands)"
+    )
 
     return agent
 
@@ -935,19 +1033,40 @@ def cmd_agent_clone(args):
 
         # Create cloned agent with new name
         from datetime import datetime
+
         cloned_agent = AgentConfiguration(
             name=dest_name,
             version=source_agent.version,
-            description=args.description if hasattr(args, 'description') and args.description else f"Cloned from {source_name}",
+            description=(
+                args.description
+                if hasattr(args, "description") and args.description
+                else f"Cloned from {source_name}"
+            ),
             created=datetime.now().strftime("%Y-%m-%d"),
             author=source_agent.author,
             capabilities=source_agent.capabilities,
-            context_priority=source_agent.context_priority.copy() if source_agent.context_priority else [],
-            agent_instructions=source_agent.agent_instructions.copy() if source_agent.agent_instructions else [],
-            required_files=source_agent.required_files.copy() if source_agent.required_files else [],
-            optional_files=source_agent.optional_files.copy() if source_agent.optional_files else [],
+            context_priority=(
+                source_agent.context_priority.copy()
+                if source_agent.context_priority
+                else []
+            ),
+            agent_instructions=(
+                source_agent.agent_instructions.copy()
+                if source_agent.agent_instructions
+                else []
+            ),
+            required_files=(
+                source_agent.required_files.copy()
+                if source_agent.required_files
+                else []
+            ),
+            optional_files=(
+                source_agent.optional_files.copy()
+                if source_agent.optional_files
+                else []
+            ),
             tags=source_agent.tags.copy() if source_agent.tags else [],
-            status=source_agent.status
+            status=source_agent.status,
         )
 
         # Save cloned agent
@@ -981,17 +1100,18 @@ def cmd_agent_create(args):
     agents_dir.mkdir(parents=True, exist_ok=True)
 
     # Handle --list-templates flag
-    if hasattr(args, 'list_templates') and args.list_templates:
+    if hasattr(args, "list_templates") and args.list_templates:
         from .agent_templates import print_available_templates
+
         print_available_templates()
         return 0
 
     # Quick mode: --template or --capabilities
-    if hasattr(args, 'template') and args.template:
+    if hasattr(args, "template") and args.template:
         agent = _create_from_template(args, agents_dir, caps_dir)
         if not agent:
             return 1
-    elif hasattr(args, 'capabilities') and args.capabilities:
+    elif hasattr(args, "capabilities") and args.capabilities:
         agent = _create_quick_agent(args, agents_dir, caps_dir)
         if not agent:
             return 1
@@ -1020,8 +1140,14 @@ def cmd_agent_create(args):
     # Check if file already exists
     agent_file = agents_dir / agent_filename
     if agent_file.exists():
-        overwrite = input(f"\n{Colors.WARNING}Agent file already exists. Overwrite? (yes/no): {Colors.ENDC}").strip().lower()
-        if overwrite != 'yes':
+        overwrite = (
+            input(
+                f"\n{Colors.WARNING}Agent file already exists. Overwrite? (yes/no): {Colors.ENDC}"
+            )
+            .strip()
+            .lower()
+        )
+        if overwrite != "yes":
             print(f"{Colors.YELLOW}Agent not saved{Colors.ENDC}")
             return 0
 
@@ -1049,6 +1175,7 @@ def cmd_agent_create(args):
 # Template Update Commands
 # ============================================================================
 
+
 def cmd_template_update(args):
     """
     Update template files while preserving user data.
@@ -1056,25 +1183,28 @@ def cmd_template_update(args):
     Safely updates AGENTS.md and PROJECT_STATUS.md to latest template
     versions while preserving tickets, metrics, and custom configurations.
     """
-    from .modules.engineering.template_updater import TemplateUpdater, TemplateUpdateError
+    from .modules.engineering.template_updater import (
+        TemplateUpdater,
+        TemplateUpdateError,
+    )
     import os
 
     # Get templates to update
     if args.templates and len(args.templates) > 0:
         # User specified which templates
-        template_names = [t.replace('.md', '') for t in args.templates]
+        template_names = [t.replace(".md", "") for t in args.templates]
     else:
         # Update all supported templates
-        template_names = ['PROJECT_STATUS', 'AGENTS']
+        template_names = ["PROJECT_STATUS", "AGENTS"]
 
     # Build project context for placeholders
     project_dir = Path.cwd()
     project_context = {
-        'PROJECT_NAME': project_dir.name,
-        'TICKET_PREFIX': _detect_ticket_prefix(project_dir),
-        'VERSION': _get_protogear_version(),
-        'MAIN_BRANCH': 'main',
-        'DEV_BRANCH': 'development',
+        "PROJECT_NAME": project_dir.name,
+        "TICKET_PREFIX": _detect_ticket_prefix(project_dir),
+        "VERSION": _get_protogear_version(),
+        "MAIN_BRANCH": "main",
+        "DEV_BRANCH": "development",
     }
 
     # Initialize updater
@@ -1104,20 +1234,25 @@ def cmd_template_update(args):
         try:
             # Perform update
             result = updater.update_template(
-                template_name,
-                project_context,
-                dry_run=args.dry_run,
-                force=args.force
+                template_name, project_context, dry_run=args.dry_run, force=args.force
             )
 
             # Report result
             if result.success:
                 if args.dry_run:
-                    print(f"{Colors.CYAN}[DRY RUN] {filename} - Would update{Colors.ENDC}")
-                    print(f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines")
+                    print(
+                        f"{Colors.CYAN}[DRY RUN] {filename} - Would update{Colors.ENDC}"
+                    )
+                    print(
+                        f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines"
+                    )
                 else:
-                    print(f"{Colors.GREEN}[OK] {filename} - Updated successfully{Colors.ENDC}")
-                    print(f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines")
+                    print(
+                        f"{Colors.GREEN}[OK] {filename} - Updated successfully{Colors.ENDC}"
+                    )
+                    print(
+                        f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines"
+                    )
                     if result.backup_created:
                         print(f"  Backup: {result.backup_path.name}")
 
@@ -1138,7 +1273,9 @@ def cmd_template_update(args):
             print(f"{Colors.FAIL}[ERROR] {filename} - {e}{Colors.ENDC}")
             error_count += 1
         except Exception as e:
-            print(f"{Colors.FAIL}[ERROR] {filename} - Unexpected error: {e}{Colors.ENDC}")
+            print(
+                f"{Colors.FAIL}[ERROR] {filename} - Unexpected error: {e}{Colors.ENDC}"
+            )
             error_count += 1
 
     # Summary
@@ -1172,13 +1309,14 @@ def _detect_ticket_prefix(project_dir: Path) -> str:
     status_file = project_dir / "PROJECT_STATUS.md"
     if status_file.exists():
         try:
-            content = status_file.read_text(encoding='utf-8')
+            content = status_file.read_text(encoding="utf-8")
             # Look for ticket IDs in completed tickets table
             import re
-            matches = re.findall(r'\|\s*([A-Z]+-\d+)\s*\|', content)
+
+            matches = re.findall(r"\|\s*([A-Z]+-\d+)\s*\|", content)
             if matches:
                 # Extract prefix from first match
-                prefix = matches[0].split('-')[0]
+                prefix = matches[0].split("-")[0]
                 return prefix
         except Exception:
             pass
@@ -1194,6 +1332,7 @@ def _get_protogear_version() -> str:
     """
     try:
         from . import __version__
+
         return __version__
     except Exception:
         return "0.8.1"  # Fallback
@@ -1202,6 +1341,7 @@ def _get_protogear_version() -> str:
 # ---------------------------------------------------------------------------
 # Departmental modules (ADR-001 Phase B)
 # ---------------------------------------------------------------------------
+
 
 def cmd_module_list(args):
     """List departmental modules discovered from module.yaml manifests."""
@@ -1215,6 +1355,7 @@ def cmd_module_list(args):
 
     if getattr(args, "json", False):
         import json
+
         print(json.dumps([m.to_dict() for m in modules], indent=2))
         return 0
 
@@ -1224,8 +1365,10 @@ def cmd_module_list(args):
 
     print(f"{Colors.BOLD}{Colors.CYAN}Departmental modules{Colors.ENDC}")
     for m in modules:
-        print(f"  {Colors.GREEN}{m.module}{Colors.ENDC} "
-              f"{Colors.GRAY}v{m.version}{Colors.ENDC} — {m.name}")
+        print(
+            f"  {Colors.GREEN}{m.module}{Colors.ENDC} "
+            f"{Colors.GRAY}v{m.version}{Colors.ENDC} — {m.name}"
+        )
         if m.description:
             print(f"      {Colors.GRAY}{m.description.strip()}{Colors.ENDC}")
     return 0
@@ -1251,16 +1394,23 @@ def cmd_module_show(args):
 
     if getattr(args, "json", False):
         import json
+
         print(json.dumps(manifest.to_dict(), indent=2))
         return 0
 
-    print(f"{Colors.BOLD}{Colors.CYAN}{manifest.name}{Colors.ENDC} "
-          f"{Colors.GRAY}({manifest.module} v{manifest.version}){Colors.ENDC}")
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}{manifest.name}{Colors.ENDC} "
+        f"{Colors.GRAY}({manifest.module} v{manifest.version}){Colors.ENDC}"
+    )
     if manifest.description:
         print(f"  {manifest.description.strip()}")
     print(f"\n  {Colors.BOLD}Contract surfaces{Colors.ENDC}")
     print(f"    capabilities_root : {manifest.capabilities_root}")
-    print(f"    state_surface     : {manifest.state_surface or Colors.GRAY + '(none)' + Colors.ENDC}")
+    print(
+        f"    state_surface     : {manifest.state_surface or Colors.GRAY + '(none)' + Colors.ENDC}"
+    )
     print(f"    context_manifest  : {manifest.context_manifest}")
-    print(f"    handoff           : {manifest.handoff or Colors.GRAY + '(none)' + Colors.ENDC}")
+    print(
+        f"    handoff           : {manifest.handoff or Colors.GRAY + '(none)' + Colors.ENDC}"
+    )
     return 0
