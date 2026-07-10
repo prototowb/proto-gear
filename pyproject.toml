@@ -39,6 +39,14 @@ dependencies = [
     "questionary>=2.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=24.0",
+    "flake8>=6.0",
+]
+
 [project.scripts]
 pg = "proto_gear_pkg.proto_gear:main"
 proto-gear = "proto_gear_pkg.proto_gear:main"
