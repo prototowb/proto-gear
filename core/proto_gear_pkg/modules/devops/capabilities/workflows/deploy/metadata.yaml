@@ -1,0 +1,59 @@
+name: "Production Deploy"
+type: "workflow"
+version: "0.1.0"
+description: "Promote a validated change to production behind a mandatory human approval gate, then verify and record it."
+
+category: "devops"
+tags: ["devops", "deploy", "release", "production", "approval", "sre"]
+
+status: "beta"
+author: "DevOps Module"
+last_updated: "2026-07-11"
+
+dependencies:
+  required: []
+  optional:
+    - "workflows/release"
+  suggested:
+    - "workflows/incident-response"
+
+conflicts: []
+
+composable_with:
+  - "workflows/release"
+  - "qa/workflows/release-signoff"
+
+agent_roles:
+  - "DevOps Agent"
+  - "Release Manager Agent"
+
+relevance:
+  triggers:
+    - "deploy to production"
+    - "production deploy"
+    - "promote to prod"
+    - "ship to prod"
+    - "prod approval"
+  contexts:
+    - "When a validated change is ready to promote to production and needs approval"
+
+usage_notes: |
+  Promote a staged change through the DEPLOY_QUEUE: confirm pre-prod validation,
+  obtain the human production-deploy approval (the prod-approval gate is
+  mandatory — nothing reaches prod without a recorded approver), deploy, then
+  verify SLOs. Composes after qa's release-signoff and engineering's release.
+
+required_files:
+  - "DEPLOY_QUEUE.md"
+
+workflow:
+  steps: 5
+  estimated_duration: "15-45 minutes"
+  outputs:
+    - "type: deployment"
+  gates:
+    - id: "prod-approval"
+      description: "A human owner approves promoting the change to production after pre-prod validation; the deploy does not proceed without their approval recorded in DEPLOY_QUEUE.md."
+      before: "deploy"
+      approver: "human"
+      required: true

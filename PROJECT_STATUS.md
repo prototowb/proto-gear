@@ -34,7 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-058 | S1 follow-up: agent subsystem reads module capabilities (multi-source) | feature | IN_PROGRESS | feature/proto-058-s1-follow-up-agent-subsystem-reads-modul |  |
+| PROTO-059 | DevOps/SRE module — 3rd discipline, zero core edits (deploy queue + prod-approval gate) | feature | IN_PROGRESS | feature/proto-059-devops-sre-module-3rd-discipline-zero-co |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -690,6 +690,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-055 | CI green: pinned black lint job + PROTO-053 docstring scrub | 2026-07-10 | |
 | PROTO-056 | S1 multi-source capability listings — per-module namespaced (<module>/<cap_id>) | 2026-07-11 | |
 | PROTO-057 | S1 Phase 2: on-disk per-module subtree — install + per-module INDEX + doctor drift | 2026-07-11 | |
+| PROTO-058 | S1 follow-up: agent subsystem reads module capabilities (multi-source) | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

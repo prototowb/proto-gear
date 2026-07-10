@@ -1,0 +1,23 @@
+# DevOps / SRE department module — the THIRD engineering-discipline implementation
+# of the module contract (PROJECT_SPECIFICATIONS.md §3). Like qa, it is added by
+# dropping this modules/devops/ directory in: the department-agnostic core
+# discovers, loads, lists, installs, indexes, and gate-audits it with ZERO edits
+# to module_core/, cli/, or doctor — the standing proof that the contract holds
+# for an arbitrary engineering discipline, not just the two it shipped with.
+
+module: devops
+name: DevOps / SRE
+description: >-
+  DevOps / site-reliability department module — deployment and incident state,
+  plus the production-deploy approval gate, encoded as agent-discoverable
+  capabilities and templates.
+version: 0.1.0
+
+# Contract surfaces (paths are relative to a host project's root, i.e. where the
+# module is initialised). Same schema engineering and qa use; the core reads it
+# without any DevOps-specific knowledge.
+contract:
+  capabilities_root: .proto-gear        # item 1 — skills / workflows / commands
+  state_surface: DEPLOY_QUEUE.md        # item 2 — deploy / incident queue
+  context_manifest: AGENT_CONTEXT.md    # item 3 — agent skim, mirrored to hosts
+  handoff: SESSION_HANDOFF.md           # item 6 — rolling session handoff
