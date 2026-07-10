@@ -34,8 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-056 | S1 multi-source capability listings — per-module namespaced (<module>/<cap_id>) | feature | IN_PROGRESS | feature/proto-056-s1-multi-source-capability-listings-per- |  |
-| PROTO-057 | S1 Phase 2: on-disk per-module subtree — install + per-module INDEX + doctor drift | feature | IN_PROGRESS | feature/proto-057-s1-phase-2-on-disk-per-module-subtree-in |  |
+| PROTO-058 | S1 follow-up: agent subsystem reads module capabilities (multi-source) | feature | IN_PROGRESS | feature/proto-058-s1-follow-up-agent-subsystem-reads-modul |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -689,6 +688,8 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-053 | Teardown: remove departmental-module platform + content; proto-gear is engineering-only | 2026-07-10 | |
 | PROTO-054 | Phase C: ship QA/Test module (2nd engineering discipline) — zero-core-edits contract falsifier | 2026-07-10 | |
 | PROTO-055 | CI green: pinned black lint job + PROTO-053 docstring scrub | 2026-07-10 | |
+| PROTO-056 | S1 multi-source capability listings — per-module namespaced (<module>/<cap_id>) | 2026-07-11 | |
+| PROTO-057 | S1 Phase 2: on-disk per-module subtree — install + per-module INDEX + doctor drift | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

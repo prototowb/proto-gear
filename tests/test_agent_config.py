@@ -237,6 +237,19 @@ class TestAgentCapabilities:
 class TestAgentManager:
     """Tests for AgentManager"""
 
+    def test_load_capabilities_overlays_module_caps(
+        self, temp_agents_dir, temp_capabilities_dir
+    ):
+        """PROTO-058 (seam S1): a discipline's bundled caps are visible to the
+        agent subsystem, namespaced <module>/<cap_id>, on top of the base dir —
+        so an agent can be built around qa/workflows/release-signoff."""
+        manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
+        caps = manager._load_capabilities()
+        # base dir cap still present…
+        assert "skills/testing" in caps
+        # …plus the real bundled qa capability, namespaced.
+        assert "qa/workflows/release-signoff" in caps
+
     def test_list_agents_empty_dir(self, temp_agents_dir, temp_capabilities_dir):
         """Test listing agents in empty directory"""
         manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
