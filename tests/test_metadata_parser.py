@@ -4,7 +4,7 @@ Tests for template metadata parser functionality.
 
 import pytest
 from pathlib import Path
-from core.proto_gear_pkg.module_core.metadata_parser import (
+from proto_gear_pkg.module_core.metadata_parser import (
     TemplateMetadata,
     MetadataParser,
     apply_conditional_content,

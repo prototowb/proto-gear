@@ -5,7 +5,7 @@ Tests coverage for Cargo.toml and various Rust frameworks.
 
 import pytest
 from pathlib import Path
-from core.proto_gear_pkg.proto_gear import detect_project_structure
+from proto_gear_pkg.proto_gear import detect_project_structure
 
 
 class TestRustDetection:
