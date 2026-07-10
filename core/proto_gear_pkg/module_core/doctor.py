@@ -403,7 +403,7 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
         must declare at least one gate, so approval points are never implied.
     Audits the package-bundled capabilities (the committed source of truth) —
     the shared root AND every module's own ``capabilities/`` bundle, so a module
-    that ships its own gated workflow (e.g. content's publish) is enforced the
+    that ships its own gated workflow (e.g. qa's release-signoff) is enforced the
     same as engineering's (seam S1). Module-owned capabilities are targeted as
     ``<module>/<cap_id>`` to disambiguate.
     """

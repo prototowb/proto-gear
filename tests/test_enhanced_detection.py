@@ -6,7 +6,7 @@ Tests coverage for Angular, Svelte, Ruby on Rails, Laravel, Spring Boot, and ASP
 import pytest
 import json
 from pathlib import Path
-from core.proto_gear_pkg.proto_gear import detect_project_structure
+from proto_gear_pkg.proto_gear import detect_project_structure
 
 
 class TestAngularDetection:
