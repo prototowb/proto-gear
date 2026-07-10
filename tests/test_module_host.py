@@ -127,6 +127,64 @@ class TestLoadBundledCapabilities:
         assert merged["qa/workflows/release"].name == "QA Release"
 
 
+class TestInstallModuleCapabilities:
+    """Seam S1 (on-disk): a module's own capabilities install under
+    ``.proto-gear/<module>/`` so their id stays ``<module>/<cap_id>``."""
+
+    @staticmethod
+    def _module_with_cap(root: Path, module_id: str, template_body: str):
+        _write_module(root, module_id, state_surface="STATE.md")
+        cap = root / module_id / "capabilities" / "workflows" / "audit"
+        cap.mkdir(parents=True)
+        (cap / "metadata.yaml").write_text(
+            'name: "Audit"\ntype: "workflow"\nversion: "0.1.0"\n'
+            'description: "d"\ncategory: "c"\ntags: ["t"]\n'
+            'status: "beta"\nauthor: "a"\nlast_updated: "2026-07-10"\n',
+            encoding="utf-8",
+        )
+        (cap / "WORKFLOW.template.md").write_text(template_body, encoding="utf-8")
+
+    def test_installs_under_module_namespace(self, tmp_path):
+        self._module_with_cap(tmp_path, "qa", "audit for {{PROJECT_NAME}}\n")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_module_capabilities(
+            proto, replacements={"PROJECT_NAME": "demo"}, modules_root=tmp_path
+        )
+        assert res["errors"] == []
+        # Laid down under the module namespace, .template.md renamed to .md,
+        # placeholder substituted.
+        wf = proto / "qa" / "workflows" / "audit" / "WORKFLOW.md"
+        assert wf.is_file()
+        assert wf.read_text(encoding="utf-8") == "audit for demo\n"
+        assert (proto / "qa" / "workflows" / "audit" / "metadata.yaml").is_file()
+
+    def test_subtree_layout_yields_namespaced_id(self, tmp_path):
+        from proto_gear_pkg.module_core.capability_metadata import (
+            load_all_capabilities,
+        )
+
+        self._module_with_cap(tmp_path, "qa", "body\n")
+        proto = tmp_path / "host" / ".proto-gear"
+        module_host.install_module_capabilities(proto, modules_root=tmp_path)
+        caps = load_all_capabilities(proto)
+        assert "qa/workflows/audit" in caps
+
+    def test_dry_run_writes_nothing(self, tmp_path):
+        self._module_with_cap(tmp_path, "qa", "body\n")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_module_capabilities(
+            proto, dry_run=True, modules_root=tmp_path
+        )
+        assert res["files_created"]  # reported…
+        assert not proto.exists()  # …but nothing written
+
+    def test_module_without_capabilities_installs_nothing(self, tmp_path):
+        _write_module(tmp_path, "qa", state_surface="STATE.md")  # no capabilities/
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_module_capabilities(proto, modules_root=tmp_path)
+        assert res["files_created"] == []
+
+
 class TestStateSurfaceTemplatePath:
     def test_template_in_module_dir(self, tmp_path):
         _write_module(tmp_path, "qa", template="queue\n", state_surface="QA_QUEUE.md")
