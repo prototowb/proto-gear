@@ -92,11 +92,11 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ("pg agent list", "List configured custom agents (if any)"),
     (
         "pg module list/show [<name>]",
-        "List/inspect departmental modules (module.yaml manifests)",
+        "List/inspect engineering department modules (module.yaml manifests)",
     ),
     (
         "pg --module <name> init-surface",
-        "Render a module's state surface (e.g. CONTENT_QUEUE.md)",
+        "Render a department module's declared state surface",
     ),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
     (

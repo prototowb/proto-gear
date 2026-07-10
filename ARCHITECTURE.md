@@ -200,10 +200,13 @@ Triggers are the bridge between user prose ("fix login bug") and capability invo
 ## Target Architecture (direction of travel)
 
 This document describes the **current** state. The accepted direction is to
-evolve proto-gear into a departmental module platform: a department-agnostic
-`module_core/` (capabilities, context sync, doctor, discovery, state interface)
-with engineering re-homed as the first module under `modules/engineering/`.
-Supervision gates become data in workflow metadata, validated by `pg doctor`.
+evolve proto-gear into a **software-engineering** module platform: a
+discipline-agnostic `module_core/` (capabilities, context sync, doctor,
+discovery, state interface) with the generalist engineering module re-homed
+under `modules/engineering/` and future engineering disciplines (QA, DevOps,
+security, docs) plugging in as their own modules. Scope stays the engineering
+circle — not a whole-business "agency OS." Supervision gates become data in
+workflow metadata, validated by `pg doctor`.
 
 - **Vision & phases**: `PROJECT_SPECIFICATIONS.md`
 - **Decision & trade-offs**: `docs/dev/adr/ADR-001-departmental-module-platform.md`

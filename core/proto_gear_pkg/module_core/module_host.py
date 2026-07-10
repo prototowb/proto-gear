@@ -1,18 +1,18 @@
-"""Multi-module hosting — resolve and operate a *selected* department module.
+"""Multi-module hosting — resolve and operate a *selected* engineering department.
 
 PROTO-048 (ADR-001 Phase B → C). The CLI's ``--module <name>`` flag names which
-department a command targets; this module turns that name into a
-:class:`ModuleManifest` and provides the department-agnostic seam a command
-needs to *materialise a module's declared state surface* into a host project.
+engineering department a command targets (engineering disciplines such as QA,
+DevOps, or docs); this module turns that name into a :class:`ModuleManifest` and
+provides the department-agnostic seam a command needs to *materialise a module's
+declared state surface* into a host project.
 
-This closes seam **S2** from ``docs/dev/content-module-design.md``: previously
-``pg init`` and template rendering lived entirely inside
-``modules/engineering/`` with no neutral path to lay down *another* module's
-state surface (e.g. ``CONTENT_QUEUE.md``). The render here knows nothing
-department-specific — it copies a module's declared template to its declared
-surface, applying whatever substitution mapping the caller supplies (none →
-verbatim). Engineering keeps its own richer ``pg init``; a manifest-only module
-like content works through this seam alone.
+Previously ``pg init`` and template rendering lived entirely inside
+``modules/engineering/`` with no neutral path to lay down *another* department's
+state surface. The render here knows nothing department-specific — it copies a
+module's declared template to its declared surface, applying whatever
+substitution mapping the caller supplies (none → verbatim). Engineering keeps
+its own richer ``pg init``; a manifest-only department works through this seam
+alone.
 """
 
 from pathlib import Path
@@ -90,8 +90,8 @@ def iter_capability_sources(
 def state_surface_template_path(manifest: ModuleManifest) -> Optional[Path]:
     """Locate the template that renders a module's declared state surface.
 
-    Convention: for ``state_surface: CONTENT_QUEUE.md`` the template is
-    ``CONTENT_QUEUE.template.md``, looked up first in the module's own directory
+    Convention: for ``state_surface: FOO.md`` the template is
+    ``FOO.template.md``, looked up first in the module's own directory
     (``modules/<name>/``) and then in the package root (where engineering's
     shared templates live). Returns ``None`` if the module declares no state
     surface or no template is found.

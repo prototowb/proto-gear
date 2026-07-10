@@ -65,7 +65,7 @@ class TestDispatch:
         assert "engineering" in capsys.readouterr().out
 
     def test_module_show(self, monkeypatch, capsys):
-        assert run(["module", "show", "content"], monkeypatch) == 0
+        assert run(["module", "show", "engineering"], monkeypatch) == 0
 
     def test_module_no_subcommand(self, monkeypatch, capsys):
         assert run(["module"], monkeypatch) == 1
@@ -112,10 +112,10 @@ class TestDispatch:
     def test_sync_context(self, project, monkeypatch, capsys):
         assert run(["sync-context", "--dry-run"], monkeypatch) == 0
 
-    def test_init_surface_content(self, tmp_path, monkeypatch, capsys):
+    def test_init_surface_engineering(self, tmp_path, monkeypatch, capsys):
         monkeypatch.chdir(tmp_path)
-        assert run(["--module", "content", "init-surface"], monkeypatch) == 0
-        assert (tmp_path / "CONTENT_QUEUE.md").exists()
+        assert run(["--module", "engineering", "init-surface"], monkeypatch) == 0
+        assert (tmp_path / "PROJECT_STATUS.md").exists()
 
     def test_init_dry_run_non_interactive(self, tmp_path, monkeypatch, capsys):
         monkeypatch.chdir(tmp_path)

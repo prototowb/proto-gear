@@ -146,14 +146,6 @@ class TestCheckSupervisionGates:
         assert "workflows/release" in targets
         assert "workflows/code-review-process" in targets
 
-    def test_module_owned_gate_is_audited(self, tmp_path):
-        """Seam S1: content's own publish workflow gate is discovered + audited."""
-        findings = doctor.check_supervision_gates(tmp_path)
-        ok_targets = {f.target for f in findings if f.id == "gate-ok"}
-        assert "content/workflows/publish" in ok_targets
-        # and it's namespaced by module, not colliding with the shared root
-        assert not any(f.target == "workflows/publish" for f in findings)
-
     def test_risky_output_without_gate_warns(self, tmp_path, monkeypatch):
         _single_source(
             monkeypatch,
@@ -200,18 +192,18 @@ class TestCheckSupervisionGates:
         assert [f.id for f in findings] == ["gate-ok"]
 
     def test_module_source_namespaces_target(self, tmp_path, monkeypatch):
-        """A gate from a module source is targeted <module>/<cap_id>."""
+        """A gate from a department source is targeted <module>/<cap_id>."""
         monkeypatch.setattr(
             "proto_gear_pkg.module_core.module_host.iter_capability_sources",
-            lambda modules_root=None: [("content", tmp_path)],
+            lambda modules_root=None: [("qa", tmp_path)],
         )
         monkeypatch.setattr(
             "proto_gear_pkg.module_core.capability_metadata.load_all_capabilities",
             lambda _d: {
-                "workflows/publish": _fake_workflow(
-                    ["type: publish"], [Gate(id="content-approval", description="ok")]
+                "workflows/release": _fake_workflow(
+                    ["type: release"], [Gate(id="qa-signoff", description="ok")]
                 )
             },
         )
         findings = doctor.check_supervision_gates(tmp_path)
-        assert [f.target for f in findings] == ["content/workflows/publish"]
+        assert [f.target for f in findings] == ["qa/workflows/release"]
