@@ -102,8 +102,8 @@ When the user's prose contains these keywords, load the matching capability befo
 - `pg capabilities show <name>` — Show full details of a capability
 - `pg capabilities tree <name>` — Show dependency tree of a capability
 - `pg agent list` — List configured custom agents (if any)
-- `pg module list/show [<name>]` — List/inspect departmental modules (module.yaml manifests)
-- `pg --module <name> init-surface` — Render a module's state surface (e.g. CONTENT_QUEUE.md)
+- `pg module list/show [<name>]` — List/inspect engineering department modules (module.yaml manifests)
+- `pg --module <name> init-surface` — Render a department module's declared state surface
 - `pg sync-context` — Regenerate Agent Context in all host files
 - `pg sync-indexes` — Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml
 - `pg doctor [--fix] [--json]` — Audit project for proto-gear sync drift (use --fix to repair)
@@ -116,6 +116,6 @@ When the user's prose contains these keywords, load the matching capability befo
 - **Proto Gear version**: v0.10.0
 - **Last release**: 2026-05-13
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-09 23:49
+- **Generated**: 2026-07-10 15:06
 
 <!-- proto-gear:agent-context end -->

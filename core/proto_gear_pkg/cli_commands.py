@@ -1420,10 +1420,10 @@ def cmd_module_init_surface(args):
     """Materialise the selected module's declared state surface into the project.
 
     Department-agnostic: renders ``<module>``'s state-surface template (e.g.
-    ``CONTENT_QUEUE.template.md`` → ``CONTENT_QUEUE.md``) via the module_host
-    seam. The target module comes from the global ``--module`` flag (default
-    engineering). This is the manifest-only module's counterpart to engineering's
-    richer ``pg init`` (PROTO-048, closes seam S2).
+    ``FOO.template.md`` → ``FOO.md``) via the module_host seam. The target
+    module comes from the global ``--module`` flag (default engineering). This
+    is a manifest-only department's counterpart to engineering's richer
+    ``pg init`` (PROTO-048, closes seam S2).
     """
     from .module_core import module_host
     from .module_core.module_manifest import ModuleManifestError

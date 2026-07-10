@@ -1,10 +1,10 @@
 <!-- proto-gear:header
-purpose: North-star vision and product specification — proto-gear as the first AI-supervised departmental module of the agency operating system
+purpose: North-star vision and product specification — proto-gear as the operating system for software engineering, its disciplines shipped as AI-supervised modules
 read-when: starting features or design work; any decision that trades short-term convenience against the module-platform direction
 priority: required
 defines:
   - vision-statement
-  - the-agency-os
+  - the-software-engineering-os
   - module-contract
   - supervision-model
   - roadmap-phases
@@ -18,30 +18,34 @@ links:
 
 # PROJECT SPECIFICATIONS — Proto Gear
 
-> **North star**: Proto Gear is the first of a set of AI-supervised departmental
-> modules that will run our agency. It is the **Engineering Department module** —
-> and the reference implementation of the module pattern itself.
+> **North star**: Proto Gear is an operating system for **software engineering**.
+> Each engineering discipline becomes an AI-supervised module; the generalist
+> engineering module is #1 — and the reference implementation of the module
+> pattern itself. Scope is the engineering circle only, not a whole business.
 
 ## 1. Vision Statement
 
-An agency is a set of departments — engineering, content, operations, finance —
-each with its own workflows, artifacts, and institutional knowledge. Today that
-knowledge lives in people's heads and scattered tools. The vision is an
-**agency operating system**: each department becomes a *module* that an AI agent
-can operate under human supervision, with the department's knowledge encoded as
-structured, versioned, drift-checked documentation and capabilities.
+Software engineering is a set of disciplines — development, testing/QA,
+DevOps/SRE, security, documentation, release & project management — each with its
+own workflows, artifacts, and institutional knowledge. Today that knowledge lives
+in people's heads and scattered tools. The vision is a **software-engineering
+operating system**: each discipline becomes a *module* (a "department" within the
+engineering circle) that an AI agent can operate under human supervision, with the
+discipline's knowledge encoded as structured, versioned, drift-checked
+documentation and capabilities.
 
-Proto Gear proves the pattern in the department we know best: engineering. It
-already encodes tickets, branching, testing, releases, code review, and incident
-response as capabilities an agent discovers and follows. The next step is to
-harden that pattern into a **module contract** other departments can implement,
-so that "add a department" becomes composition, not a rewrite.
+Proto Gear proves the pattern in the generalist core we know best: the software
+development lifecycle. It already encodes tickets, branching, testing, releases,
+code review, and incident response as capabilities an agent discovers and
+follows. The next step is to harden that pattern into a **module contract** other
+engineering disciplines can implement, so that "add a discipline" becomes
+composition, not a rewrite.
 
-**One sentence**: *Proto Gear turns a department's way-of-working into a
-machine-readable, self-auditing context that any AI agent host can load — and
-the engineering department is module #1.*
+**One sentence**: *Proto Gear turns an engineering discipline's way-of-working
+into a machine-readable, self-auditing context that any AI agent host can load —
+and the generalist engineering discipline is module #1.*
 
-## 2. The Agency OS (target picture)
+## 2. The Software-Engineering OS (target picture)
 
 ```
                     ┌────────────────────────────────────────────┐
@@ -56,48 +60,50 @@ the engineering department is module #1.*
                     └──────┬──────────────┬──────────────┬───────┘
                            │              │              │
                 ┌──────────▼───┐  ┌───────▼──────┐  ┌────▼─────────┐
-                │ ENGINEERING  │  │   CONTENT    │  │   OPS / PM   │
+                │ ENGINEERING  │  │   QA / TEST  │  │  DEVOPS/SRE  │
                 │ (proto-gear) │  │  (future)    │  │  (future)    │
-                │ code · tests │  │ posts · brand│  │ clients ·    │
-                │ releases     │  │ campaigns    │  │ scheduling   │
+                │ code · tests │  │ test plans · │  │ deploys ·    │
+                │ releases     │  │ defect queue │  │ incidents    │
                 └──────────────┘  └──────────────┘  └──────────────┘
 ```
 
-What stays constant across departments (the **core**): capability metadata
-schema, context generation/sync, drift detection, state tracking (tickets),
-discovery (prose → capability), and the supervision conventions. What varies
-per department (the **module**): the capabilities themselves, the templates,
-the state artifacts, and the tool integrations.
+Every department here is an **engineering** discipline. What stays constant
+across them (the **core**): capability metadata schema, context generation/sync,
+drift detection, state tracking (tickets), discovery (prose → capability), and
+the supervision conventions. What varies per discipline (the **module**): the
+capabilities themselves, the templates, the state artifacts, and the tool
+integrations.
 
-## 3. Module Contract (what makes something a departmental module)
+## 3. Module Contract (what makes something an engineering-discipline module)
 
-A departmental module MUST provide:
+A discipline module MUST provide:
 
 1. **Capabilities** — skills / workflows / commands as `metadata.yaml` +
    markdown bundles under `.proto-gear/`, with triggers so agents discover them
    from task prose.
-2. **State surface** — a single source of truth for department state
-   (engineering: `PROJECT_STATUS.md` tickets; content: e.g. a content queue),
-   updatable via CLI and readable by agents.
+2. **State surface** — a single source of truth for the discipline's state
+   (engineering: `PROJECT_STATUS.md` tickets; QA: e.g. a test-plan / defect
+   queue), updatable via CLI and readable by agents.
 3. **Context manifest** — an auto-generated, ≤120-line skim
    (`AGENT_CONTEXT.md` pattern) mirrored into whatever surface the agent host
    auto-loads.
 4. **Drift detection** — `doctor`-style checks proving the manifest, state, and
    capabilities agree; every check auto-repairable or clearly triaged.
 5. **Supervision points** — explicit human gates declared in workflows (e.g.
-   "PR review before merge", "content approval before publish"), never implied.
+   "PR review before merge", "sign-off before release"), never implied.
 6. **Handoff protocol** — a rolling `SESSION_HANDOFF.md` so any agent (or
    human) can resume mid-stream.
 
-Proto Gear v0.10.0 already satisfies 1–4 and 6 for engineering; 5 exists as
-convention (BRANCHING.md review gates) but is not yet machine-declared. Closing
-that gap — and extracting 1–6 into a reusable core — is the platform work.
+Proto Gear already satisfies 1–6 for the generalist engineering module
+(supervision gates, item 5, are machine-declared in workflow metadata and
+validated by `pg doctor`). Extracting 1–6 into a reusable core — and proving it
+against a *second* engineering discipline — is the platform work.
 
 ## 4. Supervision Model
 
 "AI supervised" cuts both ways, deliberately:
 
-- **AI-supervised work**: agents run the department's workflows, keep state
+- **AI-supervised work**: agents run the discipline's workflows, keep state
   current, detect drift, and prepare artifacts (PRs, releases, reports).
 - **Human-supervised AI**: every workflow declares its gates. The default
   posture is *agent proposes, human approves* at declared gates; routine
@@ -120,58 +126,64 @@ records state in SESSION_HANDOFF.md, and asks. Silence is never consent.
    documentation; agents act, `pg` audits. (Security boundary — unchanged.)
 5. **Dogfood or it didn't happen.** proto-gear runs on proto-gear. Every module
    pattern must be proven here before it's declared part of the contract.
-6. **Composition over configuration.** New departments assemble core primitives;
+6. **Composition over configuration.** New disciplines assemble core primitives;
    they don't fork the core.
 
 ## 6. Roadmap
 
-### Phase A — Harden the Engineering Module (v0.11.x)
+### Phase A — Harden the Engineering Module (v0.11.x) ✅
 - Split the `proto_gear.py` monolith along the module boundaries ARCHITECTURE.md
-  already documents (CLI dispatch vs. init engine vs. template generation).
-- Fix robustness gaps (e.g. optional-dependency import crash, PROTO-041).
-- Raise coverage on business logic; kill repo hygiene debt (tracked build
-  artifacts, backup files).
+  documents (CLI dispatch vs. init engine vs. template generation).
+- Fix robustness gaps (e.g. optional-dependency import crash).
+- Raise coverage on business logic; kill repo hygiene debt.
 - Machine-declared supervision gates in workflow metadata (contract item 5).
 
-### Phase B — Extract the Module Core (v0.12.x)
+### Phase B — Extract the Module Core (v0.12.x) ✅
 - Factor the department-agnostic engine (capability schema, sync, doctor,
-  discovery, state model) into a `module core` package layer with the
-  engineering module as its first consumer.
+  discovery, state model) into a `module_core` package layer with the
+  engineering module (`modules/engineering/`) as its first consumer.
 - Module manifest: `module.yaml` declaring a module's state surface, gates,
   and capability roots — the doctor validates it.
-- `pg` learns to host >1 module in one project (`pg --module content status`).
+- `pg` learns to host >1 module in one project (`pg --module <name> …`).
 
-### Phase C — Second Department Proves the Contract (v0.13+)
-- Ship the **Content/Marketing module** as the second implementation (content
-  queue as state surface; publish gates as supervision points) — chosen because
-  the agency already runs content tooling that can back it.
+### Phase C — Second Engineering Discipline Proves the Contract (v0.13+)
+- Ship a **second engineering-discipline module** (e.g. QA/Test or DevOps/SRE)
+  as the second implementation — a discipline state surface (test-plan / defect
+  queue) with its own supervision gates (e.g. sign-off before release).
 - Contract v1.0: anything that satisfies the module contract runs on the core
-  unmodified. Two independent modules = the pattern is real.
+  unmodified. Two independent engineering modules = the pattern is real.
+- *(History: a Content/Marketing module was briefly built as the first Phase-C
+  falsifier, then removed — content/marketing is out of scope for the
+  engineering OS. See Non-Goals.)*
 
-### Phase D — Agency OS (v1.x)
-- Cross-module orchestration: engineering ticket ↔ content campaign links,
-  agency-level dashboard, per-department agents with a shared supervision
-  inbox.
+### Phase D — Engineering OS (v1.x)
+- Cross-discipline orchestration: engineering ticket ↔ test run ↔ release
+  links, an engineering-wide dashboard, per-discipline agents with a shared
+  supervision inbox.
 
 ## 7. Success Criteria
 
 - **Phase A**: 0 import-time crashes in any dependency configuration; no module
-  >1,200 lines; `pg doctor` green including new gate checks; coverage on core
+  >1,200 lines; `pg doctor` green including gate checks; coverage on core
   business logic ≥ 70%.
 - **Phase B**: engineering module consumes the core through the same interfaces
-  a future module would; adding a toy second module requires **zero core edits**.
-- **Phase C**: content module operated by an agent end-to-end (draft → gate →
-  publish) with every gate hit logged.
+  a future discipline module would; adding a toy second module requires **zero
+  core edits**.
+- **Phase C**: a second engineering-discipline module operated by an agent
+  end-to-end (task → gate → done) with every gate hit logged.
 - **Ongoing**: a fresh agent session reaches correct, current context in ≤1 file
   auto-load + ≤2 reads (the AGENT_CONTEXT promise, held across all modules).
 
 ## 8. Non-Goals (unchanged from ARCHITECTURE.md, restated for the platform)
 
+- **Not a whole-business "agency OS."** Scope is the software-engineering circle
+  only. Other business functions — content/marketing, sales, finance — are
+  explicitly out; they belong to separate products, not proto-gear modules.
 - Not a runtime or agent host — modules describe work; hosts execute agents.
 - Not a scaffolder for the host project's tech stack.
 - Not an LLM client; no model calls inside `pg`.
-- Not a replacement for the tools departments already use (GitHub, socials,
-  accounting) — modules *wrap* department practice, integrations stay thin.
+- Not a replacement for the tools engineers already use (GitHub, CI providers,
+  cloud consoles) — modules *wrap* engineering practice, integrations stay thin.
 
 ---
-*Owner: towb · Drafted 2026-07-07 (PROTO-039) · Living document — revise at each phase boundary.*
+*Owner: towb · Drafted 2026-07-07 (PROTO-039) · Reframed 2026-07-10 (PROTO-053: agency OS → software-engineering OS) · Living document — revise at each phase boundary.*

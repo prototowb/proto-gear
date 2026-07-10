@@ -8,11 +8,14 @@
 
 ## Context
 
-Proto Gear v0.10.0 is a single-purpose CLI: it encodes *engineering* practice
-(tickets, branching, testing, releases) as templates + capabilities and keeps
-agent-facing context in sync. The new north star widens the scope: proto-gear
-becomes the **first of several AI-supervised departmental modules** (content,
-ops, finance, …) that together run the agency.
+Proto Gear v0.10.0 is a single-purpose CLI: it encodes the *generalist*
+engineering practice (tickets, branching, testing, releases) as templates +
+capabilities and keeps agent-facing context in sync. The new north star widens
+the scope **within software engineering**: proto-gear becomes the **first of
+several AI-supervised engineering-discipline modules** (QA/test, DevOps/SRE,
+security, docs, …) that together form a **software-engineering operating
+system**. Scope is the engineering circle only — not a whole-business "agency
+OS" (content/marketing, sales, finance are out).
 
 Forces at play:
 
@@ -69,9 +72,9 @@ handoff file.
 | Team familiarity | High |
 
 **Pros:** No migration risk; all effort goes to engineering features.
-**Cons:** The agency-OS vision dies or becomes N divergent forks; the generic
-machinery (sync/doctor/discovery) gets reimplemented per department; drift
-lessons get re-learned N times.
+**Cons:** The software-engineering-OS vision dies or becomes N divergent forks;
+the generic machinery (sync/doctor/discovery) gets reimplemented per discipline;
+drift lessons get re-learned N times.
 
 ### Option B: Layered module core + modules in one repo (chosen)
 
@@ -106,18 +109,20 @@ feedback loop that dogfooding provides.
 
 The real choice is **when to pay the abstraction cost**. Option A never pays it
 and forfeits the vision. Option C pays it before we know the contract is right
-— classic speculative generality. Option B pays incrementally and uses the
-second module (Content, Phase C) as the falsifier: if the content module needs
-core edits, the contract is wrong and we find out cheaply, in-repo.
+— classic speculative generality. Option B pays incrementally and uses a
+second engineering-discipline module (Phase C) as the falsifier: if that module
+needs core edits, the contract is wrong and we find out cheaply, in-repo.
 
-Rule of three, adapted: extract with one concrete consumer (engineering) and
-one designed consumer (content), promote to contract v1.0 only when the second
-consumer runs unmodified.
+Rule of three, adapted: extract with one concrete consumer (the generalist
+engineering module) and one designed consumer (a second discipline, e.g.
+QA/DevOps), promote to contract v1.0 only when the second consumer runs
+unmodified.
 
 ## Consequences
 
 **Easier:**
-- Adding a department becomes composition (`modules/<dept>/` + `module.yaml`).
+- Adding an engineering discipline becomes composition (`modules/<dept>/` +
+  `module.yaml`).
 - The proto_gear.py monolith split (already wanted for maintainability) gets a
   principled destination instead of an arbitrary one.
 - Supervision gates become auditable data — `pg doctor` can flag workflows with
@@ -133,7 +138,7 @@ consumer runs unmodified.
 **Revisit when:**
 - Phase C completes → decide whether contract v1.0 justifies separate
   distribution (revisit Option C then, with evidence).
-- If gate-as-data proves too rigid for creative-department workflows, relax to
+- If gate-as-data proves too rigid for some discipline's workflows, relax to
   gate-as-convention with doctor warnings instead of errors.
 
 ## Action Items
@@ -144,4 +149,4 @@ consumer runs unmodified.
 4. [ ] Design `module.yaml` manifest schema; doctor validates (Phase B)
 5. [ ] Move generic engine into `module_core/`, engineering specifics into `modules/engineering/` (Phase B)
 6. [ ] Acceptance test: toy second module loads with zero core edits (Phase B exit)
-7. [ ] Content module design doc (Phase C entry)
+7. [ ] Second engineering-discipline module design doc, e.g. QA/DevOps (Phase C entry). *(A Content/Marketing module was briefly built here as the first falsifier, then removed as out of scope — see PROJECT_SPECIFICATIONS.md §6/§8.)*

@@ -2,7 +2,8 @@
 
 build_parser() is pure command-line definition; these tests parse representative
 argv for every command group and assert the resulting namespace, including the
-global --module flag and the init-surface command (PROTO-048).
+global --module flag (engineering departments) and the init-surface command
+(PROTO-048).
 """
 
 import sys
@@ -27,8 +28,8 @@ class TestTopLevel:
         assert args.module is None
 
     def test_global_module_flag(self, parser):
-        args = parser.parse_args(["--module", "content", "init-surface"])
-        assert args.module == "content"
+        args = parser.parse_args(["--module", "qa", "init-surface"])
+        assert args.module == "qa"
         assert args.command == "init-surface"
 
     def test_version_exits(self, parser):
@@ -59,7 +60,7 @@ class TestInitSurface:
 
     def test_flags(self, parser):
         args = parser.parse_args(
-            ["--module", "content", "init-surface", "--force", "--dry-run"]
+            ["--module", "qa", "init-surface", "--force", "--dry-run"]
         )
         assert args.force and args.dry_run
 
@@ -127,8 +128,8 @@ class TestModule:
         assert args.module_command == "list" and args.json
 
     def test_show(self, parser):
-        args = parser.parse_args(["module", "show", "content"])
-        assert args.module_command == "show" and args.name == "content"
+        args = parser.parse_args(["module", "show", "engineering"])
+        assert args.module_command == "show" and args.name == "engineering"
 
 
 class TestMiscCommands:

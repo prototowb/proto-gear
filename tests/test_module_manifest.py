@@ -37,9 +37,9 @@ def _write_module(root: Path, module_id: str, **fields) -> Path:
 
 class TestParseManifest:
     def test_minimal_valid(self):
-        m = parse_module_manifest({"module": "content", "name": "Content"})
-        assert m.module == "content"
-        assert m.name == "Content"
+        m = parse_module_manifest({"module": "qa", "name": "QA"})
+        assert m.module == "qa"
+        assert m.name == "QA"
         assert m.version == "0.0.0"
         assert m.capabilities_root == ".proto-gear"
         assert m.context_manifest == "AGENT_CONTEXT.md"
@@ -111,13 +111,13 @@ class TestLoadManifest:
     def test_load_roundtrip(self, tmp_path):
         mod_dir = _write_module(
             tmp_path,
-            "content",
-            name="Content",
+            "qa",
+            name="QA",
             version="1.2.3",
             state_surface="QUEUE.md",
         )
         m = load_module_manifest(mod_dir / MANIFEST_FILENAME)
-        assert m.module == "content"
+        assert m.module == "qa"
         assert m.version == "1.2.3"
         assert m.state_surface == "QUEUE.md"
         assert m.source_path == mod_dir / MANIFEST_FILENAME
@@ -145,15 +145,15 @@ class TestDiscoverModules:
 
     def test_discovers_and_sorts(self, tmp_path):
         _write_module(tmp_path, "engineering")
-        _write_module(tmp_path, "content")
+        _write_module(tmp_path, "qa")
         mods = discover_modules(tmp_path)
-        assert [m.module for m in mods] == ["content", "engineering"]
+        assert [m.module for m in mods] == ["engineering", "qa"]
 
     def test_ignores_dirs_without_manifest(self, tmp_path):
-        _write_module(tmp_path, "content")
+        _write_module(tmp_path, "qa")
         (tmp_path / "not_a_module").mkdir()
         mods = discover_modules(tmp_path)
-        assert [m.module for m in mods] == ["content"]
+        assert [m.module for m in mods] == ["qa"]
 
 
 class TestSurfaceValidation:

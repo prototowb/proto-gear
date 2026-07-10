@@ -91,7 +91,46 @@ deliberately out of scope):
 
 ---
 
-### PROTO-052 Details (COMPLETE)
+### PROTO-053 Details (COMPLETE)
+**Engineering-only reframe: remove the content/marketing module; rescope the
+vision from "agency OS" → "software-engineering OS."** The departmental-module
+*platform* is the right abstraction, but it was pitched one level too high.
+Proto Gear's scope is the **software-engineering circle**, whose "departments"
+are engineering disciplines (dev, QA, DevOps, security, docs, release/PM) — not
+agency-wide functions. Content/marketing belongs to a separate product (honk),
+which already implements a full content pipeline (queue, policy-gate, social
+adapters) far beyond the toy proto-gear content module.
+
+**Removed** (content/marketing — out of scope):
+- `core/proto_gear_pkg/modules/content/` (manifest, CONTENT_QUEUE template, the
+  `publish` workflow + `content-approval` gate) — reverses PROTO-047/052's
+  content deliverables.
+- `docs/dev/content-module-design.md`, `tests/test_content_module.py`.
+
+**Kept (platform stays, rescoped to engineering departments):** `module_core/`,
+`modules/engineering/`, `module.yaml`, `module_host`, `module_manifest`,
+`pg --module` / `pg module list/show` / `pg init-surface`, the supervision-gate
+machinery. Content-specific test/doc examples re-pointed to engineering or a
+neutral `qa` department; the multi-source gate audit and init-surface now
+demonstrate against `engineering`.
+
+**Reframed vision docs** (agency → software-engineering OS; departments =
+engineering disciplines; Phase C falsifier is now a second *engineering*
+discipline e.g. QA/DevOps, not Content): `PROJECT_SPECIFICATIONS.md`,
+`docs/dev/adr/ADR-001-departmental-module-platform.md`, `ARCHITECTURE.md`,
+`modules/engineering/__init__.py`.
+
+**Verification**: full suite **736 passed** (was 748; −12 content/obsolete
+tests). `pg doctor` 0/0/**23** ok (was 25 — content's manifest + gate checks
+correctly gone). `black --check` clean.
+
+---
+
+### PROTO-052 Details (COMPLETE — content demo removed by PROTO-053)
+> ⚠️ The `iter_capability_sources` + multi-source gate-audit machinery below
+> **stays**; only its *content module* demonstration was removed (PROTO-053).
+> The behaviour is now exercised against engineering / a neutral `qa` module.
+
 **Manifest-driven capability sources — modules ship their own `capabilities/`
 (seam S1, supervision half).** PROTO-047 surfaced S1: gate auditing read only
 the shared `package_root()/capabilities`, so a department couldn't ship its own
@@ -191,7 +230,12 @@ unknown-module / engineering-placeholder-warning all correct.
 
 ---
 
-### PROTO-047 Details (COMPLETE)
+### PROTO-047 Details (COMPLETE — content module removed by PROTO-053)
+> ⚠️ Historical. The Content module shipped here was **removed** in PROTO-053
+> (content/marketing is out of scope; the engineering OS keeps the *platform*,
+> not the content department). It served its purpose as the Phase-C falsifier
+> that proved zero-core-edits before being retired.
+
 **ADR-001 Phase C entry — ship the Content module to falsify the module contract.**
 
 The Content module is the **second** implementation of the module contract
@@ -603,6 +647,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | 2026-07-09 | |
 | PROTO-052 | Manifest-driven capability sources: modules ship their own capabilities/ (seam S1) | 2026-07-10 | |
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | 2026-07-10 | |
+| PROTO-053 | Teardown: remove departmental-module platform + content; proto-gear is engineering-only | 2026-07-10 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

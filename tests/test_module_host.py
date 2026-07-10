@@ -1,8 +1,8 @@
 """Tests for multi-module hosting (PROTO-048, ADR-001 Phase B → C).
 
-Covers ``module_host`` — module resolution via ``--module`` and the generic
-state-surface render seam (closing seam S2 from the content module design) —
-plus the ``pg --module <name> init-surface`` CLI handler.
+Covers ``module_host`` — engineering-department resolution via ``--module`` and
+the generic state-surface render seam — plus the ``pg --module <name>
+init-surface`` CLI handler.
 """
 
 import argparse
@@ -39,10 +39,11 @@ class TestResolveModule:
         m = module_host.resolve_module(None)
         assert m.module == module_host.DEFAULT_MODULE == "engineering"
 
-    def test_explicit_content(self):
-        m = module_host.resolve_module("content")
-        assert m.module == "content"
-        assert m.state_surface == "CONTENT_QUEUE.md"
+    def test_explicit_module(self, tmp_path):
+        _write_module(tmp_path, "qa", state_surface="QA_QUEUE.md")
+        m = module_host.resolve_module("qa", modules_root=tmp_path)
+        assert m.module == "qa"
+        assert m.state_surface == "QA_QUEUE.md"
 
     def test_unknown_raises_with_available(self):
         with pytest.raises(ModuleManifestError, match="unknown module 'bogus'"):
@@ -63,27 +64,31 @@ class TestIterCapabilitySources:
         assert path.name == "capabilities"
         assert path.is_dir()
 
-    def test_includes_content_module_bundle(self):
-        # PROTO-052: the content module ships its own capabilities/ (publish).
-        sources = module_host.iter_capability_sources()
+    def test_includes_module_with_own_capabilities(self, tmp_path):
+        # PROTO-052: a department that ships its own capabilities/ is a source.
+        _write_module(tmp_path, "qa", state_surface="QA_QUEUE.md")
+        (tmp_path / "qa" / "capabilities" / "workflows" / "audit").mkdir(parents=True)
+        sources = module_host.iter_capability_sources(modules_root=tmp_path)
         by_module = {m: p for m, p in sources}
-        assert "content" in by_module
-        assert by_module["content"].name == "capabilities"
-        assert (by_module["content"] / "workflows" / "publish").is_dir()
+        assert None in by_module  # shared root always first
+        assert "qa" in by_module
+        assert by_module["qa"].name == "capabilities"
 
-    def test_skips_modules_without_capabilities(self):
-        # Engineering's caps live at the shared root, not modules/engineering/.
-        sources = module_host.iter_capability_sources()
-        assert "engineering" not in {m for m, _ in sources}
+    def test_skips_modules_without_capabilities(self, tmp_path):
+        # A department with no capabilities/ dir contributes no source.
+        _write_module(tmp_path, "qa", state_surface="QA_QUEUE.md")
+        sources = module_host.iter_capability_sources(modules_root=tmp_path)
+        assert "qa" not in {m for m, _ in sources}
 
 
 class TestStateSurfaceTemplatePath:
-    def test_content_template_in_module_dir(self):
-        m = module_host.resolve_module("content")
+    def test_template_in_module_dir(self, tmp_path):
+        _write_module(tmp_path, "qa", template="queue\n", state_surface="QA_QUEUE.md")
+        m = module_host.resolve_module("qa", modules_root=tmp_path)
         p = module_host.state_surface_template_path(m)
         assert p is not None
-        assert p.name == "CONTENT_QUEUE.template.md"
-        assert p.parent.name == "content"
+        assert p.name == "QA_QUEUE.template.md"
+        assert p.parent.name == "qa"
 
     def test_engineering_template_in_package_root(self):
         m = module_host.resolve_module("engineering")
@@ -178,22 +183,22 @@ class TestInitSurfaceCLI:
         kw.setdefault("dry_run", False)
         return argparse.Namespace(**kw)
 
-    def test_content_creates_queue(self, tmp_path, monkeypatch, capsys):
+    def test_engineering_creates_surface(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands
 
         monkeypatch.chdir(tmp_path)
-        rc = cli_commands.cmd_module_init_surface(self._args(module="content"))
+        rc = cli_commands.cmd_module_init_surface(self._args(module="engineering"))
         out = capsys.readouterr().out
         assert rc == 0
-        assert "Created CONTENT_QUEUE.md" in out
-        assert (tmp_path / "CONTENT_QUEUE.md").is_file()
+        assert "Created PROJECT_STATUS.md" in out
+        assert (tmp_path / "PROJECT_STATUS.md").is_file()
 
     def test_exists_returns_1(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands
 
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "CONTENT_QUEUE.md").write_text("x", encoding="utf-8")
-        rc = cli_commands.cmd_module_init_surface(self._args(module="content"))
+        (tmp_path / "PROJECT_STATUS.md").write_text("x", encoding="utf-8")
+        rc = cli_commands.cmd_module_init_surface(self._args(module="engineering"))
         out = capsys.readouterr().out
         assert rc == 1
         assert "already exists" in out
@@ -202,14 +207,14 @@ class TestInitSurfaceCLI:
         from proto_gear_pkg import cli_commands
 
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "CONTENT_QUEUE.md").write_text("x", encoding="utf-8")
+        (tmp_path / "PROJECT_STATUS.md").write_text("x", encoding="utf-8")
         rc = cli_commands.cmd_module_init_surface(
-            self._args(module="content", force=True)
+            self._args(module="engineering", force=True)
         )
         out = capsys.readouterr().out
         assert rc == 0
-        assert "Overwrote CONTENT_QUEUE.md" in out
-        assert (tmp_path / "CONTENT_QUEUE.md").read_text(encoding="utf-8") != "x"
+        assert "Overwrote PROJECT_STATUS.md" in out
+        assert (tmp_path / "PROJECT_STATUS.md").read_text(encoding="utf-8") != "x"
 
     def test_unknown_module_returns_1(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands
