@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | chore | PENDING | chore/proto-050-raise-coverage-on-core-business-logic-to |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -58,6 +57,39 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-050 Details (COMPLETE)
+**Raise core coverage to ≥70% (spec Phase A criterion).** Coverage went from
+**45% → 70.04%** (measured with `pytest --cov`). The `module_core/` engine was
+already ~95%; the drag was the untested CLI, status, detection, and init layers.
+
+**Tooling fix**: `pytest.ini` used `[tool:pytest]` — the setup.cfg/tox.ini
+spelling, silently ignored in a `pytest.ini` file — so *every* option (including
+`--cov`) had never applied and coverage couldn't be measured at all. Fixed to
+`[pytest]`, dropped `--cov` from `addopts` (kept opt-in so the pre-commit hook
+stays fast), removed the inert `timeout=` line, and added a `dev` extra
+(`pytest-cov`, `black`, `flake8`) in `pyproject.toml`.
+
+**New tests** (≈150 cases, all business logic — interactive questionary wizards
+deliberately out of scope):
+- `test_status_commands.py` — ticket/status handlers (0→97%).
+- `test_cli_parser.py` — full argparse surface (2→100%).
+- `test_agent_templates.py` — templates + AgentManager resolution (0→100%).
+- `test_cli_commands_handlers.py` — capabilities + agent handlers (11→~70%).
+- `test_cli_app.py` — `main()` dispatch across commands (2→~65%).
+- `test_init_engine.py` — full non-interactive `pg init` (proto_gear 40→87%).
+- `test_detection_engine.py` — stack detection across ecosystems.
+- `test_interactive_setup_wizard.py` — the input()-based fallback wizard.
+- `test_safe_write_file.py`, `test_template_updater_confirm.py`,
+  `test_presentation.py`, `test_capability_validator.py` — remaining gaps.
+
+**Verification**: full suite **748 passed** (was 566). `pytest --cov` → **70.04%**.
+`pg doctor` 0/0/25. `black --check` clean.
+
+**Files Created**: 11 test modules (above).
+**Files Modified**: `pytest.ini` (section fix + opt-in coverage), `pyproject.toml` (dev extra), `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-052 Details (COMPLETE)
 **Manifest-driven capability sources — modules ship their own `capabilities/`
@@ -570,6 +602,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | 2026-07-09 | |
 | PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | 2026-07-09 | |
 | PROTO-052 | Manifest-driven capability sources: modules ship their own capabilities/ (seam S1) | 2026-07-10 | |
+| PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | 2026-07-10 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
