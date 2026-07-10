@@ -369,9 +369,27 @@ class AgentManager:
         self._all_capabilities = None
 
     def _load_capabilities(self) -> Dict[str, CapabilityMetadata]:
-        """Load all capabilities (cached)"""
+        """Load all capabilities (cached).
+
+        Reads ``capabilities_dir`` then overlays each discipline's own bundled
+        capabilities, namespaced ``<module>/<cap_id>`` (seam S1), so an agent can
+        be built around e.g. ``qa/workflows/release-signoff`` — not just the
+        shared/engineering bundle. An already-present id (an installed subtree)
+        wins over the bundled overlay.
+        """
         if self._all_capabilities is None:
-            self._all_capabilities = load_all_capabilities(self.capabilities_dir)
+            caps = load_all_capabilities(self.capabilities_dir) or {}
+            from .module_core import module_host
+
+            for module, caps_dir in module_host.iter_capability_sources():
+                if module is None:
+                    continue
+                try:
+                    for cap_id, meta in load_all_capabilities(caps_dir).items():
+                        caps.setdefault(f"{module}/{cap_id}", meta)
+                except Exception:
+                    pass
+            self._all_capabilities = caps
         return self._all_capabilities
 
     def list_agents(self) -> List[AgentConfiguration]:

@@ -6,101 +6,97 @@
 
 ## ▶ Start here (next session)
 
-**Phase C is proven. The QA/Test module (PROTO-054) shipped as the second
-engineering-discipline module with ZERO `module_core/` edits — the module
-contract is real (contract v1.0). It's in review as PR #16. Scope reminder:
-proto-gear is engineering-only; "departments" = engineering disciplines.**
+**Seam S1 is fully landed: a discipline's own capabilities now surface everywhere,
+namespaced `<module>/<cap_id>` — in the listings, on disk under
+`.proto-gear/<module>/`, and to the agent subsystem. CI is genuinely green for the
+first time (pytest actually runs in CI now).** qa is the live proof
+(`qa/workflows/release-signoff`).
 
-1. **Merge PR #16** (`feature/PROTO-054-qa-module` → `development`), then
-   `git checkout development && git pull`. It only adds `modules/qa/` + a test
-   (+ PROJECT_STATUS) — no core edits, so no conflict risk.
+1. **Merge PR #19 is DONE.** **PR #20 (PROTO-058, agent multi-source) is open** —
+   merge on green, then `git checkout development && git pull`.
 2. **Then pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **S1 listing half** — route the host-side capability surfaces
-     (`discovery`/`pg suggest`, `sync_context`/AGENT_CONTEXT, `agent_config`,
-     wizard) through `module_host.iter_capability_sources()` so a discipline's
-     own capabilities surface in suggestions/context, not just the gate audit.
-     Now that qa ships a real capability (`release-signoff`), this has a live
-     consumer. Resolve the open question below first.
-   - **A third discipline (DevOps/SRE)** — deploy/incident queue + a
-     `prod-approval` gate; more contract exercise, still zero core edits.
+   - **A 3rd discipline (DevOps/SRE)** — `modules/devops/` (deploy/incident queue +
+     a `prod-approval` gate). Now the highest-value validation: it exercises the
+     *complete* S1 machinery end-to-end (discovery → listings → on-disk subtree
+     install → per-module INDEX → gate audit → agents) and must need **zero core
+     edits**. `modules/qa/` is the reference pattern.
+   - **Agent subsystem, deeper** — PROTO-058 made `AgentManager` *read* module caps;
+     `AgentManager`/`agent_config`/`agent_wizard` are otherwise unchanged. If agents
+     should *install into* module subtrees too, that's a follow-up.
    - **Phase D (Engineering OS)** — cross-discipline orchestration (engineering
-     ticket ↔ qa sign-off ↔ release). Bigger; only after S1 listing lands.
-3. **Tiny cleanup** (noticed, deliberately not done to keep #16 a clean
-   zero-core-edit proof): `module_core/module_manifest.py` docstring line 3 still
-   says "(engineering, content, ops, …)" — a leftover PROTO-053 scrub miss.
-   Fold into the next core-touching PR.
+     ticket ↔ qa sign-off ↔ release). Bigger; the S1 plumbing it needs now exists.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `b88f6b3` (PROTO-047–053). **PR #16 open** for PROTO-054 (qa).
-- On the PR branch: **750 tests green; `pg doctor` 0/0/25 ok; `black --check`
-  clean.** `pg module list` shows **engineering + qa**. Coverage measurable via
-  `pytest --cov=core/proto_gear_pkg --cov-report=term-missing`.
-- **Contract proven (v1.0):** two independent engineering-discipline modules
-  (`engineering`, `qa`) run on the department-agnostic core unmodified. Adding
-  `qa` was dropping `modules/qa/` in — the core discovered, validated, and
-  gate-audited it (doctor 23→25) with no code change. This is the ADR-001
-  Phase C exit criterion, met.
+- `development` = `010eb88` (through PROTO-057, PR #19). **PR #20 open** (PROTO-058).
+- **CI is green and deterministic.** `Tests` workflow now has a dedicated `lint`
+  job (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
+  Before PROTO-055 the matrix `black --check` ran *before* pytest and always
+  failed, so **pytest never actually executed in CI** — "green locally" hid real
+  breakage. Reproduce CI parity locally with the **bare console script**
+  `pytest tests/` (not `python -m pytest`, which puts cwd on `sys.path`).
+- **767 tests pass; `pg doctor` 0/0/25 ok; `black --check` clean.**
+- **Seam S1 complete (listings + on-disk + agents):**
+  - Bundled loader: `module_host.load_bundled_capabilities()` /
+    `merge_capability_sources()` — shared caps bare, module caps `<module>/<cap_id>`.
+  - Listings: `pg suggest` (discovery), `pg capabilities list/search/show/tree`
+    (with `_resolve_capability` accepting full id / `<type>/<name>` / unambiguous
+    bare name). `pg capabilities list` is 24→25 (qa's release-signoff shows).
+  - On-disk: `module_host.install_module_capabilities()` copies each
+    `modules/<name>/capabilities/` → `.proto-gear/<name>/` (hardened; wired into
+    `pg init` via `copy_capability_templates`).
+  - INDEX: `sync_capability_indexes` partitions by module — shared root index is
+    shared-only, each subtree gets its own INDEX (scaffolded on demand). `pg doctor`
+    covers subtree index drift (`would_create` → ok).
+  - Agents: `AgentManager._load_capabilities()` overlays module caps (namespaced).
 - **Scope (PROTO-053):** proto-gear = software-engineering OS; departments are
   engineering disciplines (dev, qa, devops, security, docs, release/PM). No
   content/marketing — that's honk (`../_Plugins/honk/`), a separate product.
 
 ## Shipped this cycle (all merged unless noted)
 
-- **PROTO-050** — core coverage 45%→70% + pytest config fix. PR #14.
-- **PROTO-053** — engineering-only reframe: remove content module, rescope vision
-  agency→software-engineering OS. PR #15.
-- **PROTO-054** — QA/Test module (Phase C falsifier), zero core edits, contract
-  v1.0. **PR #16 open.**
+- **PROTO-054** — QA/Test module (Phase C falsifier), zero core edits. PR #16.
+- **PROTO-055** — CI green: pinned single lint job; fixed a latent test-import bug
+  (4 modules imported `core.*`, only resolvable under `python -m pytest`); PROTO-053
+  docstring scrubs. PR #17.
+- **PROTO-056** — S1 listings multi-source, per-module namespaced. PR #18.
+- **PROTO-057** — S1 on-disk per-module subtrees + per-module INDEX. PR #19.
+- **PROTO-058** — S1 follow-up: agent subsystem reads module caps. **PR #20 open.**
 
 ## Pending / In Progress
 
-- **PR #16 awaiting merge.**
-- **S1 listing half** (now has a live consumer: qa's `release-signoff`) — step 2.
-- **3rd discipline (DevOps)** / **Phase D** — later (step 2).
-- **Formatting enforced via git hook, not CI.** `dev/hooks/pre-commit` blocks
-  commits failing `black --check` / flake8. Enable per clone:
-  `git config core.hooksPath dev/hooks` (already set here). Fix: `black core/
-  tests/`.
+- **PR #20 awaiting merge** (PROTO-058).
+- **3rd discipline (DevOps)** / **Phase D** — next thrust (step 2).
 
 ## Conventions In Force
 
-- **Scope discipline:** proto-gear is engineering-only. "Departments" = engineering
-  disciplines. Anything content/marketing/sales/finance is out of scope by design
-  (PROJECT_SPECIFICATIONS.md §8). Flag such requests rather than build them.
-- **New discipline = zero core edits.** Drop a `modules/<name>/` dir (manifest +
-  optional `capabilities/` + state-surface template). If it needs a `module_core/`
-  or `cli/` change, the contract abstraction is wrong — stop and reconsider.
-  `modules/qa/` is the reference pattern; `modules/engineering/` is the generalist.
-- **Layering:** `cli/` (top) → `module_core/` (generic) → `modules/<dept>/`
-  (discipline). Lower never imports higher.
+- **Scope discipline:** engineering-only. Anything content/marketing/sales/finance
+  is out of scope by design (PROJECT_SPECIFICATIONS.md §8). Flag, don't build.
+- **New discipline = zero core edits.** Drop `modules/<name>/` (manifest +
+  optional `capabilities/` + state-surface template). It is auto-discovered,
+  listed, installed into `.proto-gear/<name>/`, indexed, gate-audited, and
+  agent-visible with no `module_core/`/`cli/` change. If it needs one, the
+  abstraction is wrong — stop. `modules/qa/` is the reference.
+- **Layering:** `cli/` → `module_core/` (generic) → `modules/<dept>/`. Lower never
+  imports higher. Module-generic behavior lives in `module_core` (e.g.
+  `module_host.install_module_capabilities`), never in `modules/engineering/`.
+- **Namespacing:** shared/engineering caps keep bare ids; a module's own caps are
+  `<module>/<cap_id>` everywhere (gate audit, listings, on-disk subtree, agents).
 - **Bundled resources:** resolve via `paths.package_root()`, never
   `Path(__file__).parent` arithmetic.
-- **Supervision gates** are data in workflow `metadata.yaml` (`gates:`);
-  `pg doctor` enforces structure + coverage across the shared root AND every
-  module's own `capabilities/` (targets namespaced `<module>/<cap_id>`).
 - **Testing:** business logic via argparse.Namespace + capsys + tmp dirs;
   interactive questionary wizards out of scope. Real bundled modules get an
-  acceptance test (`test_qa_module.py` is the template); synthetic platform
-  tests use a neutral `qa` toy or engineering.
+  acceptance test (`test_qa_module.py` is the template). **Verify CI parity with
+  bare `pytest tests/`.**
 - **Git:** never commit to `main`/`development` directly; branch from
-  `development`, PR back. CI runs only on PRs targeting `main`/`development`.
-- **Regen noise:** `AGENT_CONTEXT.md` / host configs carry a `Generated:`
-  timestamp `pg` rewrites on any run — `git restore` them if the diff is
-  timestamp-only.
+  `development`, PR back. CI runs on PRs to `main`/`development`. **Formatting is a
+  hard CI gate now (pinned black) AND a pre-commit hook** (`git config
+  core.hooksPath dev/hooks`). Fix: `black core/ tests/`.
+- **Regen noise:** `AGENT_CONTEXT.md` / host configs carry a `Generated:` timestamp
+  `pg` rewrites on any run — `git restore` them if the diff is timestamp-only.
 - SESSION_HANDOFF.md is agent-owned; replace entirely at session end.
-
-## Open Questions (for the S1 listing half)
-
-- When host-side listings become multi-source, does the host's single
-  `.proto-gear/` stay the shared `capabilities_root` for all modules, or does
-  each discipline namespace its own subtree (e.g. `.proto-gear/qa/`)? Both
-  manifests declare `.proto-gear`. Decide before wiring the listing surfaces — it
-  governs whether two disciplines' capability IDs can collide in `pg suggest` /
-  AGENT_CONTEXT. (The gate audit already namespaces as `<module>/<cap_id>`; the
-  listing surfaces should follow the same convention.)
 
 ---
 *Agent-maintained. Replace entirely at session end.*
