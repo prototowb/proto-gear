@@ -425,4 +425,12 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
     )
 
+    pipeline_parser = subparsers.add_parser(
+        "pipeline",
+        help="Show the cross-discipline supervision pipeline (path to production)",
+    )
+    pipeline_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
     return parser

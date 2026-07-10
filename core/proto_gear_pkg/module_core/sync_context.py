@@ -98,6 +98,10 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
         "pg --module <name> init-surface",
         "Render a department module's declared state surface",
     ),
+    (
+        "pg pipeline [--json]",
+        "Show the cross-discipline supervision pipeline (path to production)",
+    ),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
     (
         "pg sync-indexes",

@@ -1454,6 +1454,59 @@ def cmd_module_show(args):
     return 0
 
 
+def cmd_pipeline(args):
+    """Show the cross-discipline supervision pipeline (Phase D).
+
+    Composes every discipline's declared supervision gates into the org's path
+    to production, grouped by the action each gate guards — surfacing where
+    disciplines converge on the same control point.
+    """
+    from .module_core import pipeline
+
+    try:
+        stages = pipeline.build_pipeline()
+    except Exception as e:
+        print(f"{Colors.FAIL}Error building pipeline: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps({"stages": stages}, indent=2))
+        return 0
+
+    if not stages:
+        print(f"{Colors.YELLOW}No supervision gates declared.{Colors.ENDC}")
+        return 0
+
+    disciplines = sorted({g["discipline"] for s in stages for g in s["gates"]})
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Supervision pipeline{Colors.ENDC} — path to production"
+    )
+    print(
+        f"{Colors.GRAY}Human approval gates across {len(disciplines)} disciplines "
+        f"({', '.join(disciplines)}), grouped by the action they guard.{Colors.ENDC}\n"
+    )
+    for stage in stages:
+        gates = stage["gates"]
+        converge = (
+            f"  {Colors.YELLOW}← {len({g['discipline'] for g in gates})} disciplines converge{Colors.ENDC}"
+            if len({g["discipline"] for g in gates}) > 1
+            else ""
+        )
+        print(f"{Colors.BOLD}before {stage['action']}{Colors.ENDC}{converge}")
+        for g in gates:
+            req = "required" if g["required"] else "optional"
+            print(
+                f"  {Colors.GREEN}{g['gate']}{Colors.ENDC} "
+                f"{Colors.GRAY}[{g['discipline']}]{Colors.ENDC} "
+                f"— {g['approver']}, {req} "
+                f"{Colors.GRAY}({g['workflow']}){Colors.ENDC}"
+            )
+        print()
+    return 0
+
+
 def cmd_module_init_surface(args):
     """Materialise the selected module's declared state surface into the project.
 
