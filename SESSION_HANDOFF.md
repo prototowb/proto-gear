@@ -12,7 +12,7 @@ namespaced `<module>/<cap_id>` — in the listings, on disk under
 first time (pytest actually runs in CI now).** qa is the live proof
 (`qa/workflows/release-signoff`).
 
-1. **Merge PR #19 is DONE.** **PR #58 (PROTO-058, agent multi-source) is open** —
+1. **Merge PR #19 is DONE.** **PR #20 (PROTO-058, agent multi-source) is open** —
    merge on green, then `git checkout development && git pull`.
 2. **Then pick the next thrust** (unticketed; file with `pg ticket create`):
    - **A 3rd discipline (DevOps/SRE)** — `modules/devops/` (deploy/incident queue +
@@ -30,7 +30,7 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `010eb88` (through PROTO-057, PR #19). **PR #58 open** (PROTO-058).
+- `development` = `010eb88` (through PROTO-057, PR #19). **PR #20 open** (PROTO-058).
 - **CI is green and deterministic.** `Tests` workflow now has a dedicated `lint`
   job (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
   Before PROTO-055 the matrix `black --check` ran *before* pytest and always
@@ -63,11 +63,11 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   docstring scrubs. PR #17.
 - **PROTO-056** — S1 listings multi-source, per-module namespaced. PR #18.
 - **PROTO-057** — S1 on-disk per-module subtrees + per-module INDEX. PR #19.
-- **PROTO-058** — S1 follow-up: agent subsystem reads module caps. **PR #58 open.**
+- **PROTO-058** — S1 follow-up: agent subsystem reads module caps. **PR #20 open.**
 
 ## Pending / In Progress
 
-- **PR #58 awaiting merge** (PROTO-058).
+- **PR #20 awaiting merge** (PROTO-058).
 - **3rd discipline (DevOps)** / **Phase D** — next thrust (step 2).
 
 ## Conventions In Force
