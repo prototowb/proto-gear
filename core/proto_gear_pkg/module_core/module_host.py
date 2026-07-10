@@ -16,13 +16,16 @@ alone.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from .module_manifest import (
     ModuleManifest,
     ModuleManifestError,
     discover_modules,
 )
+
+if TYPE_CHECKING:
+    from .capability_metadata import CapabilityMetadata
 
 # The department a bare ``pg <cmd>`` (no --module) targets. Engineering is
 # module #1 and the historical default, so the single-module case needs no flag.
@@ -85,6 +88,51 @@ def iter_capability_sources(
         if caps_dir.is_dir():
             sources.append((manifest.module, caps_dir))
     return sources
+
+
+def merge_capability_sources(
+    sources: List["CapabilitySource"],
+) -> Dict[str, "CapabilityMetadata"]:
+    """Merge ``(module, dir)`` capability sources into one id → metadata dict.
+
+    Namespacing follows the gate audit's convention exactly (see
+    :func:`doctor.check_supervision_gates`): the shared root (source ``None``)
+    keeps each capability's bare id (``skills/testing``), while a module-owned
+    capability is namespaced ``<module>/<cap_id>`` (``qa/workflows/release-signoff``)
+    so two disciplines can ship the same cap id without colliding. Shared is
+    iterated first, so a module can never clobber a shared capability.
+
+    This is the *bundled* (package-side) counterpart to what the host-install
+    layout gets for free: capabilities laid out under ``.proto-gear/<module>/``
+    already yield ``<module>/<cap_id>`` from a single
+    :func:`load_all_capabilities` call, because ids are the path relative to the
+    root. Bundled sources live in physically separate trees
+    (``capabilities/`` + ``modules/<name>/capabilities/``), so they need this
+    explicit merge.
+    """
+    from .capability_metadata import load_all_capabilities
+
+    merged: Dict[str, "CapabilityMetadata"] = {}
+    for module, caps_dir in sources:
+        for cap_id, meta in load_all_capabilities(caps_dir).items():
+            key = cap_id if module is None else f"{module}/{cap_id}"
+            merged[key] = meta
+    return merged
+
+
+def load_bundled_capabilities(
+    modules_root: Optional[Path] = None,
+) -> Dict[str, "CapabilityMetadata"]:
+    """Every bundled capability across the shared root and all modules (seam S1).
+
+    The multi-source listing counterpart to the doctor gate audit: where a
+    single ``load_all_capabilities(package_root()/'capabilities')`` sees only the
+    shared/engineering bundle, this also includes each discipline's own
+    ``modules/<name>/capabilities/``, namespaced ``<module>/<cap_id>``. Callers
+    that browse or suggest across *all* disciplines use this instead of reading
+    one directory.
+    """
+    return merge_capability_sources(iter_capability_sources(modules_root))
 
 
 def state_surface_template_path(manifest: ModuleManifest) -> Optional[Path]:

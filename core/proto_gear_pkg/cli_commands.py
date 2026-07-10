@@ -35,6 +35,42 @@ def get_capabilities_dir() -> Path:
     return pkg_dir / "capabilities"
 
 
+def _load_bundled_capabilities():
+    """All bundled capabilities across every discipline (seam S1).
+
+    The shared/engineering bundle plus each module's own ``capabilities/``,
+    namespaced ``<module>/<cap_id>`` (see ``module_host.load_bundled_capabilities``).
+    Browse commands use this so a discipline's capabilities (e.g. qa's
+    ``qa/workflows/release-signoff``) are visible, not just engineering's.
+    """
+    from .module_core import module_host
+
+    return module_host.load_bundled_capabilities()
+
+
+def _resolve_capability(name, all_caps):
+    """Resolve a user-supplied capability name to ``(cap_id, metadata)``.
+
+    Accepts a full id (``skills/testing``, ``qa/workflows/release-signoff``), a
+    ``<type>/<name>`` shorthand for shared caps, or a bare trailing name
+    (``release-signoff``) when it is unambiguous across disciplines. Returns
+    ``(None, candidates)`` when nothing matches (``candidates == []``) or the
+    bare name is ambiguous (``len(candidates) > 1``), so the caller can report.
+    """
+    if name in all_caps:
+        return name, all_caps[name]
+    for category in ("skills", "workflows", "commands"):
+        test_id = f"{category}/{name}"
+        if test_id in all_caps:
+            return test_id, all_caps[test_id]
+    candidates = sorted(
+        cid for cid in all_caps if cid == name or cid.endswith(f"/{name}")
+    )
+    if len(candidates) == 1:
+        return candidates[0], all_caps[candidates[0]]
+    return None, candidates
+
+
 def get_agents_dir() -> Path:
     """Get agents directory (project location)"""
     proto_gear_dir = Path(".proto-gear")
@@ -69,10 +105,8 @@ def get_close_matches(
 
 def cmd_capabilities_list(args):
     """List all available capabilities"""
-    caps_dir = get_capabilities_dir()
-
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
@@ -266,10 +300,9 @@ def cmd_capabilities_list(args):
 def cmd_capabilities_search(args):
     """Search capabilities by keyword"""
     query = args.query.lower()
-    caps_dir = get_capabilities_dir()
 
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
@@ -307,30 +340,33 @@ def cmd_capabilities_search(args):
 def cmd_capabilities_show(args):
     """Show detailed information about a capability"""
     name = args.name
-    caps_dir = get_capabilities_dir()
 
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
 
-    # Find capability (support both short name and full path)
-    metadata = None
-    cap_id = None
-
-    # Try exact match first
-    if name in all_caps:
-        cap_id = name
-        metadata = all_caps[name]
+    # Resolve name → id: full id, <type>/<name> shorthand, or an unambiguous
+    # bare trailing name across disciplines (e.g. qa/workflows/release-signoff).
+    cap_id, resolved = _resolve_capability(name, all_caps)
+    if cap_id is not None:
+        metadata = resolved
     else:
-        # Try searching in each category
-        for category in ["skills", "workflows", "commands"]:
-            test_id = f"{category}/{name}"
-            if test_id in all_caps:
-                cap_id = test_id
-                metadata = all_caps[test_id]
-                break
+        metadata = None
+        candidates = resolved  # list of colliding ids (empty if no match)
+        if len(candidates) > 1:
+            print(
+                f"{Colors.YELLOW}Ambiguous capability '{name}' — "
+                f"matches multiple disciplines:{Colors.ENDC}"
+            )
+            for cid in candidates:
+                print(f"  {cid}")
+            print(
+                f"\n{Colors.GRAY}Qualify it, e.g. "
+                f"'pg capabilities show {candidates[0]}'{Colors.ENDC}"
+            )
+            return 1
 
     if not metadata:
         print(f"{Colors.FAIL}Capability not found: '{name}'{Colors.ENDC}\n")
@@ -428,32 +464,34 @@ def cmd_capabilities_show(args):
 
 def cmd_capabilities_tree(args):
     """Show dependency tree for a capability"""
-    caps_dir = get_capabilities_dir()
     cap_id = args.capability_id
 
     # Load all capabilities
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
 
-    # Find the capability (support short names)
-    metadata = None
-    full_id = None
-
-    # Try exact match first
-    if cap_id in all_caps:
-        metadata = all_caps[cap_id]
-        full_id = cap_id
+    # Resolve name → id (full id, <type>/<name>, or unambiguous bare name).
+    full_id, resolved = _resolve_capability(cap_id, all_caps)
+    if full_id is not None:
+        metadata = resolved
     else:
-        # Try with type prefix
-        for cap_type in ["skills", "workflows", "commands"]:
-            test_id = f"{cap_type}/{cap_id}"
-            if test_id in all_caps:
-                metadata = all_caps[test_id]
-                full_id = test_id
-                break
+        metadata = None
+        candidates = resolved  # list of colliding ids (empty if no match)
+        if len(candidates) > 1:
+            print(
+                f"{Colors.YELLOW}Ambiguous capability '{cap_id}' — "
+                f"matches multiple disciplines:{Colors.ENDC}"
+            )
+            for cid in candidates:
+                print(f"  {cid}")
+            print(
+                f"\n{Colors.GRAY}Qualify it, e.g. "
+                f"'pg capabilities tree {candidates[0]}'{Colors.ENDC}"
+            )
+            return 1
 
     if not metadata:
         print(f"{Colors.FAIL}Capability not found: '{cap_id}'{Colors.ENDC}\n")

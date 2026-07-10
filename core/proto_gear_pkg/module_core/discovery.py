@@ -30,23 +30,43 @@ def load_capabilities_for_suggest(project_dir: Path) -> Dict[str, CapabilityMeta
     """
     Prefer project-installed capabilities; fall back to package built-ins
     so ``pg suggest`` still produces useful output before ``pg init``.
+
+    Whatever the shared base, each discipline's *own* bundled capabilities are
+    overlaid namespaced ``<module>/<cap_id>`` (seam S1), so e.g. qa's
+    ``qa/workflows/release-signoff`` is suggestable even before it is installed
+    into the project. An installed subtree (same key) takes precedence.
     """
+    caps: Dict[str, CapabilityMetadata] = {}
+
     project_caps = _project_caps_dir(project_dir)
     if project_caps.exists():
         try:
-            caps = load_all_capabilities(project_caps)
-            if caps:
-                return caps
+            caps = load_all_capabilities(project_caps) or {}
+        except Exception:
+            caps = {}
+
+    if not caps:
+        package_caps = _package_caps_dir()
+        if package_caps.exists():
+            try:
+                caps = load_all_capabilities(package_caps)
+            except Exception:
+                caps = {}
+
+    # Overlay each module's own bundled capabilities (namespaced), without
+    # clobbering anything already present (an installed copy wins).
+    from . import module_host
+
+    for module, caps_dir in module_host.iter_capability_sources():
+        if module is None:
+            continue
+        try:
+            for cap_id, meta in load_all_capabilities(caps_dir).items():
+                caps.setdefault(f"{module}/{cap_id}", meta)
         except Exception:
             pass
 
-    package_caps = _package_caps_dir()
-    if package_caps.exists():
-        try:
-            return load_all_capabilities(package_caps)
-        except Exception:
-            return {}
-    return {}
+    return caps
 
 
 _TOKEN_RE = re.compile(r"[a-z0-9\-/]+")

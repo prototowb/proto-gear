@@ -34,7 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-055 | CI green: pinned black lint job + PROTO-053 docstring scrub | chore | IN_PROGRESS | chore/proto-055-ci-green-pinned-black-lint-job-proto-053 |  |
+| PROTO-056 | S1 multi-source capability listings — per-module namespaced (<module>/<cap_id>) | feature | IN_PROGRESS | feature/proto-056-s1-multi-source-capability-listings-per- |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -687,6 +687,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | 2026-07-10 | |
 | PROTO-053 | Teardown: remove departmental-module platform + content; proto-gear is engineering-only | 2026-07-10 | |
 | PROTO-054 | Phase C: ship QA/Test module (2nd engineering discipline) — zero-core-edits contract falsifier | 2026-07-10 | |
+| PROTO-055 | CI green: pinned black lint job + PROTO-053 docstring scrub | 2026-07-10 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

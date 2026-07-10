@@ -81,6 +81,52 @@ class TestIterCapabilitySources:
         assert "qa" not in {m for m, _ in sources}
 
 
+class TestLoadBundledCapabilities:
+    """Seam S1 (listing side): capabilities merged across all modules, keyed by
+    the same ``<module>/<cap_id>`` convention the doctor gate audit uses."""
+
+    def test_shared_caps_keep_bare_ids(self):
+        caps = module_host.load_bundled_capabilities()
+        # A known shared/engineering capability keeps its bare, un-namespaced id.
+        assert "skills/testing" in caps
+        assert "workflows/release" in caps
+
+    def test_module_caps_are_namespaced(self):
+        caps = module_host.load_bundled_capabilities()
+        # qa's own bundled capability surfaces, namespaced by its module id —
+        # matching doctor.check_supervision_gates' target format.
+        assert "qa/workflows/release-signoff" in caps
+        # ...and never leaks in as a bare id that could collide with a shared cap.
+        assert "workflows/release-signoff" not in caps
+
+    @staticmethod
+    def _write_cap(dir_: Path, name: str):
+        dir_.mkdir(parents=True, exist_ok=True)
+        (dir_ / "metadata.yaml").write_text(
+            f'name: "{name}"\n'
+            'type: "workflow"\n'
+            'version: "0.1.0"\n'
+            'description: "test"\n'
+            'category: "test"\n'
+            'tags: ["t"]\n'
+            'status: "beta"\n'
+            'author: "test"\n'
+            'last_updated: "2026-07-10"\n',
+            encoding="utf-8",
+        )
+
+    def test_merge_shared_first_module_cannot_clobber(self, tmp_path):
+        # Two sources declaring the same bare cap id: shared (None) is iterated
+        # first, the module's copy lands under its namespace — no collision.
+        self._write_cap(tmp_path / "shared" / "workflows" / "release", "Shared Release")
+        self._write_cap(tmp_path / "mod" / "workflows" / "release", "QA Release")
+        merged = module_host.merge_capability_sources(
+            [(None, tmp_path / "shared"), ("qa", tmp_path / "mod")]
+        )
+        assert merged["workflows/release"].name == "Shared Release"
+        assert merged["qa/workflows/release"].name == "QA Release"
+
+
 class TestStateSurfaceTemplatePath:
     def test_template_in_module_dir(self, tmp_path):
         _write_module(tmp_path, "qa", template="queue\n", state_surface="QA_QUEUE.md")
