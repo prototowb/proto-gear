@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-060 | Phase D: cross-discipline supervision pipeline view (pg pipeline) | feature | IN_PROGRESS | feature/proto-060-phase-d-cross-discipline-supervision-pip |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -692,6 +691,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-057 | S1 Phase 2: on-disk per-module subtree — install + per-module INDEX + doctor drift | 2026-07-11 | |
 | PROTO-058 | S1 follow-up: agent subsystem reads module capabilities (multi-source) | 2026-07-11 | |
 | PROTO-059 | DevOps/SRE module — 3rd discipline, zero core edits (deploy queue + prod-approval gate) | 2026-07-11 | |
+| PROTO-060 | Phase D: cross-discipline supervision pipeline view (pg pipeline) | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
