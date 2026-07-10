@@ -175,6 +175,31 @@ class TestQaListedAcrossSurfaces:
         assert "QA Release Sign-off" in out
 
 
+class TestQaInstalledOnDisk:
+    """PROTO-057 (seam S1, on-disk): a real `pg init` lays qa's capabilities down
+    under `.proto-gear/qa/`, so they keep their `qa/...` identity from the tree."""
+
+    def test_copy_installs_qa_subtree(self, tmp_path):
+        from proto_gear_pkg.modules.engineering.templates import (
+            copy_capability_templates,
+        )
+        from proto_gear_pkg.module_core.capability_metadata import (
+            load_all_capabilities,
+        )
+
+        res = copy_capability_templates(tmp_path, project_name="demo", version="9.9.9")
+        assert res["status"] == "success"
+        pg = tmp_path / ".proto-gear"
+        # qa cap under its namespace; .template.md renamed to .md.
+        wf = pg / "qa" / "workflows" / "release-signoff" / "WORKFLOW.md"
+        assert wf.is_file()
+        # shared/engineering caps stay flat at the root.
+        assert (pg / "skills" / "code-review").is_dir()
+        # the subtree layout yields the namespaced id for free.
+        caps = load_all_capabilities(pg)
+        assert "qa/workflows/release-signoff" in caps
+
+
 class TestQaInitSurface:
     def test_init_surface_writes_queue_verbatim(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands

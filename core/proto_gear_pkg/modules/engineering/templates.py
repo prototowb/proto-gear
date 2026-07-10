@@ -531,6 +531,23 @@ def copy_capability_templates(
 
                 result["files_created"].append(str(dest_path.relative_to(target_dir)))
 
+        # Install each discipline's own capabilities under .proto-gear/<module>/
+        # (seam S1, on-disk). Generic: a new module is picked up with no edit
+        # here. Shared/engineering caps stay flat at the root above.
+        from proto_gear_pkg.module_core import module_host
+
+        module_result = module_host.install_module_capabilities(
+            dest_dir,
+            replacements={"VERSION": version, "PROJECT_NAME": project_name},
+            dry_run=dry_run,
+        )
+        result["files_created"].extend(module_result["files_created"])
+        result["errors"].extend(module_result["errors"])
+
+        if dry_run:
+            for rel in module_result["files_created"]:
+                print(f"    - {rel}")
+
         if result["errors"]:
             result["status"] = "partial"
 

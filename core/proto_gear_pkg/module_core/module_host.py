@@ -135,6 +135,87 @@ def load_bundled_capabilities(
     return merge_capability_sources(iter_capability_sources(modules_root))
 
 
+def install_module_capabilities(
+    proto_gear_dir: Path,
+    replacements: Optional[Dict[str, str]] = None,
+    dry_run: bool = False,
+    modules_root: Optional[Path] = None,
+) -> dict:
+    """Copy every module's own bundled capabilities into ``.proto-gear/<module>/``.
+
+    The on-disk counterpart to :func:`load_bundled_capabilities` (seam S1): where
+    the shared/engineering bundle installs flat under ``.proto-gear/``, each
+    discipline's own ``modules/<name>/capabilities/`` installs under its namespace
+    ``.proto-gear/<name>/``. A capability under the subtree therefore keeps its
+    ``<module>/<cap_id>`` identity for free — ids are the path relative to
+    ``.proto-gear/`` — matching both the gate audit and the listing loader.
+
+    Generic by design: a new discipline is picked up here with no edit, because
+    the sources come from :func:`iter_capability_sources`. Applies the same
+    hardening as the engineering installer — rejects symlinks and path-traversal,
+    enforces UTF-8, renames ``*.template.md`` → ``*.md``, and substitutes
+    ``{{KEY}}`` placeholders from ``replacements``.
+
+    Returns ``{"files_created": [...], "errors": [...]}`` (paths relative to
+    ``proto_gear_dir``'s parent, matching ``copy_capability_templates``).
+    """
+    import os
+
+    replacements = replacements or {}
+    result: dict = {"files_created": [], "errors": []}
+    proto_gear_dir = Path(proto_gear_dir)
+    project_dir = proto_gear_dir.parent
+
+    for module, caps_dir in iter_capability_sources(modules_root):
+        if module is None:
+            continue  # shared root is the engineering installer's job
+        module_dest = proto_gear_dir / module
+        for source_path in caps_dir.rglob("*"):
+            if source_path.is_dir():
+                continue
+            if source_path.is_symlink():
+                result["errors"].append(f"Skipped symlink: {source_path}")
+                continue
+
+            rel_path = source_path.relative_to(caps_dir)
+            normalized = Path(os.path.normpath(rel_path))
+            if ".." in normalized.parts or normalized.is_absolute():
+                result["errors"].append(f"Security: Invalid path detected: {rel_path}")
+                continue
+
+            dest_path = module_dest / normalized
+            if dest_path.suffix == ".md" and dest_path.stem.endswith(".template"):
+                dest_path = dest_path.parent / (
+                    dest_path.stem.replace(".template", "") + ".md"
+                )
+
+            try:
+                dest_path.resolve().relative_to(proto_gear_dir.resolve())
+            except ValueError:
+                result["errors"].append(
+                    f"Security: Destination path escapes .proto-gear/: {dest_path}"
+                )
+                continue
+
+            if dry_run:
+                result["files_created"].append(str(dest_path.relative_to(project_dir)))
+                continue
+
+            try:
+                content = source_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError as e:
+                result["errors"].append(f"Encoding error in {source_path}: {e}")
+                continue
+            for key, value in replacements.items():
+                content = content.replace("{{" + key + "}}", value)
+
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            dest_path.write_text(content, encoding="utf-8")
+            result["files_created"].append(str(dest_path.relative_to(project_dir)))
+
+    return result
+
+
 def state_surface_template_path(manifest: ModuleManifest) -> Optional[Path]:
     """Locate the template that renders a module's declared state surface.
 

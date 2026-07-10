@@ -35,6 +35,7 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 | PROTO-056 | S1 multi-source capability listings — per-module namespaced (<module>/<cap_id>) | feature | IN_PROGRESS | feature/proto-056-s1-multi-source-capability-listings-per- |  |
+| PROTO-057 | S1 Phase 2: on-disk per-module subtree — install + per-module INDEX + doctor drift | feature | IN_PROGRESS | feature/proto-057-s1-phase-2-on-disk-per-module-subtree-in |  |
 
 _No active tickets — v0.10.0 just shipped._
 
