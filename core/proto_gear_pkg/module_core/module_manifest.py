@@ -1,6 +1,7 @@
 """Departmental module manifest — the module contract as data.
 
-A *module* is a department (engineering, content, ops, …) whose way-of-working
+A *module* is a department — an engineering discipline (engineering, qa, …) —
+whose way-of-working
 is encoded as capabilities + templates + state surfaces. The manifest
 (``module.yaml``) declares the contract surfaces from PROJECT_SPECIFICATIONS.md
 §3 so the department-agnostic core can discover, load, and audit a module

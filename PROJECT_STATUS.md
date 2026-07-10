@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-055 | CI green: pinned black lint job + PROTO-053 docstring scrub | chore | IN_PROGRESS | chore/proto-055-ci-green-pinned-black-lint-job-proto-053 |  |
 
 _No active tickets — v0.10.0 just shipped._
 
