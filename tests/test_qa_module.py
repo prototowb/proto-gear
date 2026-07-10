@@ -131,6 +131,50 @@ class TestQaModuleViaCLI:
         assert data["state_surface"] == "QA_QUEUE.md"
 
 
+class TestQaListedAcrossSurfaces:
+    """PROTO-056 (seam S1, listing side): qa's own capability surfaces in the
+    host-side listings — not just the doctor gate audit — namespaced
+    ``qa/workflows/release-signoff`` so it never collides with a shared cap."""
+
+    def test_bundled_loader_includes_qa_namespaced(self):
+        caps = module_host.load_bundled_capabilities()
+        assert "qa/workflows/release-signoff" in caps
+        assert "workflows/release-signoff" not in caps  # no bare leak
+
+    def test_suggest_finds_release_signoff(self, tmp_path):
+        from proto_gear_pkg.module_core import discovery
+
+        results = discovery.suggest(tmp_path, "sign off release before shipping")
+        assert any(r["id"] == "qa/workflows/release-signoff" for r in results)
+
+    def test_capabilities_list_shows_qa(self, capsys):
+        from proto_gear_pkg import cli_commands
+
+        rc = cli_commands.cmd_capabilities_list(_args(json=True))
+        data = json.loads(capsys.readouterr().out)
+        assert rc == 0
+        ids = {c["id"] for c in data["capabilities"]}
+        assert "qa/workflows/release-signoff" in ids
+
+    def test_capabilities_show_resolves_bare_name(self, capsys):
+        from proto_gear_pkg import cli_commands
+
+        rc = cli_commands.cmd_capabilities_show(_args(name="release-signoff"))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "QA Release Sign-off" in out
+
+    def test_capabilities_show_resolves_namespaced_id(self, capsys):
+        from proto_gear_pkg import cli_commands
+
+        rc = cli_commands.cmd_capabilities_show(
+            _args(name="qa/workflows/release-signoff")
+        )
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "QA Release Sign-off" in out
+
+
 class TestQaInitSurface:
     def test_init_surface_writes_queue_verbatim(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands
