@@ -261,6 +261,9 @@ def main():
                 )
                 sys.exit(1)
 
+        elif args.command == "pipeline":
+            sys.exit(cli_commands.cmd_pipeline(args))
+
         # Handle 'update' command
         elif args.command == "update":
             sys.exit(cli_commands.cmd_template_update(args))
