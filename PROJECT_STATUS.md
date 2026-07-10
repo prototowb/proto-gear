@@ -91,6 +91,43 @@ deliberately out of scope):
 
 ---
 
+### PROTO-054 Details (COMPLETE)
+**Phase C — ship the QA/Test module (2nd engineering discipline) as the
+zero-core-edits contract falsifier.** With content removed (PROTO-053), the
+module contract needed a *real, in-scope* second implementation to prove the
+department-agnostic core hosts a brand-new engineering discipline through the
+same interfaces as engineering — with **zero `module_core/` edits**.
+
+**Delivered** (all under `core/proto_gear_pkg/modules/qa/` + one test):
+1. ✅ `module.yaml` — QA manifest (state_surface `QA_QUEUE.md`, context/handoff),
+   same schema engineering uses.
+2. ✅ `QA_QUEUE.template.md` — the QA state surface (test plans / defects:
+   `planned → in-test → failed → verified → signed-off`, with a "Signed off by"
+   column for the gate).
+3. ✅ `capabilities/workflows/release-signoff/` — a gated workflow with the
+   `qa-signoff` supervision gate (human sign-off before a release ships;
+   composes before engineering's `release`). Exercises PROTO-052's multi-source
+   gate audit against a real module.
+4. ✅ `tests/test_qa_module.py` — 14 acceptance tests: qa discovered alongside
+   engineering, surfaces validate, `doctor.check_modules` reports it valid,
+   `doctor.check_supervision_gates` audits `qa/workflows/release-signoff`
+   (gate-ok), `iter_capability_sources` includes it, `pg module list/show qa`
+   and `pg --module qa init-surface` (writes `QA_QUEUE.md` verbatim).
+
+**Falsifier result (the whole point)**: `git status` confirms the change set is
+**only** `modules/qa/` + the test — **zero edits to `module_core/`, `cli/`, or
+`doctor`**. The contract is real: a second engineering discipline runs on the
+core unmodified (ADR-001 Phase C exit / contract v1.0). `pg doctor` auto-picked
+up the qa manifest + gate (23 → **25** checks) with no code change.
+
+**Verification**: full suite **750 passed** (was 736). `pg doctor` 0/0/25 ok.
+`black --check` clean. `pg module list` shows engineering + qa.
+
+**Files Created**: `core/proto_gear_pkg/modules/qa/{__init__.py,module.yaml,QA_QUEUE.template.md,capabilities/workflows/release-signoff/{metadata.yaml,WORKFLOW.template.md}}`, `tests/test_qa_module.py`.
+**Files Modified**: `PROJECT_STATUS.md` only. *(No core edits — that's the proof.)*
+
+---
+
 ### PROTO-053 Details (COMPLETE)
 **Engineering-only reframe: remove the content/marketing module; rescope the
 vision from "agency OS" → "software-engineering OS."** The departmental-module
@@ -648,6 +685,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-052 | Manifest-driven capability sources: modules ship their own capabilities/ (seam S1) | 2026-07-10 | |
 | PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | 2026-07-10 | |
 | PROTO-053 | Teardown: remove departmental-module platform + content; proto-gear is engineering-only | 2026-07-10 | |
+| PROTO-054 | Phase C: ship QA/Test module (2nd engineering discipline) — zero-core-edits contract falsifier | 2026-07-10 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

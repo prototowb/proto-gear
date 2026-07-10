@@ -1,0 +1,21 @@
+# QA / Test department module — the SECOND engineering-discipline implementation
+# of the module contract (PROJECT_SPECIFICATIONS.md §3), and the Phase-C
+# falsifier (ADR-001): the department-agnostic core discovers, loads, and audits
+# this module with ZERO core edits. Adding it was dropping this modules/qa/
+# directory in — no changes to module_core/, cli/, or doctor.
+
+module: qa
+name: QA / Test
+description: >-
+  Quality-assurance department module — test plans, defect triage, and the
+  release sign-off gate encoded as agent-discoverable capabilities and templates.
+version: 0.1.0
+
+# Contract surfaces (paths are relative to a host project's root, i.e. where the
+# module is initialised). Same schema engineering uses; the core reads it without
+# any QA-specific knowledge.
+contract:
+  capabilities_root: .proto-gear        # item 1 — skills / workflows / commands
+  state_surface: QA_QUEUE.md            # item 2 — test-plan / defect queue
+  context_manifest: AGENT_CONTEXT.md    # item 3 — agent skim, mirrored to hosts
+  handoff: SESSION_HANDOFF.md           # item 6 — rolling session handoff
