@@ -1507,6 +1507,58 @@ def cmd_pipeline(args):
     return 0
 
 
+def cmd_trace(args):
+    """Trace a change (engineering ticket id) across discipline state surfaces.
+
+    Phase D-2: follows the ticket-id correlation key through each discipline's
+    declared state_surface, showing where the change stands (engineering ticket
+    → qa sign-off → prod deploy) and which supervision approvals have cleared.
+    """
+    from .module_core import trace
+
+    change_id = args.change_id
+    try:
+        hits = trace.trace_change(change_id, Path("."))
+    except Exception as e:
+        print(f"{Colors.FAIL}Error tracing change: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps({"change": change_id, "hits": hits}, indent=2))
+        return 0
+
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Trace {change_id}{Colors.ENDC} "
+        f"{Colors.GRAY}— cross-discipline{Colors.ENDC}"
+    )
+    if not hits:
+        print(
+            f"\n{Colors.YELLOW}No state-surface rows reference '{change_id}'.{Colors.ENDC}"
+        )
+        print(
+            f"{Colors.GRAY}Downstream disciplines link a change via a 'Ref' column "
+            f"in their state surface.{Colors.ENDC}"
+        )
+        return 0
+
+    for h in hits:
+        mark = ""
+        if h["approval_state"] == "cleared":
+            mark = f"  {Colors.GREEN}[approved: {h['approval'].strip()}]{Colors.ENDC}"
+        elif h["approval_state"] == "pending":
+            mark = f"  {Colors.YELLOW}[approval pending]{Colors.ENDC}"
+        row_id = h["id"] or "(no id)"
+        stage = h["stage"] or "—"
+        print(
+            f"  {Colors.GREEN}{h['discipline']:<12}{Colors.ENDC} "
+            f"{row_id:<14} {stage:<12}{mark} "
+            f"{Colors.GRAY}({h['surface']}){Colors.ENDC}"
+        )
+    return 0
+
+
 def cmd_module_init_surface(args):
     """Materialise the selected module's declared state surface into the project.
 
