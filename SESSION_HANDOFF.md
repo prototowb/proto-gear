@@ -7,23 +7,26 @@
 ## ▶ Start here (next session)
 
 **The department seam is complete end-to-end, and orchestration + change-tracing
-ship — proven across FOUR disciplines.** A discipline is discovered, listed,
-installed (`.proto-gear/<module>/`), indexed, gate-audited, agent-visible,
-orchestrated (`pg pipeline`), AND traceable (`pg trace` + gate checklist) — all
-from pure declaration, with **zero core edits** per discipline. Four ship:
-`engineering`, `qa`, `devops`, `security`. Adding `security` (PROTO-063)
-auto-created a new convergence: `before release ← qa-signoff + security-signoff`,
-with no orchestration code. CI is genuinely green (pytest actually runs in CI).
++ release-readiness ship — proven across FOUR disciplines.** A discipline is
+discovered, listed, installed (`.proto-gear/<module>/`), indexed, gate-audited,
+agent-visible, orchestrated (`pg pipeline`), traceable (`pg trace` + gate
+checklist), AND aggregated at the release level (`pg release`) — all from pure
+declaration, with **zero core edits** per discipline. Four ship: `engineering`,
+`qa`, `devops`, `security`. CI is genuinely green (pytest actually runs in CI).
 
-1. **Everything through PROTO-063 is merged** (PRs #16–#28). No PR in flight.
+1. **Everything through PROTO-064 is merged** (PRs #16–#30). No PR in flight
+   (bar this handoff refresh).
 2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **Another discipline (docs? release/PM?)** — the contract is well proven now
-     (4 disciplines); a 5th is cheap but low marginal insight unless it exercises
+   - **Close the `untracked` engineering-gate wart** — `pg trace`/`pg release`
+     both show engineering's own gates (`release-approval`, `pr-review-approval`,
+     …) as `untracked`/unverified because `PROJECT_STATUS.md` carries no approval
+     column. Give engineering a sign-off surface (or an approver column on the
+     completed-tickets table) so those gates become evidenceable. This is now the
+     highest-value cleanup — it's the one thing `pg release` can't verify.
+   - **Another discipline (docs? release/PM?)** — contract well proven (4
+     disciplines); a 5th is cheap but low marginal insight unless it exercises
      something new. `modules/security/` is the newest reference (Ref + approver
-     columns → full trace + checklist support).
-   - **Phase D-4 — release trace** — trace a *release* across all its tickets
-     (aggregate the per-ticket checklists), or let engineering's PROJECT_STATUS
-     carry approver evidence so its gates stop showing `untracked` in `pg trace`.
+     columns → full trace + checklist + release support).
    - **Agent subsystem, deeper** — PROTO-058 made `AgentManager` *read* module
      caps; installing/composing agents per discipline is unbuilt.
 
@@ -31,14 +34,14 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `38dfa0c` (through PROTO-063, PR #28). **No PR in flight.**
+- `development` = `cf29300` (through PROTO-064, PR #30). **No PR in flight.**
 - **CI is green and deterministic.** `Tests` workflow: a dedicated `lint` job
   (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
   Before PROTO-055 the matrix `black --check` ran *before* pytest and always
   failed, so **pytest never actually executed in CI**. Reproduce CI parity
   locally with the **bare console script** `pytest tests/` (not `python -m
   pytest`, which puts cwd on `sys.path`).
-- **822 tests pass; `pg doctor` 0/0/29 ok; `black --check` clean.**
+- **833 tests pass; `pg doctor` 0/0/29 ok; `black --check` clean.**
 - **Four disciplines ship:** `engineering`, `qa`, `devops`, `security` — all on
   the unmodified core. `security-signoff` and `qa-signoff` both guard `release`
   (a convergence point in `pg pipeline`).
@@ -59,6 +62,13 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
     `Ref` column each surface may carry), showing approval state per hop AND a
     required-approval checklist folded in from the pipeline gate chain
     (`gate_checklist`: cleared / pending / outstanding / untracked).
+  - Release trace (D-4): **`module_core/release.py` + `pg release <label> [--json]`**
+    aggregate every member ticket's `gate_checklist` into one readiness verdict.
+    Membership is read from a release column (`PR/Commit`/`Release`/`Version`) —
+    by column name, not discipline name. A required gate the discipline can't
+    evidence (engineering has no approval column → `untracked`) is reported as
+    *unverified*, never silently cleared nor perpetually blocking. `ready` = ≥1
+    ticket AND no ticket has a pending/outstanding gate.
 - **Scope (PROTO-053):** proto-gear = software-engineering OS; departments are
   engineering disciplines (dev, qa, devops, security, docs, release/PM). No
   content/marketing — that's honk (`../_Plugins/honk/`), a separate product.
@@ -81,11 +91,16 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   cleared vs outstanding, folded in from the pipeline. PR #26.
 - **PROTO-063** — Security/AppSec module, 4th discipline, zero core edits;
   auto-created the `release` convergence with qa. PR #28.
+- **PROTO-064** — Phase D-4: release trace (`pg release`) — aggregate per-ticket
+  gate checklists into a release readiness verdict; unverifiable gates reported
+  honestly, not silently cleared. Pure `module_core` + CLI, zero `modules/`
+  edits. PR #30.
 
 ## Pending / In Progress
 
-- **Nothing in flight.** Next thrust: Phase D-4, another discipline, or the
-  agent subsystem — step 2.
+- **Nothing in flight** (bar this handoff refresh). Next thrust: close the
+  engineering `untracked`-gate wart (give engineering an evidenceable sign-off
+  surface), another discipline, or the agent subsystem — step 2.
 
 ## Conventions In Force
 
