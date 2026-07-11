@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-062 | Phase D-3: pg trace gate checklist — required approvals cleared vs outstanding | feature | IN_PROGRESS | feature/proto-062-phase-d-3-pg-trace-gate-checklist-requir |  |
 
 _No active tickets — v0.10.0 just shipped._
 

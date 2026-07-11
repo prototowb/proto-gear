@@ -1519,6 +1519,7 @@ def cmd_trace(args):
     change_id = args.change_id
     try:
         hits = trace.trace_change(change_id, Path("."))
+        checklist = trace.gate_checklist(change_id, Path("."))
     except Exception as e:
         print(f"{Colors.FAIL}Error tracing change: {e}{Colors.ENDC}")
         return 1
@@ -1526,7 +1527,11 @@ def cmd_trace(args):
     if getattr(args, "json", False):
         import json
 
-        print(json.dumps({"change": change_id, "hits": hits}, indent=2))
+        print(
+            json.dumps(
+                {"change": change_id, "hits": hits, "gates": checklist}, indent=2
+            )
+        )
         return 0
 
     print(
@@ -1556,6 +1561,35 @@ def cmd_trace(args):
             f"{row_id:<14} {stage:<12}{mark} "
             f"{Colors.GRAY}({h['surface']}){Colors.ENDC}"
         )
+
+    # Required-approval checklist: which gates on the path to production this
+    # change has cleared vs still lacks (Phase D-3).
+    required = [g for g in checklist if g["required"]]
+    if required:
+        cleared = sum(1 for g in required if g["status"] == "cleared")
+        print(
+            f"\n{Colors.BOLD}Required approvals{Colors.ENDC} "
+            f"{Colors.GRAY}(path to production){Colors.ENDC} "
+            f"— {Colors.GREEN}{cleared}{Colors.ENDC}/{len(required)} cleared"
+        )
+        _marks = {
+            "cleared": f"{Colors.GREEN}[x]{Colors.ENDC}",
+            "pending": f"{Colors.YELLOW}[~]{Colors.ENDC}",
+            "outstanding": f"{Colors.GRAY}[ ]{Colors.ENDC}",
+            "untracked": f"{Colors.GRAY}[-]{Colors.ENDC}",
+        }
+        _labels = {
+            "cleared": "cleared",
+            "pending": "pending",
+            "outstanding": "not reached",
+            "untracked": "not recorded in surface",
+        }
+        for g in required:
+            print(
+                f"  {_marks[g['status']]} {g['gate']:<22} "
+                f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC} "
+                f"— {_labels[g['status']]}"
+            )
     return 0
 
 
