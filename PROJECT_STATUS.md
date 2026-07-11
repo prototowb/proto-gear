@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | feature | IN_PROGRESS | feature/proto-063-security-appsec-module-4th-discipline-ze |  |
 
 _No active tickets — v0.10.0 just shipped._
 
