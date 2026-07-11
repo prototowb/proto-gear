@@ -92,6 +92,51 @@ class TestTraceChange:
         assert trace.trace_change("PROTO-054", tmp_path) == []
 
 
+class TestGateChecklist:
+    """Phase D-3: fold the pipeline gate chain into the trace — which required
+    approvals a change has cleared vs still lacks."""
+
+    def test_evidenced_gates_cleared(self, tmp_path):
+        _write_surfaces(tmp_path)  # qa signed-off; DEP-003 deployed + approved
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-054", tmp_path)
+        }
+        assert by_gate["qa-signoff"] == "cleared"
+        assert by_gate["prod-approval"] == "cleared"
+
+    def test_engineering_gates_untracked(self, tmp_path):
+        # engineering's PROJECT_STATUS has no approval column → gates are reached
+        # (the ticket exists) but not evidenceable, not silently "outstanding".
+        _write_surfaces(tmp_path)
+        eng = [
+            g
+            for g in trace.gate_checklist("PROTO-054", tmp_path)
+            if g["discipline"] == "engineering"
+        ]
+        assert eng and all(g["status"] == "untracked" for g in eng)
+
+    def test_outstanding_when_change_has_not_reached_discipline(self, tmp_path):
+        # A ticket present only in engineering: downstream gates are outstanding.
+        (tmp_path / "PROJECT_STATUS.md").write_text(
+            "| ID | Title | Type | Status | Branch | Assignee |\n"
+            "|----|-------|------|--------|--------|----------|\n"
+            "| PROTO-080 | new | feature | IN_PROGRESS | - | towb |\n",
+            encoding="utf-8",
+        )
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-080", tmp_path)
+        }
+        assert by_gate["qa-signoff"] == "outstanding"
+        assert by_gate["prod-approval"] == "outstanding"
+
+    def test_pending_when_reached_but_awaiting_approval(self, tmp_path):
+        _write_surfaces(tmp_path)  # DEP-004 refs PROTO-099, approval pending
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-099", tmp_path)
+        }
+        assert by_gate["prod-approval"] == "pending"
+
+
 class TestTraceCLI:
     def test_trace_renders(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands
@@ -103,6 +148,9 @@ class TestTraceCLI:
         assert rc == 0
         assert "PROTO-054" in out and "QA-007" in out and "DEP-003" in out
         assert "approved: ann" in out
+        # Phase D-3: the required-approval checklist folds in the pipeline gates.
+        assert "Required approvals" in out
+        assert "qa-signoff" in out and "cleared" in out
 
     def test_trace_json(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands

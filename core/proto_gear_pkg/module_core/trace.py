@@ -144,3 +144,67 @@ def trace_change(
 
     hits.sort(key=lambda h: (h["discipline"] != "engineering", h["discipline"]))
     return hits
+
+
+# Approval evidence strength, so a discipline with several rows for one change
+# is judged by its best (a cleared row wins over a still-pending one).
+_EVIDENCE_RANK = {"cleared": 2, "pending": 1, None: 0}
+
+
+def gate_checklist(
+    change_id: str, project_dir: Path, modules_root: Optional[Path] = None
+) -> List[dict]:
+    """Fold the pipeline gate chain (Phase D) into the change trace (Phase D-2).
+
+    Answers "which required approvals does this change still lack?" — not just the
+    rows it has. Walks every supervision gate on the path to production (from
+    :func:`pipeline.build_pipeline`) and marks each against the change's trace
+    evidence in that gate's discipline:
+
+      * ``cleared``     — the discipline's row for this change has its
+                          Signed-off/Approved-by column filled.
+      * ``pending``     — the change has reached the discipline, approval pending.
+      * ``outstanding`` — the change has not reached this discipline yet (no row).
+      * ``untracked``   — the change is in the discipline, but its state surface
+                          records no approval column for this gate (e.g.
+                          engineering's PROJECT_STATUS). Distinguished from
+                          ``outstanding`` so a DONE ticket isn't misread as "not
+                          started"; still not counted as cleared.
+
+    Each entry: ``action``, ``gate``, ``discipline``, ``required``, ``status``.
+    Order follows the pipeline (path-to-production flow).
+    """
+    from . import pipeline
+
+    reached = set()
+    evidence: Dict[str, Optional[str]] = {}
+    for h in trace_change(change_id, project_dir, modules_root):
+        disc = h["discipline"]
+        reached.add(disc)
+        best = evidence.get(disc)
+        if _EVIDENCE_RANK[h["approval_state"]] >= _EVIDENCE_RANK[best]:
+            evidence[disc] = h["approval_state"]
+
+    checklist: List[dict] = []
+    for stage in pipeline.build_pipeline(modules_root):
+        for g in stage["gates"]:
+            disc = g["discipline"]
+            state = evidence.get(disc)
+            if disc not in reached:
+                status = "outstanding"  # change hasn't reached this discipline
+            elif state == "cleared":
+                status = "cleared"
+            elif state == "pending":
+                status = "pending"
+            else:
+                status = "untracked"  # reached, but no approval evidence recorded
+            checklist.append(
+                {
+                    "action": stage["action"],
+                    "gate": g["gate"],
+                    "discipline": disc,
+                    "required": g["required"],
+                    "status": status,
+                }
+            )
+    return checklist
