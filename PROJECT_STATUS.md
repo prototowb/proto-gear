@@ -821,6 +821,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-067 | Agent seam: disciplines ship & compose agents | 2026-07-11 | | |
 | PROTO-068 | ADR-002: supervision primitives for autonomous agents | 2026-07-11 | | |
 | PROTO-069 | Accept ADR-002 + defer agent authority rung | 2026-07-11 | | |
+| PROTO-070 | Spec: add UI-first product principle | 2026-07-11 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

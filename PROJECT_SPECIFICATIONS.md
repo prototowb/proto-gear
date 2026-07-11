@@ -128,6 +128,15 @@ records state in SESSION_HANDOFF.md, and asks. Silence is never consent.
    pattern must be proven here before it's declared part of the contract.
 6. **Composition over configuration.** New disciplines assemble core primitives;
    they don't fork the core.
+7. **UI-first; navigation over command palette.** The human surface is a
+   state-of-the-art **interactive CLI UI** — navigate, browse, pick-and-choose,
+   modern CLI/TUI UX methodologies. **Every feature must be reachable through the
+   UI first.** A dedicated command is a welcome convenience/shortcut, but it is
+   never the *only* way in, and the command surface must not outpace the UI.
+   "Don't grow a command palette" means *invest in navigation and UI*, not skip
+   human UX — the human UX matters, it just lives in the UI, not in flags.
+   (Agents are guided through the lifecycle by the harness; humans reach the same
+   capabilities by navigating the UI.)
 
 ## 6. Roadmap
 
