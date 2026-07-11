@@ -210,6 +210,20 @@ class TestAgentCapabilities:
         assert "commands/create-ticket" in all_caps
         assert len(all_caps) == 4
 
+    def test_all_capabilities_module_namespaced(self):
+        """A ``<module>/<name>`` entry qualifies to the module-namespaced id
+        the loaders use for a discipline's own bundle (agent-side of seam S1,
+        PROTO-067) — not ``workflows/<module>/<name>``."""
+        caps = AgentCapabilities(
+            skills=["testing"],
+            workflows=["qa/release-signoff"],
+            commands=[],
+        )
+        all_caps = caps.all_capabilities()
+        assert "skills/testing" in all_caps  # bare entry unchanged
+        assert "qa/workflows/release-signoff" in all_caps  # namespaced entry
+        assert "workflows/qa/release-signoff" not in all_caps
+
     def test_is_empty(self):
         """Test checking if capabilities are empty"""
         empty = AgentCapabilities()

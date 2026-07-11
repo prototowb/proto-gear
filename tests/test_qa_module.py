@@ -200,6 +200,42 @@ class TestQaInstalledOnDisk:
         assert "qa/workflows/release-signoff" in caps
 
 
+class TestQaShipsAnAgent:
+    """PROTO-067 (agent-side of seam S1): the qa discipline ships its own agent,
+    discovered and installed by the department-agnostic core with zero edits, and
+    it composes qa's OWN bundled workflow via a module-namespaced reference."""
+
+    def test_qa_agent_is_discovered(self):
+        by_module = {m: p for m, p in module_host.iter_agent_sources()}
+        assert "qa" in by_module
+        assert (by_module["qa"] / "qa-release-agent.yaml").is_file()
+
+    def test_qa_agent_composes_its_own_workflow(self):
+        from proto_gear_pkg.agent_config import AgentConfigParser, AgentManager
+
+        # Load the real bundled qa agent and validate it against the merged
+        # capability universe — its qa/release-signoff reference must resolve.
+        by_module = {m: p for m, p in module_host.iter_agent_sources()}
+        agent = AgentConfigParser.parse_agent_file(
+            by_module["qa"] / "qa-release-agent.yaml"
+        )
+        assert "qa/workflows/release-signoff" in agent.capabilities.all_capabilities()
+
+        from proto_gear_pkg.paths import package_root
+
+        mgr = AgentManager(Path("no-such-agents"), package_root() / "capabilities")
+        errors, _ = mgr.validate_agent(agent)
+        assert errors == [], f"qa agent should validate cleanly, got: {errors}"
+
+    def test_qa_agent_installs_flat_into_host(self, tmp_path):
+        proto = tmp_path / ".proto-gear"
+        res = module_host.install_module_agents(proto)
+        assert res["errors"] == []
+        installed = {Path(p).name for p in res["files_created"]}
+        assert "qa-release-agent.yaml" in installed
+        assert (proto / "agents" / "qa-release-agent.yaml").is_file()
+
+
 class TestQaInitSurface:
     def test_init_surface_writes_queue_verbatim(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands

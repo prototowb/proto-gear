@@ -548,6 +548,21 @@ def copy_capability_templates(
             for rel in module_result["files_created"]:
                 print(f"    - {rel}")
 
+        # Install each discipline's own agents into .proto-gear/agents/ (seam S1,
+        # agent side). Shared agents ride the recursive sweep above; this adds
+        # modules/<name>/agents/. Generic: a new module is picked up with no edit.
+        agent_result = module_host.install_module_agents(
+            dest_dir,
+            replacements={"VERSION": version, "PROJECT_NAME": project_name},
+            dry_run=dry_run,
+        )
+        result["files_created"].extend(agent_result["files_created"])
+        result["errors"].extend(agent_result["errors"])
+
+        if dry_run:
+            for rel in agent_result["files_created"]:
+                print(f"    - {rel}")
+
         if result["errors"]:
             result["status"] = "partial"
 

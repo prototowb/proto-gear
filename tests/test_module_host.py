@@ -185,6 +185,100 @@ class TestInstallModuleCapabilities:
         assert res["files_created"] == []
 
 
+class TestIterAgentSources:
+    """Seam S1 (agent side, PROTO-067): a module's own agents/ is a source,
+    alongside the shared capabilities/agents/ root."""
+
+    @staticmethod
+    def _module_with_agent(root: Path, module_id: str, filename="a-agent.yaml"):
+        _write_module(root, module_id, state_surface="STATE.md")
+        agents = root / module_id / "agents"
+        agents.mkdir(parents=True)
+        (agents / filename).write_text(
+            'name: "A"\nversion: "1.0.0"\ndescription: "d"\n'
+            'created: "2026-07-11"\ncapabilities:\n  skills: ["testing"]\n',
+            encoding="utf-8",
+        )
+
+    def test_includes_shared_agents_root_first(self):
+        sources = module_host.iter_agent_sources()
+        assert sources, "expected at least the shared capabilities/agents root"
+        module, path = sources[0]
+        assert module is None
+        assert path.name == "agents"
+        assert path.parent.name == "capabilities"
+        assert path.is_dir()
+
+    def test_includes_module_with_own_agents(self, tmp_path):
+        self._module_with_agent(tmp_path, "qa")
+        sources = module_host.iter_agent_sources(modules_root=tmp_path)
+        by_module = {m: p for m, p in sources}
+        assert None in by_module  # shared root always first
+        assert "qa" in by_module
+        assert by_module["qa"].name == "agents"
+
+    def test_skips_modules_without_agents(self, tmp_path):
+        _write_module(tmp_path, "qa", state_surface="STATE.md")  # no agents/
+        sources = module_host.iter_agent_sources(modules_root=tmp_path)
+        assert "qa" not in {m for m, _ in sources}
+
+    def test_real_qa_and_devops_agents_are_discovered(self):
+        # The real bundled discipline agents show up with zero core edits.
+        by_module = {m: p for m, p in module_host.iter_agent_sources()}
+        assert "qa" in by_module
+        assert "devops" in by_module
+
+
+class TestInstallModuleAgents:
+    """Seam S1 (agent side, on-disk): a module's agents install *flat* under
+    ``.proto-gear/agents/`` so ``AgentManager``'s non-recursive glob sees them."""
+
+    @staticmethod
+    def _module_with_agent(root: Path, module_id: str, filename):
+        _write_module(root, module_id, state_surface="STATE.md")
+        agents = root / module_id / "agents"
+        agents.mkdir(parents=True)
+        (agents / filename).write_text(
+            'name: "A"\nversion: "1.0.0"\ndescription: "for {{PROJECT_NAME}}"\n'
+            'created: "2026-07-11"\ncapabilities:\n  skills: ["testing"]\n',
+            encoding="utf-8",
+        )
+
+    def test_installs_flat_with_substitution(self, tmp_path):
+        self._module_with_agent(tmp_path, "qa", "qa-agent.yaml")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_module_agents(
+            proto, replacements={"PROJECT_NAME": "demo"}, modules_root=tmp_path
+        )
+        assert res["errors"] == []
+        agent = proto / "agents" / "qa-agent.yaml"
+        assert agent.is_file()
+        assert "for demo" in agent.read_text(encoding="utf-8")
+
+    def test_collision_keeps_existing_and_reports(self, tmp_path):
+        self._module_with_agent(tmp_path, "qa", "qa-agent.yaml")
+        proto = tmp_path / "host" / ".proto-gear"
+        module_host.install_module_agents(proto, modules_root=tmp_path)
+        res = module_host.install_module_agents(proto, modules_root=tmp_path)
+        assert res["files_created"] == []
+        assert any("collision" in e for e in res["errors"])
+
+    def test_dry_run_writes_nothing(self, tmp_path):
+        self._module_with_agent(tmp_path, "qa", "qa-agent.yaml")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_module_agents(
+            proto, dry_run=True, modules_root=tmp_path
+        )
+        assert res["files_created"]
+        assert not proto.exists()
+
+    def test_module_without_agents_installs_nothing(self, tmp_path):
+        _write_module(tmp_path, "qa", state_surface="STATE.md")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_module_agents(proto, modules_root=tmp_path)
+        assert res["files_created"] == []
+
+
 class TestStateSurfaceTemplatePath:
     def test_template_in_module_dir(self, tmp_path):
         _write_module(tmp_path, "qa", template="queue\n", state_surface="QA_QUEUE.md")

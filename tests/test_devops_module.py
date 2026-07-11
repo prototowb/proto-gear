@@ -153,6 +153,40 @@ class TestDevopsInstalledOnDisk:
         assert "devops/workflows/deploy" in caps
 
 
+class TestDevopsShipsAnAgent:
+    """PROTO-067: adding a SECOND discipline agent required zero core edits —
+    the core discovers and installs devops's agent through the same seam qa uses,
+    and `pg init` (copy_capability_templates) lays it into the host."""
+
+    def test_devops_agent_is_discovered(self):
+        by_module = {m: p for m, p in module_host.iter_agent_sources()}
+        assert "devops" in by_module
+        assert (by_module["devops"] / "deploy-agent.yaml").is_file()
+
+    def test_devops_agent_composes_its_own_workflow(self):
+        from proto_gear_pkg.agent_config import AgentConfigParser, AgentManager
+        from proto_gear_pkg.paths import package_root
+
+        by_module = {m: p for m, p in module_host.iter_agent_sources()}
+        agent = AgentConfigParser.parse_agent_file(
+            by_module["devops"] / "deploy-agent.yaml"
+        )
+        assert "devops/workflows/deploy" in agent.capabilities.all_capabilities()
+        mgr = AgentManager(Path("no-such-agents"), package_root() / "capabilities")
+        errors, _ = mgr.validate_agent(agent)
+        assert errors == [], f"devops agent should validate cleanly, got: {errors}"
+
+    def test_pg_init_installs_devops_agent(self, tmp_path):
+        from proto_gear_pkg.modules.engineering.templates import (
+            copy_capability_templates,
+        )
+
+        res = copy_capability_templates(tmp_path, project_name="demo", version="9.9.9")
+        assert res["status"] == "success"
+        agent = tmp_path / ".proto-gear" / "agents" / "deploy-agent.yaml"
+        assert agent.is_file()
+
+
 class TestDevopsViaCLI:
     def test_module_list_includes_devops(self, capsys):
         from proto_gear_pkg import cli_commands

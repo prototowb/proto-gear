@@ -216,6 +216,112 @@ def install_module_capabilities(
     return result
 
 
+def iter_agent_sources(
+    modules_root: Optional[Path] = None,
+) -> List["CapabilitySource"]:
+    """Return every *bundled* agent-config directory across all modules (seam S1).
+
+    The agent-side counterpart to :func:`iter_capability_sources`: where the
+    package ships shared/engineering agents under ``capabilities/agents/`` (source
+    ``None``), each discipline may ship its own ``modules/<name>/agents/`` (source
+    ``<name>``). A department could not previously ship an agent and have it
+    discovered/installed — the same S1 gap capabilities had, one layer up.
+
+    Returns ``(module, dir)`` pairs; ``module`` is ``None`` for the shared root.
+    Order is shared-first, then modules sorted by id.
+    """
+    from ..paths import package_root
+
+    sources: List["CapabilitySource"] = []
+    shared = package_root() / "capabilities" / "agents"
+    if shared.is_dir():
+        sources.append((None, shared))
+
+    for manifest in discover_modules(modules_root):
+        if manifest.source_path is None:
+            continue
+        agents_dir = Path(manifest.source_path).parent / "agents"
+        if agents_dir.is_dir():
+            sources.append((manifest.module, agents_dir))
+    return sources
+
+
+def install_module_agents(
+    proto_gear_dir: Path,
+    replacements: Optional[Dict[str, str]] = None,
+    dry_run: bool = False,
+    modules_root: Optional[Path] = None,
+) -> dict:
+    """Install every discipline's own bundled agents into ``.proto-gear/agents/``.
+
+    The on-disk counterpart to :func:`iter_agent_sources` and the agent-side of
+    :func:`install_module_capabilities`. Agents are read *flat* from
+    ``.proto-gear/agents/`` (``AgentManager`` globs ``*.yaml`` non-recursively),
+    so a module's agents install flat there too. The shared root (source ``None``)
+    is skipped — the engineering installer's recursive sweep already lays down
+    ``capabilities/agents/``; this handles only ``modules/<name>/agents/``.
+
+    Generic by design: a new discipline is picked up here with no edit, because
+    the sources come from :func:`iter_agent_sources`. Applies the same hardening
+    as the capability installer — rejects symlinks and path-traversal, enforces
+    UTF-8, substitutes ``{{KEY}}`` placeholders, and refuses to overwrite an
+    existing agent file (so a discipline can never clobber a host-created or
+    another discipline's agent — a name collision is reported, never silent).
+
+    Returns ``{"files_created": [...], "errors": [...]}`` (paths relative to
+    ``proto_gear_dir``'s parent, matching :func:`install_module_capabilities`).
+    """
+    import os
+
+    replacements = replacements or {}
+    result: dict = {"files_created": [], "errors": []}
+    proto_gear_dir = Path(proto_gear_dir)
+    project_dir = proto_gear_dir.parent
+    agents_dest = proto_gear_dir / "agents"
+
+    for module, agents_dir in iter_agent_sources(modules_root):
+        if module is None:
+            continue  # shared agents ride the engineering installer's sweep
+        for source_path in sorted(agents_dir.glob("*.yaml")):
+            if source_path.is_symlink():
+                result["errors"].append(f"Skipped symlink: {source_path}")
+                continue
+
+            dest_path = agents_dest / source_path.name
+            try:
+                dest_path.resolve().relative_to(proto_gear_dir.resolve())
+            except ValueError:
+                result["errors"].append(
+                    f"Security: Destination path escapes .proto-gear/: {dest_path}"
+                )
+                continue
+
+            if dest_path.exists() and not dry_run:
+                result["errors"].append(
+                    f"Agent name collision, kept existing: {dest_path.name} "
+                    f"(from module '{module}')"
+                )
+                continue
+
+            if dry_run:
+                result["files_created"].append(str(dest_path.relative_to(project_dir)))
+                continue
+
+            try:
+                content = source_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError as e:
+                result["errors"].append(f"Encoding error in {source_path}: {e}")
+                continue
+            for key, value in replacements.items():
+                content = content.replace("{{" + key + "}}", value)
+
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            dest_path.write_text(content, encoding="utf-8")
+            result["files_created"].append(str(dest_path.relative_to(project_dir)))
+
+    return result
+
+
 def state_surface_template_path(manifest: ModuleManifest) -> Optional[Path]:
     """Locate the template that renders a module's declared state surface.
 
