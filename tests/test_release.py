@@ -20,13 +20,21 @@ def _args(**kw):
     return argparse.Namespace(**kw)
 
 
-def _write_status(root: Path, rows: str):
-    """Engineering state surface: completed-tickets table with a PR/Commit column."""
-    (root / "PROJECT_STATUS.md").write_text(
+def _write_status(root: Path, rows: str, releases: str = None):
+    """Engineering state surface: completed-tickets table with a PR/Commit column,
+    plus an optional Releases table (release-scoped gate evidence, keyed by the
+    release label in the ID column)."""
+    text = (
         "# Status\n\n| ID | Title | Completed | PR/Commit |\n"
-        "|----|-------|-----------|-----------|\n" + rows,
-        encoding="utf-8",
+        "|----|-------|-----------|-----------|\n" + rows
     )
+    if releases is not None:
+        text += (
+            "\n## Releases\n\n"
+            "| ID | Date | Release approved by | Announced by |\n"
+            "|----|------|---------------------|--------------|\n" + releases
+        )
+    (root / "PROJECT_STATUS.md").write_text(text, encoding="utf-8")
 
 
 def _write_qa(root: Path, rows: str):
@@ -119,26 +127,57 @@ class TestTraceRelease:
         cleared_gates = {g["gate"] for g in a["cleared"]}
         assert {"qa-signoff", "prod-approval", "security-signoff"} <= cleared_gates
 
-    def test_engineering_gates_are_unverified_not_blocking(self, tmp_path):
-        # Only PROTO-A, fully cleared downstream → release is ready, but
-        # engineering's own gates (no approval column) stay unverifiable.
+    def _ready_release(self, root):
+        """One ticket, all change-scoped downstream gates cleared, and a Releases
+        row clearing the release-scoped gates."""
+        _write_status(
+            root,
+            "| PROTO-A | first | 2026-07-11 | v0.11 |\n",
+            releases="| v0.11 | 2026-07-11 | tobias | tobias |\n",
+        )
+        _write_qa(
+            root, "| QA-1 | PROTO-A | a | auth | signed-off | ann | ann | v0.11 |\n"
+        )
+        _write_devops(
+            root, "| DEP-1 | PROTO-A | ship a | prod | deployed | sam | sam | v0.11 |\n"
+        )
+        _write_security(
+            root, "| SEC-1 | PROTO-A | f | low | signed-off | eve | eve | v0.11 |\n"
+        )
+
+    def test_ready_when_change_and_release_gates_cleared(self, tmp_path):
+        self._ready_release(tmp_path)
+        report = release.trace_release("v0.11", tmp_path)
+        assert report["ready"] is True
+        assert report["blocking_total"] == 0
+        # engineering's per-change pr-review-approval (no Reviewed by) is
+        # unverifiable but must not block.
+        assert report["unverified_total"] > 0
+
+    def test_release_scoped_gates_evaluated_once(self, tmp_path):
+        self._ready_release(tmp_path)
+        report = release.trace_release("v0.11", tmp_path)
+        cleared = {g["gate"] for g in report["release_gates"]["cleared"]}
+        assert "release-approval" in cleared
+        assert "announcement-approval" in cleared
+
+    def test_blocked_when_release_approval_missing(self, tmp_path):
+        # Everything per-ticket clears, but no Releases row → release-scoped
+        # gates are outstanding → the release is not ready.
         _write_status(tmp_path, "| PROTO-A | first | 2026-07-11 | v0.11 |\n")
         _write_qa(
-            tmp_path,
-            "| QA-1 | PROTO-A | a | auth | signed-off | ann | ann | v0.11 |\n",
+            tmp_path, "| QA-1 | PROTO-A | a | auth | signed-off | ann | ann | v0.11 |\n"
         )
         _write_devops(
             tmp_path,
             "| DEP-1 | PROTO-A | ship a | prod | deployed | sam | sam | v0.11 |\n",
         )
         _write_security(
-            tmp_path,
-            "| SEC-1 | PROTO-A | f | low | signed-off | eve | eve | v0.11 |\n",
+            tmp_path, "| SEC-1 | PROTO-A | f | low | signed-off | eve | eve | v0.11 |\n"
         )
         report = release.trace_release("v0.11", tmp_path)
-        assert report["ready"] is True
-        assert report["unverified_total"] > 0  # engineering gates can't be evidenced
-        assert report["blocking_total"] == 0
+        assert report["ready"] is False
+        assert report["release_gates"]["blocking"]  # release-approval outstanding
 
     def test_empty_release_is_not_ready(self, tmp_path):
         _full_release(tmp_path)

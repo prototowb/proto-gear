@@ -216,8 +216,11 @@ def gate_checklist(
     instead of collapsing to a single approval cell. A gate with no ``evidence``
     keeps the discipline-level generic approval-column behaviour.
 
-    Each entry: ``action``, ``gate``, ``discipline``, ``required``, ``status``.
-    Order follows the pipeline (path-to-production flow).
+    Each entry: ``action``, ``gate``, ``discipline``, ``required``, ``status``,
+    ``scope`` (``"change"`` per-ticket or ``"release"`` per-release — a
+    release-scoped gate is cleared once for the whole release, so evaluating it
+    against a single ticket id is only meaningful when the id *is* the release
+    label; ``pg release`` does exactly that). Order follows the pipeline.
     """
     from . import pipeline
 
@@ -264,6 +267,7 @@ def gate_checklist(
                     "discipline": disc,
                     "required": g["required"],
                     "status": status,
+                    "scope": g.get("scope", "change"),
                 }
             )
     return checklist

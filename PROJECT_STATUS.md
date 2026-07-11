@@ -35,12 +35,24 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 
-_No active tickets — PROTO-065 just shipped._
+_No active tickets — PROTO-066 just shipped._
+
+## 🚀 Releases
+
+<!-- Release-scoped supervision gates (release-approval, announcement-approval)
+     are cleared once per release here — `pg release <label>` reads this table,
+     keyed by the release label in the ID column. -->
+
+| ID | Date | Release approved by | Announced by |
+|----|------|---------------------|--------------|
+| v0.10.0 | 2026-05-13 | prototowb | prototowb |
+| v0.9.0 | 2026-02-19 | prototowb | prototowb |
 
 ## ✅ Completed Tickets
 
 | ID | Title | Completed | PR/Commit | Reviewed by |
 |----|-------|-----------|-----------|-------------|
+| PROTO-066 | Release-scoped gate evidence — `pg release` verifies `release-approval`/`announcement-approval` from a Releases surface | 2026-07-11 | | prototowb |
 | PROTO-065 | Make engineering gates evidenceable — per-gate `evidence` column (closes the `untracked` wart) | 2026-07-11 | | prototowb |
 | PROTO-064 | Phase D-4: release trace — aggregate per-ticket gate checklists into a release readiness verdict (`pg release`) | 2026-07-11 | | prototowb |
 | PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | 2026-05-13 | v0.10.0 |
@@ -59,6 +71,40 @@ _No active tickets — PROTO-065 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-066 Details (COMPLETE)
+**Release-scoped gate evidence — `pg release` verifies `release-approval` /
+`announcement-approval`.** PROTO-065 made engineering's *per-change* gate
+(`pr-review-approval`) evidenceable but left its *release-level* gates
+`untracked`/unverified per ticket — correctly, since a single ticket doesn't
+clear a release gate. This closes that half: release-level gates are evidenced
+**once for the whole release**.
+
+**Delivered** (generic, reuses all existing machinery):
+1. ✅ Optional **`scope: change | release`** on a gate (default `change`).
+   Parsed in `capability_metadata.Gate`; propagated through `pipeline`; surfaced
+   on each `trace.gate_checklist` entry.
+2. ✅ `release.trace_release` splits evaluation by scope: **change-scoped** gates
+   are aggregated per ticket (as before); **release-scoped** gates are evaluated
+   **once**, against the release label itself — `gate_checklist(<label>)` reads a
+   new `Releases` table keyed by the label in its `ID` column, so *no new
+   matching logic* was needed. The verdict blocks if any release-scoped gate is
+   pending/outstanding (e.g. no release-approval recorded → not ready).
+3. ✅ `release`/`complete-release` workflows mark `release-approval` (`scope:
+   release`, `evidence: "Release approved by"`) and `announcement-approval`
+   (`evidence: "Announced by"`). `PROJECT_STATUS` template gains a `Releases`
+   table; the CLI shows a "Release-scoped gates" section in `pg release` and
+   notes them in `pg trace` (they're not a single ticket's to clear).
+4. ✅ `tests/test_release.py` +3, `test_trace.py`/metadata updated. Dogfood:
+   `pg release v0.10.0` shows `release-approval`/`announcement-approval` cleared
+   from the Releases row.
+
+**Verification**: full suite **839 passed** (was 837). `pg doctor` 0/0/29 ok.
+`black --check` clean.
+
+**Files Modified**: `core/proto_gear_pkg/module_core/capability_metadata.py`, `core/proto_gear_pkg/module_core/pipeline.py`, `core/proto_gear_pkg/module_core/trace.py`, `core/proto_gear_pkg/module_core/release.py`, `core/proto_gear_pkg/cli_commands.py`, `core/proto_gear_pkg/capabilities/workflows/release/metadata.yaml`, `core/proto_gear_pkg/capabilities/workflows/complete-release/metadata.yaml`, `core/proto_gear_pkg/PROJECT_STATUS.template.md`, `tests/test_release.py`, `tests/test_trace.py`, `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-065 Details (COMPLETE)
 **Make engineering's own gates evidenceable — closes the `untracked` wart.**
@@ -771,6 +817,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | 2026-07-11 | |
 | PROTO-064 | Phase D-4: release trace (pg release) — aggregate per-ticket gate checklists into a release readiness verdict | 2026-07-11 | |
 | PROTO-065 | Make engineering gates evidenceable — per-gate evidence column (closes the untracked wart) | 2026-07-11 | |
+| PROTO-066 | Release-scoped gate evidence — pg release verifies release-approval/announcement-approval from a Releases surface | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
