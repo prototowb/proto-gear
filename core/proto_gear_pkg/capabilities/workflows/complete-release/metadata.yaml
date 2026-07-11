@@ -68,8 +68,14 @@ workflow:
       before: "deploy"
       approver: "human"
       required: true
+      # Release-scoped — see the Releases table's "Release approved by" column.
+      scope: "release"
+      evidence: "Release approved by"
     - id: "announcement-approval"
       description: "Human approves the public release announcement before it is published."
       before: "announce"
       approver: "human"
       required: true
+      # Release-scoped — evidenced by the Releases table's "Announced by" column.
+      scope: "release"
+      evidence: "Announced by"

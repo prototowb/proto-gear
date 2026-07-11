@@ -113,6 +113,16 @@ ticket_prefix: "{{TICKET_PREFIX}}"  # e.g., "PROJ", "MCP", etc.
 |----|-------|---------|-------|
 {{BLOCKED_TICKETS}}
 
+## 🚀 Releases
+
+<!-- Release-scoped supervision gates (release-approval, announcement-approval)
+     are cleared once per release here — `pg release <label>` reads this table,
+     keyed by the release label in the ID column. Per-change gates stay in the
+     tickets tables above. -->
+
+| ID | Date | Release approved by | Announced by |
+|----|------|---------------------|--------------|
+
 ## 📈 Feature Progress
 
 | Feature | Status | Progress | Notes |

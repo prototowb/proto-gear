@@ -7,18 +7,23 @@ the path to production. This aggregates the per-ticket gate checklists into one
 release-level readiness verdict: which tickets belong to the release, and which
 gates each still blocks on.
 
-Two design points, both to stay honest rather than convenient:
+Three design points, all to stay honest rather than convenient:
 
 * **Membership is read, not passed.** A ticket belongs to a release when its row
   in a discipline's state surface carries the release label in a release column
   (``PR/Commit`` / ``Release`` / ``Version``). Engineering owns the ticket list,
   so in practice that is ``PROJECT_STATUS.md`` — but the selection is by *column
   name*, not by discipline name, so it stays generic like the rest of trace.
-* **Unverifiable ≠ cleared.** A required gate whose discipline records no approval
-  column (engineering's ``PROJECT_STATUS`` has none) reads ``untracked`` in the
-  per-ticket checklist. We cannot verify it from data, so we neither count it as
-  cleared (false confidence) nor as blocking (it would wedge every release). It
-  is reported separately as *unverified*, and the verdict says so.
+* **Change- vs release-scoped gates.** Most gates are per-change: every ticket
+  must clear them. But some (``release-approval``, ``announcement-approval``) are
+  per-*release* — cleared once for the whole candidate, not per ticket. Those
+  declare ``scope: release`` and are evaluated once, against the release label
+  itself (which a ``Releases`` table records, keyed by the label) — reusing
+  :func:`trace.gate_checklist` with the label as the id.
+* **Unverifiable ≠ cleared.** A required gate whose discipline records no evidence
+  column reads ``untracked``. We cannot verify it from data, so we neither count
+  it as cleared (false confidence) nor as blocking (it would wedge every
+  release). It is reported separately as *unverified*, and the verdict says so.
 
 Generic by construction: the per-ticket verdict reuses
 :func:`trace.gate_checklist`, so any discipline that joins the pipeline joins the
@@ -89,58 +94,86 @@ def find_release_tickets(
 def trace_release(
     release_id: str, project_dir: Path, modules_root: Optional[Path] = None
 ) -> dict:
-    """Aggregate the per-ticket gate checklists for ``release_id``.
+    """Aggregate the release's gate checklists into one readiness verdict.
 
-    For every ticket in the release (:func:`find_release_tickets`) we compute its
-    required-gate checklist (:func:`trace.gate_checklist`) and classify the gates:
+    Gates are evaluated at two scopes (see ``Gate.scope``):
 
-      * ``cleared``   — approval recorded in the discipline's surface.
-      * ``blocking``  — pending or outstanding: definitively not cleared.
-      * ``unverified``— ``untracked``: the discipline records no approval column,
-                        so the gate can't be evidenced from data.
+      * **change-scoped** gates (``pr-review-approval``, ``qa-signoff``,
+        ``prod-approval``, …) are checked **per ticket** — every member ticket
+        (:func:`find_release_tickets`) must clear them.
+      * **release-scoped** gates (``release-approval``, ``announcement-approval``)
+        are cleared **once for the whole release** — evaluated against the
+        release label itself (:func:`trace.gate_checklist` with the label as the
+        id), which reads the Releases table keyed by that label.
+
+    Each gate is classified ``cleared`` / ``blocking`` (pending or outstanding:
+    definitively not cleared) / ``unverified`` (``untracked``: no evidence column
+    recorded, so it can't be judged from data).
 
     Returns a dict:
 
-      * ``release``      — the label traced.
-      * ``ticket_count`` — number of member tickets found.
-      * ``tickets``      — per-ticket ``{ticket, gates, required_total,
-                           cleared, blocking, unverified, ready}``.
-      * ``ready``        — ``True`` iff at least one ticket was found and no ticket
-                           has a blocking gate. Unverified gates do *not* flip this
-                           to ``False`` (see module docstring) but are surfaced via
-                           ``unverified_total`` so callers can caveat the verdict.
-      * ``unverified_total`` — count of required gates across all tickets that are
-                           unverifiable.
-      * ``blocking_total``   — count of blocking required gates across all tickets.
+      * ``release`` / ``ticket_count``.
+      * ``tickets`` — per-ticket ``{ticket, gates, required_total, cleared,
+                       blocking, unverified, ready}`` (change-scoped gates only).
+      * ``release_gates`` — the release-scoped ``{cleared, blocking, unverified}``
+                       evaluated once for the whole release.
+      * ``ready`` — ``True`` iff ≥1 ticket was found, no ticket has a blocking
+                       change-scoped gate, and no release-scoped gate is blocking.
+                       Unverified gates never flip this to ``False`` but are
+                       counted in ``unverified_total``.
+      * ``unverified_total`` / ``blocking_total`` — across tickets *and* the
+                       release-scoped gates.
     """
+
+    def _classify(gates):
+        return {
+            "cleared": [g for g in gates if g["status"] == "cleared"],
+            "blocking": [g for g in gates if g["status"] in _BLOCKING_STATES],
+            "unverified": [g for g in gates if g["status"] == "untracked"],
+        }
+
     entries: List[dict] = []
     unverified_total = 0
     blocking_total = 0
     for tid in find_release_tickets(release_id, project_dir, modules_root):
         checklist = _trace.gate_checklist(tid, project_dir, modules_root)
-        required = [g for g in checklist if g["required"]]
-        blocking = [g for g in required if g["status"] in _BLOCKING_STATES]
-        unverified = [g for g in required if g["status"] == "untracked"]
-        cleared = [g for g in required if g["status"] == "cleared"]
-        unverified_total += len(unverified)
-        blocking_total += len(blocking)
+        # Per ticket, only the change-scoped required gates are that ticket's to
+        # clear; release-scoped gates are handled once, below.
+        required = [g for g in checklist if g["required"] and g["scope"] != "release"]
+        c = _classify(required)
+        unverified_total += len(c["unverified"])
+        blocking_total += len(c["blocking"])
         entries.append(
             {
                 "ticket": tid,
                 "gates": checklist,
                 "required_total": len(required),
-                "cleared": cleared,
-                "blocking": blocking,
-                "unverified": unverified,
-                "ready": not blocking,
+                "cleared": c["cleared"],
+                "blocking": c["blocking"],
+                "unverified": c["unverified"],
+                "ready": not c["blocking"],
             }
         )
 
-    ready = bool(entries) and all(e["ready"] for e in entries)
+    # Release-scoped gates: evaluated once, against the release label itself.
+    release_checklist = _trace.gate_checklist(release_id, project_dir, modules_root)
+    release_required = [
+        g for g in release_checklist if g["required"] and g["scope"] == "release"
+    ]
+    release_gates = _classify(release_required)
+    unverified_total += len(release_gates["unverified"])
+    blocking_total += len(release_gates["blocking"])
+
+    ready = (
+        bool(entries)
+        and all(e["ready"] for e in entries)
+        and not release_gates["blocking"]
+    )
     return {
         "release": release_id,
         "ticket_count": len(entries),
         "tickets": entries,
+        "release_gates": release_gates,
         "ready": ready,
         "unverified_total": unverified_total,
         "blocking_total": blocking_total,

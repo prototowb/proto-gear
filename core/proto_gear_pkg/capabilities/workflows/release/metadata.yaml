@@ -70,3 +70,8 @@ workflow:
       before: "tag-and-deploy"
       approver: "human"
       required: true
+      # Release-scoped: cleared once for the whole release, not per ticket.
+      # `pg release <label>` evidences it against the "Release approved by"
+      # column of the Releases table (keyed by the release label).
+      scope: "release"
+      evidence: "Release approved by"

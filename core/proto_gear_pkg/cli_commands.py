@@ -1563,8 +1563,12 @@ def cmd_trace(args):
         )
 
     # Required-approval checklist: which gates on the path to production this
-    # change has cleared vs still lacks (Phase D-3).
-    required = [g for g in checklist if g["required"]]
+    # change has cleared vs still lacks (Phase D-3). Release-scoped gates aren't
+    # a single ticket's to clear — they're verified once via `pg release`.
+    required = [g for g in checklist if g["required"] and g.get("scope") != "release"]
+    release_scoped = [
+        g for g in checklist if g["required"] and g.get("scope") == "release"
+    ]
     if required:
         cleared = sum(1 for g in required if g["status"] == "cleared")
         print(
@@ -1590,6 +1594,12 @@ def cmd_trace(args):
                 f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC} "
                 f"— {_labels[g['status']]}"
             )
+    if release_scoped:
+        gates = ", ".join(sorted({g["gate"] for g in release_scoped}))
+        print(
+            f"\n{Colors.GRAY}Release-scoped gates ({gates}) are cleared per "
+            f"release, not per ticket — verify with `pg release <label>`.{Colors.ENDC}"
+        )
     return 0
 
 
@@ -1638,7 +1648,9 @@ def cmd_release(args):
         "untracked": f"{Colors.GRAY}[-]{Colors.ENDC}",
     }
     for e in report["tickets"]:
-        required = [g for g in e["gates"] if g["required"]]
+        # Per-ticket rows show change-scoped gates only; release-scoped gates are
+        # listed once for the whole release below.
+        required = [g for g in e["gates"] if g["required"] and g["scope"] != "release"]
         n_cleared = len(e["cleared"])
         verdict = (
             f"{Colors.GREEN}ready{Colors.ENDC}"
@@ -1651,6 +1663,19 @@ def cmd_release(args):
             f"— {verdict}"
         )
         for g in required:
+            print(
+                f"  {_mark[g['status']]} {g['gate']:<22} "
+                f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC}"
+            )
+
+    # Release-scoped gates — cleared once for the whole release (not per ticket).
+    rg = report.get("release_gates", {})
+    release_scoped = (
+        rg.get("cleared", []) + rg.get("blocking", []) + rg.get("unverified", [])
+    )
+    if release_scoped:
+        print(f"\n{Colors.BOLD}Release-scoped gates{Colors.ENDC}")
+        for g in sorted(release_scoped, key=lambda g: g["gate"]):
             print(
                 f"  {_mark[g['status']]} {g['gate']:<22} "
                 f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC}"

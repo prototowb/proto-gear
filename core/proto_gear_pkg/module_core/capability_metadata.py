@@ -96,6 +96,11 @@ class Gate:
     # per change. Absent → discipline-level generic approval-column fallback.
     # Disambiguates disciplines that carry more than one gate (e.g. engineering).
     evidence: str = ""
+    # "change" (default) — a per-change gate every ticket must clear.
+    # "release" — a per-release gate cleared once for the whole release (e.g.
+    # release-approval); `pg release` evidences it against the release label,
+    # not per ticket. Anything unrecognised is treated as "change".
+    scope: str = "change"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -105,6 +110,7 @@ class Gate:
             "approver": self.approver,
             "required": self.required,
             "evidence": self.evidence,
+            "scope": self.scope,
         }
 
 
@@ -361,6 +367,7 @@ class CapabilityMetadataParser:
                             approver=str(g.get("approver", "human")),
                             required=bool(g.get("required", True)),
                             evidence=str(g.get("evidence", "")),
+                            scope=str(g.get("scope", "change")),
                         )
                     )
             workflow = WorkflowMetadata(
