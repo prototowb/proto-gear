@@ -7,37 +7,41 @@
 ## ▶ Start here (next session)
 
 **The department seam is complete end-to-end, and orchestration + change-tracing
-ship.** A discipline is discovered, listed, installed (`.proto-gear/<module>/`),
-indexed, gate-audited, agent-visible, orchestrated (`pg pipeline`), AND traceable
-(`pg trace`) — all from pure declaration, with **zero core edits** per discipline.
-Three disciplines ship: `engineering`, `qa`, `devops`. CI is genuinely green
-(pytest actually runs in CI now).
+ship — proven across FOUR disciplines.** A discipline is discovered, listed,
+installed (`.proto-gear/<module>/`), indexed, gate-audited, agent-visible,
+orchestrated (`pg pipeline`), AND traceable (`pg trace` + gate checklist) — all
+from pure declaration, with **zero core edits** per discipline. Four ship:
+`engineering`, `qa`, `devops`, `security`. Adding `security` (PROTO-063)
+auto-created a new convergence: `before release ← qa-signoff + security-signoff`,
+with no orchestration code. CI is genuinely green (pytest actually runs in CI).
 
-1. **Everything through PROTO-062 is merged** (PRs #16–#26). No PR in flight.
+1. **Everything through PROTO-063 is merged** (PRs #16–#28). No PR in flight.
 2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **A 4th discipline (security? docs?)** — cheap contract exercise; `modules/qa`
-     and `modules/devops` are the reference patterns. It would light up
-     `pg pipeline` (if it ships a gated workflow), `pg trace`, AND the D-3 gate
-     checklist (if its state surface carries a `Ref` + approver column) — all
-     automatically. The cleanest next validation.
-   - **Agent subsystem, deeper** — PROTO-058 made `AgentManager` *read* module
-     caps; installing/composing agents per discipline is unbuilt.
+   - **Another discipline (docs? release/PM?)** — the contract is well proven now
+     (4 disciplines); a 5th is cheap but low marginal insight unless it exercises
+     something new. `modules/security/` is the newest reference (Ref + approver
+     columns → full trace + checklist support).
    - **Phase D-4 — release trace** — trace a *release* across all its tickets
      (aggregate the per-ticket checklists), or let engineering's PROJECT_STATUS
      carry approver evidence so its gates stop showing `untracked` in `pg trace`.
+   - **Agent subsystem, deeper** — PROTO-058 made `AgentManager` *read* module
+     caps; installing/composing agents per discipline is unbuilt.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `5dfdd3d` (through PROTO-062, PR #26). **No PR in flight.**
+- `development` = `38dfa0c` (through PROTO-063, PR #28). **No PR in flight.**
 - **CI is green and deterministic.** `Tests` workflow: a dedicated `lint` job
   (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
   Before PROTO-055 the matrix `black --check` ran *before* pytest and always
   failed, so **pytest never actually executed in CI**. Reproduce CI parity
   locally with the **bare console script** `pytest tests/` (not `python -m
   pytest`, which puts cwd on `sys.path`).
-- **808 tests pass; `pg doctor` 0/0/27 ok; `black --check` clean.**
+- **822 tests pass; `pg doctor` 0/0/29 ok; `black --check` clean.**
+- **Four disciplines ship:** `engineering`, `qa`, `devops`, `security` — all on
+  the unmodified core. `security-signoff` and `qa-signoff` both guard `release`
+  (a convergence point in `pg pipeline`).
 - **The department seam, end to end** (all namespaced `<module>/<cap_id>`):
   - Discovery/manifest: `discover_modules()`, `module_host.resolve_module()`.
   - Listings (S1): `module_host.load_bundled_capabilities()`; `pg suggest`,
@@ -75,10 +79,13 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   ticket-id correlation via a `Ref` column. PR #24.
 - **PROTO-062** — Phase D-3: `pg trace` gate checklist — required approvals
   cleared vs outstanding, folded in from the pipeline. PR #26.
+- **PROTO-063** — Security/AppSec module, 4th discipline, zero core edits;
+  auto-created the `release` convergence with qa. PR #28.
 
 ## Pending / In Progress
 
-- **Nothing in flight.** Next thrust: a 4th discipline, or Phase D-4 — step 2.
+- **Nothing in flight.** Next thrust: Phase D-4, another discipline, or the
+  agent subsystem — step 2.
 
 ## Conventions In Force
 
@@ -89,8 +96,9 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   listed, installed, indexed, gate-audited, agent-visible, joins `pg pipeline`
   (if it ships a gated workflow), and joins `pg trace` (if its state surface
   carries a `Ref` column) — with no `module_core/`/`cli/` change. If it needs
-  one, the abstraction is wrong — stop. `modules/qa/` and `modules/devops/` are
-  the reference patterns.
+  one, the abstraction is wrong — stop. `modules/qa/`, `modules/devops/`, and
+  `modules/security/` are the reference patterns (security carries `Ref` +
+  approver columns, so it supports full `pg trace` + gate checklist).
 - **Layering:** `cli/` → `module_core/` (generic) → `modules/<dept>/`. Lower never
   imports higher. Module-generic behavior lives in `module_core` (e.g.
   `module_host.install_module_capabilities`, `pipeline.py`), never in
