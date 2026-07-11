@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | feature | IN_PROGRESS | feature/proto-063-security-appsec-module-4th-discipline-ze |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -695,6 +694,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-060 | Phase D: cross-discipline supervision pipeline view (pg pipeline) | 2026-07-11 | |
 | PROTO-061 | Phase D-2: cross-discipline change trace (pg trace) — ticket-id correlation | 2026-07-11 | |
 | PROTO-062 | Phase D-3: pg trace gate checklist — required approvals cleared vs outstanding | 2026-07-11 | |
+| PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
