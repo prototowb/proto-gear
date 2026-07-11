@@ -1,9 +1,9 @@
 # ADR-002: Supervision Primitives for Autonomous Agents — Actor, Evidence, Graded Authority
 
-**Status:** Proposed
+**Status:** Accepted (2026-07-11) — with amendment: the `agent` authority rung is **deferred**, not part of the contract yet (see §3).
 **Date:** 2026-07-11
 **Deciders:** towb
-**Ticket:** PROTO-068
+**Ticket:** PROTO-068 (proposed), PROTO-069 (accepted + amended)
 **Related:** ADR-001 (departmental module platform), PROJECT_SPECIFICATIONS.md §4 (supervision model), PROTO-060–066 (pipeline/trace/release + gates-as-data), PROTO-067 (agent seam)
 
 ## Context
@@ -69,7 +69,9 @@ gate guards. An actor is a discipline agent (`qa/qa-release-agent`), a human
 role, or unassigned. This is distinct from the approver (who *clears*) and gives
 the PROTO-067 agent seam operational meaning: an agent is no longer only
 *declarable*, it is *accountable* — traceable as the party that did the work a
-gate checks.
+gate checks. Note the deliberate asymmetry (see §3): an agent may be the
+**actor** and may **recommend**, but it does not yet hold **clearing**
+authority.
 
 ### 2. Evidence as predicate — what proves the gate is satisfied
 
@@ -83,27 +85,37 @@ the same surfaces, a firmer contract.
 
 ### 3. Graded authority — the capability-growth axis
 
-Each gate declares the **minimum authority** required to clear it, on a ladder:
+Each gate declares the **minimum authority** required to clear it. The ladder as
+adopted has three active rungs, ordered most→least human involvement:
 
 | Authority | Meaning |
 |-----------|---------|
-| `auto` | Cleared by the evidence predicate alone; no named signer. |
-| `agent` | An accountable **agent** actor may clear it, recording itself as signer. |
 | `human` | Requires a **human** signer (default — unchanged from §4). |
-| `human-on-recommendation` | Agent verifies + recommends; a human ratifies (records the residual-risk acceptance). |
+| `human-on-recommendation` | An agent verifies + recommends; a **human ratifies**, recording the residual-risk acceptance. The current **ceiling** for any gate involving judgment. |
+| `auto` | Cleared by the evidence predicate alone — reserved for **deterministic, non-judgment facts** (e.g. "tests recorded green," "coverage ≥ threshold"). Not for anything requiring judgment. |
+
+**Amendment (PROTO-069): the `agent` rung is deferred.** The originally proposed
+`agent` rung — an agent as the accountable *clearer*, exercising judgment and
+recording *itself* as signer — is **not** part of the contract. An agent may be
+the **actor** (does the work) and may **recommend** under
+`human-on-recommendation`, but a human retains clearing authority for every
+judgment gate. The rung remains a documented future extension, revisited only
+once there is a track record justifying it (see *Revisit when*); until then the
+ceiling is `human-on-recommendation`.
 
 The default remains `human`, so the entire existing corpus is unchanged.
 **Capability growth is expressed by lowering a specific gate's required authority
 in its metadata — a one-line config change, zero core or workflow-structure
-edits.** `pg doctor`/`pg trace`/`pg release` gain an authority dimension for
-free: they can report whether each cleared gate was cleared by a signer of
-*sufficient* authority.
+edits** — but, per the amendment, only as far down as `human-on-recommendation`
+for judgment gates. `pg doctor`/`pg trace`/`pg release` gain an authority
+dimension for free: they can report whether each cleared gate was cleared by a
+signer of *sufficient* authority.
 
 The through-line is the separation of **verification** (mechanizable,
-evidence-predicated, safely agent-ownable) from **risk acceptance** (may require
-human authority). That separation is what lets autonomy expand *safely*: a gate
-migrates down the ladder only when its verification is fully predicated and its
-residual risk is acceptable to delegate.
+evidence-predicated, agent-ownable) from **risk acceptance** (retained by a
+human). That separation is what lets autonomy expand *safely*: agents take over
+more of the *verification and recommendation*, while a human still *ratifies*
+the residual risk at every judgment gate.
 
 ## Options Considered
 
@@ -113,7 +125,7 @@ residual risk is acceptable to delegate.
 |-----------|------------|
 | Complexity | Lowest |
 | Scales with capability | No — the autonomy boundary stays hardcoded in prose |
-| Auditability | Can't answer "is this gate agent-clearable yet?" |
+| Auditability | Can't answer "is this gate's verification safe to delegate yet?" |
 
 **Cons:** every capability step-change means hand-editing `approver`/prose across
 workflows; no way to audit or govern the human→agent handoff; the agent seam
@@ -159,30 +171,35 @@ the **contract**: the declarative primitives and their audit, provable by
 dogfooding on the engineering + qa gates before promotion to contract v1.
 
 Graded authority is specifically a **hedge against an unknown**: we cannot
-predict *when* a given gate becomes safe to delegate to an agent. So we make that
-transition a one-line, doctor-audited config change rather than a code change —
-the architecture accommodates capability growth it cannot forecast.
+predict *when* a given gate's verification becomes safe to delegate. So we make
+that transition a one-line, doctor-audited config change rather than a code
+change — the architecture accommodates capability growth it cannot forecast,
+while keeping a human on residual-risk acceptance (the `agent` clearing rung
+stays deferred until evidence justifies it).
 
 ## Consequences
 
 **Easier:**
 - A gate expresses *who acts / what proves / who clears* explicitly, instead of
   smuggling all three into `approver: human`.
-- Delegating a gate to an agent becomes reviewable config, audited by `pg doctor`
-  — a governed human→agent handoff, not a silent edit.
+- Moving a gate's *verification* to an agent (up to `human-on-recommendation`)
+  becomes reviewable config, audited by `pg doctor` — a governed handoff, not a
+  silent edit — while a human still ratifies.
 - The PROTO-067 agent seam gains operational meaning: agents become accountable
-  actors and (where authority permits) signers within `pg trace`/`pg release`.
+  **actors** and **recommenders** within `pg trace`/`pg release`; clearing stays
+  with a human.
 
 **Harder:**
 - The gate schema grows; defaults must keep single-gate disciplines trivial.
 - The evidence-predicate vocabulary must be small, declarative, and provably
   non-executing — a design constraint, not an afterthought.
-- "Authority" needs a crisp definition (what an `agent`-cleared gate actually
-  guarantees) or it becomes theater.
+- "Authority" needs a crisp definition (what an `auto`-cleared or
+  `human-on-recommendation` gate actually guarantees) or it becomes theater.
 
-**Revisit when:**
-- The first real gate needs `agent` authority in practice — that migration
-  validates (or breaks) the ladder.
+- **The deferred `agent` clearing rung** — revisit only once there is a track
+  record of `human-on-recommendation` gates where the human ratification was
+  consistently a rubber stamp, *and* a decision that the residual risk is
+  acceptable to delegate. Until then, `human-on-recommendation` is the ceiling.
 - Evidence predicates strain markdown-as-API — reconsider a typed state surface
   (in tension with Principle 1, "docs are the API").
 - If the actor/approver split proves to add ceremony without leverage on
@@ -201,7 +218,8 @@ dogfooded, and surfaces through existing commands (no new human-facing palette).
        each cleared gate cleared by a signer of adequate authority?) — reuse the
        surfaces, add no commands.
 4. [ ] Dogfood falsifier: migrate exactly one engineering gate to an evidence
-       predicate + `agent` authority; keep human gates human. If it needs a core
-       edit, the primitive is wrong — stop.
+       predicate + `human-on-recommendation` (agent verifies + recommends, human
+       ratifies); keep pure-human gates human. No `agent` clearing rung. If it
+       needs a core edit, the primitive is wrong — stop.
 5. [ ] Update PROJECT_SPECIFICATIONS §4 to describe **graded authority** as the
        supervision model's capability-growth axis.
