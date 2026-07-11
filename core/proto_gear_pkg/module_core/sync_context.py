@@ -102,6 +102,10 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
         "pg pipeline [--json]",
         "Show the cross-discipline supervision pipeline (path to production)",
     ),
+    (
+        "pg trace <ticket-id> [--json]",
+        "Trace a change across discipline state surfaces (ticket → qa → deploy)",
+    ),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
     (
         "pg sync-indexes",

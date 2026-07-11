@@ -19,9 +19,13 @@
 
 ## Queue
 
-| ID | Title | Area | Stage | Owner | Signed off by | Target |
-|----|-------|------|-------|-------|---------------|--------|
-| (example) QA-001 | Login regression sweep | auth | verified | ann | _(pending gate)_ | 2026-07-15 |
+| ID | Ref | Title | Area | Stage | Owner | Signed off by | Target |
+|----|-----|-------|------|-------|-------|---------------|--------|
+| (example) QA-001 | PROTO-054 | Login regression sweep | auth | verified | ann | _(pending gate)_ | 2026-07-15 |
+
+> The **Ref** column links this item to the engineering ticket it validates (the
+> cross-discipline correlation key — see `pg trace <ticket>`). Leave blank for
+> QA work with no originating ticket.
 
 ## Sign-off Log
 

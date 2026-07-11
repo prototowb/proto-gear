@@ -21,9 +21,13 @@
 
 ## Deploy Queue
 
-| ID | Change | Environment | Stage | Owner | Approved by | Target |
-|----|--------|-------------|-------|-------|-------------|--------|
-| (example) DEP-001 | Ship auth service v2 | prod | staged | sam | _(pending gate)_ | 2026-07-15 |
+| ID | Ref | Change | Environment | Stage | Owner | Approved by | Target |
+|----|-----|--------|-------------|-------|-------|-------------|--------|
+| (example) DEP-001 | PROTO-054 | Ship auth service v2 | prod | staged | sam | _(pending gate)_ | 2026-07-15 |
+
+> The **Ref** column links this deploy to the engineering ticket(s) it ships (the
+> cross-discipline correlation key — see `pg trace <ticket>`). For a deploy that
+> ships several tickets, list them comma-separated.
 
 ## Incident Log
 

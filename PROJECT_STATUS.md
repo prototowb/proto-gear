@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-061 | Phase D-2: cross-discipline change trace (pg trace) — ticket-id correlation | feature | IN_PROGRESS | feature/proto-061-phase-d-2-cross-discipline-change-trace- |  |
 
 _No active tickets — v0.10.0 just shipped._
 

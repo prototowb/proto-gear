@@ -433,4 +433,15 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
     )
 
+    trace_parser = subparsers.add_parser(
+        "trace",
+        help="Trace a change (ticket id) across discipline state surfaces",
+    )
+    trace_parser.add_argument(
+        "change_id", type=str, help="Engineering ticket id (e.g., PROTO-054)"
+    )
+    trace_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
     return parser
