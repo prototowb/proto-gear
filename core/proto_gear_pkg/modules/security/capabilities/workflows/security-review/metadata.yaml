@@ -1,0 +1,59 @@
+name: "Security Review Sign-off"
+type: "workflow"
+version: "0.1.0"
+description: "Review a release candidate's security findings and record the mandatory human security sign-off before it ships."
+
+category: "security"
+tags: ["security", "appsec", "review", "release", "sign-off", "approval"]
+
+status: "beta"
+author: "Security Module"
+last_updated: "2026-07-11"
+
+dependencies:
+  required: []
+  optional:
+    - "workflows/release"
+  suggested:
+    - "skills/security"
+
+conflicts: []
+
+composable_with:
+  - "workflows/release"
+  - "qa/workflows/release-signoff"
+
+agent_roles:
+  - "Security Agent"
+  - "Release Manager Agent"
+
+relevance:
+  triggers:
+    - "security sign-off"
+    - "security review"
+    - "appsec approval"
+    - "vulnerability sign-off"
+    - "clear security for release"
+  contexts:
+    - "When a release candidate is built and open security findings must be cleared before it ships"
+
+usage_notes: |
+  Walk the SECURITY_QUEUE findings targeted at this release: confirm each is
+  `remediated` (no open high/critical), then record the human security owner's
+  sign-off. The security-signoff gate is mandatory — nothing ships with an
+  unresolved finding lacking a name in the queue's "Signed off by" column.
+
+required_files:
+  - "SECURITY_QUEUE.md"
+
+workflow:
+  steps: 4
+  estimated_duration: "20-40 minutes"
+  outputs:
+    - "type: release"
+  gates:
+    - id: "security-signoff"
+      description: "A human security owner confirms every release-targeted finding is remediated and approves the candidate for release; nothing ships without their sign-off recorded in SECURITY_QUEUE.md."
+      before: "release"
+      approver: "human"
+      required: true

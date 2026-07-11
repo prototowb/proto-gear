@@ -1,0 +1,23 @@
+# Security / AppSec department module — the FOURTH engineering-discipline
+# implementation of the module contract (PROJECT_SPECIFICATIONS.md §3). Added the
+# way the contract promises: by dropping this modules/security/ directory in. The
+# department-agnostic core discovers, lists, installs, indexes, gate-audits,
+# orchestrates (pg pipeline), and traces (pg trace) it with ZERO edits to
+# module_core/, cli/, or doctor.
+
+module: security
+name: Security / AppSec
+description: >-
+  Application-security department module — vulnerability findings, remediation
+  state, and the security sign-off gate before a release ships, encoded as
+  agent-discoverable capabilities and templates.
+version: 0.1.0
+
+# Contract surfaces (paths are relative to a host project's root). Same schema
+# engineering, qa, and devops use; the core reads it without any security-
+# specific knowledge.
+contract:
+  capabilities_root: .proto-gear        # item 1 — skills / workflows / commands
+  state_surface: SECURITY_QUEUE.md      # item 2 — findings / remediation queue
+  context_manifest: AGENT_CONTEXT.md    # item 3 — agent skim, mirrored to hosts
+  handoff: SESSION_HANDOFF.md           # item 6 — rolling session handoff
