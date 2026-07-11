@@ -106,6 +106,10 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
         "pg trace <ticket-id> [--json]",
         "Trace a change across discipline state surfaces (ticket → qa → deploy)",
     ),
+    (
+        "pg release <label> [--json]",
+        "Trace a release across its tickets — aggregate readiness verdict",
+    ),
     ("pg sync-context", "Regenerate Agent Context in all host files"),
     (
         "pg sync-indexes",

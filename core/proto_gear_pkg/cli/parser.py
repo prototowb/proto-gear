@@ -444,4 +444,15 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
     )
 
+    release_parser = subparsers.add_parser(
+        "release",
+        help="Trace a release across its tickets — aggregate readiness verdict",
+    )
+    release_parser.add_argument(
+        "release_id", type=str, help="Release label (e.g., v0.10.0)"
+    )
+    release_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
     return parser
