@@ -35,12 +35,13 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 
-_No active tickets — v0.10.0 just shipped._
+_No active tickets — PROTO-064 just shipped._
 
 ## ✅ Completed Tickets
 
 | ID | Title | Completed | PR/Commit |
 |----|-------|-----------|-----------|
+| PROTO-064 | Phase D-4: release trace — aggregate per-ticket gate checklists into a release readiness verdict (`pg release`) | 2026-07-11 | |
 | PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | 2026-05-13 | v0.10.0 |
 | PROTO-037 | Strip duplicate frontmatter from capability content files | 2026-05-13 | v0.10.0 |
 | PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | 2026-05-13 | v0.10.0 |
@@ -57,6 +58,42 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-064 Details (COMPLETE)
+**Phase D-4 — release trace (`pg release <label>`).** `pg trace <ticket>` (D-2/D-3)
+follows one change to production and reports which required approvals it lacks. A
+*release* bundles many tickets and ships only when **every** ticket has cleared
+**every** required gate. This aggregates the per-ticket gate checklists into one
+release-level readiness verdict.
+
+**Delivered** (generic, read-only, **zero edits to `modules/`** — pure
+`module_core` + CLI, the correct layer for cross-discipline logic):
+1. ✅ `module_core/release.py` — `find_release_tickets(release_id, ...)` reads
+   release membership from a release column (`PR/Commit` / `Release` / `Version`)
+   across every discipline's `state_surface` (selection by *column name*, not
+   discipline name, so it stays generic like `trace`); `trace_release(...)`
+   folds each member ticket's `trace.gate_checklist` into one verdict.
+2. ✅ **Honest unverifiable handling** — a required gate whose discipline records
+   no approval column (engineering's `PROJECT_STATUS`) reads `untracked`. We
+   neither count it cleared (false confidence) nor blocking (would wedge every
+   release): it's reported as *unverified*, and the verdict says so. `ready` =
+   at least one ticket AND no ticket has a `pending`/`outstanding` gate.
+3. ✅ `pg release <label> [--json]` — per-ticket checklist + `READY TO SHIP` /
+   `BLOCKED` roll-up. Wired in `cli/parser.py`, `cli/app.py`, `cli_commands.py`;
+   added to `sync_context.CLI_COMMANDS` (regenerated AGENT_CONTEXT + host files).
+4. ✅ `tests/test_release.py` — 11 tests: membership discovery (incl. `Target`
+   column is NOT release membership), aggregation (blocked/cleared/unverified),
+   CLI render/json/no-match.
+
+**Verification**: full suite **833 passed** (was 822). `pg doctor` 0/0/29 ok.
+`black --check` clean. `pg release v0.10.0` on this repo correctly reports each
+ticket blocked (repo dogfoods engineering-only; downstream gates legitimately
+outstanding — no qa/devops/security surfaces present).
+
+**Files Created**: `core/proto_gear_pkg/module_core/release.py`, `tests/test_release.py`.
+**Files Modified**: `core/proto_gear_pkg/cli/parser.py`, `core/proto_gear_pkg/cli/app.py`, `core/proto_gear_pkg/cli_commands.py`, `core/proto_gear_pkg/module_core/sync_context.py`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-050 Details (COMPLETE)
 **Raise core coverage to ≥70% (spec Phase A criterion).** Coverage went from
@@ -695,6 +732,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-061 | Phase D-2: cross-discipline change trace (pg trace) — ticket-id correlation | 2026-07-11 | |
 | PROTO-062 | Phase D-3: pg trace gate checklist — required approvals cleared vs outstanding | 2026-07-11 | |
 | PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | 2026-07-11 | |
+| PROTO-064 | Phase D-4: release trace (pg release) — aggregate per-ticket gate checklists into a release readiness verdict | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

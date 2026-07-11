@@ -267,6 +267,9 @@ def main():
         elif args.command == "trace":
             sys.exit(cli_commands.cmd_trace(args))
 
+        elif args.command == "release":
+            sys.exit(cli_commands.cmd_release(args))
+
         # Handle 'update' command
         elif args.command == "update":
             sys.exit(cli_commands.cmd_template_update(args))

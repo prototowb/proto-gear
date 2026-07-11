@@ -1593,6 +1593,87 @@ def cmd_trace(args):
     return 0
 
 
+def cmd_release(args):
+    """Trace a whole release across its tickets (Phase D-4).
+
+    A release ships only when every one of its tickets has cleared every required
+    approval on the path to production. This aggregates each ticket's gate
+    checklist (`pg trace`) into a single readiness verdict, listing which tickets
+    still block and on which gates. Membership is read from the disciplines'
+    state surfaces via a release column (PR/Commit / Release / Version).
+    """
+    from .module_core import release
+
+    release_id = args.release_id
+    try:
+        report = release.trace_release(release_id, Path("."))
+    except Exception as e:
+        print(f"{Colors.FAIL}Error tracing release: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps(report, indent=2))
+        return 0
+
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Release {release_id}{Colors.ENDC} "
+        f"{Colors.GRAY}— readiness across {report['ticket_count']} ticket(s){Colors.ENDC}"
+    )
+    if not report["tickets"]:
+        print(
+            f"\n{Colors.YELLOW}No tickets reference release '{release_id}'.{Colors.ENDC}"
+        )
+        print(
+            f"{Colors.GRAY}A ticket joins a release via a 'PR/Commit', 'Release', "
+            f"or 'Version' column in a discipline's state surface.{Colors.ENDC}"
+        )
+        return 0
+
+    _mark = {
+        "cleared": f"{Colors.GREEN}[x]{Colors.ENDC}",
+        "pending": f"{Colors.YELLOW}[~]{Colors.ENDC}",
+        "outstanding": f"{Colors.GRAY}[ ]{Colors.ENDC}",
+        "untracked": f"{Colors.GRAY}[-]{Colors.ENDC}",
+    }
+    for e in report["tickets"]:
+        required = [g for g in e["gates"] if g["required"]]
+        n_cleared = len(e["cleared"])
+        verdict = (
+            f"{Colors.GREEN}ready{Colors.ENDC}"
+            if e["ready"]
+            else f"{Colors.FAIL}blocked{Colors.ENDC}"
+        )
+        print(
+            f"\n{Colors.BOLD}{e['ticket']}{Colors.ENDC} "
+            f"{Colors.GRAY}({n_cleared}/{e['required_total']} required cleared){Colors.ENDC} "
+            f"— {verdict}"
+        )
+        for g in required:
+            print(
+                f"  {_mark[g['status']]} {g['gate']:<22} "
+                f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC}"
+            )
+
+    # Release-level verdict.
+    if report["ready"]:
+        head = f"{Colors.BOLD}{Colors.GREEN}READY TO SHIP{Colors.ENDC}"
+        if report["unverified_total"]:
+            head += (
+                f" {Colors.YELLOW}({report['unverified_total']} required approval(s) "
+                f"unverifiable — discipline records no sign-off column){Colors.ENDC}"
+            )
+    else:
+        head = (
+            f"{Colors.BOLD}{Colors.FAIL}BLOCKED{Colors.ENDC} "
+            f"{Colors.GRAY}— {report['blocking_total']} required gate(s) not cleared"
+            f"{Colors.ENDC}"
+        )
+    print(f"\n{Colors.BOLD}Release {release_id}:{Colors.ENDC} {head}")
+    return 0
+
+
 def cmd_module_init_surface(args):
     """Materialise the selected module's declared state surface into the project.
 

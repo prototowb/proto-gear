@@ -1,0 +1,182 @@
+"""Tests for release trace (PROTO-064, Phase D-4).
+
+`module_core.release` aggregates each ticket's gate checklist (Phase D-3) into a
+single release-level readiness verdict. Membership is read from a release column
+(PR/Commit / Release / Version) in the disciplines' state surfaces; the verdict
+distinguishes cleared / blocking / unverifiable gates.
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
+
+from proto_gear_pkg.module_core import release
+
+
+def _args(**kw):
+    return argparse.Namespace(**kw)
+
+
+def _write_status(root: Path, rows: str):
+    """Engineering state surface: completed-tickets table with a PR/Commit column."""
+    (root / "PROJECT_STATUS.md").write_text(
+        "# Status\n\n| ID | Title | Completed | PR/Commit |\n"
+        "|----|-------|-----------|-----------|\n" + rows,
+        encoding="utf-8",
+    )
+
+
+def _write_qa(root: Path, rows: str):
+    (root / "QA_QUEUE.md").write_text(
+        "# QA\n\n| ID | Ref | Title | Area | Stage | Owner | Signed off by | Target |\n"
+        "|----|-----|-------|------|-------|-------|---------------|--------|\n" + rows,
+        encoding="utf-8",
+    )
+
+
+def _write_devops(root: Path, rows: str):
+    (root / "DEPLOY_QUEUE.md").write_text(
+        "# Deploy\n\n| ID | Ref | Change | Environment | Stage | Owner | Approved by | Target |\n"
+        "|----|-----|--------|-------------|-------|-------|-------------|--------|\n"
+        + rows,
+        encoding="utf-8",
+    )
+
+
+def _write_security(root: Path, rows: str):
+    (root / "SECURITY_QUEUE.md").write_text(
+        "# Security\n\n| ID | Ref | Finding | Severity | Stage | Owner | Signed off by | Target |\n"
+        "|----|-----|---------|----------|-------|-------|---------------|--------|\n"
+        + rows,
+        encoding="utf-8",
+    )
+
+
+def _full_release(root: Path):
+    """A two-ticket release: PROTO-A fully cleared downstream, PROTO-B still blocked."""
+    _write_status(
+        root,
+        "| PROTO-A | first | 2026-07-11 | v0.11 |\n"
+        "| PROTO-B | second | 2026-07-11 | v0.11 |\n"
+        "| PROTO-C | other | 2026-07-01 | v0.10 |\n",
+    )
+    _write_qa(
+        root,
+        "| QA-1 | PROTO-A | a | auth | signed-off | ann | ann | v0.11 |\n"
+        "| QA-2 | PROTO-B | b | api | in-test | ann | _(pending gate)_ | v0.11 |\n",
+    )
+    _write_devops(
+        root,
+        "| DEP-1 | PROTO-A | ship a | prod | deployed | sam | sam | v0.11 |\n",
+    )
+    _write_security(
+        root,
+        "| SEC-1 | PROTO-A | a finding | low | signed-off | eve | eve | v0.11 |\n",
+    )
+
+
+class TestFindReleaseTickets:
+    def test_matches_tickets_by_release_column(self, tmp_path):
+        _full_release(tmp_path)
+        tickets = release.find_release_tickets("v0.11", tmp_path)
+        assert tickets == ["PROTO-A", "PROTO-B"]  # PROTO-C is v0.10, excluded
+
+    def test_no_match_returns_empty(self, tmp_path):
+        _full_release(tmp_path)
+        assert release.find_release_tickets("v9.9", tmp_path) == []
+
+    def test_missing_surfaces_are_skipped(self, tmp_path):
+        assert release.find_release_tickets("v0.11", tmp_path) == []
+
+    def test_target_column_is_not_release_membership(self, tmp_path):
+        # qa/devops surfaces carry a "Target" version column; it must NOT be read
+        # as release membership (those are downstream items, not release tickets).
+        _write_qa(
+            tmp_path,
+            "| QA-9 | PROTO-Z | z | auth | in-test | ann | | v0.11 |\n",
+        )
+        assert release.find_release_tickets("v0.11", tmp_path) == []
+
+
+class TestTraceRelease:
+    def test_blocked_when_a_ticket_has_outstanding_gates(self, tmp_path):
+        _full_release(tmp_path)
+        report = release.trace_release("v0.11", tmp_path)
+        assert report["ticket_count"] == 2
+        assert report["ready"] is False  # PROTO-B blocks
+        by_ticket = {e["ticket"]: e for e in report["tickets"]}
+        assert by_ticket["PROTO-A"]["ready"] is True
+        assert by_ticket["PROTO-B"]["ready"] is False
+        assert report["blocking_total"] > 0
+
+    def test_cleared_gates_counted_per_ticket(self, tmp_path):
+        _full_release(tmp_path)
+        report = release.trace_release("v0.11", tmp_path)
+        a = next(e for e in report["tickets"] if e["ticket"] == "PROTO-A")
+        cleared_gates = {g["gate"] for g in a["cleared"]}
+        assert {"qa-signoff", "prod-approval", "security-signoff"} <= cleared_gates
+
+    def test_engineering_gates_are_unverified_not_blocking(self, tmp_path):
+        # Only PROTO-A, fully cleared downstream → release is ready, but
+        # engineering's own gates (no approval column) stay unverifiable.
+        _write_status(tmp_path, "| PROTO-A | first | 2026-07-11 | v0.11 |\n")
+        _write_qa(
+            tmp_path,
+            "| QA-1 | PROTO-A | a | auth | signed-off | ann | ann | v0.11 |\n",
+        )
+        _write_devops(
+            tmp_path,
+            "| DEP-1 | PROTO-A | ship a | prod | deployed | sam | sam | v0.11 |\n",
+        )
+        _write_security(
+            tmp_path,
+            "| SEC-1 | PROTO-A | f | low | signed-off | eve | eve | v0.11 |\n",
+        )
+        report = release.trace_release("v0.11", tmp_path)
+        assert report["ready"] is True
+        assert report["unverified_total"] > 0  # engineering gates can't be evidenced
+        assert report["blocking_total"] == 0
+
+    def test_empty_release_is_not_ready(self, tmp_path):
+        _full_release(tmp_path)
+        report = release.trace_release("v9.9", tmp_path)
+        assert report["ticket_count"] == 0
+        assert report["ready"] is False
+
+
+class TestReleaseCLI:
+    def test_release_renders(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        _full_release(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_release(_args(release_id="v0.11", json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "PROTO-A" in out and "PROTO-B" in out
+        assert "BLOCKED" in out  # PROTO-B blocks the release
+
+    def test_release_json(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        _full_release(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_release(_args(release_id="v0.11", json=True))
+        data = json.loads(capsys.readouterr().out)
+        assert rc == 0
+        assert data["release"] == "v0.11"
+        assert data["ticket_count"] == 2
+        assert data["ready"] is False
+
+    def test_release_no_match_message(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        _full_release(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_release(_args(release_id="v9.9", json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "No tickets reference release" in out
