@@ -13,30 +13,31 @@ indexed, gate-audited, agent-visible, orchestrated (`pg pipeline`), AND traceabl
 Three disciplines ship: `engineering`, `qa`, `devops`. CI is genuinely green
 (pytest actually runs in CI now).
 
-1. **Everything through PROTO-061 is merged** (PRs #16–#24). No PR in flight.
+1. **Everything through PROTO-062 is merged** (PRs #16–#26). No PR in flight.
 2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
    - **A 4th discipline (security? docs?)** — cheap contract exercise; `modules/qa`
-     and `modules/devops` are the reference patterns. It would join `pg pipeline`
-     automatically (if it ships a gated workflow) and `pg trace` (if its state
-     surface carries a `Ref` column). The cleanest next validation.
+     and `modules/devops` are the reference patterns. It would light up
+     `pg pipeline` (if it ships a gated workflow), `pg trace`, AND the D-3 gate
+     checklist (if its state surface carries a `Ref` + approver column) — all
+     automatically. The cleanest next validation.
    - **Agent subsystem, deeper** — PROTO-058 made `AgentManager` *read* module
      caps; installing/composing agents per discipline is unbuilt.
-   - **Phase D-3 — richer trace/pipeline** — e.g. `pg trace` could fold in the
-     pipeline gate chain to show which required approvals a change still lacks
-     (not just the rows it has); or trace a release across all its tickets.
+   - **Phase D-4 — release trace** — trace a *release* across all its tickets
+     (aggregate the per-ticket checklists), or let engineering's PROJECT_STATUS
+     carry approver evidence so its gates stop showing `untracked` in `pg trace`.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `1432f8b` (through PROTO-061, PR #24). **No PR in flight.**
+- `development` = `5dfdd3d` (through PROTO-062, PR #26). **No PR in flight.**
 - **CI is green and deterministic.** `Tests` workflow: a dedicated `lint` job
   (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
   Before PROTO-055 the matrix `black --check` ran *before* pytest and always
   failed, so **pytest never actually executed in CI**. Reproduce CI parity
   locally with the **bare console script** `pytest tests/` (not `python -m
   pytest`, which puts cwd on `sys.path`).
-- **804 tests pass; `pg doctor` 0/0/27 ok; `black --check` clean.**
+- **808 tests pass; `pg doctor` 0/0/27 ok; `black --check` clean.**
 - **The department seam, end to end** (all namespaced `<module>/<cap_id>`):
   - Discovery/manifest: `discover_modules()`, `module_host.resolve_module()`.
   - Listings (S1): `module_host.load_bundled_capabilities()`; `pg suggest`,
@@ -49,9 +50,11 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   - Gates/orchestration: `doctor.check_supervision_gates` audits every
     discipline's gates; **`module_core/pipeline.py` + `pg pipeline [--json]`**
     compose them into the path to production, flagging convergence points.
-  - Change trace (D-2): **`module_core/trace.py` + `pg trace <ticket> [--json]`**
+  - Change trace (D-2/D-3): **`module_core/trace.py` + `pg trace <ticket> [--json]`**
     follow a change across discipline state surfaces via the ticket-id key (a
-    `Ref` column each surface may carry), showing approval state per hop.
+    `Ref` column each surface may carry), showing approval state per hop AND a
+    required-approval checklist folded in from the pipeline gate chain
+    (`gate_checklist`: cleared / pending / outstanding / untracked).
 - **Scope (PROTO-053):** proto-gear = software-engineering OS; departments are
   engineering disciplines (dev, qa, devops, security, docs, release/PM). No
   content/marketing — that's honk (`../_Plugins/honk/`), a separate product.
@@ -70,10 +73,12 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   PR #22.
 - **PROTO-061** — Phase D-2: cross-discipline change trace (`pg trace`),
   ticket-id correlation via a `Ref` column. PR #24.
+- **PROTO-062** — Phase D-3: `pg trace` gate checklist — required approvals
+  cleared vs outstanding, folded in from the pipeline. PR #26.
 
 ## Pending / In Progress
 
-- **Nothing in flight.** Next thrust: a 4th discipline, or Phase D-3 — step 2.
+- **Nothing in flight.** Next thrust: a 4th discipline, or Phase D-4 — step 2.
 
 ## Conventions In Force
 
