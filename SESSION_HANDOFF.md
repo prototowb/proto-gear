@@ -14,20 +14,26 @@ checklist), AND aggregated at the release level (`pg release`) — all from pure
 declaration, with **zero core edits** per discipline. Four ship: `engineering`,
 `qa`, `devops`, `security`. CI is genuinely green (pytest actually runs in CI).
 
-1. **Everything through PROTO-066 is merged** (PRs #16–#34). No PR in flight
-   (bar this handoff refresh). **The supervision-readiness loop is now closed
-   end-to-end**: pipeline → per-change trace + gate checklist (evidenceable via
-   per-gate `evidence:` columns) → release roll-up with **both** change-scoped
-   (per-ticket) and release-scoped (once-per-release) gate evidence.
+1. **Everything through PROTO-067 is merged** (PRs #16–#36). No PR in flight
+   (bar this handoff refresh). **The supervision-readiness loop is closed
+   end-to-end** (pipeline → per-change trace + gate checklist → release roll-up
+   with change- *and* release-scoped gate evidence) **AND the agent subsystem now
+   has a department seam**: a discipline ships its own agent and the core
+   discovers/installs/validates it with zero core edits (PROTO-067).
 2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **Agent subsystem, deeper** — likely the highest-value frontier now. PROTO-058
-     made `AgentManager` *read* module caps; installing/composing agents per
-     discipline (a qa agent, a devops agent, …) is unbuilt. This is where the
-     department model pays off for *running* work, not just auditing it.
+   - **Agent subsystem, deeper (continue PROTO-067)** — the seam exists; the
+     *surfacing* is thin. `pg agent list` still reads only the host's
+     `.proto-gear/agents/`, so bundled/discipline agents appear only *after*
+     `pg init` installs them. Natural next slices: `pg agent list --available`
+     (show discoverable bundled agents via `module_host.iter_agent_sources()`)
+     and a `pg agent install <name>` command to pull one discipline agent into a
+     host on demand. Deeper still: fold agents into `pg pipeline`/`pg trace` so a
+     discipline's *agent* (not just its gates) is visible in the path to
+     production.
    - **Another discipline (docs? release/PM?)** — contract well proven (4
-     disciplines) and now exercises change- *and* release-scoped gates; a 5th is
-     cheap. A `release/PM` discipline could *own* the Releases surface that
-     PROTO-066 put in engineering's `PROJECT_STATUS` — a natural home for it.
+     disciplines); a 5th is cheap and would now *also* get to ship an agent for
+     free. A `release/PM` discipline could *own* the Releases surface that
+     PROTO-066 put in engineering's `PROJECT_STATUS`.
    - **`pg release` polish** — aggregate a release trace across *disciplines'*
      release surfaces (today the Releases table lives in engineering); or a
      `--format` for release-notes generation from the cleared checklist.
@@ -36,14 +42,14 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `5e37596` (through PROTO-066, PR #34). **No PR in flight.**
+- `development` = `a756f15` (through PROTO-067, PR #36). **No PR in flight.**
 - **CI is green and deterministic.** `Tests` workflow: a dedicated `lint` job
   (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
   Before PROTO-055 the matrix `black --check` ran *before* pytest and always
   failed, so **pytest never actually executed in CI**. Reproduce CI parity
   locally with the **bare console script** `pytest tests/` (not `python -m
   pytest`, which puts cwd on `sys.path`).
-- **839 tests pass; `pg doctor` 0/0/29 ok; `black --check` clean.**
+- **854 tests pass; `pg doctor` 0/0/29 ok; `black --check` clean.**
 - **Four disciplines ship:** `engineering`, `qa`, `devops`, `security` — all on
   the unmodified core. `security-signoff` and `qa-signoff` both guard `release`
   (a convergence point in `pg pipeline`).
@@ -118,12 +124,24 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   release-scoped gates (`release-approval`, `announcement-approval`) once,
   against a `Releases` table keyed by the release label. Fully closes the
   readiness loop. PR #34.
+- **PROTO-067** — the **agent seam** (agent-side of S1). A discipline ships an
+  agent in `modules/<name>/agents/` and the core discovers it
+  (`module_host.iter_agent_sources`), installs it flat into
+  `.proto-gear/agents/` on `pg init` (`module_host.install_module_agents`, wired
+  through engineering's `copy_capability_templates`), and validates it — zero
+  core edits per discipline. `AgentCapabilities.all_capabilities()` now resolves
+  a `<module>/<name>` entry to the module-namespaced id (`qa/release-signoff` →
+  `qa/workflows/release-signoff`), so an agent composes its *own* department's
+  caps, not just the shared bundle. Reference agents: qa **QA Release Agent**
+  (`qa/release-signoff`) + devops **Deploy Agent** (`devops/deploy`). PR #36.
 
 ## Pending / In Progress
 
 - **Nothing in flight** (bar this handoff refresh). The D-series supervision arc
-  is complete. Next thrust: the agent subsystem (install/compose agents per
-  discipline), a 5th discipline (docs / release-PM), or `pg release` polish.
+  is complete and the agent subsystem now has its department seam. Next thrust:
+  *surface* discipline agents pre-install (`pg agent list --available` /
+  `pg agent install <name>`), a 5th discipline (docs / release-PM), or
+  `pg release` polish. See "Start here" for the specifics.
 
 ## Conventions In Force
 
