@@ -43,12 +43,29 @@ class AgentCapabilities:
     workflows: List[str] = field(default_factory=list)
     commands: List[str] = field(default_factory=list)
 
+    @staticmethod
+    def _qualify(kind: str, entry: str) -> str:
+        """Turn a capability entry into a full capability id.
+
+        A bare entry (``testing``) targets the shared/engineering bundle and
+        qualifies to ``<kind>/<entry>`` (``skills/testing``). An entry that
+        names a discipline as ``<module>/<name>`` (``qa/release-signoff``)
+        qualifies to the module-namespaced id the loaders use for that
+        discipline's own bundle (``qa/workflows/release-signoff``) — so an agent
+        can compose capabilities its own department ships, not just the shared
+        ones (the agent-side of seam S1).
+        """
+        if "/" in entry:
+            module, name = entry.split("/", 1)
+            return f"{module}/{kind}/{name}"
+        return f"{kind}/{entry}"
+
     def all_capabilities(self) -> List[str]:
-        """Get all capabilities as full paths"""
+        """Get all capabilities as full (optionally module-namespaced) ids"""
         result = []
-        result.extend([f"skills/{skill}" for skill in self.skills])
-        result.extend([f"workflows/{workflow}" for workflow in self.workflows])
-        result.extend([f"commands/{command}" for command in self.commands])
+        result.extend([self._qualify("skills", skill) for skill in self.skills])
+        result.extend([self._qualify("workflows", wf) for wf in self.workflows])
+        result.extend([self._qualify("commands", cmd) for cmd in self.commands])
         return result
 
     def is_empty(self) -> bool:
