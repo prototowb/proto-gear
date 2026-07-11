@@ -83,3 +83,9 @@ workflow:
       before: "merge"
       approver: "human"
       required: true
+      # Per-change engineering gate: evidenced by the "Reviewed by" column on the
+      # completed-tickets table in PROJECT_STATUS.md, so `pg trace`/`pg release`
+      # can verify each ticket was reviewed. (Release-level engineering gates —
+      # release-approval, announcement-approval — stay unverified per-ticket: a
+      # single ticket doesn't clear a release gate.)
+      evidence: "Reviewed by"

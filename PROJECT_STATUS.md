@@ -35,13 +35,14 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 
-_No active tickets — PROTO-064 just shipped._
+_No active tickets — PROTO-065 just shipped._
 
 ## ✅ Completed Tickets
 
-| ID | Title | Completed | PR/Commit |
-|----|-------|-----------|-----------|
-| PROTO-064 | Phase D-4: release trace — aggregate per-ticket gate checklists into a release readiness verdict (`pg release`) | 2026-07-11 | |
+| ID | Title | Completed | PR/Commit | Reviewed by |
+|----|-------|-----------|-----------|-------------|
+| PROTO-065 | Make engineering gates evidenceable — per-gate `evidence` column (closes the `untracked` wart) | 2026-07-11 | | prototowb |
+| PROTO-064 | Phase D-4: release trace — aggregate per-ticket gate checklists into a release readiness verdict (`pg release`) | 2026-07-11 | | prototowb |
 | PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | 2026-05-13 | v0.10.0 |
 | PROTO-037 | Strip duplicate frontmatter from capability content files | 2026-05-13 | v0.10.0 |
 | PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | 2026-05-13 | v0.10.0 |
@@ -58,6 +59,42 @@ _No active tickets — PROTO-064 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-065 Details (COMPLETE)
+**Make engineering's own gates evidenceable — closes the `untracked` wart.**
+`pg trace`/`pg release` showed engineering's gates (`release-approval`,
+`pr-review-approval`, …) as `untracked` because `gate_checklist` evidenced
+approvals at the **discipline** level (one approval column per discipline) and
+`PROJECT_STATUS.md` carries none. That works for single-gate disciplines
+(qa/devops/security) but engineering has several heterogeneous gates, so one
+column can't disambiguate them — and naively adding a generic approval column
+would have *falsely* cleared release-level gates in `pg release` (false "ready").
+
+**Delivered** (generic, opt-in, backward compatible):
+1. ✅ Optional **`evidence`** field on a supervision gate (workflow
+   `metadata.yaml`) — names the state-surface column (case-insensitive
+   substring) that records *that specific gate's* sign-off. Parsed in
+   `capability_metadata.Gate`; propagated through `pipeline.collect_supervision_gates`.
+2. ✅ `trace.gate_checklist` is now gate-evidence-aware: a gate with `evidence`
+   is verified against its own column (cleared / pending / untracked); a gate
+   without keeps the discipline-level generic fallback unchanged. Refactored row
+   iteration into `_iter_change_rows` so the checklist can read arbitrary columns.
+3. ✅ Engineering's **per-change** gate `pr-review-approval` (before `merge`)
+   declares `evidence: "Reviewed by"`; the `PROJECT_STATUS` completed-tickets
+   template gains a `Reviewed by` column (and `pg ticket ... --status COMPLETED`
+   writes the extra cell). Deliberately named outside the generic approval-column
+   set so engineering's **release-level** gates stay honestly unverified per
+   ticket — no false clears in `pg release`.
+4. ✅ `tests/test_trace.py` — 4 new tests (evidence cleared/pending, release-level
+   gates not falsely cleared, bundled gate ships its column).
+
+**Verification**: full suite **837 passed** (was 833). `pg doctor` 0/0/29 ok.
+`black --check` clean. `pg trace PROTO-065` now shows `pr-review-approval:
+cleared` (Reviewed by: prototowb) while release-level gates remain unverified.
+
+**Files Modified**: `core/proto_gear_pkg/module_core/capability_metadata.py`, `core/proto_gear_pkg/module_core/pipeline.py`, `core/proto_gear_pkg/module_core/trace.py`, `core/proto_gear_pkg/capabilities/workflows/code-review-process/metadata.yaml`, `core/proto_gear_pkg/PROJECT_STATUS.template.md`, `core/proto_gear_pkg/modules/engineering/status_commands.py`, `tests/test_trace.py`, `PROJECT_STATUS.md`.
+
+---
 
 ### PROTO-064 Details (COMPLETE)
 **Phase D-4 — release trace (`pg release <label>`).** `pg trace <ticket>` (D-2/D-3)
@@ -733,6 +770,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-062 | Phase D-3: pg trace gate checklist — required approvals cleared vs outstanding | 2026-07-11 | |
 | PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | 2026-07-11 | |
 | PROTO-064 | Phase D-4: release trace (pg release) — aggregate per-ticket gate checklists into a release readiness verdict | 2026-07-11 | |
+| PROTO-065 | Make engineering gates evidenceable — per-gate evidence column (closes the untracked wart) | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

@@ -97,20 +97,17 @@ def _approval_state(cell: Optional[str]) -> Optional[str]:
     return "cleared"
 
 
-def trace_change(
+def _iter_change_rows(
     change_id: str, project_dir: Path, modules_root: Optional[Path] = None
-) -> List[dict]:
-    """Return every state-surface row across disciplines referencing ``change_id``.
+):
+    """Yield ``(discipline, surface, row)`` for every state-surface row that
+    references ``change_id`` — by its own ``ID`` or via a ``Ref`` column.
 
-    A row matches when its ``ID`` equals ``change_id`` (the change itself, in the
-    engineering surface) or a ``Ref`` column lists it (downstream disciplines).
-    Each hit: ``discipline``, ``surface``, ``id``, ``ref``, ``stage``,
-    ``approval`` (raw cell or None), ``approval_state`` ('cleared'/'pending'/None).
-    Ordered engineering-first, then disciplines alphabetically.
+    ``row`` is the full header→cell dict, so callers can read arbitrary columns
+    (e.g. a gate-specific evidence column), not just the detected approval cell.
     """
     from .module_manifest import discover_modules
 
-    hits: List[dict] = []
     for manifest in discover_modules(modules_root):
         surface = manifest.state_surface
         if not surface:
@@ -129,21 +126,63 @@ def trace_change(
                 refs = _refs(_role_value(row, _REF_HEADERS))
                 if row_id != change_id and change_id not in refs:
                     continue
-                approval = _approval_cell(row)
-                hits.append(
-                    {
-                        "discipline": manifest.module,
-                        "surface": surface,
-                        "id": row_id,
-                        "ref": _role_value(row, _REF_HEADERS) or "",
-                        "stage": (_role_value(row, _STAGE_HEADERS) or "").strip(),
-                        "approval": approval,
-                        "approval_state": _approval_state(approval),
-                    }
-                )
+                yield manifest.module, surface, row
+
+
+def trace_change(
+    change_id: str, project_dir: Path, modules_root: Optional[Path] = None
+) -> List[dict]:
+    """Return every state-surface row across disciplines referencing ``change_id``.
+
+    A row matches when its ``ID`` equals ``change_id`` (the change itself, in the
+    engineering surface) or a ``Ref`` column lists it (downstream disciplines).
+    Each hit: ``discipline``, ``surface``, ``id``, ``ref``, ``stage``,
+    ``approval`` (raw cell or None), ``approval_state`` ('cleared'/'pending'/None).
+    Ordered engineering-first, then disciplines alphabetically.
+    """
+    hits: List[dict] = []
+    for discipline, surface, row in _iter_change_rows(
+        change_id, project_dir, modules_root
+    ):
+        approval = _approval_cell(row)
+        hits.append(
+            {
+                "discipline": discipline,
+                "surface": surface,
+                "id": (_role_value(row, _ID_HEADERS) or "").strip(),
+                "ref": _role_value(row, _REF_HEADERS) or "",
+                "stage": (_role_value(row, _STAGE_HEADERS) or "").strip(),
+                "approval": approval,
+                "approval_state": _approval_state(approval),
+            }
+        )
 
     hits.sort(key=lambda h: (h["discipline"] != "engineering", h["discipline"]))
     return hits
+
+
+def _column_cells(rows: List[Dict[str, str]], column_spec: str) -> List[str]:
+    """Cells under any header matching ``column_spec`` (case-insensitive substring).
+
+    An empty list means the column is absent from every row — distinct from a
+    present-but-empty cell (which is returned as ``""``).
+    """
+    spec = column_spec.strip().lower()
+    cells: List[str] = []
+    for row in rows:
+        for header, cell in row.items():
+            if spec and spec in header.strip().lower():
+                cells.append(cell)
+    return cells
+
+
+def _best_state(states) -> Optional[str]:
+    """The strongest approval state in ``states`` (cleared > pending > None)."""
+    best: Optional[str] = None
+    for st in states:
+        if _EVIDENCE_RANK[st] >= _EVIDENCE_RANK[best]:
+            best = st
+    return best
 
 
 # Approval evidence strength, so a discipline with several rows for one change
@@ -171,33 +210,53 @@ def gate_checklist(
                           ``outstanding`` so a DONE ticket isn't misread as "not
                           started"; still not counted as cleared.
 
+    A gate that declares an ``evidence`` column (workflow metadata) is matched
+    against **that specific column** in its discipline's rows — so a discipline
+    carrying several gates (engineering) can evidence each one independently
+    instead of collapsing to a single approval cell. A gate with no ``evidence``
+    keeps the discipline-level generic approval-column behaviour.
+
     Each entry: ``action``, ``gate``, ``discipline``, ``required``, ``status``.
     Order follows the pipeline (path-to-production flow).
     """
     from . import pipeline
 
-    reached = set()
-    evidence: Dict[str, Optional[str]] = {}
-    for h in trace_change(change_id, project_dir, modules_root):
-        disc = h["discipline"]
-        reached.add(disc)
-        best = evidence.get(disc)
-        if _EVIDENCE_RANK[h["approval_state"]] >= _EVIDENCE_RANK[best]:
-            evidence[disc] = h["approval_state"]
+    rows_by_disc: Dict[str, List[Dict[str, str]]] = {}
+    for disc, _surface, row in _iter_change_rows(change_id, project_dir, modules_root):
+        rows_by_disc.setdefault(disc, []).append(row)
+    reached = set(rows_by_disc)
+
+    # Discipline-level generic evidence — the fallback for gates that don't name
+    # their own evidence column (works for single-gate disciplines: qa/devops/…).
+    disc_evidence: Dict[str, Optional[str]] = {
+        disc: _best_state(_approval_state(_approval_cell(row)) for row in rows)
+        for disc, rows in rows_by_disc.items()
+    }
 
     checklist: List[dict] = []
     for stage in pipeline.build_pipeline(modules_root):
         for g in stage["gates"]:
             disc = g["discipline"]
-            state = evidence.get(disc)
             if disc not in reached:
                 status = "outstanding"  # change hasn't reached this discipline
-            elif state == "cleared":
-                status = "cleared"
-            elif state == "pending":
-                status = "pending"
+            elif g.get("evidence"):
+                cells = _column_cells(rows_by_disc[disc], g["evidence"])
+                if not cells:
+                    status = "untracked"  # gate's evidence column absent here
+                else:
+                    status = (
+                        "cleared"
+                        if _best_state(_approval_state(c) for c in cells) == "cleared"
+                        else "pending"
+                    )
             else:
-                status = "untracked"  # reached, but no approval evidence recorded
+                state = disc_evidence.get(disc)
+                if state == "cleared":
+                    status = "cleared"
+                elif state == "pending":
+                    status = "pending"
+                else:
+                    status = "untracked"  # reached, but no approval evidence recorded
             checklist.append(
                 {
                     "action": stage["action"],

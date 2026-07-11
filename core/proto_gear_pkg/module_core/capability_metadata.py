@@ -91,6 +91,11 @@ class Gate:
     before: str = ""  # step/action the gate guards (freeform, optional)
     approver: str = "human"  # who must approve
     required: bool = True
+    # Optional: the state-surface column (case-insensitive substring) that
+    # records THIS gate's sign-off, so `pg trace`/`pg release` can evidence it
+    # per change. Absent → discipline-level generic approval-column fallback.
+    # Disambiguates disciplines that carry more than one gate (e.g. engineering).
+    evidence: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -99,6 +104,7 @@ class Gate:
             "before": self.before,
             "approver": self.approver,
             "required": self.required,
+            "evidence": self.evidence,
         }
 
 
@@ -354,6 +360,7 @@ class CapabilityMetadataParser:
                             before=str(g.get("before", "")),
                             approver=str(g.get("approver", "human")),
                             required=bool(g.get("required", True)),
+                            evidence=str(g.get("evidence", "")),
                         )
                     )
             workflow = WorkflowMetadata(
