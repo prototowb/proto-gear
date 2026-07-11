@@ -137,6 +137,65 @@ class TestGateChecklist:
         assert by_gate["prod-approval"] == "pending"
 
 
+def _write_status_with_review(root: Path, reviewer: str):
+    """Engineering completed-tickets table carrying the per-gate 'Reviewed by'
+    evidence column that pr-review-approval names."""
+    (root / "PROJECT_STATUS.md").write_text(
+        "# Status\n\n## Completed Tickets\n\n"
+        "| ID | Title | Completed | PR | Reviewed by |\n"
+        "|----|-------|-----------|----|-------------|\n"
+        f"| PROTO-054 | QA module | 2026-07-11 | | {reviewer} |\n",
+        encoding="utf-8",
+    )
+
+
+class TestGateSpecificEvidence:
+    """PROTO-065: a gate that names an ``evidence`` column is verified against
+    THAT column, so engineering's per-change pr-review-approval becomes
+    evidenceable without falsely clearing its release-level gates."""
+
+    def test_pr_review_cleared_from_reviewed_by_column(self, tmp_path):
+        _write_status_with_review(tmp_path, "ann")
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-054", tmp_path)
+        }
+        assert by_gate["pr-review-approval"] == "cleared"
+
+    def test_pr_review_pending_when_column_present_but_empty(self, tmp_path):
+        _write_status_with_review(tmp_path, "")
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-054", tmp_path)
+        }
+        assert by_gate["pr-review-approval"] == "pending"
+
+    def test_release_level_gates_not_falsely_cleared(self, tmp_path):
+        # The "Reviewed by" evidence must NOT bleed into engineering's other
+        # gates: release-approval is a release-level gate, unverifiable per ticket.
+        _write_status_with_review(tmp_path, "ann")
+        eng = {
+            g["gate"]: g["status"]
+            for g in trace.gate_checklist("PROTO-054", tmp_path)
+            if g["discipline"] == "engineering" and g["gate"] != "pr-review-approval"
+        }
+        assert eng  # there are other engineering gates
+        assert all(status != "cleared" for status in eng.values())
+
+
+class TestGateEvidenceShipped:
+    """The bundled pr-review-approval gate ships its evidence column."""
+
+    def test_pr_review_gate_declares_reviewed_by(self):
+        from proto_gear_pkg.module_core import pipeline
+
+        gate = next(
+            g
+            for s in pipeline.build_pipeline()
+            for g in s["gates"]
+            if g["gate"] == "pr-review-approval"
+        )
+        assert gate["evidence"] == "Reviewed by"
+
+
 class TestTraceCLI:
     def test_trace_renders(self, tmp_path, monkeypatch, capsys):
         from proto_gear_pkg import cli_commands

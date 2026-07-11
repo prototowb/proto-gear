@@ -34,7 +34,8 @@ def collect_supervision_gates(modules_root: Optional[Path] = None) -> List[dict]
 
     Each record: ``discipline``, ``workflow`` (namespaced id), ``workflow_name``,
     ``gate``, ``before`` (guarded action), ``approver``, ``required``,
-    ``description``. The shared/engineering bundle reports discipline
+    ``description``, ``evidence`` (the state-surface column that records this
+    gate's sign-off, or ``""``). The shared/engineering bundle reports discipline
     ``"engineering"``; a module's own caps report the module id.
     """
     from . import module_host
@@ -65,6 +66,7 @@ def collect_supervision_gates(modules_root: Optional[Path] = None) -> List[dict]
                         "approver": g.approver,
                         "required": g.required,
                         "description": g.description,
+                        "evidence": g.evidence,
                     }
                 )
     return records

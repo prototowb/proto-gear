@@ -374,7 +374,7 @@ def cmd_ticket_update(args):
         text, removed = _remove_active_row(text, ticket_id)
         if removed:
             today = datetime.now().strftime("%Y-%m-%d")
-            comp_row = "| {} | {} | {} | |".format(
+            comp_row = "| {} | {} | {} | | |".format(
                 ticket_id, removed.get("Title", ""), today
             )
             text = _append_row(text, "Completed Tickets", comp_row)

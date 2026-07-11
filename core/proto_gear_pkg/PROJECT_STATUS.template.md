@@ -103,8 +103,8 @@ ticket_prefix: "{{TICKET_PREFIX}}"  # e.g., "PROJ", "MCP", etc.
 
 ## ✅ Completed Tickets
 
-| ID | Title | Completed | PR |
-|----|-------|-----------|-----|
+| ID | Title | Completed | PR | Reviewed by |
+|----|-------|-----------|-----|-------------|
 {{COMPLETED_TICKETS}}
 
 ## 🚧 Blocked Tickets
