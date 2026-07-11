@@ -6,40 +6,37 @@
 
 ## ▶ Start here (next session)
 
-**The department seam is complete end-to-end.** A discipline is now discovered,
-listed, installed (`.proto-gear/<module>/`), indexed, gate-audited, agent-visible,
-AND orchestrated — all from pure declaration, with **zero core edits** per
-discipline. Three disciplines ship: `engineering`, `qa`, `devops`. CI is
-genuinely green (pytest actually runs in CI now). `pg pipeline` composes the
-cross-discipline path to production.
+**The department seam is complete end-to-end, and orchestration + change-tracing
+ship.** A discipline is discovered, listed, installed (`.proto-gear/<module>/`),
+indexed, gate-audited, agent-visible, orchestrated (`pg pipeline`), AND traceable
+(`pg trace`) — all from pure declaration, with **zero core edits** per discipline.
+Three disciplines ship: `engineering`, `qa`, `devops`. CI is genuinely green
+(pytest actually runs in CI now).
 
-1. **Everything through PROTO-060 is merged** (PRs #16–#22). No PR in flight.
+1. **Everything through PROTO-061 is merged** (PRs #16–#24). No PR in flight.
 2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **Phase D-2 — change correlation.** `pg pipeline` today reports the declared
-     *approval surface* (which gates guard which action, across disciplines). The
-     next step is tracking a *specific* change through the disciplines' state
-     surfaces (`PROJECT_STATUS.md` ticket → `QA_QUEUE.md` sign-off →
-     `DEPLOY_QUEUE.md` deploy). Needs a **shared correlation key** across the
-     three surfaces — decide that first (e.g. a ticket/release id column each
-     surface carries). This is the natural continuation of Phase D.
+   - **A 4th discipline (security? docs?)** — cheap contract exercise; `modules/qa`
+     and `modules/devops` are the reference patterns. It would join `pg pipeline`
+     automatically (if it ships a gated workflow) and `pg trace` (if its state
+     surface carries a `Ref` column). The cleanest next validation.
    - **Agent subsystem, deeper** — PROTO-058 made `AgentManager` *read* module
      caps; installing/composing agents per discipline is unbuilt.
-   - **A 4th discipline (security? docs?)** — cheap contract exercise; `modules/qa`
-     and `modules/devops` are the reference patterns. Would join `pg pipeline`
-     automatically if it ships a gated workflow.
+   - **Phase D-3 — richer trace/pipeline** — e.g. `pg trace` could fold in the
+     pipeline gate chain to show which required approvals a change still lacks
+     (not just the rows it has); or trace a release across all its tickets.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = `6447df6` (through PROTO-060, PR #22). **No PR in flight.**
+- `development` = `1432f8b` (through PROTO-061, PR #24). **No PR in flight.**
 - **CI is green and deterministic.** `Tests` workflow: a dedicated `lint` job
   (single ubuntu/py3.12, **`black==26.5.1` pinned**) + a pytest-only matrix.
   Before PROTO-055 the matrix `black --check` ran *before* pytest and always
   failed, so **pytest never actually executed in CI**. Reproduce CI parity
   locally with the **bare console script** `pytest tests/` (not `python -m
   pytest`, which puts cwd on `sys.path`).
-- **792 tests pass; `pg doctor` 0/0/27 ok; `black --check` clean.**
+- **804 tests pass; `pg doctor` 0/0/27 ok; `black --check` clean.**
 - **The department seam, end to end** (all namespaced `<module>/<cap_id>`):
   - Discovery/manifest: `discover_modules()`, `module_host.resolve_module()`.
   - Listings (S1): `module_host.load_bundled_capabilities()`; `pg suggest`,
@@ -52,6 +49,9 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   - Gates/orchestration: `doctor.check_supervision_gates` audits every
     discipline's gates; **`module_core/pipeline.py` + `pg pipeline [--json]`**
     compose them into the path to production, flagging convergence points.
+  - Change trace (D-2): **`module_core/trace.py` + `pg trace <ticket> [--json]`**
+    follow a change across discipline state surfaces via the ticket-id key (a
+    `Ref` column each surface may carry), showing approval state per hop.
 - **Scope (PROTO-053):** proto-gear = software-engineering OS; departments are
   engineering disciplines (dev, qa, devops, security, docs, release/PM). No
   content/marketing — that's honk (`../_Plugins/honk/`), a separate product.
@@ -68,10 +68,12 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 - **PROTO-059** — DevOps/SRE module, 3rd discipline, zero core edits. PR #21.
 - **PROTO-060** — Phase D: cross-discipline supervision pipeline (`pg pipeline`).
   PR #22.
+- **PROTO-061** — Phase D-2: cross-discipline change trace (`pg trace`),
+  ticket-id correlation via a `Ref` column. PR #24.
 
 ## Pending / In Progress
 
-- **Nothing in flight.** Next thrust: Phase D-2 (change correlation) — step 2.
+- **Nothing in flight.** Next thrust: a 4th discipline, or Phase D-3 — step 2.
 
 ## Conventions In Force
 
@@ -79,10 +81,11 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   of scope by design (PROJECT_SPECIFICATIONS.md §8). Flag, don't build.
 - **New discipline = zero core edits.** Drop `modules/<name>/` (manifest +
   optional `capabilities/` + state-surface template). It is auto-discovered,
-  listed, installed, indexed, gate-audited, agent-visible, and joins
-  `pg pipeline` — with no `module_core/`/`cli/` change. If it needs one, the
-  abstraction is wrong — stop. `modules/qa/` and `modules/devops/` are the
-  reference patterns.
+  listed, installed, indexed, gate-audited, agent-visible, joins `pg pipeline`
+  (if it ships a gated workflow), and joins `pg trace` (if its state surface
+  carries a `Ref` column) — with no `module_core/`/`cli/` change. If it needs
+  one, the abstraction is wrong — stop. `modules/qa/` and `modules/devops/` are
+  the reference patterns.
 - **Layering:** `cli/` → `module_core/` (generic) → `modules/<dept>/`. Lower never
   imports higher. Module-generic behavior lives in `module_core` (e.g.
   `module_host.install_module_capabilities`, `pipeline.py`), never in

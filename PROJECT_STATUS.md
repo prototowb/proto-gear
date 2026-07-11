@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-061 | Phase D-2: cross-discipline change trace (pg trace) — ticket-id correlation | feature | IN_PROGRESS | feature/proto-061-phase-d-2-cross-discipline-change-trace- |  |
 
 _No active tickets — v0.10.0 just shipped._
 
@@ -693,6 +692,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-058 | S1 follow-up: agent subsystem reads module capabilities (multi-source) | 2026-07-11 | |
 | PROTO-059 | DevOps/SRE module — 3rd discipline, zero core edits (deploy queue + prod-approval gate) | 2026-07-11 | |
 | PROTO-060 | Phase D: cross-discipline supervision pipeline view (pg pipeline) | 2026-07-11 | |
+| PROTO-061 | Phase D-2: cross-discipline change trace (pg trace) — ticket-id correlation | 2026-07-11 | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
