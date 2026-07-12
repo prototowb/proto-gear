@@ -114,6 +114,43 @@ against a *second* engineering discipline — is the platform work.
 Escalation rule: when a workflow hits an undeclared situation, the agent stops,
 records state in SESSION_HANDOFF.md, and asks. Silence is never consent.
 
+### 4.1 Graded authority — the capability-growth axis (ADR-002)
+
+A gate declares three separate concerns (all data, all doctor-validated):
+
+- **`actor`** — who is *accountable* for the guarded work: a discipline agent
+  (`qa/qa-release-agent`), a human role, or unassigned. An agent can be the
+  actor and the recommender; it is never the clearer.
+- **`evidence`** — what *proves* the gate is satisfied: a declarative,
+  provably non-executing predicate over a state-surface cell (`non-empty` —
+  a sign-off is recorded; `equals` / `at-least` — a recorded fact matches a
+  declared claim). A filled cell that fails the claim is pending, not cleared.
+- **`authority`** — the *minimum authority required to clear* the gate, on a
+  three-rung ladder ordered most → least human involvement:
+
+  | Authority | Meaning |
+  |-----------|---------|
+  | `human` | A human signer clears (the default — identical to the base posture above). |
+  | `human-on-recommendation` | An agent verifies + recommends; a **human ratifies**, recording the residual-risk acceptance. The **ceiling** for any judgment gate. |
+  | `auto` | Cleared by the evidence predicate alone — reserved for deterministic, non-judgment facts (tests recorded green, coverage ≥ threshold). |
+
+This is how the supervision model **scales with agent capability**: as a class
+of verification becomes safe to delegate, that specific gate's `authority` is
+lowered in its metadata — a one-line, reviewable, doctor-audited config change;
+no workflow restructuring, no core edits (proven by dogfooding: engineering's
+`pr-review-approval` runs at `human-on-recommendation`, PROTO-073). The
+through-line is the separation of **verification** (mechanizable,
+evidence-predicated, agent-ownable) from **risk acceptance** (retained by a
+human at every judgment gate).
+
+Sufficiency is audited, not assumed: `pg trace` / `pg release` check that each
+cleared gate was signed by an identity of adequate authority (an agent signs
+with its agent id or an `agent:` prefix; an agent-signed human-rung gate is
+flagged). There is **no `agent` clearing rung** — an agent recording *itself*
+as the clearer of a judgment gate is deferred until a track record justifies
+revisiting (ADR-002, PROTO-069 amendment). The escalation rule above is
+unchanged by all of this: silence is never consent.
+
 ## 5. Product Principles (extends ARCHITECTURE.md design principles)
 
 1. **Docs are the API.** Modules encode knowledge as markdown + YAML that both

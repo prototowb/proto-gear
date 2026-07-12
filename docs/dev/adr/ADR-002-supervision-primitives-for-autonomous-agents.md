@@ -248,5 +248,10 @@ dogfooded, and surfaces through existing commands (no new human-facing palette).
        held**: the entire migration is the workflow's own metadata.yaml — zero
        `module_core`/`cli` edits — and doctor/pipeline/trace/release picked it
        up unchanged. All other gates remain pure `human`.)*
-5. [ ] Update PROJECT_SPECIFICATIONS §4 to describe **graded authority** as the
+5. [x] Update PROJECT_SPECIFICATIONS §4 to describe **graded authority** as the
        supervision model's capability-growth axis.
+       *(PROTO-075 — §4.1: actor / evidence / authority, the three-rung
+       ladder, the verification-vs-risk-acceptance through-line, sufficiency
+       auditing, and the deferred `agent` rung. **All five action items are
+       now complete** — the ADR-002 contract is implemented, dogfooded, and
+       specified.)*
