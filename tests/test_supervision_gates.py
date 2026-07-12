@@ -17,6 +17,7 @@ from proto_gear_pkg.module_core.capability_metadata import (
     CapabilityType,
     WorkflowMetadata,
     Gate,
+    GATE_AUTHORITY_LADDER,
 )
 from proto_gear_pkg.module_core import doctor
 
@@ -100,6 +101,38 @@ class TestGateParsing:
         assert m.workflow.gates[0].id == ""
         assert m.workflow.gates[0].description == "no id here"
 
+    def test_adr002_defaults_preserve_section4(self):
+        """actor/authority default to unassigned/human — corpus unchanged."""
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(gates=[{"id": "g1", "description": "d"}])
+        )
+        g = m.workflow.gates[0]
+        assert g.actor == ""
+        assert g.authority == "human"
+
+    def test_actor_and_authority_parsed(self):
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {
+                        "id": "qa-signoff",
+                        "description": "d",
+                        "actor": "qa/qa-release-agent",
+                        "authority": "human-on-recommendation",
+                        "evidence": "Signed off by",
+                    },
+                ]
+            )
+        )
+        g = m.workflow.gates[0]
+        assert g.actor == "qa/qa-release-agent"
+        assert g.authority == "human-on-recommendation"
+
+    def test_authority_ladder_excludes_deferred_agent_rung(self):
+        """ADR-002 PROTO-069 amendment: no `agent` clearing rung in the contract."""
+        assert "agent" not in GATE_AUTHORITY_LADDER
+        assert GATE_AUTHORITY_LADDER == ("human", "human-on-recommendation", "auto")
+
     def test_to_dict_includes_gates(self):
         m = CapabilityMetadataParser._parse_metadata_dict(
             _workflow_dict(
@@ -111,6 +144,8 @@ class TestGateParsing:
         wd = m.workflow.to_dict()
         assert "gates" in wd
         assert wd["gates"][0]["id"] == "g1"
+        assert wd["gates"][0]["actor"] == ""
+        assert wd["gates"][0]["authority"] == "human"
 
 
 def _fake_workflow(outputs, gates):
@@ -185,6 +220,131 @@ class TestCheckSupervisionGates:
             {
                 "workflows/x": _fake_workflow(
                     ["type: release"], [Gate(id="g", description="approve")]
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert [f.id for f in findings] == ["gate-ok"]
+
+    def test_deferred_agent_authority_is_error(self, tmp_path, monkeypatch):
+        """The `agent` clearing rung is deferred (ADR-002 amendment) — rejected."""
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [Gate(id="g", description="d", authority="agent")],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        deferred = [f for f in findings if f.id == "gate-authority-deferred"]
+        assert len(deferred) == 1
+        assert deferred[0].severity == "error"
+        assert "human-on-recommendation" in deferred[0].message
+
+    def test_unknown_authority_is_error(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [Gate(id="g", description="d", authority="vibes")],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert any(
+            f.id == "gate-authority-invalid" and f.severity == "error" for f in findings
+        )
+
+    def test_valid_authority_rungs_are_clean(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [
+                        Gate(id="g1", description="d", authority="human"),
+                        Gate(
+                            id="g2",
+                            description="d",
+                            authority="human-on-recommendation",
+                        ),
+                        Gate(
+                            id="g3",
+                            description="d",
+                            authority="auto",
+                            evidence="Tests green",
+                        ),
+                    ],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert [f.id for f in findings] == ["gate-ok"]
+
+    def test_auto_authority_without_evidence_is_error(self, tmp_path, monkeypatch):
+        """An auto gate clears by its evidence predicate alone — evidence required."""
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [Gate(id="g", description="d", authority="auto")],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert any(
+            f.id == "gate-auto-needs-evidence" and f.severity == "error"
+            for f in findings
+        )
+
+    def test_known_discipline_agent_actor_is_clean(self, tmp_path, monkeypatch):
+        """qa really ships qa-release-agent (PROTO-067) — a valid actor reference."""
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [Gate(id="g", description="d", actor="qa/qa-release-agent")],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert [f.id for f in findings] == ["gate-ok"]
+
+    def test_unknown_namespaced_actor_warns(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [Gate(id="g", description="d", actor="docs/ghost-agent")],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        unknown = [f for f in findings if f.id == "gate-actor-unknown"]
+        assert len(unknown) == 1
+        assert unknown[0].severity == "warning"
+
+    def test_human_role_actor_is_not_validated(self, tmp_path, monkeypatch):
+        """A non-namespaced actor is a human role, not an agent reference."""
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [Gate(id="g", description="d", actor="Release Manager")],
                 )
             },
         )

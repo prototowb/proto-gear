@@ -36,8 +36,10 @@ def collect_supervision_gates(modules_root: Optional[Path] = None) -> List[dict]
     ``gate``, ``before`` (guarded action), ``approver``, ``required``,
     ``description``, ``evidence`` (the state-surface column that records this
     gate's sign-off, or ``""``), ``scope`` (``"change"`` per-ticket or
-    ``"release"`` per-release). The shared/engineering bundle reports discipline
-    ``"engineering"``; a module's own caps report the module id.
+    ``"release"`` per-release), ``actor`` (who is accountable for the guarded
+    work, or ``""``) and ``authority`` (the minimum authority required to clear
+    — ADR-002 graded-authority ladder). The shared/engineering bundle reports
+    discipline ``"engineering"``; a module's own caps report the module id.
     """
     from . import module_host
     from .capability_metadata import load_all_capabilities, CapabilityType
@@ -69,6 +71,8 @@ def collect_supervision_gates(modules_root: Optional[Path] = None) -> List[dict]
                         "description": g.description,
                         "evidence": g.evidence,
                         "scope": g.scope,
+                        "actor": g.actor,
+                        "authority": g.authority,
                     }
                 )
     return records

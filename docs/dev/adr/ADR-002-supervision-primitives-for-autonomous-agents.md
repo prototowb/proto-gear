@@ -210,8 +210,13 @@ stays deferred until evidence justifies it).
 Architecture, phased — not a build commitment. Each ships behind green tests,
 dogfooded, and surfaces through existing commands (no new human-facing palette).
 
-1. [ ] Spec the gate-schema extension — `actor`, `authority` (with §4-preserving
+1. [x] Spec the gate-schema extension — `actor`, `authority` (with §4-preserving
        defaults), and evidence-as-predicate; `pg doctor` validates.
+       *(PROTO-071 — `actor` + three-rung `authority` in the gate schema,
+       doctor-validated: deferred/unknown rungs are errors, `auto` requires an
+       `evidence` column, a namespaced actor must name a shipped agent. The v1
+       evidence predicate is the implicit "cell non-empty and not 'pending'"
+       check `pg trace` already applies; the richer vocabulary is item 2.)*
 2. [ ] Define the evidence-predicate vocabulary — declarative checks over
        state-surface columns; provably non-executing.
 3. [ ] Extend `pg trace`/`pg release` to report **authority sufficiency** (was

@@ -76,14 +76,30 @@ class CapabilityRelevance:
         return {"triggers": self.triggers, "contexts": self.contexts}
 
 
+# The graded-authority ladder (ADR-002): the minimum authority a gate demands
+# of its clearer, ordered most → least human involvement. `human-on-
+# recommendation` is the current CEILING for judgment gates (an agent verifies
+# and recommends, a human ratifies); `auto` is reserved for deterministic,
+# non-judgment facts and clears by the evidence predicate alone. The `agent`
+# rung (an agent as the accountable clearer) is DEFERRED by the PROTO-069
+# amendment — declared but not part of the contract, so the doctor rejects it.
+GATE_AUTHORITY_LADDER = ("human", "human-on-recommendation", "auto")
+GATE_DEFERRED_AUTHORITIES = ("agent",)
+
+
 @dataclass
 class Gate:
-    """A supervision point — an explicit human approval within a workflow.
+    """A supervision point — an explicit approval within a workflow.
 
-    Gates make the supervision model (PROJECT_SPECIFICATIONS.md §4) machine-
-    readable: "agent proposes, human approves at declared gates". Declared as
-    data so tooling (pg doctor) can enforce that a workflow with irreversible
-    effects doesn't leave its approval points implied.
+    Gates make the supervision model (PROJECT_SPECIFICATIONS.md §4, ADR-002)
+    machine-readable: "agent proposes, human approves at declared gates".
+    Declared as data so tooling (pg doctor) can enforce that a workflow with
+    irreversible effects doesn't leave its approval points implied.
+
+    ADR-002 separates the three concerns a gate bundles: ``actor`` (who is
+    accountable for the guarded work), ``evidence`` (what proves the gate is
+    satisfied), and ``authority`` (the minimum authority required to clear it).
+    Defaults reproduce §4 exactly, so the existing corpus is unchanged.
     """
 
     id: str
@@ -95,12 +111,22 @@ class Gate:
     # records THIS gate's sign-off, so `pg trace`/`pg release` can evidence it
     # per change. Absent → discipline-level generic approval-column fallback.
     # Disambiguates disciplines that carry more than one gate (e.g. engineering).
+    # The v1 evidence predicate is implicit: "the cell is non-empty and not
+    # 'pending'" — declarative, read-only, never executed (ADR-002 §2).
     evidence: str = ""
     # "change" (default) — a per-change gate every ticket must clear.
     # "release" — a per-release gate cleared once for the whole release (e.g.
     # release-approval); `pg release` evidences it against the release label,
     # not per ticket. Anything unrecognised is treated as "change".
     scope: str = "change"
+    # Optional: who is ACCOUNTABLE for producing the work this gate guards —
+    # a discipline agent (`qa/qa-release-agent`), a human role, or "" =
+    # unassigned. Distinct from the approver (who clears); an agent may be the
+    # actor and recommender, never the clearer (ADR-002 §1, §3 amendment).
+    actor: str = ""
+    # Minimum authority required to CLEAR the gate — one of
+    # GATE_AUTHORITY_LADDER. Defaults to "human" (§4-preserving).
+    authority: str = "human"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -111,6 +137,8 @@ class Gate:
             "required": self.required,
             "evidence": self.evidence,
             "scope": self.scope,
+            "actor": self.actor,
+            "authority": self.authority,
         }
 
 
@@ -368,6 +396,8 @@ class CapabilityMetadataParser:
                             required=bool(g.get("required", True)),
                             evidence=str(g.get("evidence", "")),
                             scope=str(g.get("scope", "change")),
+                            actor=str(g.get("actor", "")),
+                            authority=str(g.get("authority", "human")),
                         )
                     )
             workflow = WorkflowMetadata(

@@ -405,23 +405,56 @@ def check_modules(project_dir: Path) -> List[Finding]:
 _RISK_OUTPUT_TOKENS = ("release", "deploy", "publish")
 
 
+def _bundled_agent_actors() -> set:
+    """Every discipline-shipped agent id (``<module>/<agent-slug>``).
+
+    The vocabulary a gate's namespaced ``actor:`` may reference — an agent slug
+    is its filename stem in ``modules/<name>/agents/`` (the id the PROTO-067
+    seam installs it under). Shared-root agents are not namespaced and a human
+    role actor carries no ``/``, so neither appears here.
+    """
+    from . import module_host
+
+    actors = set()
+    for module, agents_dir in module_host.iter_agent_sources():
+        if module is None:
+            continue
+        for f in sorted(agents_dir.glob("*.yaml")):
+            actors.add(f"{module}/{f.stem}")
+    return actors
+
+
 def check_supervision_gates(project_dir: Path) -> List[Finding]:
     """Audit supervision gates declared in bundled workflow capabilities.
 
-    Two rules (PROJECT_SPECIFICATIONS.md §4, contract item 5):
+    Rules (PROJECT_SPECIFICATIONS.md §4, contract item 5, ADR-002):
       * structural — every declared gate must have an id + description;
       * coverage — a workflow that produces a release/deployment/publish output
-        must declare at least one gate, so approval points are never implied.
+        must declare at least one gate, so approval points are never implied;
+      * authority — a gate's ``authority`` must be a rung of the adopted ladder
+        (the deferred ``agent`` clearing rung is rejected per the PROTO-069
+        amendment), and an ``auto`` gate must declare an ``evidence`` column —
+        it clears by the evidence predicate alone, so without one it would be
+        unverifiable;
+      * actor — a namespaced ``actor`` (``<module>/<agent>``) must reference an
+        agent some discipline actually ships (warning: accountability that
+        points at nobody).
     Audits the package-bundled capabilities (the committed source of truth) —
     the shared root AND every module's own ``capabilities/`` bundle, so a module
     that ships its own gated workflow (e.g. qa's release-signoff) is enforced the
     same as engineering's (seam S1). Module-owned capabilities are targeted as
     ``<module>/<cap_id>`` to disambiguate.
     """
-    from .capability_metadata import load_all_capabilities, CapabilityType
+    from .capability_metadata import (
+        load_all_capabilities,
+        CapabilityType,
+        GATE_AUTHORITY_LADDER,
+        GATE_DEFERRED_AUTHORITIES,
+    )
     from . import module_host
 
     findings: List[Finding] = []
+    known_actors: Optional[set] = None  # resolved lazily, only if referenced
 
     for module, caps_dir in module_host.iter_capability_sources():
         try:
@@ -450,6 +483,68 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
                             fix_hint="Give every gates: entry an id and a description",
                         )
                     )
+
+                authority = getattr(g, "authority", "human")
+                if authority in GATE_DEFERRED_AUTHORITIES:
+                    findings.append(
+                        Finding(
+                            id="gate-authority-deferred",
+                            severity="error",
+                            target=target,
+                            message=(
+                                f"gate '{g.id}' declares authority '{authority}' — "
+                                "the agent clearing rung is deferred (ADR-002, "
+                                "PROTO-069 amendment); the ceiling is "
+                                "'human-on-recommendation'."
+                            ),
+                            fix_hint="Use human-on-recommendation (agent verifies + recommends, human ratifies)",
+                        )
+                    )
+                elif authority not in GATE_AUTHORITY_LADDER:
+                    findings.append(
+                        Finding(
+                            id="gate-authority-invalid",
+                            severity="error",
+                            target=target,
+                            message=(
+                                f"gate '{g.id}' declares unknown authority "
+                                f"'{authority}'."
+                            ),
+                            fix_hint=f"Use one of: {', '.join(GATE_AUTHORITY_LADDER)}",
+                        )
+                    )
+                elif authority == "auto" and not g.evidence:
+                    findings.append(
+                        Finding(
+                            id="gate-auto-needs-evidence",
+                            severity="error",
+                            target=target,
+                            message=(
+                                f"gate '{g.id}' is authority 'auto' but names no "
+                                "evidence column — an auto gate clears by its "
+                                "evidence predicate alone."
+                            ),
+                            fix_hint="Declare evidence: <state-surface column> or raise the authority",
+                        )
+                    )
+
+                actor = getattr(g, "actor", "")
+                if actor and "/" in actor:
+                    if known_actors is None:
+                        known_actors = _bundled_agent_actors()
+                    if actor not in known_actors:
+                        findings.append(
+                            Finding(
+                                id="gate-actor-unknown",
+                                severity="warning",
+                                target=target,
+                                message=(
+                                    f"gate '{g.id}' names actor '{actor}' but no "
+                                    "discipline ships that agent."
+                                ),
+                                fix_hint="Reference a modules/<name>/agents/ file as <module>/<agent-slug>",
+                            )
+                        )
 
             risky = any(
                 any(tok in str(o).lower() for tok in _RISK_OUTPUT_TOKENS)
