@@ -30,23 +30,30 @@ sufficiency auditing, and one live `human-on-recommendation` gate.
    (`go-no-go`, before `release` — a three-way convergence with qa +
    security), and ships `release-coordinator-agent` via the PROTO-067 seam.
    `pg release <label>` now requires a recorded human go decision.
-2. **User said PAUSE here** before the remaining backlog:
-   - **`pg release` polish** — cross-discipline release surfaces, or
-     release-notes generation from the cleared checklist.
-   - **Interactive UI investment (§5.7)** — the init wizard is the only
-     interactive surface; a browse/navigate UI over capabilities + agents
-     (the `pg agent list` sections are the seed) would honor UI-first
-     before the command surface grows further.
-   Also done post-merge: proto-gear installed into `../arsenal-gear/`
-   (pg init) — see that repo's own SESSION_HANDOFF for its state.
+2. **Post-ADR-002 backlog — now largely worked through** (PRs #49–#51):
+   - **PROTO-078** — `pg init --no-interactive` substitution gaps: shared
+     defaulted-replacement dict on every init path, PROJECT_STATUS via the
+     headered template, `--force` refresh, fence-aware + comment-tolerant
+     `pg status` parsing. **Prod-verified in `../arsenal-gear/`** (86→0 leaks).
+   - **PROTO-079** — **`pg release --notes`**: release notes generated from the
+     cleared gate checklist (tickets grouped Features/Fixes/Changes + approvers
+     per discipline; draft caveat when not ready). Reuses `trace_release`.
+   - **PROTO-080** — **interactive agent browser (§5.7 first slice)**: bare
+     `pg agent` → navigate/select installed + available agents (view + install
+     on pick), `questionary`-driven, falls back to `pg agent list` without a
+     TTY. First non-wizard interactive surface.
+   - **Remaining §5.7 slices** (not started): interactive **capability browser**
+     (`pg capabilities` no-arg) and a top-level **home menu** (`pg` no-arg).
+     Reuse the `cmd_agent_browse` pattern — pure `_collect_*` data + a thin
+     `questionary` loop with a non-TTY fallback.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-077 (PR #47). **No PR in flight** (bar this
-  one if you're reading it pre-merge). **923 tests pass; `pg doctor` 31
-  checks green.**
+- `development` = through PROTO-080 (PRs #49–#51). **951 tests pass; `pg
+  doctor` green.** The init/release/agent-browser work rides those PRs; run
+  `pg status` / `pg ticket list` for the live picture.
 - **Five disciplines**: `modules/release/` = module.yaml +
   RELEASE_QUEUE.template.md (stages planned→…→go→shipped; ID = release
   label; Ref = member tickets; no Release/Version column, so the label row
