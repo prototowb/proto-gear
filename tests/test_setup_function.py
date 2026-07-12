@@ -397,10 +397,9 @@ class TestSetupEdgeCases:
         """Test when generate_branching_doc returns None (line 737-741 else path)"""
         monkeypatch.chdir(tmp_path)
 
-        with (
-            patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git,
-            patch("proto_gear_pkg.proto_gear.generate_branching_doc") as mock_gen,
-        ):
+        with patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git, patch(
+            "proto_gear_pkg.proto_gear.generate_branching_doc"
+        ) as mock_gen:
 
             mock_git.return_value = {
                 "is_git_repo": False,
