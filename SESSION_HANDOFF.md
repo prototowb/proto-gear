@@ -15,25 +15,31 @@ is the implicit "cell non-empty and not 'pending'" check), and **authority**
 per the PROTO-069 amendment and the doctor rejects it). Defaults reproduce §4
 exactly — the whole bundled corpus is unchanged, all-human.
 
-1. **Everything through PROTO-074 is merged** (PROTO-068/069 = ADR-002
-   proposed/accepted, PROTO-070 = UI-first §5.7, PROTO-071 = `actor` +
-   `authority` PR #41, PROTO-072 = evidence predicates PR #42, PROTO-073 =
-   dogfood falsifier PR #43 — **held, zero core edits**, PROTO-074 =
-   authority sufficiency PR #44).
-2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **ADR-002 item 5 (last one)** — update PROJECT_SPECIFICATIONS §4 to
-     describe graded authority as the supervision model's capability-growth
-     axis. Docs-only; closes the ADR-002 action list.
-   - Still open from before: `pg agent list --available` / `pg agent install`
-     (surfacing pre-install discipline agents), a 5th discipline (docs /
-     release-PM), `pg release` polish. Remember PROTO-070: every new feature
-     must be reachable via the interactive UI first — commands are shortcuts.
+**The ADR-002 arc is COMPLETE** — all five action items shipped (PROTO-071
+schema, PROTO-072 evidence predicates, PROTO-073 dogfood falsifier [held,
+zero core edits], PROTO-074 authority sufficiency, PROTO-075 spec §4.1).
+The supervision contract now separates actor / evidence / authority, with a
+three-rung graded-authority ladder, doctor validation, trace/release
+sufficiency auditing, and one live `human-on-recommendation` gate.
+
+1. **Everything through PROTO-075 is merged** (PRs #41–#45).
+2. **Pick the next thrust** (unticketed; file with `pg ticket create`) — the
+   pre-ADR backlog is the queue now:
+   - **Agent surfacing**: `pg agent list --available` (show discoverable
+     bundled/discipline agents via `module_host.iter_agent_sources()`) and
+     `pg agent install <name>`. Per PROTO-070 (§5.7), reach it through the
+     interactive UI first — a command is the shortcut, not the entry.
+   - **A 5th discipline** (docs / release-PM) — contract proven ×4; a
+     release/PM discipline could own the Releases surface and would get
+     agents + graded authority for free.
+   - **`pg release` polish** — cross-discipline release surfaces, or
+     release-notes generation from the cleared checklist.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-074 (PR #44). **No PR in flight** (bar this
+- `development` = through PROTO-075 (PR #45). **No PR in flight** (bar this
   one if you're reading it pre-merge).
 - **892 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
 - **Authority sufficiency (PROTO-074, ADR-002 item 3)**: checklist entries
@@ -97,14 +103,16 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
   mapping-form evidence, in the workflow's metadata.yaml alone. PR #43.
 - **PROTO-074** — ADR-002 action item 3: authority-sufficiency reporting in
   `pg trace`/`pg release` (signers + `authority_ok`), no new commands. PR #44.
+- **PROTO-075** — ADR-002 action item 5: PROJECT_SPECIFICATIONS §4.1 describes
+  graded authority as the capability-growth axis. **Closes the ADR-002 action
+  list.** PR #45.
 - (Earlier: PROTO-054–067 — module seam S1, pipeline/trace/release D-series,
   per-gate evidence + scope, agent seam. See git history.)
 
 ## Pending / In Progress
 
-- **Nothing in flight** beyond PR #44 (PROTO-074). Next: ADR-002 item 5
-  (spec §4 graded authority — docs-only, closes the ADR action list), then
-  the pre-ADR backlog — see "Start here".
+- **Nothing in flight** beyond PR #45 (PROTO-075). The ADR-002 arc is done;
+  next thrust comes from the backlog — see "Start here".
 
 ## Conventions In Force
 
