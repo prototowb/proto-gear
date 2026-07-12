@@ -436,6 +436,10 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
         amendment), and an ``auto`` gate must declare an ``evidence`` column —
         it clears by the evidence predicate alone, so without one it would be
         unverifiable;
+      * evidence predicate — a gate's ``evidence`` predicate must come from the
+        declarative vocabulary (``GATE_EVIDENCE_PREDICATES``), and a comparison
+        predicate must be fully specified: an evidence column, a value operand,
+        and a numeric operand for ``at-least``;
       * actor — a namespaced ``actor`` (``<module>/<agent>``) must reference an
         agent some discipline actually ships (warning: accountability that
         points at nobody).
@@ -450,6 +454,7 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
         CapabilityType,
         GATE_AUTHORITY_LADDER,
         GATE_DEFERRED_AUTHORITIES,
+        GATE_EVIDENCE_PREDICATES,
     )
     from . import module_host
 
@@ -527,6 +532,69 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
                             fix_hint="Declare evidence: <state-surface column> or raise the authority",
                         )
                     )
+
+                # Evidence predicate (ADR-002 §2) — must stay within the small
+                # declarative vocabulary, and a comparison predicate must be
+                # fully specified (column + operand) or it is theater.
+                predicate = getattr(g, "evidence_predicate", "non-empty")
+                ev_value = getattr(g, "evidence_value", "")
+                if predicate not in GATE_EVIDENCE_PREDICATES:
+                    findings.append(
+                        Finding(
+                            id="gate-evidence-predicate-invalid",
+                            severity="error",
+                            target=target,
+                            message=(
+                                f"gate '{g.id}' declares unknown evidence "
+                                f"predicate '{predicate}'."
+                            ),
+                            fix_hint=f"Use one of: {', '.join(GATE_EVIDENCE_PREDICATES)}",
+                        )
+                    )
+                elif predicate != "non-empty":
+                    if not g.evidence:
+                        findings.append(
+                            Finding(
+                                id="gate-evidence-column-missing",
+                                severity="error",
+                                target=target,
+                                message=(
+                                    f"gate '{g.id}' declares evidence predicate "
+                                    f"'{predicate}' but no evidence column to "
+                                    "check it against."
+                                ),
+                                fix_hint="Declare evidence: {column: <state-surface column>, predicate: ..., value: ...}",
+                            )
+                        )
+                    if not ev_value:
+                        findings.append(
+                            Finding(
+                                id="gate-evidence-value-missing",
+                                severity="error",
+                                target=target,
+                                message=(
+                                    f"gate '{g.id}' evidence predicate "
+                                    f"'{predicate}' requires a value operand."
+                                ),
+                                fix_hint="Add value: to the evidence mapping",
+                            )
+                        )
+                    elif predicate == "at-least":
+                        try:
+                            float(ev_value)
+                        except ValueError:
+                            findings.append(
+                                Finding(
+                                    id="gate-evidence-value-not-numeric",
+                                    severity="error",
+                                    target=target,
+                                    message=(
+                                        f"gate '{g.id}' at-least predicate needs "
+                                        f"a numeric value, got '{ev_value}'."
+                                    ),
+                                    fix_hint="Use a number, e.g. value: 90",
+                                )
+                            )
 
                 actor = getattr(g, "actor", "")
                 if actor and "/" in actor:

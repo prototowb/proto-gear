@@ -823,6 +823,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-069 | Accept ADR-002 + defer agent authority rung | 2026-07-11 | | |
 | PROTO-070 | Spec: add UI-first product principle | 2026-07-11 | | |
 | PROTO-071 | Gate schema: actor + graded authority — ADR-002 action item 1 | 2026-07-12 | | |
+| PROTO-072 | Evidence-predicate vocabulary for supervision gates — ADR-002 action item 2 | 2026-07-12 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

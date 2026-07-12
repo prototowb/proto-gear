@@ -35,11 +35,13 @@ def collect_supervision_gates(modules_root: Optional[Path] = None) -> List[dict]
     Each record: ``discipline``, ``workflow`` (namespaced id), ``workflow_name``,
     ``gate``, ``before`` (guarded action), ``approver``, ``required``,
     ``description``, ``evidence`` (the state-surface column that records this
-    gate's sign-off, or ``""``), ``scope`` (``"change"`` per-ticket or
-    ``"release"`` per-release), ``actor`` (who is accountable for the guarded
-    work, or ``""``) and ``authority`` (the minimum authority required to clear
-    — ADR-002 graded-authority ladder). The shared/engineering bundle reports
-    discipline ``"engineering"``; a module's own caps report the module id.
+    gate's sign-off, or ``""``) with ``evidence_predicate``/``evidence_value``
+    (the declarative claim that column must satisfy — ADR-002 §2), ``scope``
+    (``"change"`` per-ticket or ``"release"`` per-release), ``actor`` (who is
+    accountable for the guarded work, or ``""``) and ``authority`` (the minimum
+    authority required to clear — ADR-002 graded-authority ladder). The
+    shared/engineering bundle reports discipline ``"engineering"``; a module's
+    own caps report the module id.
     """
     from . import module_host
     from .capability_metadata import load_all_capabilities, CapabilityType
@@ -70,6 +72,8 @@ def collect_supervision_gates(modules_root: Optional[Path] = None) -> List[dict]
                         "required": g.required,
                         "description": g.description,
                         "evidence": g.evidence,
+                        "evidence_predicate": g.evidence_predicate,
+                        "evidence_value": g.evidence_value,
                         "scope": g.scope,
                         "actor": g.actor,
                         "authority": g.authority,

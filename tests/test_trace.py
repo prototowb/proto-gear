@@ -145,6 +145,113 @@ class TestGateChecklist:
         assert by_gate["prod-approval"] == "pending"
 
 
+def _pin_pipeline(monkeypatch, gates):
+    """Pin the pipeline to one stage with controlled gate records — the
+    comparison-predicate gates don't exist in the bundled corpus (it is
+    deliberately all-default), so checklist evaluation is tested in isolation."""
+    monkeypatch.setattr(
+        "proto_gear_pkg.module_core.pipeline.build_pipeline",
+        lambda modules_root=None: [{"action": "release", "gates": gates}],
+    )
+
+
+class TestEvidencePredicates:
+    """ADR-002 §2: a gate clears iff its declarative evidence predicate holds."""
+
+    def test_predicate_holds_equals_is_case_insensitive(self):
+        assert trace._predicate_holds("Green", "equals", "green")
+        assert trace._predicate_holds("_deployed_", "equals", "deployed")
+        assert not trace._predicate_holds("red", "equals", "green")
+
+    def test_predicate_holds_at_least_reads_first_number(self):
+        assert trace._predicate_holds("93%", "at-least", "90")
+        assert trace._predicate_holds("coverage 90.5", "at-least", "90")
+        assert not trace._predicate_holds("87%", "at-least", "90")
+        assert not trace._predicate_holds("n/a", "at-least", "90")
+
+    def test_unknown_predicate_never_holds(self):
+        # An unverifiable claim must not clear a gate; doctor flags the schema.
+        assert not trace._predicate_holds("anything", "python:check()", "x")
+
+    def test_equals_gate_cleared_when_cell_matches(self, tmp_path, monkeypatch):
+        _write_surfaces(tmp_path)  # qa row: Stage = signed-off
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "stage-check",
+                    "required": True,
+                    "evidence": "Stage",
+                    "evidence_predicate": "equals",
+                    "evidence_value": "signed-off",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+
+    def test_equals_gate_pending_when_cell_differs(self, tmp_path, monkeypatch):
+        # A FILLED cell that fails the claim is pending, never cleared — the
+        # sharpening over non-empty that makes evidence a predicate.
+        _write_surfaces(tmp_path)
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "stage-check",
+                    "required": True,
+                    "evidence": "Stage",
+                    "evidence_predicate": "equals",
+                    "evidence_value": "verified",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "pending"
+
+    def test_at_least_gate_over_numeric_cell(self, tmp_path, monkeypatch):
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Stage | Coverage | Signed off by |\n"
+            "|----|-----|-------|----------|---------------|\n"
+            "| QA-009 | PROTO-060 | verified | 93% | ann |\n",
+            encoding="utf-8",
+        )
+        gate = {
+            "discipline": "qa",
+            "gate": "coverage-floor",
+            "required": True,
+            "evidence": "Coverage",
+            "evidence_predicate": "at-least",
+            "evidence_value": "90",
+        }
+        _pin_pipeline(monkeypatch, [dict(gate)])
+        (entry,) = trace.gate_checklist("PROTO-060", tmp_path)
+        assert entry["status"] == "cleared"
+
+        _pin_pipeline(monkeypatch, [dict(gate, evidence_value="95")])
+        (entry,) = trace.gate_checklist("PROTO-060", tmp_path)
+        assert entry["status"] == "pending"
+
+    def test_non_empty_gate_keeps_historical_behaviour(self, tmp_path, monkeypatch):
+        _write_surfaces(tmp_path)
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "qa-signoff",
+                    "required": True,
+                    "evidence": "Signed off by",
+                    "evidence_predicate": "non-empty",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+
+
 def _write_status_with_review(root: Path, reviewer: str):
     """Engineering completed-tickets table carrying the per-gate 'Reviewed by'
     evidence column that pr-review-approval names."""

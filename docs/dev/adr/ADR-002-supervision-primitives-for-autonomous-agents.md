@@ -217,8 +217,15 @@ dogfooded, and surfaces through existing commands (no new human-facing palette).
        `evidence` column, a namespaced actor must name a shipped agent. The v1
        evidence predicate is the implicit "cell non-empty and not 'pending'"
        check `pg trace` already applies; the richer vocabulary is item 2.)*
-2. [ ] Define the evidence-predicate vocabulary — declarative checks over
+2. [x] Define the evidence-predicate vocabulary — declarative checks over
        state-surface columns; provably non-executing.
+       *(PROTO-072 — `GATE_EVIDENCE_PREDICATES = non-empty | equals |
+       at-least`; in YAML `evidence:` is a plain column string (non-empty) or
+       a `{column, predicate, value}` mapping. Pure string/number comparison
+       over a markdown cell — nothing can name or run code; an unknown
+       predicate never clears and the doctor rejects it. `pg trace`/`pg
+       release` evaluate the predicate; a filled cell that fails the claim is
+       pending, never cleared.)*
 3. [ ] Extend `pg trace`/`pg release` to report **authority sufficiency** (was
        each cleared gate cleared by a signer of adequate authority?) — reuse the
        surfaces, add no commands.

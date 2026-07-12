@@ -460,9 +460,14 @@ def cmd_capabilities_show(args):
             # so the common all-human gate stays a one-glance line.
             auth = f", authority: {g.authority}" if g.authority != "human" else ""
             actor = f", actor: {g.actor}" if g.actor else ""
+            ev = (
+                f", evidence: {g.evidence} {g.evidence_predicate} {g.evidence_value}"
+                if g.evidence_predicate != "non-empty"
+                else ""
+            )
             print(
                 f"  - {Colors.BOLD}{g.id}{Colors.ENDC} "
-                f"({g.approver}, {req}{loc}{auth}{actor})"
+                f"({g.approver}, {req}{loc}{auth}{actor}{ev})"
             )
             print(f"      {g.description}")
 
