@@ -86,6 +86,18 @@ class CapabilityRelevance:
 GATE_AUTHORITY_LADDER = ("human", "human-on-recommendation", "auto")
 GATE_DEFERRED_AUTHORITIES = ("agent",)
 
+# The evidence-predicate vocabulary (ADR-002 §2): the machine-checkable claims
+# a gate may make about its evidence cell. Deliberately small, declarative, and
+# provably non-executing — every predicate is a pure string/number comparison
+# over a state-surface cell; nothing here can name code or be evaluated.
+#   non-empty — the cell is filled and not 'pending' (the v1 default; exactly
+#               the check `pg trace` has always applied to evidence columns).
+#   equals    — the cell equals `value` (case-insensitive, ignores the *_ *
+#               markdown emphasis wrapping) — e.g. Tests equals "green".
+#   at-least  — the first number in the cell is >= the numeric `value` —
+#               e.g. Coverage at-least 90 (a "93%" cell clears).
+GATE_EVIDENCE_PREDICATES = ("non-empty", "equals", "at-least")
+
 
 @dataclass
 class Gate:
@@ -111,9 +123,15 @@ class Gate:
     # records THIS gate's sign-off, so `pg trace`/`pg release` can evidence it
     # per change. Absent → discipline-level generic approval-column fallback.
     # Disambiguates disciplines that carry more than one gate (e.g. engineering).
-    # The v1 evidence predicate is implicit: "the cell is non-empty and not
-    # 'pending'" — declarative, read-only, never executed (ADR-002 §2).
+    # In YAML, `evidence:` is either a plain string (the column; predicate
+    # defaults to non-empty) or a mapping {column, predicate, value} — parsed
+    # into the three flat fields below (ADR-002 §2).
     evidence: str = ""
+    # What must hold of the evidence cell for the gate to clear — one of
+    # GATE_EVIDENCE_PREDICATES. Declarative, read-only, never executed.
+    evidence_predicate: str = "non-empty"
+    # The comparison operand for equals/at-least; unused by non-empty.
+    evidence_value: str = ""
     # "change" (default) — a per-change gate every ticket must clear.
     # "release" — a per-release gate cleared once for the whole release (e.g.
     # release-approval); `pg release` evidences it against the release label,
@@ -136,6 +154,8 @@ class Gate:
             "approver": self.approver,
             "required": self.required,
             "evidence": self.evidence,
+            "evidence_predicate": self.evidence_predicate,
+            "evidence_value": self.evidence_value,
             "scope": self.scope,
             "actor": self.actor,
             "authority": self.authority,
@@ -387,6 +407,17 @@ class CapabilityMetadataParser:
             gates = []
             for g in workflow_data.get("gates") or []:
                 if isinstance(g, dict):
+                    # evidence: either a plain column string (predicate defaults
+                    # to non-empty) or a {column, predicate, value} mapping.
+                    ev = g.get("evidence", "")
+                    if isinstance(ev, dict):
+                        ev_column = str(ev.get("column", ""))
+                        ev_predicate = str(ev.get("predicate", "non-empty"))
+                        ev_value = str(ev.get("value", ""))
+                    else:
+                        ev_column = str(ev)
+                        ev_predicate = "non-empty"
+                        ev_value = ""
                     gates.append(
                         Gate(
                             id=str(g.get("id", "")),
@@ -394,7 +425,9 @@ class CapabilityMetadataParser:
                             before=str(g.get("before", "")),
                             approver=str(g.get("approver", "human")),
                             required=bool(g.get("required", True)),
-                            evidence=str(g.get("evidence", "")),
+                            evidence=ev_column,
+                            evidence_predicate=ev_predicate,
+                            evidence_value=ev_value,
                             scope=str(g.get("scope", "change")),
                             actor=str(g.get("actor", "")),
                             authority=str(g.get("authority", "human")),

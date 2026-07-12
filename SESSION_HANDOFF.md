@@ -15,22 +15,19 @@ is the implicit "cell non-empty and not 'pending'" check), and **authority**
 per the PROTO-069 amendment and the doctor rejects it). Defaults reproduce §4
 exactly — the whole bundled corpus is unchanged, all-human.
 
-1. **Everything through PROTO-071 is merged** (PROTO-068/069 = ADR-002
+1. **Everything through PROTO-072 is merged** (PROTO-068/069 = ADR-002
    proposed/accepted, PROTO-070 = UI-first principle §5.7, PROTO-071 = gate
-   schema `actor` + `authority`, doctor-validated, PR #41).
+   schema `actor` + `authority` PR #41, PROTO-072 = evidence-predicate
+   vocabulary PR #42).
 2. **Pick the next thrust** (unticketed; file with `pg ticket create`) — the
    ADR-002 action items are the arc (docs/dev/adr/ADR-002-…md §Action Items):
-   - **Item 2 — evidence-predicate vocabulary**: promote `evidence:` from "a
-     column whose cell is non-empty" to a small declarative predicate set
-     (e.g. non-empty / names-a-recognized-approver / equals). Must stay
-     read-only and provably non-executing.
    - **Item 3 — authority sufficiency in `pg trace`/`pg release`**: the
      checklist entries already carry `authority`; report whether each cleared
      gate's signer had *sufficient* authority (needs a signer-identity
      convention on the state surface). No new commands.
    - **Item 4 — dogfood falsifier**: migrate exactly ONE engineering gate to
      evidence-predicate + `human-on-recommendation`; if it needs a core edit,
-     the primitive is wrong — stop.
+     the primitive is wrong — stop. (Items 1+2 shipped; this is now unblocked.)
    - **Item 5 — PROJECT_SPECIFICATIONS §4**: describe graded authority as the
      supervision model's capability-growth axis.
    - Still open from before: `pg agent list --available` / `pg agent install`
@@ -42,14 +39,23 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-071 (PR #41). **No PR in flight** (bar this
+- `development` = through PROTO-072 (PR #42). **No PR in flight** (bar this
   one if you're reading it pre-merge).
-- **866 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
+- **881 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
 - **Gate schema (capability_metadata.Gate)**: `id`, `description`, `before`,
-  `approver`, `required`, `evidence`, `scope: change|release`, **`actor`**
-  (discipline agent `<module>/<agent-slug>`, human role, or "" = unassigned),
-  **`authority`** (`GATE_AUTHORITY_LADDER = human | human-on-recommendation |
-  auto`; `GATE_DEFERRED_AUTHORITIES = agent`). All defaults §4-preserving.
+  `approver`, `required`, `evidence` (+ `evidence_predicate`,
+  `evidence_value`), `scope: change|release`, **`actor`** (discipline agent
+  `<module>/<agent-slug>`, human role, or "" = unassigned), **`authority`**
+  (`GATE_AUTHORITY_LADDER = human | human-on-recommendation | auto`;
+  `GATE_DEFERRED_AUTHORITIES = agent`). All defaults §4-preserving.
+- **Evidence predicates (PROTO-072, ADR-002 §2)**:
+  `GATE_EVIDENCE_PREDICATES = non-empty | equals | at-least`. YAML `evidence:`
+  is a plain column string (predicate non-empty) or a
+  `{column, predicate, value}` mapping. `trace._predicate_holds` evaluates
+  comparisons (pure string/number checks over a markdown cell — provably
+  non-executing; unknown predicates never clear). A filled cell that fails
+  the claim is `pending`, never `cleared`. Doctor: predicate must be in the
+  vocabulary; equals/at-least need column + value; at-least value numeric.
 - **Doctor gate audit** (`check_supervision_gates`) now enforces:
   `gate-authority-deferred` (error — `agent` rung, ADR-002 amendment),
   `gate-authority-invalid` (error), `gate-auto-needs-evidence` (error — an
@@ -77,13 +83,16 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 - **PROTO-071** — ADR-002 action item 1: gate schema `actor` + graded
   `authority`, doctor validation, plumbed through pipeline/trace/CLI. Zero
   behavior change for the existing all-default corpus. PR #41.
+- **PROTO-072** — ADR-002 action item 2: declarative evidence-predicate
+  vocabulary (non-empty/equals/at-least), doctor-validated, evaluated by
+  `gate_checklist` (so `pg trace` AND `pg release` get it). PR #42.
 - (Earlier: PROTO-054–067 — module seam S1, pipeline/trace/release D-series,
   per-gate evidence + scope, agent seam. See git history.)
 
 ## Pending / In Progress
 
-- **Nothing in flight** beyond PR #41 (PROTO-071). Next: ADR-002 items 2–5
-  (see "Start here").
+- **Nothing in flight** beyond PR #42 (PROTO-072). Next: ADR-002 items 3–5
+  (see "Start here"); item 4 (dogfood falsifier) is the natural proof point.
 
 ## Conventions In Force
 

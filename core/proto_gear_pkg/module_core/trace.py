@@ -13,6 +13,7 @@ column in its state surface — no code here changes. Read-only; parses the
 surfaces, executes nothing.
 """
 
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -189,6 +190,31 @@ def _best_state(states) -> Optional[str]:
 # is judged by its best (a cleared row wins over a still-pending one).
 _EVIDENCE_RANK = {"cleared": 2, "pending": 1, None: 0}
 
+_NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
+
+
+def _predicate_holds(cell: str, predicate: str, value: str) -> bool:
+    """Does the evidence ``cell`` satisfy a comparison ``predicate``?
+
+    The declarative vocabulary of ADR-002 §2 (``GATE_EVIDENCE_PREDICATES``,
+    minus ``non-empty`` which keeps the graded cleared/pending semantics in the
+    caller). Pure string/number comparison — reads a markdown cell, executes
+    nothing. Unknown predicates never hold: the doctor flags them, and an
+    unverifiable claim must not clear a gate.
+    """
+    norm = cell.strip().strip("_*").strip()
+    if predicate == "equals":
+        return norm.lower() == value.strip().lower()
+    if predicate == "at-least":
+        m = _NUMBER_RE.search(norm)
+        if not m:
+            return False
+        try:
+            return float(m.group()) >= float(value)
+        except ValueError:
+            return False
+    return False
+
 
 def gate_checklist(
     change_id: str, project_dir: Path, modules_root: Optional[Path] = None
@@ -213,8 +239,12 @@ def gate_checklist(
     A gate that declares an ``evidence`` column (workflow metadata) is matched
     against **that specific column** in its discipline's rows — so a discipline
     carrying several gates (engineering) can evidence each one independently
-    instead of collapsing to a single approval cell. A gate with no ``evidence``
-    keeps the discipline-level generic approval-column behaviour.
+    instead of collapsing to a single approval cell. The gate's evidence
+    *predicate* (ADR-002 §2) decides what the cell must satisfy: ``non-empty``
+    (default — filled and not 'pending') keeps the historical behaviour, while
+    ``equals``/``at-least`` clear only when the declared comparison holds
+    (:func:`_predicate_holds`). A gate with no ``evidence`` keeps the
+    discipline-level generic approval-column behaviour.
 
     Each entry: ``action``, ``gate``, ``discipline``, ``required``, ``status``,
     ``scope`` (``"change"`` per-ticket or ``"release"`` per-release — a
@@ -247,12 +277,25 @@ def gate_checklist(
                 status = "outstanding"  # change hasn't reached this discipline
             elif g.get("evidence"):
                 cells = _column_cells(rows_by_disc[disc], g["evidence"])
+                predicate = g.get("evidence_predicate", "non-empty")
                 if not cells:
                     status = "untracked"  # gate's evidence column absent here
-                else:
+                elif predicate == "non-empty":
                     status = (
                         "cleared"
                         if _best_state(_approval_state(c) for c in cells) == "cleared"
+                        else "pending"
+                    )
+                else:
+                    # Comparison predicate (ADR-002 §2): the gate clears iff some
+                    # row's evidence cell satisfies the declared claim; a filled
+                    # cell that fails the claim is still pending, never cleared.
+                    status = (
+                        "cleared"
+                        if any(
+                            _predicate_holds(c, predicate, g.get("evidence_value", ""))
+                            for c in cells
+                        )
                         else "pending"
                     )
             else:

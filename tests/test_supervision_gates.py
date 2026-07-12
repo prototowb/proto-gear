@@ -133,6 +133,52 @@ class TestGateParsing:
         assert "agent" not in GATE_AUTHORITY_LADDER
         assert GATE_AUTHORITY_LADDER == ("human", "human-on-recommendation", "auto")
 
+    def test_evidence_string_form_defaults_to_non_empty(self):
+        """Back-compat: a plain-string evidence is the column, predicate non-empty."""
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[{"id": "g1", "description": "d", "evidence": "Reviewed by"}]
+            )
+        )
+        g = m.workflow.gates[0]
+        assert g.evidence == "Reviewed by"
+        assert g.evidence_predicate == "non-empty"
+        assert g.evidence_value == ""
+
+    def test_evidence_mapping_form_parsed(self):
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {
+                        "id": "g1",
+                        "description": "d",
+                        "evidence": {
+                            "column": "Coverage",
+                            "predicate": "at-least",
+                            "value": 90,
+                        },
+                    }
+                ]
+            )
+        )
+        g = m.workflow.gates[0]
+        assert g.evidence == "Coverage"
+        assert g.evidence_predicate == "at-least"
+        assert g.evidence_value == "90"
+
+    def test_evidence_mapping_defaults(self):
+        """A mapping without predicate/value keeps the non-empty default."""
+        m = CapabilityMetadataParser._parse_metadata_dict(
+            _workflow_dict(
+                gates=[
+                    {"id": "g1", "description": "d", "evidence": {"column": "Tests"}}
+                ]
+            )
+        )
+        g = m.workflow.gates[0]
+        assert g.evidence == "Tests"
+        assert g.evidence_predicate == "non-empty"
+
     def test_to_dict_includes_gates(self):
         m = CapabilityMetadataParser._parse_metadata_dict(
             _workflow_dict(
@@ -304,6 +350,123 @@ class TestCheckSupervisionGates:
             f.id == "gate-auto-needs-evidence" and f.severity == "error"
             for f in findings
         )
+
+    def test_unknown_evidence_predicate_is_error(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [
+                        Gate(
+                            id="g",
+                            description="d",
+                            evidence="Tests",
+                            evidence_predicate="python:check()",
+                        )
+                    ],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert any(
+            f.id == "gate-evidence-predicate-invalid" and f.severity == "error"
+            for f in findings
+        )
+
+    def test_comparison_predicate_without_column_is_error(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [
+                        Gate(
+                            id="g",
+                            description="d",
+                            evidence_predicate="equals",
+                            evidence_value="green",
+                        )
+                    ],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert any(f.id == "gate-evidence-column-missing" for f in findings)
+
+    def test_comparison_predicate_without_value_is_error(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [
+                        Gate(
+                            id="g",
+                            description="d",
+                            evidence="Tests",
+                            evidence_predicate="equals",
+                        )
+                    ],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert any(f.id == "gate-evidence-value-missing" for f in findings)
+
+    def test_at_least_with_non_numeric_value_is_error(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [
+                        Gate(
+                            id="g",
+                            description="d",
+                            evidence="Coverage",
+                            evidence_predicate="at-least",
+                            evidence_value="lots",
+                        )
+                    ],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert any(f.id == "gate-evidence-value-not-numeric" for f in findings)
+
+    def test_well_formed_comparison_predicates_are_clean(self, tmp_path, monkeypatch):
+        _single_source(
+            monkeypatch,
+            tmp_path,
+            {
+                "workflows/x": _fake_workflow(
+                    ["type: release"],
+                    [
+                        Gate(
+                            id="g1",
+                            description="d",
+                            evidence="Tests",
+                            evidence_predicate="equals",
+                            evidence_value="green",
+                        ),
+                        Gate(
+                            id="g2",
+                            description="d",
+                            evidence="Coverage",
+                            evidence_predicate="at-least",
+                            evidence_value="90",
+                        ),
+                    ],
+                )
+            },
+        )
+        findings = doctor.check_supervision_gates(tmp_path)
+        assert [f.id for f in findings] == ["gate-ok"]
 
     def test_known_discipline_agent_actor_is_clean(self, tmp_path, monkeypatch):
         """qa really ships qa-release-agent (PROTO-067) — a valid actor reference."""
