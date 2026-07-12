@@ -22,28 +22,38 @@ The supervision contract now separates actor / evidence / authority, with a
 three-rung graded-authority ladder, doctor validation, trace/release
 sufficiency auditing, and one live `human-on-recommendation` gate.
 
-1. **Everything through PROTO-076 is merged** (PRs #41–#46). Agent surfacing
-   shipped: `pg agent list` shows an "Available bundled agents" section
-   (discipline agents visible pre-install), `--available` filters to it, and
-   `pg agent install <name>` (bare or `<module>/<name>`) pulls one in with
-   the sweep installer's hardening.
-2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
-   - **A 5th discipline** (docs / release-PM) — contract proven ×4; a
-     release/PM discipline could own the Releases surface and would get
-     agents + graded authority for free.
+1. **Everything through PROTO-077 is merged** (PRs #41–#47). **FIVE
+   disciplines ship**: engineering, qa, devops, security, **release**
+   (Release Management / PM, PROTO-077) — the 5th landed with zero core
+   edits, again. `release` owns RELEASE_QUEUE.md (rows keyed by the release
+   *label*), ships the first `modules/` **release-scoped** gate
+   (`go-no-go`, before `release` — a three-way convergence with qa +
+   security), and ships `release-coordinator-agent` via the PROTO-067 seam.
+   `pg release <label>` now requires a recorded human go decision.
+2. **User said PAUSE here** before the remaining backlog:
    - **`pg release` polish** — cross-discipline release surfaces, or
      release-notes generation from the cleared checklist.
    - **Interactive UI investment (§5.7)** — the init wizard is the only
      interactive surface; a browse/navigate UI over capabilities + agents
      (the `pg agent list` sections are the seed) would honor UI-first
      before the command surface grows further.
+   Also done post-merge: proto-gear installed into `../arsenal-gear/`
+   (pg init) — see that repo's own SESSION_HANDOFF for its state.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-076 (PR #46). **No PR in flight** (bar this
-  one if you're reading it pre-merge). **906 tests pass.**
+- `development` = through PROTO-077 (PR #47). **No PR in flight** (bar this
+  one if you're reading it pre-merge). **923 tests pass; `pg doctor` 31
+  checks green.**
+- **Five disciplines**: `modules/release/` = module.yaml +
+  RELEASE_QUEUE.template.md (stages planned→…→go→shipped; ID = release
+  label; Ref = member tickets; no Release/Version column, so the label row
+  never reads as ticket membership) + `workflows/go-no-go` (gate: human,
+  required, `scope: release`, evidence "Signed off by") +
+  `agents/release-coordinator-agent.yaml`. Fixtures in test_release.py
+  gained `_write_release_queue`; a ready release now needs the go row.
 - **892 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
 - **Authority sufficiency (PROTO-074, ADR-002 item 3)**: checklist entries
   carry `signed_by` + `authority_ok`. Signer convention: an agent signs with
@@ -112,13 +122,17 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 - **PROTO-076** — agent surfacing: `module_host.list_bundled_agents` +
   `install_bundled_agent`; `pg agent list [--available]` + `pg agent
   install <name>`. PR #46.
+- **PROTO-077** — Release Management / PM, the 5th discipline: RELEASE_QUEUE
+  surface keyed by release label, release-scoped `go-no-go` gate (three-way
+  `release` convergence), discipline agent. Zero core edits. PR #47.
 - (Earlier: PROTO-054–067 — module seam S1, pipeline/trace/release D-series,
   per-gate evidence + scope, agent seam. See git history.)
 
 ## Pending / In Progress
 
-- **Nothing in flight** beyond PR #46 (PROTO-076). Next thrust from the
-  backlog — see "Start here".
+- **Nothing in flight** beyond PR #47 (PROTO-077). **Paused by the user**
+  before the remaining backlog (release polish / interactive UI) — see
+  "Start here".
 
 ## Conventions In Force
 
