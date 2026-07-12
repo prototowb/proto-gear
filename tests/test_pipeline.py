@@ -37,13 +37,26 @@ class TestCollectSupervisionGates:
         assert deploy["before"] == "deploy"
         assert deploy["approver"] == "human"
 
-    def test_records_carry_adr002_primitives_at_defaults(self):
-        """Every gate record exposes actor/authority; the corpus is all-§4."""
+    def test_records_carry_adr002_primitives(self):
+        """Every gate record exposes actor/authority. Exactly ONE gate deviates
+        from the all-§4 defaults: pr-review-approval, the ADR-002 dogfood
+        falsifier (action item 4) — agent verifies + recommends, human ratifies.
+        Every other gate stays pure-human."""
         records = pipeline.collect_supervision_gates()
         assert records
-        for r in records:
-            assert r["actor"] == ""
-            assert r["authority"] == "human"
+        migrated = [r for r in records if r["authority"] != "human" or r["actor"]]
+        assert [r["gate"] for r in migrated] == ["pr-review-approval"]
+        (dogfood,) = migrated
+        assert dogfood["actor"] == "code-review-agent"
+        assert dogfood["authority"] == "human-on-recommendation"
+
+    def test_dogfood_gate_evidence_is_explicit_predicate(self):
+        """The migrated gate declares its evidence in mapping form — the
+        explicit non-empty claim over the Reviewed-by column."""
+        records = pipeline.collect_supervision_gates()
+        gate = next(r for r in records if r["gate"] == "pr-review-approval")
+        assert gate["evidence"] == "Reviewed by"
+        assert gate["evidence_predicate"] == "non-empty"
 
 
 class TestBuildPipeline:

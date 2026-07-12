@@ -229,9 +229,15 @@ dogfooded, and surfaces through existing commands (no new human-facing palette).
 3. [ ] Extend `pg trace`/`pg release` to report **authority sufficiency** (was
        each cleared gate cleared by a signer of adequate authority?) — reuse the
        surfaces, add no commands.
-4. [ ] Dogfood falsifier: migrate exactly one engineering gate to an evidence
+4. [x] Dogfood falsifier: migrate exactly one engineering gate to an evidence
        predicate + `human-on-recommendation` (agent verifies + recommends, human
        ratifies); keep pure-human gates human. No `agent` clearing rung. If it
        needs a core edit, the primitive is wrong — stop.
+       *(PROTO-073 — `pr-review-approval` migrated: actor
+       `code-review-agent`, authority `human-on-recommendation`, evidence in
+       mapping form (explicit non-empty over "Reviewed by"). **The falsifier
+       held**: the entire migration is the workflow's own metadata.yaml — zero
+       `module_core`/`cli` edits — and doctor/pipeline/trace/release picked it
+       up unchanged. All other gates remain pure `human`.)*
 5. [ ] Update PROJECT_SPECIFICATIONS §4 to describe **graded authority** as the
        supervision model's capability-growth axis.
