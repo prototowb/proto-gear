@@ -52,6 +52,27 @@ _RELEASE_HEADERS = {
 # ``cleared`` passes.
 _BLOCKING_STATES = {"pending", "outstanding"}
 
+# Ticket-metadata columns, matched case-insensitively against exact header text
+# (same discipline of precision as ``_RELEASE_HEADERS``).
+_TITLE_HEADERS = {"title"}
+_TYPE_HEADERS = {"type"}
+_DATE_HEADERS = {"date"}
+
+# Ticket ``Type`` value → release-notes section heading. Unknown/absent types
+# fall through to ``_DEFAULT_SECTION`` (completed-ticket tables carry no Type
+# column, so a shipped release lands there honestly rather than mis-grouped).
+_TYPE_SECTIONS = {
+    "feature": "Features",
+    "feat": "Features",
+    "enhancement": "Features",
+    "bugfix": "Fixes",
+    "bug": "Fixes",
+    "fix": "Fixes",
+    "hotfix": "Fixes",
+}
+_SECTION_ORDER = ["Features", "Fixes", "Changes"]
+_DEFAULT_SECTION = "Changes"
+
 
 def find_release_tickets(
     release_id: str, project_dir: Path, modules_root: Optional[Path] = None
@@ -191,3 +212,187 @@ def trace_release(
         "blocking_total": blocking_total,
         "authority_insufficient_total": insufficient_total,
     }
+
+
+def _ticket_meta(tid: str, project_dir: Path, modules_root: Optional[Path]) -> dict:
+    """Resolve a ticket's ``title`` and ``type`` from its state-surface rows.
+
+    Reads across every discipline surface (reusing :func:`trace._iter_change_rows`)
+    and takes the first non-empty ``Title`` / ``Type`` cell seen — engineering's
+    ticket tables carry both; completed-ticket tables carry Title but no Type.
+    """
+    title = ""
+    ttype = ""
+    for _disc, _surface, row in _trace._iter_change_rows(
+        tid, project_dir, modules_root
+    ):
+        if not title:
+            title = (_trace._role_value(row, _TITLE_HEADERS) or "").strip()
+        if not ttype:
+            ttype = (_trace._role_value(row, _TYPE_HEADERS) or "").strip()
+        if title and ttype:
+            break
+    return {"title": title, "type": ttype}
+
+
+def _release_date(
+    release_id: str, project_dir: Path, modules_root: Optional[Path]
+) -> Optional[str]:
+    """Return the recorded Date for ``release_id`` from a Releases table, if any.
+
+    Scans every discipline surface for a table row whose ``ID`` is the release
+    label and reads its ``Date`` column (the PROJECT_STATUS Releases table).
+    """
+    from .module_manifest import discover_modules
+
+    for manifest in discover_modules(modules_root):
+        surface = manifest.state_surface
+        if not surface:
+            continue
+        surface_path = Path(project_dir) / surface
+        if not surface_path.is_file():
+            continue
+        try:
+            text = surface_path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for table in _trace.parse_markdown_tables(text):
+            for row in table:
+                rid = (_trace._role_value(row, _trace._ID_HEADERS) or "").strip()
+                if rid == release_id:
+                    date = (_trace._role_value(row, _DATE_HEADERS) or "").strip()
+                    if date:
+                        return date
+    return None
+
+
+def build_release_notes(
+    release_id: str, project_dir: Path, modules_root: Optional[Path] = None
+) -> dict:
+    """Assemble structured release-notes data from the release's cleared checklist.
+
+    Reuses :func:`trace_release` for membership, readiness and gate evidence, then
+    layers on ticket titles/types (grouped into sections) and the distinct
+    approvers behind each cleared gate. Read-only; safe to run on a not-yet-ready
+    release (the caller can render it as a draft — see ``ready``/``blocking``).
+
+    Returns a dict:
+
+      * ``release`` / ``date`` / ``ready`` / ``ticket_count``.
+      * ``blocking_total`` / ``unverified_total`` — carried from the trace.
+      * ``sections`` — ordered ``[{heading, tickets: [{id, title}]}]``.
+      * ``approvals`` — ordered ``[{discipline, gate, signers: [...]}]`` for every
+        cleared gate (change- and release-scoped) that recorded a signer.
+    """
+    report = trace_release(release_id, project_dir, modules_root)
+
+    # Group member tickets into sections by Type, preserving membership order
+    # within each section and a stable section order.
+    grouped: dict = {}
+    for entry in report["tickets"]:
+        tid = entry["ticket"]
+        meta = _ticket_meta(tid, project_dir, modules_root)
+        heading = _TYPE_SECTIONS.get(meta["type"].lower(), _DEFAULT_SECTION)
+        grouped.setdefault(heading, []).append({"id": tid, "title": meta["title"]})
+
+    ordered_headings = [h for h in _SECTION_ORDER if h in grouped]
+    ordered_headings += [h for h in grouped if h not in _SECTION_ORDER]
+    sections = [{"heading": h, "tickets": grouped[h]} for h in ordered_headings]
+
+    # Distinct approvers per cleared gate (change-scoped across tickets +
+    # release-scoped once), in a stable discipline/gate order.
+    approvals: List[dict] = []
+    seen_gate = set()
+    cleared_gates = []
+    for entry in report["tickets"]:
+        cleared_gates.extend(entry["cleared"])
+    cleared_gates.extend(report["release_gates"]["cleared"])
+    for g in cleared_gates:
+        signers = [s for s in g.get("signed_by", []) if s]
+        if not signers:
+            continue
+        key = (g["discipline"], g["gate"])
+        if key in seen_gate:
+            # Merge additional signers into the existing entry (distinct, ordered).
+            for a in approvals:
+                if (a["discipline"], a["gate"]) == key:
+                    for s in signers:
+                        if s not in a["signers"]:
+                            a["signers"].append(s)
+                    break
+            continue
+        seen_gate.add(key)
+        approvals.append(
+            {
+                "discipline": g["discipline"],
+                "gate": g["gate"],
+                "signers": list(dict.fromkeys(signers)),
+            }
+        )
+
+    return {
+        "release": release_id,
+        "date": _release_date(release_id, project_dir, modules_root),
+        "ready": report["ready"],
+        "ticket_count": report["ticket_count"],
+        "blocking_total": report["blocking_total"],
+        "unverified_total": report["unverified_total"],
+        "sections": sections,
+        "approvals": approvals,
+    }
+
+
+def render_release_notes(data: dict) -> str:
+    """Render :func:`build_release_notes` data to a Markdown release-notes block."""
+    lines: List[str] = []
+    date = data.get("date")
+    heading = "## {}{}".format(data["release"], " — {}".format(date) if date else "")
+    lines.append(heading)
+    lines.append("")
+
+    if not data["ready"]:
+        lines.append(
+            "> ⚠ **Draft** — release not yet ready: "
+            "{} required gate(s) still blocking.".format(data["blocking_total"])
+        )
+        lines.append("")
+
+    if not data["ticket_count"]:
+        lines.append(
+            "_No tickets reference this release "
+            "(join one via a PR/Commit, Release or Version column)._"
+        )
+        return "\n".join(lines) + "\n"
+
+    for section in data["sections"]:
+        lines.append("### {}".format(section["heading"]))
+        for t in section["tickets"]:
+            title = t["title"] or "_(no title)_"
+            lines.append("- {}  {}".format(t["id"], title))
+        lines.append("")
+
+    if data["approvals"]:
+        # Collapse the per-gate structured approvals to one entry per discipline
+        # for the human line (distinct signers, discipline order preserved).
+        by_discipline: dict = {}
+        order: List[str] = []
+        for a in data["approvals"]:
+            disc = a["discipline"]
+            if disc not in by_discipline:
+                by_discipline[disc] = []
+                order.append(disc)
+            for s in a["signers"]:
+                if s not in by_discipline[disc]:
+                    by_discipline[disc].append(s)
+        parts = ["{} ({})".format(d, ", ".join(by_discipline[d])) for d in order]
+        lines.append("**Approvals:** " + " · ".join(parts))
+        lines.append("")
+    lines.append("_Generated from cleared gate evidence._")
+
+    if data["unverified_total"]:
+        lines.append("")
+        lines.append(
+            "_{} required approval(s) unverifiable — discipline records no "
+            "sign-off column._".format(data["unverified_total"])
+        )
+    return "\n".join(lines) + "\n"

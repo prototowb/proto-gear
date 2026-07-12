@@ -830,6 +830,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-076 | Agent surfacing: pg agent list --available + pg agent install | 2026-07-12 | | |
 | PROTO-077 | Release/PM module — 5th discipline, zero core edits | 2026-07-12 | | |
 | PROTO-078 | pg init --no-interactive skips wizard substitutions (blank name, --ticket-prefix ignored, placeholder leakage) | 2026-07-12 | | |
+| PROTO-079 | pg release --notes: generate release notes from cleared gate checklist | 2026-07-12 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

@@ -469,5 +469,10 @@ For more information, visit: https://github.com/proto-gear/proto-gear
     release_parser.add_argument(
         "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
     )
+    release_parser.add_argument(
+        "--notes",
+        action="store_true",
+        help="Generate release notes from the cleared gate checklist",
+    )
 
     return parser
