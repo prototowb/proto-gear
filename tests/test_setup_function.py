@@ -397,9 +397,10 @@ class TestSetupEdgeCases:
         """Test when generate_branching_doc returns None (line 737-741 else path)"""
         monkeypatch.chdir(tmp_path)
 
-        with patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git, patch(
-            "proto_gear_pkg.proto_gear.generate_branching_doc"
-        ) as mock_gen:
+        with (
+            patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git,
+            patch("proto_gear_pkg.proto_gear.generate_branching_doc") as mock_gen,
+        ):
 
             mock_git.return_value = {
                 "is_git_repo": False,
@@ -420,6 +421,114 @@ class TestSetupEdgeCases:
             # via generate_project_template (lines 878-880), even if generate_branching_doc returns None
             # The test verifies that the code handles None gracefully and continues
             assert result["files_created"] is not None
+
+
+import re
+
+from proto_gear_pkg.modules.engineering.templates import (
+    build_default_replacements,
+    humanize_leftover_tokens,
+)
+
+# A single {{TOKEN}} slot (letters/underscore), ignoring doubled `{{{{..}}}}`.
+_TOKEN_RE = re.compile(r"(?<!\{)\{\{[A-Za-z_]+\}\}(?!\})")
+
+
+class TestBuildDefaultReplacements:
+    """PROTO-078: the shared defaulted replacement dict."""
+
+    def test_honors_ticket_prefix_flag(self):
+        repl = build_default_replacements(".", ticket_prefix="ARSENAL")
+        assert repl["TICKET_PREFIX"] == "ARSENAL"
+
+    def test_resolves_blank_dot_name(self):
+        # Path(".").name is "" — the builder must resolve to a real name.
+        repl = build_default_replacements(".")
+        assert repl["PROJECT_NAME"]  # non-empty
+        assert repl["PROJECT_NAME"] != ""
+
+    def test_language_aware_python(self):
+        repl = build_default_replacements(".", project_info={"type": "Python Project"})
+        assert repl["TEST_COMMAND"] == "pytest"
+        assert repl["CODE_LANGUAGE"] == "Python"
+
+    def test_language_aware_node(self):
+        repl = build_default_replacements(".", project_info={"type": "Node.js Project"})
+        assert repl["TEST_COMMAND"] == "npm test"
+
+    def test_generic_fallback(self):
+        repl = build_default_replacements(".", project_info={"type": None})
+        assert repl["TEST_COMMAND"] == "make test"
+
+    def test_branch_names_from_git_config(self):
+        repl = build_default_replacements(
+            ".", git_config={"main_branch": "trunk", "dev_branch": "dev"}
+        )
+        assert repl["MAIN_BRANCH"] == "trunk"
+        assert repl["DEV_BRANCH"] == "dev"
+
+
+class TestHumanizeLeftoverTokens:
+    """PROTO-078: the clean-file leftover sweep."""
+
+    def test_replaces_bare_token(self):
+        assert humanize_leftover_tokens("x {{CODE_STYLE_GUIDE}} y") == (
+            "x _TBD: code style guide_ y"
+        )
+
+    def test_leaves_doubled_braces_alone(self):
+        # BRANCHING examples emit literal `{{{{...}}}}`; must not be swept.
+        assert (
+            humanize_leftover_tokens("feature/{{{{TICKET_PREFIX}}}}-XXX")
+            == "feature/{{{{TICKET_PREFIX}}}}-XXX"
+        )
+
+
+class TestProto078NonInteractiveInit:
+    """PROTO-078: `pg init --no-interactive` fills wizard substitutions."""
+
+    def _init_all(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        return setup_agent_framework_only(
+            ticket_prefix="ARSENAL",
+            with_branching=True,
+            with_all=True,
+            dry_run=False,
+        )
+
+    def test_project_status_headered_and_prefixed(self, tmp_path, monkeypatch):
+        self._init_all(tmp_path, monkeypatch)
+        status = (tmp_path / "PROJECT_STATUS.md").read_text(encoding="utf-8")
+        # Routed through the headered template (was headerless inline before).
+        assert "proto-gear:header" in status
+        # --ticket-prefix honored in the parseable Current State YAML.
+        assert 'ticket_prefix: "ARSENAL"' in status
+        assert "last_ticket_id:" in status
+
+    def test_no_blank_project_name(self, tmp_path, monkeypatch):
+        self._init_all(tmp_path, monkeypatch)
+        agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        # The dir name must appear; never a stray empty "Project - " title.
+        assert tmp_path.name in agents
+
+    def test_clean_files_have_no_token_leakage(self, tmp_path, monkeypatch):
+        self._init_all(tmp_path, monkeypatch)
+        for name in (
+            "AGENTS.md",
+            "PROJECT_STATUS.md",
+            "TESTING.md",
+            "BRANCHING.md",
+            "CONTRIBUTING.md",
+        ):
+            text = (tmp_path / name).read_text(encoding="utf-8")
+            leaks = _TOKEN_RE.findall(text)
+            assert not leaks, f"{name} leaked config tokens: {leaks}"
+
+    def test_scaffold_files_keep_fill_in_slots(self, tmp_path, monkeypatch):
+        self._init_all(tmp_path, monkeypatch)
+        # ARCHITECTURE intentionally retains open-ended content slots.
+        arch = (tmp_path / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        assert _TOKEN_RE.findall(arch)
 
 
 if __name__ == "__main__":

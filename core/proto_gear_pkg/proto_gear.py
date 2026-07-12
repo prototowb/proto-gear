@@ -51,6 +51,8 @@ from .modules.engineering.templates import (
     discover_available_templates,
     generate_project_template,
     copy_capability_templates,
+    build_default_replacements,
+    humanize_leftover_tokens,
 )
 
 # Terminal presentation helpers (logo, splash, help, input) live in
@@ -87,6 +89,8 @@ def setup_agent_framework_only(
     print("-" * 30)
 
     current_dir = Path(".")
+    # Path(".").name is "" — resolve so the project name is real everywhere.
+    project_name = current_dir.resolve().name
     print(f"Current directory: {current_dir.absolute()}")
 
     # Detect project structure
@@ -96,6 +100,23 @@ def setup_agent_framework_only(
         print(f"Detected: {project_info['type']} project")
         if project_info.get("framework"):
             print(f"Framework: {project_info['framework']}")
+
+    # Determine ticket prefix (honor --ticket-prefix; else derive from name)
+    if not ticket_prefix:
+        derived = project_name.upper().replace("-", "").replace("_", "")[:6]
+        ticket_prefix = derived if len(derived) >= 2 else "PROJ"
+
+    # Detect git config once so both dry-run and real paths, plus the shared
+    # defaulted replacement dict, see the same branch names (PROTO-078).
+    git_config = detect_git_config()
+
+    # The single defaulted replacement dict every generated file draws from.
+    default_replacements = build_default_replacements(
+        current_dir,
+        ticket_prefix=ticket_prefix,
+        git_config=git_config,
+        project_info=project_info,
+    )
 
     if not dry_run:
         try:
@@ -146,20 +167,11 @@ def setup_agent_framework_only(
                         f"{Colors.YELLOW}Warning: Could not create specifications stub: {e}{Colors.ENDC}"
                     )
 
-            # Determine ticket prefix
-            if not ticket_prefix:
-                # Try to derive from project name
-                project_name = (
-                    current_dir.name.upper().replace("-", "").replace("_", "")[:6]
-                )
-                ticket_prefix = project_name if project_name else "PROJ"
-
             # Optionally create BRANCHING.md
             branching_reference = ""
             if with_branching:
-                git_config = detect_git_config()
                 branching_content = generate_branching_doc(
-                    current_dir.name,
+                    project_name,
                     ticket_prefix,
                     git_config,
                     datetime.now().strftime("%Y-%m-%d"),
@@ -192,24 +204,22 @@ def setup_agent_framework_only(
             )  # Explicitly selected
 
             if should_create_agents:
-                # Use template-based generation instead of hardcoded content
-                template_context = {
-                    "PROJECT_NAME": current_dir.name,
-                    "TICKET_PREFIX": ticket_prefix,
-                    "DATE": datetime.now().strftime("%Y-%m-%d"),
-                    "YEAR": datetime.now().strftime("%Y"),
-                    "VERSION": __version__,
-                    "PROJECT_TYPE": project_info.get("type", "Unknown"),
-                    "FRAMEWORK": project_info.get("framework", "Unknown"),
+                # Use template-based generation instead of hardcoded content.
+                # Draw from the shared defaulted dict so branch names, ticket
+                # prefix, dates, etc. all resolve (PROTO-078).
+                agents_context = {
+                    **default_replacements,
+                    "BRANCHING_REFERENCE": branching_reference,
                 }
 
                 output_file, action = generate_project_template(
                     "AGENTS",
                     current_dir,
-                    template_context,
+                    agents_context,
                     dry_run=dry_run,
                     force=force,
                     interactive=True,
+                    humanize_leftovers=True,
                 )
 
                 if output_file or action == "would_create":
@@ -267,58 +277,49 @@ def setup_agent_framework_only(
             )  # Explicitly selected
 
             if should_create_status:
-                status_content = f"""# PROJECT STATUS - {current_dir.name}
-
-> **Single Source of Truth** for project state
-
-## Current State
-
-```yaml
-project_phase: "Initialized"
-protogear_enabled: true
-framework: "{project_info.get('framework', 'Unknown')}"
-project_type: "{project_info.get('type', 'Unknown')}"
-initialization_date: "{datetime.now().strftime('%Y-%m-%d')}"
-current_sprint: null
-```
-
-## 🎫 Active Tickets
-*No active tickets yet - ProtoGear will track development progress here*
-
-## ✅ Completed Tickets
-- INIT-001: ProtoGear Agent Framework integrated
-
-## Project Analysis
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| ProtoGear Integration | Complete | Agent framework active |
-| Project Structure | Analyzed | {len(project_info.get('directories', []))} directories detected |
-
-## Recent Updates
-- {datetime.now().strftime('%Y-%m-%d')}: ProtoGear Agent Framework integrated
-
----
-*Maintained by ProtoGear Agent Framework*
-"""
-                action, written = safe_write_file(
-                    status_file,
-                    status_content,
+                # Route through the headered PROJECT_STATUS.template.md so the
+                # generated file carries the proto-gear:header block and a
+                # parseable Current State YAML (ticket_prefix + last_ticket_id),
+                # instead of the old headerless inline copy (PROTO-078).
+                today = datetime.now().strftime("%Y-%m-%d")
+                status_context = {
+                    **default_replacements,
+                    "PHASE": "Development",
+                    "SPRINT_NUMBER": "null",
+                    "LAST_TICKET_ID": "0",
+                    "ACTIVE_TICKETS": "_No active tickets yet._",
+                    "COMPLETED_TICKETS": (
+                        f"| INIT-001 | Proto Gear framework integrated | {today} | - | - |"
+                    ),
+                    "BLOCKED_TICKETS": "_None._",
+                    "FEATURE_PROGRESS": "_None tracked yet._",
+                    "RECENT_UPDATES": f"- {today}: Proto Gear AI Agent Framework integrated",
+                    "NEXT_SPRINT": "1",
+                    "SPRINT_GOALS": "_TBD._",
+                    "UPCOMING_FEATURES": "_TBD._",
+                    "VELOCITY": "0",
+                    "COVERAGE": "0",
+                    "DOC_COVERAGE": "0",
+                    "TECH_DEBT": "0",
+                    "SPRINT_TYPE": "feature_development",
+                    "CORE_AGENTS": "# none configured yet",
+                    "FLEX_AGENTS": "# none configured yet",
+                }
+                output_file, action = generate_project_template(
+                    "PROJECT_STATUS",
+                    current_dir,
+                    status_context,
                     dry_run=dry_run,
                     force=force,
                     interactive=True,
+                    humanize_leftovers=True,
                 )
-                if written or action == "would_create":
+                if output_file or action == "would_create":
                     files_created.append("PROJECT_STATUS.md")
 
-            # Generate additional templates based on selections
-            template_context = {
-                "PROJECT_NAME": current_dir.name,
-                "TICKET_PREFIX": ticket_prefix,
-                "DATE": datetime.now().strftime("%Y-%m-%d"),
-                "YEAR": datetime.now().strftime("%Y"),
-                "VERSION": __version__,
-            }
+            # Generate additional templates based on selections. All draw from
+            # the shared defaulted replacement dict (PROTO-078).
+            template_context = default_replacements
 
             templates_to_generate = []
 
@@ -367,8 +368,37 @@ current_sprint: null
                 if "BRANCHING" not in [f.replace(".md", "") for f in files_created]:
                     templates_to_generate.append("BRANCHING")
 
+            # Files that must ship free of raw {{TOKEN}} leakage get the
+            # humanize sweep; scaffold files (ARCHITECTURE/SECURITY/
+            # CODE_OF_CONDUCT) keep their fill-in slots (PROTO-078).
+            humanize_files = {"TESTING", "CONTRIBUTING"}
+
             # Generate all selected templates
             for template_name in templates_to_generate:
+                # BRANCHING is fully rendered by generate_branching_doc (git-aware,
+                # and it preserves intentional literal-brace examples). Never send
+                # it through the generic path, which would leak/garble it.
+                if template_name == "BRANCHING":
+                    if "BRANCHING.md" in files_created:
+                        continue
+                    branching_content = generate_branching_doc(
+                        project_name,
+                        ticket_prefix,
+                        git_config,
+                        datetime.now().strftime("%Y-%m-%d"),
+                    )
+                    if branching_content:
+                        action, written = safe_write_file(
+                            current_dir / "BRANCHING.md",
+                            branching_content,
+                            dry_run=dry_run,
+                            force=force,
+                            interactive=True,
+                        )
+                        if written or action == "would_create":
+                            files_created.append("BRANCHING.md")
+                    continue
+
                 output_file, action = generate_project_template(
                     template_name,
                     current_dir,
@@ -376,6 +406,7 @@ current_sprint: null
                     dry_run=dry_run,
                     force=force,
                     interactive=True,
+                    humanize_leftovers=template_name in humanize_files,
                 )
 
                 if output_file or action == "would_create":
@@ -385,7 +416,7 @@ current_sprint: null
             if with_capabilities:
                 capability_result = copy_capability_templates(
                     current_dir,
-                    current_dir.name,
+                    project_name,
                     dry_run=False,
                     capabilities_config=capabilities_config,
                 )
@@ -482,7 +513,7 @@ current_sprint: null
         if with_capabilities:
             capability_result = copy_capability_templates(
                 current_dir,
-                current_dir.name,
+                project_name,
                 dry_run=True,
                 capabilities_config=capabilities_config,
             )
