@@ -1699,6 +1699,22 @@ def cmd_release(args):
     from .module_core import release
 
     release_id = args.release_id
+
+    # --notes: generate a release-notes block from the cleared gate checklist.
+    if getattr(args, "notes", False):
+        try:
+            notes = release.build_release_notes(release_id, Path("."))
+        except Exception as e:
+            print(f"{Colors.FAIL}Error building release notes: {e}{Colors.ENDC}")
+            return 1
+        if getattr(args, "json", False):
+            import json
+
+            print(json.dumps(notes, indent=2))
+        else:
+            print(release.render_release_notes(notes))
+        return 0
+
     try:
         report = release.trace_release(release_id, Path("."))
     except Exception as e:

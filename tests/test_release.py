@@ -262,3 +262,105 @@ class TestAuthoritySufficiencyRollup:
         _full_release(tmp_path)
         report = release.trace_release("v0.11", tmp_path)
         assert report["authority_insufficient_total"] == 0
+
+
+class TestReleaseNotes:
+    """PROTO-079: `pg release --notes` renders notes from the cleared checklist."""
+
+    def _ready_release(self, root):
+        _write_status(
+            root,
+            "| PROTO-A | first | 2026-07-11 | v0.11 |\n",
+            releases="| v0.11 | 2026-07-11 | tobias | tobias |\n",
+        )
+        _write_qa(
+            root, "| QA-1 | PROTO-A | a | auth | signed-off | ann | ann | v0.11 |\n"
+        )
+        _write_devops(
+            root, "| DEP-1 | PROTO-A | ship a | prod | deployed | sam | sam | v0.11 |\n"
+        )
+        _write_security(
+            root, "| SEC-1 | PROTO-A | f | low | signed-off | eve | eve | v0.11 |\n"
+        )
+        _write_release_queue(
+            root, "| v0.11 | PROTO-A | go | rex | 2026-07-15 | tobias |\n"
+        )
+
+    def test_build_notes_ready_release(self, tmp_path):
+        self._ready_release(tmp_path)
+        data = release.build_release_notes("v0.11", tmp_path)
+        assert data["ready"] is True
+        assert data["date"] == "2026-07-11"  # read from the Releases table
+        # One member ticket, no Type column → default "Changes" section.
+        assert data["ticket_count"] == 1
+        section = data["sections"][0]
+        assert section["heading"] == "Changes"
+        assert section["tickets"] == [{"id": "PROTO-A", "title": "first"}]
+        # Cleared downstream gates recorded their signers.
+        signers = {s for a in data["approvals"] for s in a["signers"]}
+        assert {"ann", "sam", "eve"} <= signers
+
+    def test_render_ready_notes_markdown(self, tmp_path):
+        self._ready_release(tmp_path)
+        md = release.render_release_notes(
+            release.build_release_notes("v0.11", tmp_path)
+        )
+        assert md.startswith("## v0.11 — 2026-07-11")
+        assert "### Changes" in md
+        assert "- PROTO-A  first" in md
+        assert "**Approvals:**" in md
+        assert "_Generated from cleared gate evidence._" in md
+        assert "Draft" not in md  # ready → no draft caveat
+
+    def test_render_draft_when_blocked(self, tmp_path):
+        # PROTO-B has no downstream sign-offs → release blocked → draft caveat.
+        _write_status(
+            tmp_path,
+            "| PROTO-A | first | 2026-07-11 | v0.11 |\n"
+            "| PROTO-B | second | 2026-07-11 | v0.11 |\n",
+        )
+        md = release.render_release_notes(
+            release.build_release_notes("v0.11", tmp_path)
+        )
+        assert "⚠ **Draft**" in md
+        assert "still blocking" in md
+
+    def test_type_column_groups_into_sections(self, tmp_path):
+        # A surface with both Type and a Release column exercises grouping.
+        (tmp_path / "PROJECT_STATUS.md").write_text(
+            "# Status\n\n| ID | Title | Type | Status | Release |\n"
+            "|----|-------|------|--------|--------|\n"
+            "| PROTO-A | shiny thing | feature | done | v0.11 |\n"
+            "| PROTO-B | squash it | bugfix | done | v0.11 |\n",
+            encoding="utf-8",
+        )
+        data = release.build_release_notes("v0.11", tmp_path)
+        headings = [s["heading"] for s in data["sections"]]
+        assert headings == ["Features", "Fixes"]  # stable section order
+        feats = next(s for s in data["sections"] if s["heading"] == "Features")
+        assert feats["tickets"] == [{"id": "PROTO-A", "title": "shiny thing"}]
+
+    def test_no_tickets_message(self, tmp_path):
+        _write_status(tmp_path, "| PROTO-A | first | 2026-07-11 | v0.10 |\n")
+        md = release.render_release_notes(release.build_release_notes("v9.9", tmp_path))
+        assert "No tickets reference this release" in md
+
+    def test_cli_notes_renders(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        self._ready_release(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_release(_args(release_id="v0.11", json=False, notes=True))
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "## v0.11" in out and "- PROTO-A  first" in out
+
+    def test_cli_notes_json(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        self._ready_release(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_release(_args(release_id="v0.11", json=True, notes=True))
+        assert rc == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["release"] == "v0.11" and data["ready"] is True
