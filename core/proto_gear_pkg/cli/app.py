@@ -235,6 +235,8 @@ def main():
                 sys.exit(cli_commands.cmd_agent_create(args))
             elif args.agent_command == "list":
                 sys.exit(cli_commands.cmd_agent_list(args))
+            elif args.agent_command == "install":
+                sys.exit(cli_commands.cmd_agent_install(args))
             elif args.agent_command == "show":
                 sys.exit(cli_commands.cmd_agent_show(args))
             elif args.agent_command == "validate":

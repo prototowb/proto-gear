@@ -205,7 +205,22 @@ For more information, visit: https://github.com/proto-gear/proto-gear
 
     # agent list
     agent_list_parser = agent_subparsers.add_parser(
-        "list", help="List all configured agents"
+        "list", help="List configured agents and available bundled agents"
+    )
+    agent_list_parser.add_argument(
+        "--available",
+        action="store_true",
+        help="Show only bundled agents not yet installed",
+    )
+
+    # agent install
+    agent_install_parser = agent_subparsers.add_parser(
+        "install", help="Install one bundled agent into .proto-gear/agents/"
+    )
+    agent_install_parser.add_argument(
+        "name",
+        type=str,
+        help="Agent id (filename stem), or <module>/<id> to disambiguate",
     )
 
     # agent show

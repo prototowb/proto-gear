@@ -89,7 +89,11 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ),
     ("pg capabilities show <name>", "Show full details of a capability"),
     ("pg capabilities tree <name>", "Show dependency tree of a capability"),
-    ("pg agent list", "List configured custom agents (if any)"),
+    (
+        "pg agent list [--available]",
+        "List configured agents + bundled agents available to install",
+    ),
+    ("pg agent install <name>", "Install one bundled/discipline agent on demand"),
     (
         "pg module list/show [<name>]",
         "List/inspect engineering department modules (module.yaml manifests)",

@@ -246,6 +246,114 @@ def iter_agent_sources(
     return sources
 
 
+def list_bundled_agents(modules_root: Optional[Path] = None) -> List[dict]:
+    """Every bundled agent the package could install, across all sources.
+
+    The browse view over :func:`iter_agent_sources` (PROTO-076): before this,
+    a discipline's agent was visible only *after* ``pg init`` installed it.
+    Each record: ``name`` (the agent id — filename stem), ``module`` (``None``
+    for the shared root), ``qualified`` (``<module>/<name>``, or the bare name
+    for shared), ``path`` (source file), ``description`` (from the YAML, best
+    effort — a config that fails to parse still lists, with an empty one).
+    Order follows the sources: shared first, then modules alphabetically.
+    """
+    import yaml
+
+    records: List[dict] = []
+    for module, agents_dir in iter_agent_sources(modules_root):
+        for source_path in sorted(agents_dir.glob("*.yaml")):
+            description = ""
+            try:
+                data = yaml.safe_load(source_path.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    description = str(data.get("description", "") or "")
+            except Exception:
+                pass  # unparseable config still deserves to be listed
+            name = source_path.stem
+            records.append(
+                {
+                    "name": name,
+                    "module": module,
+                    "qualified": name if module is None else f"{module}/{name}",
+                    "path": str(source_path),
+                    "description": description,
+                }
+            )
+    return records
+
+
+def install_bundled_agent(
+    name: str,
+    proto_gear_dir: Path,
+    replacements: Optional[Dict[str, str]] = None,
+    modules_root: Optional[Path] = None,
+) -> dict:
+    """Install ONE bundled agent by name into ``.proto-gear/agents/``.
+
+    The on-demand counterpart to :func:`install_module_agents` (which runs the
+    full sweep at ``pg init``): pull a single discovered agent — shared or
+    discipline-shipped — into an already-initialised host. ``name`` is the
+    agent id (filename stem) or the qualified ``<module>/<id>`` form; a bare id
+    matching agents in more than one source is ambiguous and must be qualified.
+
+    Same hardening as the sweep installer: rejects symlinks, refuses a
+    destination outside ``.proto-gear/``, enforces UTF-8, substitutes
+    ``{{KEY}}`` placeholders, and never overwrites an existing agent file.
+
+    Returns ``{"installed": <path str or None>, "errors": [...]}``.
+    """
+    replacements = replacements or {}
+    result: dict = {"installed": None, "errors": []}
+
+    matches = [
+        r
+        for r in list_bundled_agents(modules_root)
+        if name in (r["name"], r["qualified"])
+    ]
+    if not matches:
+        result["errors"].append(f"No bundled agent named '{name}'.")
+        return result
+    if len(matches) > 1:
+        options = ", ".join(r["qualified"] for r in matches)
+        result["errors"].append(
+            f"Ambiguous agent name '{name}' — qualify it: {options}"
+        )
+        return result
+
+    source_path = Path(matches[0]["path"])
+    if source_path.is_symlink():
+        result["errors"].append(f"Skipped symlink: {source_path}")
+        return result
+
+    proto_gear_dir = Path(proto_gear_dir)
+    dest_path = proto_gear_dir / "agents" / source_path.name
+    try:
+        dest_path.resolve().relative_to(proto_gear_dir.resolve())
+    except ValueError:
+        result["errors"].append(
+            f"Security: Destination path escapes .proto-gear/: {dest_path}"
+        )
+        return result
+    if dest_path.exists():
+        result["errors"].append(
+            f"Agent already installed, kept existing: {dest_path.name}"
+        )
+        return result
+
+    try:
+        content = source_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        result["errors"].append(f"Encoding error in {source_path}: {e}")
+        return result
+    for key, value in replacements.items():
+        content = content.replace("{{" + key + "}}", value)
+
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_text(content, encoding="utf-8")
+    result["installed"] = str(dest_path)
+    return result
+
+
 def install_module_agents(
     proto_gear_dir: Path,
     replacements: Optional[Dict[str, str]] = None,

@@ -233,3 +233,64 @@ class TestAgentCommands:
         out = capsys.readouterr().out
         assert rc == 1
         assert "not found" in out.lower()
+
+
+class TestAgentSurfacing:
+    """PROTO-076: pg agent list surfaces installable bundled agents;
+    pg agent install pulls one in on demand."""
+
+    def test_list_shows_available_section_without_agents_dir(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        monkeypatch.chdir(tmp_path)
+        rc = cc.cmd_agent_list(argparse.Namespace(available=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "Available bundled agents" in out
+        assert "qa-release-agent" in out
+        assert "[qa]" in out  # discipline attribution
+        assert "pg agent install" in out
+
+    def test_list_available_filter(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        rc = cc.cmd_agent_list(argparse.Namespace(available=True))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "qa-release-agent" in out
+        assert "Configured Agents" not in out
+
+    def test_installed_agents_leave_available_section(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".proto-gear").mkdir()
+        rc = cc.cmd_agent_install(argparse.Namespace(name="qa-release-agent"))
+        assert rc == 0
+        capsys.readouterr()  # flush the install output
+        cc.cmd_agent_list(argparse.Namespace(available=True))
+        out = capsys.readouterr().out
+        assert "qa-release-agent" not in out
+        assert "deploy-agent" in out  # others remain available
+
+    def test_install_requires_initialised_host(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)  # no .proto-gear/
+        rc = cc.cmd_agent_install(argparse.Namespace(name="qa-release-agent"))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "pg init" in out
+
+    def test_install_unknown_agent_fails_with_hint(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".proto-gear").mkdir()
+        rc = cc.cmd_agent_install(argparse.Namespace(name="ghost-agent"))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "No bundled agent" in out
+        assert "--available" in out
+
+    def test_install_writes_agent_file(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".proto-gear").mkdir()
+        rc = cc.cmd_agent_install(argparse.Namespace(name="devops/deploy-agent"))
+        assert rc == 0
+        assert (tmp_path / ".proto-gear" / "agents" / "deploy-agent.yaml").is_file()

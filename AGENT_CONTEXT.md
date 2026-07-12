@@ -101,7 +101,8 @@ When the user's prose contains these keywords, load the matching capability befo
 - `pg capabilities list [--type ...] [--json]` — Browse capabilities (--json for agent consumption)
 - `pg capabilities show <name>` — Show full details of a capability
 - `pg capabilities tree <name>` — Show dependency tree of a capability
-- `pg agent list` — List configured custom agents (if any)
+- `pg agent list [--available]` — List configured agents + bundled agents available to install
+- `pg agent install <name>` — Install one bundled/discipline agent on demand
 - `pg module list/show [<name>]` — List/inspect engineering department modules (module.yaml manifests)
 - `pg --module <name> init-surface` — Render a department module's declared state surface
 - `pg pipeline [--json]` — Show the cross-discipline supervision pipeline (path to production)
@@ -119,6 +120,6 @@ When the user's prose contains these keywords, load the matching capability befo
 - **Proto Gear version**: v0.10.0
 - **Last release**: 2026-05-13
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-11 11:19
+- **Generated**: 2026-07-12 15:44
 
 <!-- proto-gear:agent-context end -->
