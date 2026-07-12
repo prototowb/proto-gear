@@ -123,6 +123,9 @@ def trace_release(
                        counted in ``unverified_total``.
       * ``unverified_total`` / ``blocking_total`` — across tickets *and* the
                        release-scoped gates.
+      * ``authority_insufficient_total`` — cleared gates whose every signer is
+                       an agent identity while the gate demands a human rung
+                       (ADR-002 action item 3). Reported, never blocking.
     """
 
     def _classify(gates):
@@ -130,11 +133,17 @@ def trace_release(
             "cleared": [g for g in gates if g["status"] == "cleared"],
             "blocking": [g for g in gates if g["status"] in _BLOCKING_STATES],
             "unverified": [g for g in gates if g["status"] == "untracked"],
+            # ADR-002 action item 3: cleared, but every signer is an agent
+            # identity while the gate demands a human rung. Reported (a signer
+            # of insufficient authority is a supervision violation worth eyes),
+            # not blocking — the verdict semantics stay unchanged.
+            "insufficient": [g for g in gates if g.get("authority_ok") is False],
         }
 
     entries: List[dict] = []
     unverified_total = 0
     blocking_total = 0
+    insufficient_total = 0
     for tid in find_release_tickets(release_id, project_dir, modules_root):
         checklist = _trace.gate_checklist(tid, project_dir, modules_root)
         # Per ticket, only the change-scoped required gates are that ticket's to
@@ -143,6 +152,7 @@ def trace_release(
         c = _classify(required)
         unverified_total += len(c["unverified"])
         blocking_total += len(c["blocking"])
+        insufficient_total += len(c["insufficient"])
         entries.append(
             {
                 "ticket": tid,
@@ -151,6 +161,7 @@ def trace_release(
                 "cleared": c["cleared"],
                 "blocking": c["blocking"],
                 "unverified": c["unverified"],
+                "insufficient": c["insufficient"],
                 "ready": not c["blocking"],
             }
         )
@@ -163,6 +174,7 @@ def trace_release(
     release_gates = _classify(release_required)
     unverified_total += len(release_gates["unverified"])
     blocking_total += len(release_gates["blocking"])
+    insufficient_total += len(release_gates["insufficient"])
 
     ready = (
         bool(entries)
@@ -177,4 +189,5 @@ def trace_release(
         "ready": ready,
         "unverified_total": unverified_total,
         "blocking_total": blocking_total,
+        "authority_insufficient_total": insufficient_total,
     }

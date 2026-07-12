@@ -193,6 +193,33 @@ _EVIDENCE_RANK = {"cleared": 2, "pending": 1, None: 0}
 _NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
 
+def _agent_identities(modules_root: Optional[Path] = None) -> set:
+    """Every bundled agent identity a signer cell might carry, lowercased.
+
+    The signer-identity convention (ADR-002, action item 3): an agent signs a
+    state-surface cell with its agent id — the filename stem of its config
+    (``code-review-agent``), optionally module-namespaced
+    (``qa/qa-release-agent``). Cells may also mark an agent signer explicitly
+    with an ``agent:`` prefix (checked by :func:`_is_agent_signer`, not listed
+    here). Anything else in a sign-off cell is presumed a human name.
+    """
+    from . import module_host
+
+    ids = set()
+    for module, agents_dir in module_host.iter_agent_sources(modules_root):
+        for f in sorted(agents_dir.glob("*.yaml")):
+            ids.add(f.stem.lower())
+            if module:
+                ids.add(f"{module}/{f.stem}".lower())
+    return ids
+
+
+def _is_agent_signer(cell: str, agent_ids: set) -> bool:
+    """Is this sign-off cell an *agent* identity rather than a human name?"""
+    norm = cell.strip().strip("_*").strip().lower()
+    return norm.startswith("agent:") or norm in agent_ids
+
+
 def _predicate_holds(cell: str, predicate: str, value: str) -> bool:
     """Does the evidence ``cell`` satisfy a comparison ``predicate``?
 
@@ -250,10 +277,13 @@ def gate_checklist(
     ``scope`` (``"change"`` per-ticket or ``"release"`` per-release — a
     release-scoped gate is cleared once for the whole release, so evaluating it
     against a single ticket id is only meaningful when the id *is* the release
-    label; ``pg release`` does exactly that), and ``authority`` (the minimum
-    authority the gate demands of its clearer — ADR-002; carried through so the
-    trace/release surfaces can report authority sufficiency). Order follows the
-    pipeline.
+    label; ``pg release`` does exactly that), ``authority`` (the minimum
+    authority the gate demands of its clearer — ADR-002), ``signed_by`` (the
+    signature cells that cleared it) and ``authority_ok`` (ADR-002 action item
+    3: ``True`` — cleared with sufficient authority; ``False`` — cleared, but
+    every signer is an agent identity while the gate demands a human;
+    ``None`` — not cleared, or cleared without a signature to judge). Order
+    follows the pipeline.
     """
     from . import pipeline
 
@@ -270,9 +300,14 @@ def gate_checklist(
     }
 
     checklist: List[dict] = []
+    agent_ids: Optional[set] = None  # resolved lazily, only if a signer is judged
     for stage in pipeline.build_pipeline(modules_root):
         for g in stage["gates"]:
             disc = g["discipline"]
+            # signers: the signature-style cells that actually cleared the gate
+            # (non-empty evidence or the generic approval fallback). Comparison
+            # predicates clear on a measurement, not a signature — no signers.
+            signers: List[str] = []
             if disc not in reached:
                 status = "outstanding"  # change hasn't reached this discipline
             elif g.get("evidence"):
@@ -281,11 +316,8 @@ def gate_checklist(
                 if not cells:
                     status = "untracked"  # gate's evidence column absent here
                 elif predicate == "non-empty":
-                    status = (
-                        "cleared"
-                        if _best_state(_approval_state(c) for c in cells) == "cleared"
-                        else "pending"
-                    )
+                    signers = [c for c in cells if _approval_state(c) == "cleared"]
+                    status = "cleared" if signers else "pending"
                 else:
                     # Comparison predicate (ADR-002 §2): the gate clears iff some
                     # row's evidence cell satisfies the declared claim; a filled
@@ -302,10 +334,31 @@ def gate_checklist(
                 state = disc_evidence.get(disc)
                 if state == "cleared":
                     status = "cleared"
+                    for row in rows_by_disc[disc]:
+                        cell = _approval_cell(row)
+                        if cell is not None and _approval_state(cell) == "cleared":
+                            signers.append(cell)
                 elif state == "pending":
                     status = "pending"
                 else:
                     status = "untracked"  # reached, but no approval evidence recorded
+
+            # Authority sufficiency (ADR-002, action item 3): was a cleared gate
+            # cleared by a signer of adequate authority? `auto` needs no signer;
+            # human rungs need at least one signer that is not an agent identity.
+            # A signature-less clear (comparison predicate) can't be judged: None.
+            authority = g.get("authority", "human")
+            if status != "cleared":
+                authority_ok = None
+            elif authority == "auto":
+                authority_ok = True
+            elif not signers:
+                authority_ok = None  # cleared without a signature to judge
+            else:
+                if agent_ids is None:
+                    agent_ids = _agent_identities(modules_root)
+                authority_ok = any(not _is_agent_signer(s, agent_ids) for s in signers)
+
             checklist.append(
                 {
                     "action": stage["action"],
@@ -314,7 +367,9 @@ def gate_checklist(
                     "required": g["required"],
                     "status": status,
                     "scope": g.get("scope", "change"),
-                    "authority": g.get("authority", "human"),
+                    "authority": authority,
+                    "signed_by": [s.strip().strip("_*").strip() for s in signers],
+                    "authority_ok": authority_ok,
                 }
             )
     return checklist

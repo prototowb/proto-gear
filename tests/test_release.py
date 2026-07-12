@@ -219,3 +219,31 @@ class TestReleaseCLI:
         out = capsys.readouterr().out
         assert rc == 0
         assert "No tickets reference release" in out
+
+
+class TestAuthoritySufficiencyRollup:
+    """ADR-002 action item 3: the release report counts cleared gates whose
+    only signer is an agent identity while the gate demands a human rung.
+    Reported, never blocking — the readiness verdict is unchanged."""
+
+    def test_agent_signed_gate_is_counted_not_blocking(self, tmp_path):
+        _write_status(tmp_path, "| PROTO-A | first | 2026-07-11 | v0.11 |\n")
+        # qa-release-agent is a real bundled agent id — an agent signature on
+        # the human-authority qa-signoff gate.
+        _write_qa(
+            tmp_path,
+            "| QA-1 | PROTO-A | a | auth | signed-off | ann | qa-release-agent | v0.11 |\n",
+        )
+        report = release.trace_release("v0.11", tmp_path)
+        assert report["authority_insufficient_total"] >= 1
+        insufficient = report["tickets"][0]["insufficient"]
+        assert any(g["gate"] == "qa-signoff" for g in insufficient)
+        # Not blocking: readiness semantics unchanged (the gate IS cleared).
+        assert not any(
+            g["gate"] == "qa-signoff" for g in report["tickets"][0]["blocking"]
+        )
+
+    def test_human_signed_release_reports_zero_insufficient(self, tmp_path):
+        _full_release(tmp_path)
+        report = release.trace_release("v0.11", tmp_path)
+        assert report["authority_insufficient_total"] == 0

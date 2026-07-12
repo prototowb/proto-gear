@@ -226,9 +226,18 @@ dogfooded, and surfaces through existing commands (no new human-facing palette).
        predicate never clears and the doctor rejects it. `pg trace`/`pg
        release` evaluate the predicate; a filled cell that fails the claim is
        pending, never cleared.)*
-3. [ ] Extend `pg trace`/`pg release` to report **authority sufficiency** (was
+3. [x] Extend `pg trace`/`pg release` to report **authority sufficiency** (was
        each cleared gate cleared by a signer of adequate authority?) — reuse the
        surfaces, add no commands.
+       *(PROTO-074 — checklist entries carry `signed_by` + `authority_ok`.
+       Signer-identity convention: an agent signs with its agent id (config
+       filename stem, optionally `<module>/`-namespaced) or an `agent:` prefix;
+       anything else is presumed human. A cleared human/`human-on-
+       recommendation` gate whose every signer is an agent identity is flagged
+       (`!!` in `pg trace`/`pg release`, `authority_insufficient_total` in the
+       release report) — reported, never blocking; `auto` needs no signer; a
+       signature-less comparison clear is unjudgeable (`None`). No new
+       commands.)*
 4. [x] Dogfood falsifier: migrate exactly one engineering gate to an evidence
        predicate + `human-on-recommendation` (agent verifies + recommends, human
        ratifies); keep pure-human gates human. No `agent` clearing rung. If it
