@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-078 | pg init --no-interactive skips wizard substitutions (blank name, --ticket-prefix ignored, placeholder leakage) | bugfix | PENDING | bugfix/proto-078-pg-init-no-interactive-skips-wizard-subs |  |
 
 _No active tickets — PROTO-066 just shipped._
 
@@ -830,6 +829,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-075 | Spec: describe graded authority in the supervision model (section 4) — ADR-002 action item 5 | 2026-07-12 | | |
 | PROTO-076 | Agent surfacing: pg agent list --available + pg agent install | 2026-07-12 | | |
 | PROTO-077 | Release/PM module — 5th discipline, zero core edits | 2026-07-12 | | |
+| PROTO-078 | pg init --no-interactive skips wizard substitutions (blank name, --ticket-prefix ignored, placeholder leakage) | 2026-07-12 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

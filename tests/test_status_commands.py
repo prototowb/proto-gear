@@ -238,3 +238,77 @@ class TestCmdTicketList:
     def test_missing_file(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         assert sc.cmd_ticket_list(_args(status="", json=False)) == 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PROTO-078: fenced "**Example**:" rows must not parse/mutate as real tickets.
+# The generated PROJECT_STATUS.md ships an example row inside a ```markdown
+# fence, with the project's real prefix substituted in.
+# ─────────────────────────────────────────────────────────────────────────────
+
+FENCED_EXAMPLE_STATUS = """# PROJECT STATUS
+
+## Current State
+
+```yaml
+project_phase: "Development"
+ticket_prefix: "ARSENAL"
+last_ticket_id: 0
+```
+
+## Active Tickets
+
+| ID | Title | Type | Status | Branch | Assignee |
+|----|-------|------|--------|--------|----------|
+_No active tickets yet._
+
+**Example**:
+```markdown
+| ARSENAL-001 | Add user authentication | feature | IN_PROGRESS | feature/ARSENAL-001-add-user-auth | Lead AI |
+```
+
+## Completed Tickets
+
+| ID | Title | Completed | PR | Reviewed by |
+|----|-------|-----------|-----|-------------|
+| INIT-001 | Proto Gear framework integrated | 2026-07-12 | - | - |
+"""
+
+
+class TestFencedExampleIgnored:
+    def test_parse_skips_fenced_example(self, tmp_path):
+        (tmp_path / "PROJECT_STATUS.md").write_text(
+            FENCED_EXAMPLE_STATUS, encoding="utf-8"
+        )
+        state = sc.ProjectState(tmp_path / "PROJECT_STATUS.md")
+        assert state.active == []  # fenced ARSENAL-001 must not count
+        assert state.last_ticket_id == 0  # not inferred from the example
+
+    def test_update_status_leaves_fenced_example_untouched(self):
+        out = sc._update_status_inline(
+            FENCED_EXAMPLE_STATUS, "ARSENAL-001", "COMPLETED"
+        )
+        # The example row inside the fence keeps its original IN_PROGRESS status.
+        assert (
+            "| ARSENAL-001 | Add user authentication | feature | IN_PROGRESS |" in out
+        )
+        assert "COMPLETED" not in out
+
+
+class TestExtractToleratesInlineComments:
+    """PROTO-078: Current State YAML ships inline `# comments`."""
+
+    def test_prefix_and_id_parse_past_comments(self, tmp_path):
+        text = (
+            "# x\n\n## Current State\n\n```yaml\n"
+            'project_phase: "Development"  # Planning, Development, ...\n'
+            "current_sprint: null  # null for pre-development\n"
+            "last_ticket_id: 0  # Next ticket will increment from this\n"
+            'ticket_prefix: "ARSENAL"  # e.g., "PROJ", "MCP", etc.\n'
+            "```\n\n## Active Tickets\n\n## Completed Tickets\n"
+        )
+        p = tmp_path / "PROJECT_STATUS.md"
+        p.write_text(text, encoding="utf-8")
+        state = sc.ProjectState(p)
+        assert state.ticket_prefix == "ARSENAL"
+        assert state.last_ticket_id == 0

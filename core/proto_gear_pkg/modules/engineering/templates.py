@@ -8,6 +8,8 @@ is engineering-module-specific and will move to modules/engineering/ in Phase B.
 """
 
 import os
+import re
+from datetime import datetime
 from pathlib import Path
 
 from proto_gear_pkg import __version__
@@ -17,6 +19,216 @@ from proto_gear_pkg.module_core.metadata_parser import (
     apply_conditional_content,
 )
 from proto_gear_pkg.paths import package_root
+
+# ---------------------------------------------------------------------------
+# Defaulted replacement dictionary (PROTO-078)
+#
+# Host templates carry far more placeholders than the wizard ever asked about.
+# Historically only the interactive path filled a handful (PROJECT_NAME,
+# TICKET_PREFIX, DATE, ...), so `pg init --no-interactive` shipped files with
+# raw `{{TOKEN}}` leakage and `--ticket-prefix` silently ignored. This builds
+# the single defaulted replacement dict that *every* init path applies, keyed
+# off project/git detection and honoring the caller's flags. Deep content
+# scaffold slots (ARCHITECTURE diagrams, SECURITY threat scenarios) are
+# intentionally NOT defaulted here — agents fill those in.
+# ---------------------------------------------------------------------------
+
+# Per-language tooling defaults for the command/coverage/source tokens.
+# Detection yields a coarse "<Lang> Project" type string; we key off the
+# language word and fall back to language-neutral `make`-style commands.
+_LANGUAGE_PROFILES = {
+    "python": {
+        "LANGUAGE": "Python",
+        "LANGUAGE_VERSION": "python-version",
+        "SETUP_ACTION": "actions/setup-python@v5",
+        "TEST_FRAMEWORK": "pytest",
+        "TEST_COMMAND": "pytest",
+        "RUN_ALL_TESTS": "pytest",
+        "RUN_UNIT_TESTS": "pytest tests/unit",
+        "RUN_INTEGRATION_TESTS": "pytest tests/integration",
+        "RUN_SPECIFIC_TESTS": "pytest tests/unit/test_module.py",
+        "RUN_WATCH_MODE": "pytest-watch",
+        "RUN_WITH_COVERAGE": "pytest --cov",
+        "RUN_COVERAGE": "pytest --cov --cov-report=html",
+        "LINTER_COMMAND": "ruff check .",
+        "RUN_LINTER": "ruff check .",
+        "TYPE_CHECKER_COMMAND": "mypy .",
+        "FORMAT_COMMAND": "black .",
+        "AUTO_FIX_COMMAND": "ruff check --fix .",
+        "VERIFY_COMMAND": "pytest && ruff check . && mypy .",
+        "INSTALL_COMMAND": "pip install -e .[dev]",
+        "SOURCE_DIR": "src",
+    },
+    "node": {
+        "LANGUAGE": "JavaScript/TypeScript",
+        "LANGUAGE_VERSION": "node-version",
+        "SETUP_ACTION": "actions/setup-node@v4",
+        "TEST_FRAMEWORK": "Jest",
+        "TEST_COMMAND": "npm test",
+        "RUN_ALL_TESTS": "npm test",
+        "RUN_UNIT_TESTS": "npm run test:unit",
+        "RUN_INTEGRATION_TESTS": "npm run test:integration",
+        "RUN_SPECIFIC_TESTS": "npm test -- src/module.test.js",
+        "RUN_WATCH_MODE": "npm test -- --watch",
+        "RUN_WITH_COVERAGE": "npm test -- --coverage",
+        "RUN_COVERAGE": "npm test -- --coverage",
+        "LINTER_COMMAND": "npm run lint",
+        "RUN_LINTER": "npm run lint",
+        "TYPE_CHECKER_COMMAND": "npx tsc --noEmit",
+        "FORMAT_COMMAND": "npm run format",
+        "AUTO_FIX_COMMAND": "npm run lint -- --fix",
+        "VERIFY_COMMAND": "npm test && npm run lint",
+        "INSTALL_COMMAND": "npm install",
+        "SOURCE_DIR": "src",
+    },
+    "generic": {
+        "LANGUAGE": "your language",
+        "LANGUAGE_VERSION": "language-version",
+        "SETUP_ACTION": "actions/checkout@v4",
+        "TEST_FRAMEWORK": "your test framework",
+        "TEST_COMMAND": "make test",
+        "RUN_ALL_TESTS": "make test",
+        "RUN_UNIT_TESTS": "make test-unit",
+        "RUN_INTEGRATION_TESTS": "make test-integration",
+        "RUN_SPECIFIC_TESTS": "make test TEST=module",
+        "RUN_WATCH_MODE": "make test-watch",
+        "RUN_WITH_COVERAGE": "make coverage",
+        "RUN_COVERAGE": "make coverage",
+        "LINTER_COMMAND": "make lint",
+        "RUN_LINTER": "make lint",
+        "TYPE_CHECKER_COMMAND": "make typecheck",
+        "FORMAT_COMMAND": "make format",
+        "AUTO_FIX_COMMAND": "make lint-fix",
+        "VERIFY_COMMAND": "make verify",
+        "INSTALL_COMMAND": "make install",
+        "SOURCE_DIR": "src",
+    },
+}
+
+
+def _language_key(project_info: dict) -> str:
+    """Map a detected project type string to a `_LANGUAGE_PROFILES` key."""
+    ptype = (project_info or {}).get("type") or ""
+    ptype = ptype.lower()
+    if "python" in ptype:
+        return "python"
+    if "node" in ptype or "javascript" in ptype or "typescript" in ptype:
+        return "node"
+    return "generic"
+
+
+def build_default_replacements(
+    project_dir: Path,
+    ticket_prefix: str = None,
+    git_config: dict = None,
+    project_info: dict = None,
+) -> dict:
+    """Build the defaulted replacement dict shared by every init path.
+
+    Covers the project-config token surface (branch names, ticket prefix,
+    dates, language/test/lint/coverage commands, repository URL, review/SLA
+    times) with sensible, detection-aware defaults. Callers merge per-file
+    extras on top. Genuinely open-ended content slots are left untouched for
+    agents to fill (see `humanize_leftover_tokens` for the clean-file sweep).
+    """
+    project_dir = Path(project_dir)
+    project_info = project_info or {}
+    git_config = git_config or {}
+
+    # Path(".").name is "" — always resolve so the project name is real.
+    project_name = project_dir.resolve().name
+    today = datetime.now().strftime("%Y-%m-%d")
+    year = datetime.now().strftime("%Y")
+
+    main_branch = git_config.get("main_branch", "main")
+    dev_branch = git_config.get("dev_branch", "development")
+
+    lang = dict(_LANGUAGE_PROFILES[_language_key(project_info)])
+
+    repo_url = (
+        git_config.get("remote_url") or f"https://github.com/OWNER/{project_name}"
+    )
+
+    replacements = {
+        # Identity / meta
+        "PROJECT_NAME": project_name,
+        "PROJECT_ROOT": project_name,
+        "TICKET_PREFIX": ticket_prefix or "PROJ",
+        "VERSION": __version__,
+        "YEAR": year,
+        "DATE": today,
+        "GENERATION_DATE": today,
+        "PROJECT_TYPE": project_info.get("type", "Unknown"),
+        "FRAMEWORK": project_info.get("framework", "Unknown"),
+        "CODE_LANGUAGE": lang["LANGUAGE"],
+        # Git / branches
+        "MAIN_BRANCH": main_branch,
+        "DEV_BRANCH": dev_branch,
+        "CURRENT_BRANCH": main_branch,
+        "REPOSITORY_URL": repo_url,
+        # Coverage targets
+        "COVERAGE_TARGET": "80",
+        "MIN_COVERAGE": "80",
+        "NEW_CODE_COVERAGE": "90",
+        # Agents / sprint cadence (AGENTS.md)
+        "SPRINT_DURATION": "2 weeks",
+        "FLEX_AGENTS_DEFINITIONS": (
+            "_No flex agents configured yet. Add them as the team grows._"
+        ),
+        # Illustrative example fillers so shipped code samples read naturally
+        "MODULE_NAME": "example",
+        "module": "example",
+        "WORKFLOW_NAME": "checkout",
+        "workflow": "checkout",
+        "WORKFLOW": "the checkout workflow",
+        "FEATURE_NAME": "user login",
+        "USER_JOURNEY": "the sign-up flow",
+        "ACTION": "complete the primary flow",
+        "ERROR_CONDITION": "invalid input gracefully",
+        "EDGE_CASE_DESCRIPTION": "empty and boundary inputs are handled",
+        "BASE_URL": "http://localhost:8000",
+        # Review / response SLAs (CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md)
+        "SECURITY_CONTACT": "the project maintainers",
+        "ACKNOWLEDGMENT_TIME": "48 hours",
+        "INITIAL_RESPONSE_TIME": "48 hours",
+        "ASSESSMENT_TIME": "5 business days",
+        "RESOLUTION_TIME": "30 days",
+        "RESOLUTION_TARGET": "30 days",
+        "ISSUE_RESPONSE_TIME": "2 business days",
+        "PR_RESPONSE_TIME": "2 business days",
+        "QUESTION_RESPONSE_TIME": "2 business days",
+        "REVIEW_TURNAROUND": "2 business days",
+        "CRITICAL_RESPONSE_TIME": "24 hours",
+        "HIGH_RESPONSE_TIME": "48 hours",
+        "MEDIUM_RESPONSE_TIME": "5 business days",
+        "LOW_RESPONSE_TIME": "10 business days",
+        "CRITICAL_FIX_TIME": "7 days",
+        "HIGH_FIX_TIME": "30 days",
+        "MEDIUM_FIX_TIME": "90 days",
+        "LOW_FIX_TIME": "best effort",
+    }
+    replacements.update(lang)
+    return replacements
+
+
+# Matches a single `{{TOKEN}}` placeholder (letters/underscores only, so
+# doubled `{{{{...}}}}` literals in code samples are left alone).
+_LEFTOVER_TOKEN_RE = re.compile(r"(?<!\{)\{\{([A-Za-z_]+)\}\}(?!\})")
+
+
+def humanize_leftover_tokens(content: str) -> str:
+    """Replace any surviving `{{TOKEN}}` with a friendly `_TBD: token_` marker.
+
+    Applied only to files that must ship leakage-free (AGENTS, PROJECT_STATUS,
+    TESTING, CONTRIBUTING) as a safety net for config tokens without an
+    explicit default. Scaffold files (ARCHITECTURE/SECURITY) are not swept.
+    """
+
+    def _repl(match: "re.Match") -> str:
+        words = match.group(1).replace("_", " ").strip().lower()
+        return f"_TBD: {words}_"
+
+    return _LEFTOVER_TOKEN_RE.sub(_repl, content)
 
 
 def safe_write_file(
@@ -170,7 +382,7 @@ This project has a remote repository configured ({git_config['remote_name']}).
 ### Push Regularly
 ```bash
 # Push your branch to backup work
-git push -u origin feature/{{{{TICKET_PREFIX}}}}-XXX-description
+git push -u origin feature/{ticket_prefix}-XXX-description
 
 # Check remote status
 git branch -vv
@@ -201,28 +413,28 @@ git branch -vv
             remote_push_during = ""
             example_post_merge = ""
             before_merge_steps = f"\n4. **Merge locally**: `git checkout {dev} && git merge feature-branch`"
-            remote_handling_section = """## Local Development (No Remote)
+            remote_handling_section = f"""## Local Development (No Remote)
 
 This project does not have a remote repository configured.
 
 ### Local Workflow
 ```bash
 # Work on your branch
-git checkout -b feature/{{TICKET_PREFIX}}-XXX-description
+git checkout -b feature/{ticket_prefix}-XXX-description
 
 # When done, merge to development
-git checkout {{DEV_BRANCH}}
-git merge feature/{{TICKET_PREFIX}}-XXX-description
+git checkout {dev}
+git merge feature/{ticket_prefix}-XXX-description
 
 # Delete feature branch
-git branch -d feature/{{TICKET_PREFIX}}-XXX-description
+git branch -d feature/{ticket_prefix}-XXX-description
 ```
 
 ### Adding a Remote Later
 If you want to add a remote repository:
 ```bash
 git remote add origin <repository-url>
-git push -u origin {{DEV_BRANCH}}
+git push -u origin {dev}
 ```"""
             quick_remote_rules = ""
             quick_never_remote = ""
@@ -288,7 +500,13 @@ def discover_available_templates():
 
 
 def generate_project_template(
-    template_name, project_dir, context, dry_run=False, force=False, interactive=True
+    template_name,
+    project_dir,
+    context,
+    dry_run=False,
+    force=False,
+    interactive=True,
+    humanize_leftovers=False,
 ):
     """
     Generate a project template from the template file with metadata support.
@@ -342,6 +560,11 @@ def generate_project_template(
         for key, value in context.items():
             placeholder = f"{{{{{key}}}}}"
             content = content.replace(placeholder, str(value))
+
+        # For files that must ship leakage-free, turn any config token we
+        # forgot to default into a friendly fill-in marker (PROTO-078).
+        if humanize_leftovers:
+            content = humanize_leftover_tokens(content)
 
         # Write to project directory
         output_file = project_dir / f"{template_name}.md"
