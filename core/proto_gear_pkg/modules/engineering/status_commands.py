@@ -51,8 +51,12 @@ class ProjectState:
 
     def _extract(self, key, default=""):
         # type: (str, str) -> str
+        # Tolerate trailing inline `# comments` — the generated Current State
+        # YAML annotates each field (e.g. `ticket_prefix: "ARSENAL"  # e.g.,
+        # "PROJ"`); without this the value fails to parse and the caller falls
+        # back to error-prone ticket-id inference (PROTO-078).
         m = re.search(
-            r"^" + re.escape(key) + r":\s*[\"']?([^\"'#\n]+?)[\"']?\s*$",
+            r"^" + re.escape(key) + r":\s*[\"']?([^\"'#\n]+?)[\"']?\s*(?:#[^\n]*)?$",
             self.text,
             re.MULTILINE,
         )
@@ -100,8 +104,16 @@ class ProjectState:
 
         header = None
         rows = []
+        in_fence = False
         for line in m.group(1).splitlines():
             line = line.strip()
+            # Skip fenced code blocks — the template ships an "**Example**:"
+            # ```markdown table that must not be read as real tickets (PROTO-078).
+            if line.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
             if not line.startswith("|"):
                 continue
             cells = [c.strip() for c in line.split("|")[1:-1]]
@@ -140,6 +152,7 @@ def _find_insert_point(lines, section_name):
     in_section = False
     sep_idx = None
     last_row_idx = None
+    in_fence = False
 
     for i, line in enumerate(lines):
         s = line.strip()
@@ -149,6 +162,11 @@ def _find_insert_point(lines, section_name):
         if in_section:
             if s.startswith("## "):
                 break
+            if s.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
             if s.startswith("|"):
                 cells = [c.strip() for c in s.split("|")[1:-1]]
                 if all(set(c) <= set("-: ") for c in cells if c):
@@ -181,6 +199,7 @@ def _remove_active_row(text, ticket_id):
     header = None
     sep_seen = False
     removed = None
+    in_fence = False
 
     for i, line in enumerate(lines):
         s = line.strip()
@@ -190,6 +209,11 @@ def _remove_active_row(text, ticket_id):
         if in_section:
             if s.startswith("## "):
                 break
+            if s.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
             if s.startswith("|"):
                 cells = [c.strip() for c in s.split("|")[1:-1]]
                 if header is None:
@@ -209,7 +233,19 @@ def _update_status_inline(text, ticket_id, new_status):
     pattern = re.compile(
         r"(\|\s*" + re.escape(ticket_id) + r"\s*\|[^|]+\|[^|]+\|)\s*\S+\s*(\|)"
     )
-    return pattern.sub(r"\g<1> " + new_status + r" \2", text)
+    # Line-based + fence-aware so a fenced "**Example**:" row sharing this
+    # ticket id (e.g. the template's ARSENAL-001) is never mutated (PROTO-078).
+    lines = text.splitlines(keepends=True)
+    in_fence = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        lines[i] = pattern.sub(r"\g<1> " + new_status + r" \2", line)
+    return "".join(lines)
 
 
 def _write(path, text):

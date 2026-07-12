@@ -530,6 +530,29 @@ class TestProto078NonInteractiveInit:
         arch = (tmp_path / "ARCHITECTURE.md").read_text(encoding="utf-8")
         assert _TOKEN_RE.findall(arch)
 
+    def test_force_refreshes_guarded_agents_and_status(self, tmp_path, monkeypatch):
+        # A botched install left leaked, guarded files behind; --force must
+        # refresh them (the documented recovery path).
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "AGENTS.md").write_text("stale {{MAIN_BRANCH}}", encoding="utf-8")
+        (tmp_path / "PROJECT_STATUS.md").write_text(
+            "stale {{TICKET_PREFIX}}", encoding="utf-8"
+        )
+
+        setup_agent_framework_only(
+            ticket_prefix="ARSENAL",
+            with_branching=True,
+            with_all=True,
+            dry_run=False,
+            force=True,
+        )
+
+        agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        status = (tmp_path / "PROJECT_STATUS.md").read_text(encoding="utf-8")
+        assert "stale" not in agents and not _TOKEN_RE.findall(agents)
+        assert "proto-gear:header" in status
+        assert 'ticket_prefix: "ARSENAL"' in status
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

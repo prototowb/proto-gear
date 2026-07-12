@@ -190,17 +190,23 @@ def setup_agent_framework_only(
                         files_created.append("BRANCHING.md")
                     branching_reference = f"\n> **📋 Branching Strategy**: See [BRANCHING.md](BRANCHING.md) for Git workflow and commit conventions\n"
 
-            # Create AGENTS.md (only if doesn't exist or explicitly selected)
+            # Create AGENTS.md (fresh install, explicit --force, or selected).
+            # --force is the documented recovery path for a botched install
+            # (PROTO-078), so it must be able to refresh this guarded file.
             agents_file = current_dir / "AGENTS.md"
-            should_create_agents = not agents_file.exists() or (  # Fresh install
-                core_templates
-                and "AGENTS"
-                in [
-                    t.replace(".md", "")
-                    for t in (
-                        core_templates if isinstance(core_templates, list) else []
-                    )
-                ]
+            should_create_agents = (
+                force
+                or not agents_file.exists()
+                or (
+                    core_templates
+                    and "AGENTS"
+                    in [
+                        t.replace(".md", "")
+                        for t in (
+                            core_templates if isinstance(core_templates, list) else []
+                        )
+                    ]
+                )
             )  # Explicitly selected
 
             if should_create_agents:
@@ -263,17 +269,22 @@ def setup_agent_framework_only(
                 if written or action == "would_create":
                     files_created.append("SESSION_HANDOFF.md")
 
-            # Create PROJECT_STATUS.md (only if doesn't exist or explicitly selected)
+            # Create PROJECT_STATUS.md (fresh install, explicit --force, or
+            # selected). --force refreshes it for install recovery (PROTO-078).
             status_file = current_dir / "PROJECT_STATUS.md"
-            should_create_status = not status_file.exists() or (  # Fresh install
-                core_templates
-                and "PROJECT_STATUS"
-                in [
-                    t.replace(".md", "")
-                    for t in (
-                        core_templates if isinstance(core_templates, list) else []
-                    )
-                ]
+            should_create_status = (
+                force
+                or not status_file.exists()
+                or (
+                    core_templates
+                    and "PROJECT_STATUS"
+                    in [
+                        t.replace(".md", "")
+                        for t in (
+                            core_templates if isinstance(core_templates, list) else []
+                        )
+                    ]
+                )
             )  # Explicitly selected
 
             if should_create_status:
