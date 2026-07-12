@@ -37,6 +37,14 @@ class TestCollectSupervisionGates:
         assert deploy["before"] == "deploy"
         assert deploy["approver"] == "human"
 
+    def test_records_carry_adr002_primitives_at_defaults(self):
+        """Every gate record exposes actor/authority; the corpus is all-§4."""
+        records = pipeline.collect_supervision_gates()
+        assert records
+        for r in records:
+            assert r["actor"] == ""
+            assert r["authority"] == "human"
+
 
 class TestBuildPipeline:
     def test_stages_in_flow_order(self):

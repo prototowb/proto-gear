@@ -104,6 +104,14 @@ class TestGateChecklist:
         assert by_gate["qa-signoff"] == "cleared"
         assert by_gate["prod-approval"] == "cleared"
 
+    def test_checklist_entries_carry_authority(self, tmp_path):
+        # ADR-002: every checklist entry reports the gate's required authority
+        # (all-human across the bundled corpus), so trace/release surfaces can
+        # report authority sufficiency without re-reading workflow metadata.
+        _write_surfaces(tmp_path)
+        entries = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entries and all(g["authority"] == "human" for g in entries)
+
     def test_engineering_gates_untracked(self, tmp_path):
         # engineering's PROJECT_STATUS has no approval column → gates are reached
         # (the ticket exists) but not evidenceable, not silently "outstanding".

@@ -220,7 +220,10 @@ def gate_checklist(
     ``scope`` (``"change"`` per-ticket or ``"release"`` per-release — a
     release-scoped gate is cleared once for the whole release, so evaluating it
     against a single ticket id is only meaningful when the id *is* the release
-    label; ``pg release`` does exactly that). Order follows the pipeline.
+    label; ``pg release`` does exactly that), and ``authority`` (the minimum
+    authority the gate demands of its clearer — ADR-002; carried through so the
+    trace/release surfaces can report authority sufficiency). Order follows the
+    pipeline.
     """
     from . import pipeline
 
@@ -268,6 +271,7 @@ def gate_checklist(
                     "required": g["required"],
                     "status": status,
                     "scope": g.get("scope", "change"),
+                    "authority": g.get("authority", "human"),
                 }
             )
     return checklist

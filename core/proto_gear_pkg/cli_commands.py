@@ -456,7 +456,14 @@ def cmd_capabilities_show(args):
         for g in metadata.workflow.gates:
             req = "required" if g.required else "optional"
             loc = f", before {g.before}" if g.before else ""
-            print(f"  - {Colors.BOLD}{g.id}{Colors.ENDC} ({g.approver}, {req}{loc})")
+            # ADR-002 primitives shown only when they deviate from §4 defaults,
+            # so the common all-human gate stays a one-glance line.
+            auth = f", authority: {g.authority}" if g.authority != "human" else ""
+            actor = f", actor: {g.actor}" if g.actor else ""
+            print(
+                f"  - {Colors.BOLD}{g.id}{Colors.ENDC} "
+                f"({g.approver}, {req}{loc}{auth}{actor})"
+            )
             print(f"      {g.description}")
 
     return 0
@@ -1497,10 +1504,13 @@ def cmd_pipeline(args):
         print(f"{Colors.BOLD}before {stage['action']}{Colors.ENDC}{converge}")
         for g in gates:
             req = "required" if g["required"] else "optional"
+            auth = g.get("authority", "human")
+            auth_note = f", authority: {auth}" if auth != "human" else ""
+            actor_note = f", actor: {g['actor']}" if g.get("actor") else ""
             print(
                 f"  {Colors.GREEN}{g['gate']}{Colors.ENDC} "
                 f"{Colors.GRAY}[{g['discipline']}]{Colors.ENDC} "
-                f"— {g['approver']}, {req} "
+                f"— {g['approver']}, {req}{auth_note}{actor_note} "
                 f"{Colors.GRAY}({g['workflow']}){Colors.ENDC}"
             )
         print()
