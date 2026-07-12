@@ -245,6 +245,10 @@ def main():
                 sys.exit(cli_commands.cmd_agent_delete(args))
             elif args.agent_command == "clone":
                 sys.exit(cli_commands.cmd_agent_clone(args))
+            elif args.agent_command is None:
+                # Bare `pg agent` → interactive browse/select UI (§5.7),
+                # falling back to the static list when non-interactive.
+                sys.exit(cli_commands.cmd_agent_browse(args))
             else:
                 print(
                     f"{Colors.YELLOW}Use 'pg agent --help' to see available commands{Colors.ENDC}"

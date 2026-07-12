@@ -58,7 +58,9 @@ class TestDispatch:
         assert run(["capabilities"], monkeypatch) == 1
 
     def test_agent_no_subcommand(self, monkeypatch, capsys):
-        assert run(["agent"], monkeypatch) == 1
+        # Bare `pg agent` launches the interactive browser (§5.7); with no TTY
+        # it falls back to the static list, which exits 0 (not the old 1).
+        assert run(["agent"], monkeypatch) == 0
 
     def test_module_list(self, monkeypatch, capsys):
         assert run(["module", "list"], monkeypatch) == 0

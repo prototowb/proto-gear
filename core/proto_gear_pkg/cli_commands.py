@@ -759,6 +759,150 @@ def cmd_agent_list(args):
     return 0
 
 
+def _collect_agent_entries(agents_dir: Path, caps_dir: Path) -> List[dict]:
+    """Assemble the unified browse list: installed agents + available bundled ones.
+
+    Pure data (no I/O prompts) so it is unit-testable. Each entry is a dict:
+    ``kind`` (``installed`` | ``available``), ``name``, ``description``,
+    ``module`` (source, ``None`` for shared/installed) and, for installed
+    agents, a validation ``status`` (``valid`` / ``warnings`` / ``invalid`` /
+    ``error``). Installed first, then available — mirroring `pg agent list`.
+    """
+    from .module_core import module_host
+
+    entries: List[dict] = []
+
+    if agents_dir.exists():
+        try:
+            manager = AgentManager(agents_dir, caps_dir)
+            for agent in manager.list_agents():
+                try:
+                    errors, warnings = manager.validate_agent(agent)
+                    status = (
+                        "invalid" if errors else "warnings" if warnings else "valid"
+                    )
+                except Exception:
+                    status = "error"
+                entries.append(
+                    {
+                        "kind": "installed",
+                        "name": agent.name,
+                        "description": agent.description or "",
+                        "module": None,
+                        "status": status,
+                    }
+                )
+        except Exception:
+            pass  # a broken agents dir shouldn't hide the available ones
+
+    installed_stems = (
+        {p.stem for p in agents_dir.glob("*.yaml")} if agents_dir.exists() else set()
+    )
+    for r in module_host.list_bundled_agents():
+        if r["name"] in installed_stems:
+            continue
+        entries.append(
+            {
+                "kind": "available",
+                "name": r["name"],
+                "description": r["description"] or "",
+                "module": r["module"],
+                "status": None,
+            }
+        )
+    return entries
+
+
+def _agent_entry_label(entry: dict) -> str:
+    """One-line label for an agent entry in the browse list."""
+    if entry["kind"] == "installed":
+        badge = {
+            "valid": f"{Colors.GREEN}[OK]{Colors.ENDC}",
+            "warnings": f"{Colors.WARNING}[!]{Colors.ENDC}",
+            "invalid": f"{Colors.FAIL}[X]{Colors.ENDC}",
+            "error": f"{Colors.FAIL}[X]{Colors.ENDC}",
+        }.get(entry["status"], "")
+        tail = f" — {entry['description']}" if entry["description"] else ""
+        return f"{badge} {entry['name']}{tail}"
+    source = entry["module"] or "shared"
+    tail = f" — {entry['description']}" if entry["description"] else ""
+    return f"{Colors.CYAN}+ {entry['name']}{Colors.ENDC} {Colors.GRAY}[{source}, not installed]{Colors.ENDC}{tail}"
+
+
+def cmd_agent_browse(args):
+    """Interactive browse/select UI over installed + available agents (§5.7).
+
+    UI-first entry point for ``pg agent`` with no subcommand: navigate the
+    catalog and pick an agent to inspect (and install, if it's a bundled one not
+    yet here). Degrades gracefully — without a TTY or without ``questionary``
+    it falls back to the classic ``pg agent list`` so scripts/CI are unaffected.
+    """
+    agents_dir = get_agents_dir()
+    caps_dir = get_capabilities_dir()
+
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    # Non-interactive (piped/CI) or no questionary: the static list is correct.
+    if not interactive or questionary is None:
+        return cmd_agent_list(args)
+
+    while True:
+        entries = _collect_agent_entries(agents_dir, caps_dir)
+        if not entries:
+            print(
+                f"{Colors.YELLOW}No agents installed or available.{Colors.ENDC} "
+                f"Run 'pg init' to scaffold, or 'pg agent create <name>'."
+            )
+            return 0
+
+        choices = [
+            questionary.Choice(_agent_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Agents — installed + available (select to view):",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        if entry["kind"] == "installed":
+            cmd_agent_show(_args_ns(name=entry["name"]))
+        else:
+            _show_available_agent(entry)
+            confirm = questionary.confirm(
+                f"Install '{entry['name']}' into .proto-gear/agents/?",
+                default=False,
+            ).ask()
+            if confirm:
+                cmd_agent_install(_args_ns(name=entry["name"]))
+
+
+def _show_available_agent(entry: dict) -> None:
+    """Print the summary of a bundled agent that isn't installed yet."""
+    source = entry["module"] or "shared"
+    print(f"\n{Colors.HEADER}=== {entry['name']} ==={Colors.ENDC}\n")
+    print(f"Source: {source}")
+    print(f"Status: {Colors.YELLOW}not installed{Colors.ENDC}")
+    if entry["description"]:
+        print(f"\n{Colors.CYAN}Description:{Colors.ENDC}\n  {entry['description']}")
+    print()
+
+
+def _args_ns(**kw):
+    """Small argparse.Namespace shim for dispatching to sibling handlers."""
+    import argparse
+
+    return argparse.Namespace(**kw)
+
+
 def cmd_agent_install(args):
     """Install one bundled agent (shared or discipline-shipped) on demand."""
     from .module_core import module_host
