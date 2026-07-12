@@ -22,25 +22,28 @@ The supervision contract now separates actor / evidence / authority, with a
 three-rung graded-authority ladder, doctor validation, trace/release
 sufficiency auditing, and one live `human-on-recommendation` gate.
 
-1. **Everything through PROTO-075 is merged** (PRs #41–#45).
-2. **Pick the next thrust** (unticketed; file with `pg ticket create`) — the
-   pre-ADR backlog is the queue now:
-   - **Agent surfacing**: `pg agent list --available` (show discoverable
-     bundled/discipline agents via `module_host.iter_agent_sources()`) and
-     `pg agent install <name>`. Per PROTO-070 (§5.7), reach it through the
-     interactive UI first — a command is the shortcut, not the entry.
+1. **Everything through PROTO-076 is merged** (PRs #41–#46). Agent surfacing
+   shipped: `pg agent list` shows an "Available bundled agents" section
+   (discipline agents visible pre-install), `--available` filters to it, and
+   `pg agent install <name>` (bare or `<module>/<name>`) pulls one in with
+   the sweep installer's hardening.
+2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
    - **A 5th discipline** (docs / release-PM) — contract proven ×4; a
      release/PM discipline could own the Releases surface and would get
      agents + graded authority for free.
    - **`pg release` polish** — cross-discipline release surfaces, or
      release-notes generation from the cleared checklist.
+   - **Interactive UI investment (§5.7)** — the init wizard is the only
+     interactive surface; a browse/navigate UI over capabilities + agents
+     (the `pg agent list` sections are the seed) would honor UI-first
+     before the command surface grows further.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-075 (PR #45). **No PR in flight** (bar this
-  one if you're reading it pre-merge).
+- `development` = through PROTO-076 (PR #46). **No PR in flight** (bar this
+  one if you're reading it pre-merge). **906 tests pass.**
 - **892 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
 - **Authority sufficiency (PROTO-074, ADR-002 item 3)**: checklist entries
   carry `signed_by` + `authority_ok`. Signer convention: an agent signs with
@@ -106,13 +109,16 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 - **PROTO-075** — ADR-002 action item 5: PROJECT_SPECIFICATIONS §4.1 describes
   graded authority as the capability-growth axis. **Closes the ADR-002 action
   list.** PR #45.
+- **PROTO-076** — agent surfacing: `module_host.list_bundled_agents` +
+  `install_bundled_agent`; `pg agent list [--available]` + `pg agent
+  install <name>`. PR #46.
 - (Earlier: PROTO-054–067 — module seam S1, pipeline/trace/release D-series,
   per-gate evidence + scope, agent seam. See git history.)
 
 ## Pending / In Progress
 
-- **Nothing in flight** beyond PR #45 (PROTO-075). The ADR-002 arc is done;
-  next thrust comes from the backlog — see "Start here".
+- **Nothing in flight** beyond PR #46 (PROTO-076). Next thrust from the
+  backlog — see "Start here".
 
 ## Conventions In Force
 

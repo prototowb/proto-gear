@@ -434,3 +434,80 @@ class TestInitSurfaceCLI:
         assert rc == 0
         assert "Would create PROJECT_STATUS.md" in out
         assert "unresolved placeholders" in out
+
+
+class TestListBundledAgents:
+    """PROTO-076: browse every installable bundled agent, pre-install."""
+
+    def test_real_shared_and_discipline_agents_are_listed(self):
+        records = module_host.list_bundled_agents()
+        by_qualified = {r["qualified"]: r for r in records}
+        # shared agents keep bare ids; discipline agents are namespaced.
+        assert "code-review-agent" in by_qualified
+        assert by_qualified["code-review-agent"]["module"] is None
+        assert "qa/qa-release-agent" in by_qualified
+        assert by_qualified["qa/qa-release-agent"]["module"] == "qa"
+        assert by_qualified["qa/qa-release-agent"]["name"] == "qa-release-agent"
+
+    def test_descriptions_are_read_best_effort(self):
+        records = module_host.list_bundled_agents()
+        qa = next(r for r in records if r["qualified"] == "qa/qa-release-agent")
+        assert "sign-off" in qa["description"]
+
+    def test_custom_root_module_agent_listed(self, tmp_path):
+        TestIterAgentSources._module_with_agent(tmp_path, "qa")
+        records = module_host.list_bundled_agents(modules_root=tmp_path)
+        assert any(r["qualified"] == "qa/a-agent" for r in records)
+
+
+class TestInstallBundledAgent:
+    """PROTO-076: pull ONE discovered agent into a host on demand."""
+
+    def test_installs_by_bare_name(self, tmp_path):
+        TestIterAgentSources._module_with_agent(tmp_path, "qa")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_bundled_agent("a-agent", proto, modules_root=tmp_path)
+        assert res["errors"] == []
+        assert (proto / "agents" / "a-agent.yaml").is_file()
+
+    def test_installs_by_qualified_name(self, tmp_path):
+        TestIterAgentSources._module_with_agent(tmp_path, "qa")
+        proto = tmp_path / "host" / ".proto-gear"
+        res = module_host.install_bundled_agent(
+            "qa/a-agent", proto, modules_root=tmp_path
+        )
+        assert res["errors"] == []
+        assert res["installed"].endswith("a-agent.yaml")
+
+    def test_unknown_name_errors(self, tmp_path):
+        proto = tmp_path / ".proto-gear"
+        res = module_host.install_bundled_agent(
+            "no-such-agent", proto, modules_root=tmp_path
+        )
+        assert res["installed"] is None
+        assert any("No bundled agent" in e for e in res["errors"])
+
+    def test_ambiguous_bare_name_requires_qualification(self, tmp_path):
+        TestIterAgentSources._module_with_agent(tmp_path, "qa", "dup-agent.yaml")
+        TestIterAgentSources._module_with_agent(tmp_path, "devops", "dup-agent.yaml")
+        proto = tmp_path / ".proto-gear"
+        res = module_host.install_bundled_agent(
+            "dup-agent", proto, modules_root=tmp_path
+        )
+        assert res["installed"] is None
+        assert any("Ambiguous" in e for e in res["errors"])
+        # the qualified form resolves it
+        res2 = module_host.install_bundled_agent(
+            "qa/dup-agent", proto, modules_root=tmp_path
+        )
+        assert res2["errors"] == []
+
+    def test_never_overwrites_existing(self, tmp_path):
+        TestIterAgentSources._module_with_agent(tmp_path, "qa")
+        proto = tmp_path / ".proto-gear"
+        module_host.install_bundled_agent("a-agent", proto, modules_root=tmp_path)
+        marker = (proto / "agents" / "a-agent.yaml").read_text(encoding="utf-8")
+        res = module_host.install_bundled_agent("a-agent", proto, modules_root=tmp_path)
+        assert res["installed"] is None
+        assert any("already installed" in e for e in res["errors"])
+        assert (proto / "agents" / "a-agent.yaml").read_text(encoding="utf-8") == marker

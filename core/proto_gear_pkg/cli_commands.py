@@ -635,14 +635,49 @@ def cmd_capabilities_tree(args):
 # ============================================================================
 
 
+def _print_available_agents(agents_dir: Path) -> None:
+    """Render the bundled agents not yet installed in this host (PROTO-076).
+
+    Surfaces discoverable agents *before* install — previously a discipline's
+    agent appeared only after `pg init` swept it in. Silent when everything
+    discoverable is already installed.
+    """
+    from .module_core import module_host
+
+    installed = (
+        {p.stem for p in agents_dir.glob("*.yaml")} if agents_dir.exists() else set()
+    )
+    available = [
+        r for r in module_host.list_bundled_agents() if r["name"] not in installed
+    ]
+    if not available:
+        return
+
+    print(f"\n{Colors.BOLD}Available bundled agents (not installed):{Colors.ENDC}")
+    for r in available:
+        source = r["module"] or "shared"
+        desc = f" — {r['description']}" if r["description"] else ""
+        print(
+            f"  {Colors.CYAN}{r['name']:<24}{Colors.ENDC} "
+            f"{Colors.GRAY}[{source}]{Colors.ENDC}{desc}"
+        )
+    print(f"\n  Install one with: pg agent install <name>")
+
+
 def cmd_agent_list(args):
-    """List all configured agents"""
+    """List configured agents, plus the bundled ones available to install."""
     agents_dir = get_agents_dir()
     caps_dir = get_capabilities_dir()
+
+    if getattr(args, "available", False):
+        # Filtered view: only what could be installed.
+        _print_available_agents(agents_dir)
+        return 0
 
     if not agents_dir.exists():
         print(f"{Colors.YELLOW}No agents directory found.{Colors.ENDC}")
         print(f"Create agents with: pg agent create <name>")
+        _print_available_agents(agents_dir)
         return 0
 
     try:
@@ -655,6 +690,7 @@ def cmd_agent_list(args):
     if not agents:
         print(f"{Colors.YELLOW}No agents configured.{Colors.ENDC}")
         print(f"Create agents with: pg agent create <name>")
+        _print_available_agents(agents_dir)
         return 0
 
     # Print header with box
@@ -716,6 +752,31 @@ def cmd_agent_list(args):
     print(f"  pg agent validate <name>  - Check for configuration issues")
     print(f"  pg agent clone <src> <dst> - Duplicate an agent")
 
+    # Discoverable-but-not-installed bundled agents ride the same view, so a
+    # discipline's agent is visible before `pg init`/install (UI-first, §5.7).
+    _print_available_agents(agents_dir)
+
+    return 0
+
+
+def cmd_agent_install(args):
+    """Install one bundled agent (shared or discipline-shipped) on demand."""
+    from .module_core import module_host
+
+    proto_gear_dir = Path(".proto-gear")
+    if not proto_gear_dir.is_dir():
+        print(f"{Colors.FAIL}No .proto-gear/ here — run 'pg init' first.{Colors.ENDC}")
+        return 1
+
+    result = module_host.install_bundled_agent(args.name, proto_gear_dir)
+    for err in result["errors"]:
+        print(f"{Colors.FAIL}{err}{Colors.ENDC}")
+    if result["errors"]:
+        print(f"\nUse 'pg agent list --available' to see installable agents")
+        return 1
+
+    print(f"{Colors.GREEN}Installed agent: {result['installed']}{Colors.ENDC}")
+    print(f"  pg agent show {Path(result['installed']).stem}  - view it")
     return 0
 
 
