@@ -828,6 +828,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-074 | Authority sufficiency in pg trace / pg release — ADR-002 action item 3 | 2026-07-12 | | |
 | PROTO-075 | Spec: describe graded authority in the supervision model (section 4) — ADR-002 action item 5 | 2026-07-12 | | |
 | PROTO-076 | Agent surfacing: pg agent list --available + pg agent install | 2026-07-12 | | |
+| PROTO-077 | Release/PM module — 5th discipline, zero core edits | 2026-07-12 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

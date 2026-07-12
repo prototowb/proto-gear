@@ -1,0 +1,25 @@
+# Release Management / PM department module — the FIFTH engineering-discipline
+# implementation of the module contract (PROJECT_SPECIFICATIONS.md §3). Added the
+# way the contract promises: by dropping this modules/release/ directory in. The
+# department-agnostic core discovers, lists, installs, indexes, gate-audits,
+# orchestrates (pg pipeline), and traces (pg trace / pg release) it with ZERO
+# edits to module_core/, cli/, or doctor — and, since PROTO-067/ADR-002, it also
+# ships its own agent and a release-scoped supervision gate for free.
+
+module: release
+name: Release Management / PM
+description: >-
+  Release-management department module — the release queue (one row per release
+  candidate, keyed by its label), the go/no-go decision, and the human sign-off
+  gate that owns whether a candidate ships, encoded as agent-discoverable
+  capabilities and templates.
+version: 0.1.0
+
+# Contract surfaces (paths are relative to a host project's root). Same schema
+# engineering, qa, devops, and security use; the core reads it without any
+# release-management-specific knowledge.
+contract:
+  capabilities_root: .proto-gear        # item 1 — skills / workflows / commands
+  state_surface: RELEASE_QUEUE.md       # item 2 — release candidates / go-no-go
+  context_manifest: AGENT_CONTEXT.md    # item 3 — agent skim, mirrored to hosts
+  handoff: SESSION_HANDOFF.md           # item 6 — rolling session handoff

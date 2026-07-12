@@ -63,6 +63,16 @@ def _write_security(root: Path, rows: str):
     )
 
 
+def _write_release_queue(root: Path, rows: str):
+    """Release-management surface (PROTO-077): rows keyed by the release label,
+    evidencing the release-scoped go-no-go gate."""
+    (root / "RELEASE_QUEUE.md").write_text(
+        "# Releases\n\n| ID | Ref | Stage | Owner | Window | Signed off by |\n"
+        "|----|-----|-------|-------|--------|---------------|\n" + rows,
+        encoding="utf-8",
+    )
+
+
 def _full_release(root: Path):
     """A two-ticket release: PROTO-A fully cleared downstream, PROTO-B still blocked."""
     _write_status(
@@ -128,8 +138,9 @@ class TestTraceRelease:
         assert {"qa-signoff", "prod-approval", "security-signoff"} <= cleared_gates
 
     def _ready_release(self, root):
-        """One ticket, all change-scoped downstream gates cleared, and a Releases
-        row clearing the release-scoped gates."""
+        """One ticket, all change-scoped downstream gates cleared, a Releases
+        row clearing engineering's release-scoped gates, and a RELEASE_QUEUE
+        row clearing release-management's go-no-go (PROTO-077)."""
         _write_status(
             root,
             "| PROTO-A | first | 2026-07-11 | v0.11 |\n",
@@ -143,6 +154,9 @@ class TestTraceRelease:
         )
         _write_security(
             root, "| SEC-1 | PROTO-A | f | low | signed-off | eve | eve | v0.11 |\n"
+        )
+        _write_release_queue(
+            root, "| v0.11 | PROTO-A | go | rex | 2026-07-15 | tobias |\n"
         )
 
     def test_ready_when_change_and_release_gates_cleared(self, tmp_path):
@@ -160,6 +174,7 @@ class TestTraceRelease:
         cleared = {g["gate"] for g in report["release_gates"]["cleared"]}
         assert "release-approval" in cleared
         assert "announcement-approval" in cleared
+        assert "go-no-go" in cleared  # release-management's gate (PROTO-077)
 
     def test_blocked_when_release_approval_missing(self, tmp_path):
         # Everything per-ticket clears, but no Releases row → release-scoped
