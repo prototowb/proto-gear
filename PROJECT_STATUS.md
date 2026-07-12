@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-078 | pg init --no-interactive skips wizard substitutions (blank name, --ticket-prefix ignored, placeholder leakage) | bugfix | PENDING | bugfix/proto-078-pg-init-no-interactive-skips-wizard-subs |  |
 
 _No active tickets — PROTO-066 just shipped._
 
