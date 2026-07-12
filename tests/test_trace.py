@@ -238,6 +238,30 @@ class TestEvidencePredicates:
         (entry,) = trace.gate_checklist("PROTO-060", tmp_path)
         assert entry["status"] == "pending"
 
+    def test_human_gate_cleared_without_signature_is_unjudgeable(
+        self, tmp_path, monkeypatch
+    ):
+        # A comparison predicate clears on a measurement, not a signature — a
+        # human-authority gate cleared that way reports authority_ok None.
+        _write_surfaces(tmp_path)  # qa row: Stage = signed-off
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "stage-check",
+                    "required": True,
+                    "evidence": "Stage",
+                    "evidence_predicate": "equals",
+                    "evidence_value": "signed-off",
+                    "authority": "human",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["authority_ok"] is None
+
     def test_non_empty_gate_keeps_historical_behaviour(self, tmp_path, monkeypatch):
         _write_surfaces(tmp_path)
         _pin_pipeline(
@@ -370,3 +394,122 @@ class TestStateSurfacesCarryRefColumn:
         ).read_text(encoding="utf-8")
         assert "| ID | Ref |" in qa
         assert "| ID | Ref |" in devops
+
+
+def _qa_gate(**overrides):
+    """A pinned qa gate with no evidence column — the generic approval fallback."""
+    g = {
+        "discipline": "qa",
+        "gate": "qa-signoff",
+        "required": True,
+        "authority": "human",
+    }
+    g.update(overrides)
+    return g
+
+
+def _qa_row(root, signer):
+    (root / "QA_QUEUE.md").write_text(
+        "| ID | Ref | Stage | Signed off by |\n"
+        "|----|-----|-------|---------------|\n"
+        f"| QA-1 | PROTO-054 | signed-off | {signer} |\n",
+        encoding="utf-8",
+    )
+
+
+class TestAuthoritySufficiency:
+    """ADR-002 action item 3: was each cleared gate cleared by a signer of
+    sufficient authority? An agent identity (bundled agent slug, or an
+    'agent:' prefix) cannot clear a gate that demands a human rung."""
+
+    def test_human_signer_is_sufficient(self, tmp_path, monkeypatch):
+        _qa_row(tmp_path, "ann")
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["signed_by"] == ["ann"]
+        assert entry["authority_ok"] is True
+
+    def test_agent_slug_signer_is_insufficient_for_human_gate(
+        self, tmp_path, monkeypatch
+    ):
+        # qa really ships qa-release-agent — its id in a sign-off cell is an
+        # agent signature, and an agent may never be the clearer (ADR-002 §3).
+        _qa_row(tmp_path, "qa-release-agent")
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"  # the cell IS filled…
+        assert entry["authority_ok"] is False  # …but the signer lacks authority
+
+    def test_agent_prefix_marks_agent_signer(self, tmp_path, monkeypatch):
+        _qa_row(tmp_path, "agent:some-future-helper")
+        _pin_pipeline(monkeypatch, [_qa_gate(authority="human-on-recommendation")])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["authority_ok"] is False
+
+    def test_any_human_signer_among_agents_suffices(self, tmp_path, monkeypatch):
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Stage | Signed off by |\n"
+            "|----|-----|-------|---------------|\n"
+            "| QA-1 | PROTO-054 | signed-off | qa-release-agent |\n"
+            "| QA-2 | PROTO-054 | signed-off | ann |\n",
+            encoding="utf-8",
+        )
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["authority_ok"] is True
+
+    def test_auto_gate_needs_no_signer(self, tmp_path, monkeypatch):
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Coverage | Signed off by |\n"
+            "|----|-----|----------|---------------|\n"
+            "| QA-1 | PROTO-054 | 93% | |\n",
+            encoding="utf-8",
+        )
+        _pin_pipeline(
+            monkeypatch,
+            [
+                _qa_gate(
+                    gate="coverage-floor",
+                    evidence="Coverage",
+                    evidence_predicate="at-least",
+                    evidence_value="90",
+                    authority="auto",
+                )
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["authority_ok"] is True
+
+    def test_uncleared_gate_has_no_sufficiency_verdict(self, tmp_path, monkeypatch):
+        _qa_row(tmp_path, "_(pending gate)_")
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "pending"
+        assert entry["authority_ok"] is None
+        assert entry["signed_by"] == []
+
+    def test_evidence_column_signers_are_judged_too(self, tmp_path, monkeypatch):
+        # The non-empty evidence path collects signers the same way the
+        # fallback does — code-review-agent is a shared bundled agent id.
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Reviewed by |\n"
+            "|----|-----|-------------|\n"
+            "| QA-1 | PROTO-054 | code-review-agent |\n",
+            encoding="utf-8",
+        )
+        _pin_pipeline(
+            monkeypatch,
+            [
+                _qa_gate(
+                    gate="pr-review-approval",
+                    evidence="Reviewed by",
+                    authority="human-on-recommendation",
+                )
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["signed_by"] == ["code-review-agent"]
+        assert entry["authority_ok"] is False

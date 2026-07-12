@@ -1604,10 +1604,18 @@ def cmd_trace(args):
             "untracked": "not recorded in surface",
         }
         for g in required:
+            # ADR-002 item 3: a cleared gate whose only signers are agent
+            # identities, when the gate demands a human rung, is flagged.
+            insufficient = (
+                f" {Colors.WARNING}!! agent-signed ({', '.join(g['signed_by'])}) "
+                f"— requires {g['authority']}{Colors.ENDC}"
+                if g.get("authority_ok") is False
+                else ""
+            )
             print(
                 f"  {_marks[g['status']]} {g['gate']:<22} "
                 f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC} "
-                f"— {_labels[g['status']]}"
+                f"— {_labels[g['status']]}{insufficient}"
             )
     if release_scoped:
         gates = ", ".join(sorted({g["gate"] for g in release_scoped}))
@@ -1678,9 +1686,15 @@ def cmd_release(args):
             f"— {verdict}"
         )
         for g in required:
+            insufficient = (
+                f" {Colors.WARNING}!! agent-signed — requires {g['authority']}{Colors.ENDC}"
+                if g.get("authority_ok") is False
+                else ""
+            )
             print(
                 f"  {_mark[g['status']]} {g['gate']:<22} "
                 f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC}"
+                f"{insufficient}"
             )
 
     # Release-scoped gates — cleared once for the whole release (not per ticket).
@@ -1709,6 +1723,12 @@ def cmd_release(args):
             f"{Colors.BOLD}{Colors.FAIL}BLOCKED{Colors.ENDC} "
             f"{Colors.GRAY}— {report['blocking_total']} required gate(s) not cleared"
             f"{Colors.ENDC}"
+        )
+    if report.get("authority_insufficient_total"):
+        head += (
+            f" {Colors.WARNING}!! {report['authority_insufficient_total']} cleared "
+            f"gate(s) signed with insufficient authority (agent-signed, human "
+            f"required){Colors.ENDC}"
         )
     print(f"\n{Colors.BOLD}Release {release_id}:{Colors.ENDC} {head}")
     return 0

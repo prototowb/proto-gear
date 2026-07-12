@@ -15,22 +15,15 @@ is the implicit "cell non-empty and not 'pending'" check), and **authority**
 per the PROTO-069 amendment and the doctor rejects it). Defaults reproduce §4
 exactly — the whole bundled corpus is unchanged, all-human.
 
-1. **Everything through PROTO-073 is merged** (PROTO-068/069 = ADR-002
-   proposed/accepted, PROTO-070 = UI-first principle §5.7, PROTO-071 = gate
-   schema `actor` + `authority` PR #41, PROTO-072 = evidence-predicate
-   vocabulary PR #42, PROTO-073 = dogfood falsifier PR #43 — **the falsifier
-   held: metadata-only migration, zero core edits**).
-2. **Pick the next thrust** (unticketed; file with `pg ticket create`) — the
-   ADR-002 action items are the arc (docs/dev/adr/ADR-002-…md §Action Items):
-   - **Item 3 — authority sufficiency in `pg trace`/`pg release`**: the
-     checklist entries already carry `authority`; report whether each cleared
-     gate's signer had *sufficient* authority (needs a signer-identity
-     convention on the state surface). No new commands.
-   - **Item 4 — DONE (PROTO-073)**: `pr-review-approval` runs at
-     `human-on-recommendation` with actor `code-review-agent` and mapping-form
-     evidence. Zero core edits — the primitives are proven.
-   - **Item 5 — PROJECT_SPECIFICATIONS §4**: describe graded authority as the
-     supervision model's capability-growth axis.
+1. **Everything through PROTO-074 is merged** (PROTO-068/069 = ADR-002
+   proposed/accepted, PROTO-070 = UI-first §5.7, PROTO-071 = `actor` +
+   `authority` PR #41, PROTO-072 = evidence predicates PR #42, PROTO-073 =
+   dogfood falsifier PR #43 — **held, zero core edits**, PROTO-074 =
+   authority sufficiency PR #44).
+2. **Pick the next thrust** (unticketed; file with `pg ticket create`):
+   - **ADR-002 item 5 (last one)** — update PROJECT_SPECIFICATIONS §4 to
+     describe graded authority as the supervision model's capability-growth
+     axis. Docs-only; closes the ADR-002 action list.
    - Still open from before: `pg agent list --available` / `pg agent install`
      (surfacing pre-install discipline agents), a 5th discipline (docs /
      release-PM), `pg release` polish. Remember PROTO-070: every new feature
@@ -40,9 +33,16 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-073 (PR #43). **No PR in flight** (bar this
+- `development` = through PROTO-074 (PR #44). **No PR in flight** (bar this
   one if you're reading it pre-merge).
-- **882 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
+- **892 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
+- **Authority sufficiency (PROTO-074, ADR-002 item 3)**: checklist entries
+  carry `signed_by` + `authority_ok`. Signer convention: an agent signs with
+  its agent id (config filename stem, optionally namespaced) or `agent:`
+  prefix; anything else is presumed human. Cleared human-rung gate with only
+  agent signers → flagged `!!` in trace/release + counted in the release
+  report's `authority_insufficient_total`. Reported, never blocking. `auto`
+  needs no signer; a signature-less comparison clear is `None` (unjudgeable).
 - **The corpus is no longer all-default**: `pr-review-approval`
   (workflows/code-review-process) carries `actor: code-review-agent`,
   `authority: human-on-recommendation`, evidence as a mapping. Tests encode
@@ -95,14 +95,16 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 - **PROTO-073** — ADR-002 action item 4, the dogfood falsifier:
   `pr-review-approval` migrated to `human-on-recommendation` + actor +
   mapping-form evidence, in the workflow's metadata.yaml alone. PR #43.
+- **PROTO-074** — ADR-002 action item 3: authority-sufficiency reporting in
+  `pg trace`/`pg release` (signers + `authority_ok`), no new commands. PR #44.
 - (Earlier: PROTO-054–067 — module seam S1, pipeline/trace/release D-series,
   per-gate evidence + scope, agent seam. See git history.)
 
 ## Pending / In Progress
 
-- **Nothing in flight** beyond PR #43 (PROTO-073). Next: ADR-002 item 3
-  (authority sufficiency in trace/release) and item 5 (spec §4 graded
-  authority) — see "Start here".
+- **Nothing in flight** beyond PR #44 (PROTO-074). Next: ADR-002 item 5
+  (spec §4 graded authority — docs-only, closes the ADR action list), then
+  the pre-ADR backlog — see "Start here".
 
 ## Conventions In Force
 
