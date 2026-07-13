@@ -833,6 +833,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-079 | pg release --notes: generate release notes from cleared gate checklist | 2026-07-12 | | |
 | PROTO-080 | Interactive agent browser: bare 'pg agent' navigate/select UI (§5.7 first slice) | 2026-07-12 | | |
 | PROTO-081 | Interactive capability browser: bare 'pg capabilities' navigate/select UI (§5.7 slice 2) | 2026-07-13 | | |
+| PROTO-082 | Top-level interactive home menu: bare 'pg' navigate to Status/Capabilities/Agents/Tickets/Release (§5.7 slice 3) | 2026-07-13 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

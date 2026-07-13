@@ -489,6 +489,20 @@ def main():
 
         # No command provided - show help
         else:
+            # Bare `pg`: in an interactive terminal with questionary, open the
+            # top-level home menu (§5.7, UI-first). Otherwise keep the classic
+            # splash + command list so pipes/CI/scripts are unaffected.
+            interactive = sys.stdin.isatty() and sys.stdout.isatty()
+            try:
+                import questionary  # noqa: F401
+
+                has_questionary = True
+            except Exception:
+                has_questionary = False
+
+            if interactive and has_questionary:
+                sys.exit(cli_commands.cmd_home_menu(args))
+
             engine.show_splash_screen()
             print(
                 f"{Colors.GREEN}Welcome to Proto Gear AI Agent Framework!{Colors.ENDC}"

@@ -45,18 +45,23 @@ sufficiency auditing, and one live `human-on-recommendation` gate.
    - **PROTO-081** — **interactive capability browser (§5.7 slice 2)**: bare
      `pg capabilities` → navigate skills/workflows/commands, view detail +
      optional dependency tree; same fallback contract.
-   - **Remaining §5.7 slice** (not started): top-level **home menu** (`pg`
-     no-arg in a TTY) routing into Status / Capabilities / Agents / Tickets /
-     Release. Reuse the browser pattern — pure `_collect_*` data + a thin
-     `questionary` loop with a non-TTY fallback.
+   - **PROTO-082** — **top-level home menu (§5.7 slice 3)**: bare `pg` in a TTY
+     → navigate to Status / Capabilities / Agents / Tickets / Release, routing
+     into the browsers + status/ticket/release handlers; non-TTY keeps the
+     classic splash. **§5.7 UI-first slices complete** for capabilities/agents.
+   - **§5.7 follow-on ideas** (not started): richer in-menu actions (create/
+     clone/delete from the agent browser; ticket create/update from the menu),
+     and a `rich`-rendered detail pane. All follow the same
+     `_collect_* data + thin questionary loop + non-TTY fallback` pattern.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-081 (PRs #49–#52). **956 tests pass; `pg
-  doctor` green.** The init/release/agent+capability-browser work rides those
-  PRs; run `pg status` / `pg ticket list` for the live picture.
+- `development` = through PROTO-082 (PRs #49–#53). **960 tests pass; `pg
+  doctor` green.** Init/release + the three §5.7 interactive surfaces (agent
+  browser, capability browser, home menu) ride those PRs; run `pg status` /
+  `pg ticket list` for the live picture.
 - **Five disciplines**: `modules/release/` = module.yaml +
   RELEASE_QUEUE.template.md (stages planned→…→go→shipped; ID = release
   label; Ref = member tickets; no Release/Version column, so the label row
