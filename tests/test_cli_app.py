@@ -55,7 +55,9 @@ class TestDispatch:
         assert run(["capabilities", "list"], monkeypatch) == 0
 
     def test_capabilities_no_subcommand(self, monkeypatch, capsys):
-        assert run(["capabilities"], monkeypatch) == 1
+        # Bare `pg capabilities` launches the interactive browser (§5.7); with
+        # no TTY it falls back to the static list, which exits 0 (not old 1).
+        assert run(["capabilities"], monkeypatch) == 0
 
     def test_agent_no_subcommand(self, monkeypatch, capsys):
         # Bare `pg agent` launches the interactive browser (§5.7); with no TTY

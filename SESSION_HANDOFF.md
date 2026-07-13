@@ -38,22 +38,25 @@ sufficiency auditing, and one live `human-on-recommendation` gate.
    - **PROTO-079** — **`pg release --notes`**: release notes generated from the
      cleared gate checklist (tickets grouped Features/Fixes/Changes + approvers
      per discipline; draft caveat when not ready). Reuses `trace_release`.
-   - **PROTO-080** — **interactive agent browser (§5.7 first slice)**: bare
+   - **PROTO-080** — **interactive agent browser (§5.7 slice 1)**: bare
      `pg agent` → navigate/select installed + available agents (view + install
      on pick), `questionary`-driven, falls back to `pg agent list` without a
      TTY. First non-wizard interactive surface.
-   - **Remaining §5.7 slices** (not started): interactive **capability browser**
-     (`pg capabilities` no-arg) and a top-level **home menu** (`pg` no-arg).
-     Reuse the `cmd_agent_browse` pattern — pure `_collect_*` data + a thin
+   - **PROTO-081** — **interactive capability browser (§5.7 slice 2)**: bare
+     `pg capabilities` → navigate skills/workflows/commands, view detail +
+     optional dependency tree; same fallback contract.
+   - **Remaining §5.7 slice** (not started): top-level **home menu** (`pg`
+     no-arg in a TTY) routing into Status / Capabilities / Agents / Tickets /
+     Release. Reuse the browser pattern — pure `_collect_*` data + a thin
      `questionary` loop with a non-TTY fallback.
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-080 (PRs #49–#51). **951 tests pass; `pg
-  doctor` green.** The init/release/agent-browser work rides those PRs; run
-  `pg status` / `pg ticket list` for the live picture.
+- `development` = through PROTO-081 (PRs #49–#52). **956 tests pass; `pg
+  doctor` green.** The init/release/agent+capability-browser work rides those
+  PRs; run `pg status` / `pg ticket list` for the live picture.
 - **Five disciplines**: `modules/release/` = module.yaml +
   RELEASE_QUEUE.template.md (stages planned→…→go→shipped; ID = release
   label; Ref = member tickets; no Release/Version column, so the label row

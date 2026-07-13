@@ -297,6 +297,114 @@ def cmd_capabilities_list(args):
     return 0
 
 
+def _collect_capability_entries() -> List[dict]:
+    """Assemble the browse list of capabilities, grouped skills → workflows →
+    commands then sorted by id within each group.
+
+    Pure data (no prompts), so it is unit-testable. Each entry:
+    ``id`` (full), ``short_id`` (trailing segment), ``type`` (``skill`` /
+    ``workflow`` / ``command``), ``name``, ``description``, ``status``.
+    """
+    all_caps = _load_bundled_capabilities()
+
+    type_order = {
+        CapabilityType.SKILL: 0,
+        CapabilityType.WORKFLOW: 1,
+        CapabilityType.COMMAND: 2,
+    }
+
+    def _sort_key(cap_id):
+        meta = all_caps[cap_id]
+        return (type_order.get(meta.type, 9), cap_id)
+
+    entries: List[dict] = []
+    for cap_id in sorted(all_caps.keys(), key=_sort_key):
+        meta = all_caps[cap_id]
+        entries.append(
+            {
+                "id": cap_id,
+                "short_id": cap_id.split("/")[-1],
+                "type": (
+                    meta.type.value if hasattr(meta.type, "value") else str(meta.type)
+                ),
+                "name": meta.name,
+                "description": meta.description or "",
+                "status": (
+                    meta.status.value
+                    if hasattr(meta.status, "value")
+                    else str(meta.status)
+                ),
+            }
+        )
+    return entries
+
+
+def _capability_entry_label(entry: dict) -> str:
+    """One-line label for a capability entry in the browse list."""
+    badge = (
+        f"{Colors.GREEN}[OK]{Colors.ENDC}"
+        if entry["status"] == "stable"
+        else f"{Colors.WARNING}[!]{Colors.ENDC}"
+    )
+    tail = f" — {entry['name']}" if entry["name"] else ""
+    return (
+        f"{badge} {Colors.GRAY}{entry['type']:<8}{Colors.ENDC} "
+        f"{Colors.CYAN}{entry['short_id']}{Colors.ENDC}{tail}"
+    )
+
+
+def cmd_capabilities_browse(args):
+    """Interactive browse/select UI over the capability catalog (§5.7).
+
+    UI-first entry point for ``pg capabilities`` with no subcommand: navigate
+    skills / workflows / commands and pick one to view its detail (and, on
+    request, its dependency tree). Degrades to the classic ``pg capabilities
+    list`` without a TTY or without ``questionary``, so scripts/CI are
+    unaffected.
+    """
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    if not interactive or questionary is None:
+        return cmd_capabilities_list(args)
+
+    try:
+        entries = _collect_capability_entries()
+    except Exception as e:
+        print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
+        return 1
+
+    if not entries:
+        print(f"{Colors.YELLOW}No capabilities found.{Colors.ENDC}")
+        return 0
+
+    while True:
+        choices = [
+            questionary.Choice(_capability_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Capabilities — skills, workflows, commands (select to view):",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        cmd_capabilities_show(_args_ns(name=entry["id"]))
+        view_tree = questionary.confirm(
+            f"Show dependency tree for '{entry['short_id']}'?",
+            default=False,
+        ).ask()
+        if view_tree:
+            cmd_capabilities_tree(_args_ns(capability_id=entry["id"]))
+
+
 def cmd_capabilities_search(args):
     """Search capabilities by keyword"""
     query = args.query.lower()
