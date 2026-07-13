@@ -867,6 +867,49 @@ def cmd_agent_list(args):
     return 0
 
 
+def cmd_home_menu(args):
+    """Top-level interactive home menu (§5.7) — bare ``pg`` in a TTY.
+
+    The UI-first entry point to the whole tool: navigate to project status,
+    the capability/agent browsers, tickets, or a release readiness check,
+    instead of reading a static command list. The caller (``cli.app``) only
+    routes here when interactive and ``questionary`` is importable; without a
+    TTY it keeps the classic splash/command list, so scripts/CI are unaffected.
+    """
+    from .modules.engineering import status_commands
+
+    import questionary  # caller guarantees this import succeeds
+
+    routes = [
+        ("Status — current project state", "status"),
+        ("Capabilities — browse skills / workflows / commands", "capabilities"),
+        ("Agents — browse installed + available", "agents"),
+        ("Tickets — list active", "tickets"),
+        ("Release — readiness for a label", "release"),
+    ]
+
+    while True:
+        choices = [questionary.Choice(label, value=key) for label, key in routes]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select("Proto Gear — where to?", choices=choices).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        if selection == "status":
+            status_commands.cmd_status(_args_ns(json=False))
+        elif selection == "capabilities":
+            cmd_capabilities_browse(_args_ns(capabilities_command=None))
+        elif selection == "agents":
+            cmd_agent_browse(_args_ns(agent_command=None))
+        elif selection == "tickets":
+            status_commands.cmd_ticket_list(_args_ns(status="", json=False))
+        elif selection == "release":
+            label = questionary.text("Release label (e.g. v0.10.0):").ask()
+            if label and label.strip():
+                cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
+
+
 def _collect_agent_entries(agents_dir: Path, caps_dir: Path) -> List[dict]:
     """Assemble the unified browse list: installed agents + available bundled ones.
 
