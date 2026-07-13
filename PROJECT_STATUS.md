@@ -832,6 +832,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-078 | pg init --no-interactive skips wizard substitutions (blank name, --ticket-prefix ignored, placeholder leakage) | 2026-07-12 | | |
 | PROTO-079 | pg release --notes: generate release notes from cleared gate checklist | 2026-07-12 | | |
 | PROTO-080 | Interactive agent browser: bare 'pg agent' navigate/select UI (§5.7 first slice) | 2026-07-12 | | |
+| PROTO-081 | Interactive capability browser: bare 'pg capabilities' navigate/select UI (§5.7 slice 2) | 2026-07-13 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

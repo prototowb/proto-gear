@@ -223,6 +223,10 @@ def main():
                 sys.exit(cli_commands.cmd_capabilities_show(args))
             elif args.capabilities_command == "tree":
                 sys.exit(cli_commands.cmd_capabilities_tree(args))
+            elif args.capabilities_command is None:
+                # Bare `pg capabilities` → interactive browse/select UI (§5.7),
+                # falling back to the static list when non-interactive.
+                sys.exit(cli_commands.cmd_capabilities_browse(args))
             else:
                 print(
                     f"{Colors.YELLOW}Use 'pg capabilities --help' to see available commands{Colors.ENDC}"
