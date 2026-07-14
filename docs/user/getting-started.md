@@ -20,7 +20,7 @@ Proto Gear is **NOT** an AI system itself. It's the **framework** that external 
 
 ### Key Features
 
-- 🤖 **Adaptive Hybrid Agent System**: 4 permanent core agents + 2 flexible sprint-based slots
+- 🤖 **Orchestration Paradigms**: a selectable pool (dynamic, solo, driver-reviewer, core-flex, pipeline, fan-out) — pick and switch on the fly, with a model tier per agent
 - 📊 **Project State Management**: Single source of truth via PROJECT_STATUS.md
 - 🎯 **Sprint-Based Configuration**: Agents adapt to sprint type (Feature Development, Bug Fixing, etc.)
 - 🎫 **Ticket Generation**: Structured ticket creation with proper ID management
@@ -181,7 +181,7 @@ pg init --dry-run
 #### AGENTS.md
 This file provides context to AI assistants about your project:
 - Detected project type and framework
-- Agent configuration (4 core + 2 flex)
+- Orchestration doctrine (paradigm pool + per-agent model tiers)
 - Workflow commands
 - Instructions for AI assistants
 - Reference to branching strategy (if enabled)
@@ -228,38 +228,32 @@ Generated if you chose branching strategy during setup:
 
 ## Core Concepts
 
-### 1. Adaptive Hybrid Agent System
+### 1. Orchestration Paradigms
 
-Proto Gear uses a **4 + 2 agent model**:
+There is **no fixed agent roster**. For each task the overseer composes the
+**minimal set of sub-agents** it needs and picks an **orchestration paradigm** —
+a named pattern for how those sub-agents are distributed. The human (via the
+interactive UI) or the overseeing agent selects a paradigm and **switches on the
+fly** as circumstances change, optimizing for efficiency.
 
-```
-┌─────────────────────────────────────┐
-│    Workflow Orchestrator            │
-│    (Lead AI Coordination)           │
-└──────────────┬──────────────────────┘
-               │
-    ┌──────────┴──────────┐
-    │                     │
-┌───▼────┐          ┌────▼────┐
-│  Core   │          │  Flex   │
-│ Agents  │          │ Agents  │
-│   (4)   │          │   (2)   │
-└─────────┘          └─────────┘
-Always Active        Sprint-Specific
-```
+Browse the pool with `pg orchestration list` (`pg orchestration show <id>` for
+detail):
 
-#### Core Agents (Always Active)
-- **Backend Agent**: Server logic, APIs, databases
-- **Frontend Agent**: UI/UX, components, styling
-- **Testing Agent**: Test creation, coverage, QA
-- **DevOps Agent**: CI/CD, deployment, infrastructure
+| Paradigm | Use it for |
+|----------|-----------|
+| `dynamic` | **Default** — compose the minimal set per task; re-architect mid-flight |
+| `solo` | Trivial, local, low-risk changes — one actor, no sub-agents |
+| `driver-reviewer` | Risky/shared code — implementer plus an independent reviewer |
+| `core-flex` | Sustained multi-domain sprints — a small persistent core plus situational flex (the former "4 core + 2 flex", now one option with open counts) |
+| `pipeline` | Release-bound work — sequential discipline hand-off (eng → qa → devops) |
+| `fan-out` | Decomposable breadth — parallel workers, then integrate |
 
-#### Flex Agents (Sprint-Based)
-Two slots that adapt based on sprint type:
-- **Documentation Agent**: For feature development
-- **Performance Agent**: For optimization sprints
-- **Security Agent**: For security-focused work
-- **Refactoring Agent**: For code quality improvements
+#### Model tier per agent
+
+Each agent (`pg agent`) can declare a **model tier** — `fast` (mechanical),
+`balanced` (default), `deep` (judgment, architecture, review) — plus an optional
+concrete override. Match the tier to the work: cheap models for mechanical
+steps, strong models for judgment. See `pg agent show <name>`.
 
 ### 2. Sprint Types
 

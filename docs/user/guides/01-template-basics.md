@@ -105,14 +105,14 @@ PROJECT_STATUS.md is updated manually by agents as work progresses:
 ## 📖 How to Use This Document
 (Explains that code blocks are patterns, not executable code)
 
-## 🤖 Agent System Architecture
-(Describes 4 core + 2 flex agent model)
+## 🤖 Orchestration
+(No fixed roster — compose the minimal sub-agents per task)
 
-## 🎯 Core Agents
-(Lead AI, Backend, Frontend, Testing patterns)
+## 🎯 Orchestration Paradigms
+(A selectable pool: dynamic, solo, driver-reviewer, core-flex, pipeline, fan-out — `pg orchestration list`)
 
-## 🔄 Flex Agent Slots
-(Sprint-based agent patterns)
+## 🔄 Model Tier per Agent
+(fast / balanced / deep — match the tier to the work)
 
 ## 📋 Lead AI Workflow
 (Decision-making patterns for coordination)

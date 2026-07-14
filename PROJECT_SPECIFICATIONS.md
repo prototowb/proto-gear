@@ -151,6 +151,21 @@ as the clearer of a judgment gate is deferred until a track record justifies
 revisiting (ADR-002, PROTO-069 amendment). The escalation rule above is
 unchanged by all of this: silence is never consent.
 
+### 4.2 Orchestration — dynamic, paradigm-driven (ADR-003)
+
+*Who does the work* is as unfixed as *who clears it*. There is **no mandated
+agent roster**. For each task the overseer composes the **minimal set of
+sub-agents** needed, at a **model tier per agent** (`fast` / `balanced` / `deep`,
+default `balanced`, optional concrete override) — the efficiency lever. The
+orchestrating party (a human via the interactive UI, or the overseeing agent)
+selects an **orchestration paradigm** from a shipped pool (`dynamic`, `solo`,
+`driver-reviewer`, `core-flex`, `pipeline`, `fan-out`) and **switches on the fly**
+as circumstances change. See `pg orchestration list` and `pg agent show`. The
+former fixed "4 core + 2 flex" roster is now just the `core-flex` paradigm — one
+option, counts open. Like graded authority, this stays declarative: paradigms and
+tiers are declarations the host honours; the core audits, it does not execute
+(Principle 4). ADR-003 has the full rationale.
+
 ## 5. Product Principles (extends ARCHITECTURE.md design principles)
 
 1. **Docs are the API.** Modules encode knowledge as markdown + YAML that both

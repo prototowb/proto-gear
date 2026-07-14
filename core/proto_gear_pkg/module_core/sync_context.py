@@ -95,6 +95,14 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ),
     ("pg agent install <name>", "Install one bundled/discipline agent on demand"),
     (
+        "pg orchestration list [--json]",
+        "Browse orchestration paradigms — how sub-agents are distributed (pick/switch on the fly)",
+    ),
+    (
+        "pg orchestration show <id>",
+        "Show a paradigm's roles, model tiers, and when to use it",
+    ),
+    (
         "pg module list/show [<name>]",
         "List/inspect engineering department modules (module.yaml manifests)",
     ),

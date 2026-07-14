@@ -9,7 +9,7 @@ defines:
   - critical-rules
   - agent-self-configuration-protocol
   - decision-matrix
-  - agent-roles-4-core-2-flex
+  - orchestration-paradigms
 links:
   - PROJECT_STATUS.md
   - BRANCHING.md
@@ -169,65 +169,48 @@ This is the **root AGENTS.md** - the master orchestrator. Directory-specific AGE
 
 ---
 
-## Adaptive Hybrid Agent System (4 Core + 2 Flex)
+## Orchestration
 
-The system uses 4 permanent core agents (always active) plus 2 flexible sprint-specific slots. Flex agents are dynamically assigned based on sprint type (feature development, bug fixing, performance optimization, deployment prep).
+There is **no fixed agent roster**. For each piece of work, compose the
+**minimal set of sub-agents** it actually needs and dissolve them when done —
+optimizing for efficiency at every step. Both the **human (via the interactive
+UI)** and the **overseeing agent** may (re)architect the roster and **switch
+orchestration paradigms on the fly** as circumstances change.
 
-### Core Agent Specifications (Always Active)
+Proto Gear *declares and audits* orchestration; it never executes agents
+(Principle 4 — *agents act, `pg` audits*). The paradigms and model tiers below
+are **declarations the host honours**, not a runtime that spawns models.
 
-#### 1. {{CORE_AGENT_1_NAME}}
-**Identity**: {{CORE_AGENT_1_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_1_RESPONSIBILITIES}}
+### Orchestration paradigms — a selectable pool
 
-#### 2. {{CORE_AGENT_2_NAME}}
-**Identity**: {{CORE_AGENT_2_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_2_RESPONSIBILITIES}}
+Pick the paradigm that fits the work, and change it when the work changes.
+Browse the pool with **`pg orchestration list`** (`pg orchestration show <id>`
+for detail); a project can `pg orchestration install <id>` to customise one.
 
-#### 3. {{CORE_AGENT_3_NAME}}
-**Identity**: {{CORE_AGENT_3_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_3_RESPONSIBILITIES}}
+| Paradigm | Use it for |
+|----------|-----------|
+| `dynamic` | **Default.** Compose the minimal set per task; re-architect mid-flight. |
+| `solo` | Trivial, local, low-risk changes — one actor, no sub-agents. |
+| `driver-reviewer` | Risky or shared code — an implementer plus an independent reviewer. |
+| `core-flex` | Sustained multi-domain sprints — a small persistent core plus situational flex (the former "4 core + 2 flex", now one option with open counts). |
+| `pipeline` | Release-bound work — sequential discipline hand-off (eng → qa → devops). |
+| `fan-out` | Decomposable, low-coupling breadth — parallel workers, then integrate. |
 
-#### 4. {{CORE_AGENT_4_NAME}}
-**Identity**: {{CORE_AGENT_4_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_4_RESPONSIBILITIES}}
+### Model tier per agent
 
-### Flexible Agent Pool (Sprint-Specific)
-
-{{FLEX_AGENTS_DEFINITIONS}}
-
-### Sprint Type Detection
-
-Analyze the backlog, recent commits, and current issues to determine the sprint type. Key indicators:
-- **Feature development**: Majority of backlog items labeled "feature"
-- **Bug fixing**: High volume of recent bugs (5+)
-- **Performance optimization**: Backlog items focused on performance
-- **Deployment prep**: Deployment date approaching
-
-The detected sprint type determines which 2 flex agents are activated.
+Each `pg agent` may declare a **model tier** — `fast` (mechanical), `balanced`
+(default), `deep` (judgment, architecture, review) — plus an optional concrete
+`override`. Match the tier to the work: cheap models for mechanical steps,
+strong models for judgment. See `pg agent show <name>`.
 
 ---
 
-## Automatic Workflow
+## On Session Start
 
-**EXECUTE IMMEDIATELY when AGENTS.md is accessed:**
-
-```workflow
-ON_AGENTS_MD_READ:
-  1. Initialize Hybrid System (4 core + 2 flex agents)
-  2. Analyze current sprint type and goals
-  3. Configure flex agents based on sprint needs
-  4. Check documentation consistency across AGENTS.md hierarchy
-  5. Update Project Status
-  6. Core agents process their domains
-  7. Flex agents handle sprint-specific tasks
-  8. Generate Development Plan
-  9. Propose Next Sprint with agent config
-  10. Request Human Approval
-```
+Run the **Pre-Flight Checklist** above, then choose an orchestration paradigm
+for the work at hand (default: `dynamic`). Re-architect the roster or switch
+paradigms whenever changing circumstances make a different shape more efficient —
+becoming *more minimal* never needs approval.
 
 ---
 
@@ -347,17 +330,16 @@ Lead AI → Human
 
 ## EXECUTION TRIGGER
 
-**IMPORTANT**: When an agent reads this AGENTS.md file, it MUST:
+**When an agent reads this AGENTS.md file, it should:**
 
-1. **Initialize** as Lead AI (Product Owner + Tech Lead + Software Architect)
-2. **Activate** 4 core agents + 2 flex agents (based on sprint type)
-3. **Execute** the Automatic Workflow above
-4. **Update** PROJECT_STATUS.md with current status
-5. **Generate** development tickets as needed
-6. **Propose** next sprint configuration
-7. **Request** human approval for critical changes
+1. **Run** the Pre-Flight Checklist (SESSION_HANDOFF.md → PROJECT_STATUS.md → BRANCHING.md → TESTING.md)
+2. **Choose** an orchestration paradigm for the work (default: `dynamic`) — see `pg orchestration list`
+3. **Compose** the minimal sub-agents the task needs, at appropriate model tiers
+4. **Update** PROJECT_STATUS.md as work progresses
+5. **Propose** and register tickets as needed
+6. **Request** human approval for critical changes (see the Decision Matrix)
 
 ---
 
-*Lead AI System - Adaptive Hybrid Agent Architecture*
-*4 Core Agents (always active) + 2 Flex Agents (sprint-adaptive) = Optimal resource utilization*
+*Lead AI System — dynamic, paradigm-driven orchestration*
+*Compose the minimal roster each task needs; pick and switch paradigms for optimal efficiency.*

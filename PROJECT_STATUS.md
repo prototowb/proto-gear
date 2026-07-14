@@ -34,6 +34,9 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-083 | feat(agents): per-agent model tier (fast/balanced/deep + override) | feature | IN_PROGRESS | feature/proto-083-feat-agents-per-agent-model-tier-fast-ba |  |
+| PROTO-084 | feat(orchestration): selectable orchestration paradigm pool + pg orchestration | feature | IN_PROGRESS | feature/proto-084-feat-orchestration-selectable-orchestrat |  |
+| PROTO-085 | docs(agents): loosen AGENTS.md to dynamic paradigm-driven orchestration | feature | IN_PROGRESS | feature/proto-085-docs-agents-loosen-agents-md-to-dynamic- |  |
 
 _No active tickets — PROTO-066 just shipped._
 
