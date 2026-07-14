@@ -1,0 +1,37 @@
+# Orchestration paradigm — copy to .proto-gear/orchestration/ to customise.
+id: dynamic
+name: "Dynamic Composition"
+version: "1.0.0"
+description: "Compose the minimal set of sub-agents each task needs; re-architect on the fly as circumstances change."
+created: "2026-07-14"
+author: "Proto Gear Team"
+
+when_to_use:
+  - "The default posture — start here unless a change clearly fits another paradigm"
+  - "Scope or risk is uncertain and will become clear as work proceeds"
+  - "Efficiency matters: pay only for the agents and model tiers a step actually needs"
+
+avoid_when:
+  - "A fixed, repeatable pattern is already known to fit (use that paradigm directly)"
+
+roles:
+  - role: overseer
+    responsibility: "Assess each task, spin up the minimal sub-agents it needs, and dissolve them when done"
+    model_tier: deep
+  - role: worker
+    responsibility: "Situationally composed per task; tier chosen to match the work (mechanical → fast, judgment → deep)"
+    model_tier: balanced
+
+coordination: >
+  The overseer composes the smallest roster that moves the task forward, switches
+  to a more structured paradigm (driver-reviewer, pipeline, fan-out) the moment
+  the work calls for it, and collapses back to solo when it doesn't. Re-architecting
+  mid-flight is expected, not exceptional.
+
+efficiency: >
+  Highest leverage default: no standing roster to pay for. Match model tier to
+  each step — reserve deep for judgment/architecture/review, use fast for
+  mechanical work.
+
+selectable_by: [user, agent]
+status: active

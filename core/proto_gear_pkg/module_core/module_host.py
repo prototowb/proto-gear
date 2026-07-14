@@ -354,6 +354,146 @@ def install_bundled_agent(
     return result
 
 
+def iter_paradigm_sources(
+    modules_root: Optional[Path] = None,
+) -> List["CapabilitySource"]:
+    """Return every *bundled* orchestration-paradigm directory (seam S1).
+
+    The paradigm-pool counterpart to :func:`iter_agent_sources`. The package
+    ships shared paradigms under ``orchestration/`` (source ``None``); each
+    discipline may ship its own ``modules/<name>/orchestration/`` (source
+    ``<name>``). Paradigms are *declarative* orchestration patterns the user or
+    the overseeing agent selects from — the core audits them, never executes
+    them (ADR-002/003, Principle 4).
+
+    Returns ``(module, dir)`` pairs; ``module`` is ``None`` for the shared root.
+    Order is shared-first, then modules sorted by id.
+    """
+    from ..paths import package_root
+
+    sources: List["CapabilitySource"] = []
+    shared = package_root() / "orchestration"
+    if shared.is_dir():
+        sources.append((None, shared))
+
+    for manifest in discover_modules(modules_root):
+        if manifest.source_path is None:
+            continue
+        paradigms_dir = Path(manifest.source_path).parent / "orchestration"
+        if paradigms_dir.is_dir():
+            sources.append((manifest.module, paradigms_dir))
+    return sources
+
+
+def list_bundled_paradigms(modules_root: Optional[Path] = None) -> List[dict]:
+    """Every bundled orchestration paradigm the package could install.
+
+    The browse view over :func:`iter_paradigm_sources`. Each record: ``name``
+    (paradigm id — filename stem), ``module`` (``None`` for the shared root),
+    ``qualified`` (``<module>/<name>`` or the bare name for shared), ``path``
+    (source file), ``description`` (from the YAML, best effort). Order follows
+    the sources: shared first, then modules alphabetically. ``INDEX.*`` files
+    are skipped — they are catalog output, not paradigms.
+    """
+    import yaml
+
+    records: List[dict] = []
+    for module, paradigms_dir in iter_paradigm_sources(modules_root):
+        for source_path in sorted(paradigms_dir.glob("*.yaml")):
+            if source_path.stem.upper() == "INDEX":
+                continue
+            description = ""
+            try:
+                data = yaml.safe_load(source_path.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    description = str(data.get("description", "") or "")
+            except Exception:
+                pass  # unparseable manifest still deserves to be listed
+            name = source_path.stem
+            records.append(
+                {
+                    "name": name,
+                    "module": module,
+                    "qualified": name if module is None else f"{module}/{name}",
+                    "path": str(source_path),
+                    "description": description,
+                }
+            )
+    return records
+
+
+def install_bundled_paradigm(
+    name: str,
+    proto_gear_dir: Path,
+    replacements: Optional[Dict[str, str]] = None,
+    modules_root: Optional[Path] = None,
+) -> dict:
+    """Install ONE bundled paradigm by name into ``.proto-gear/orchestration/``.
+
+    The on-demand counterpart to :func:`install_bundled_agent` for the paradigm
+    pool: pull a single discovered paradigm — shared or discipline-shipped —
+    into an already-initialised host so a project can customise it. ``name`` is
+    the paradigm id (filename stem) or the qualified ``<module>/<id>`` form; an
+    ambiguous bare id must be qualified.
+
+    Same hardening as the agent installer: rejects symlinks, refuses a
+    destination outside ``.proto-gear/``, enforces UTF-8, substitutes
+    ``{{KEY}}`` placeholders, and never overwrites an existing file.
+
+    Returns ``{"installed": <path str or None>, "errors": [...]}``.
+    """
+    replacements = replacements or {}
+    result: dict = {"installed": None, "errors": []}
+
+    matches = [
+        r
+        for r in list_bundled_paradigms(modules_root)
+        if name in (r["name"], r["qualified"])
+    ]
+    if not matches:
+        result["errors"].append(f"No bundled paradigm named '{name}'.")
+        return result
+    if len(matches) > 1:
+        options = ", ".join(r["qualified"] for r in matches)
+        result["errors"].append(
+            f"Ambiguous paradigm name '{name}' — qualify it: {options}"
+        )
+        return result
+
+    source_path = Path(matches[0]["path"])
+    if source_path.is_symlink():
+        result["errors"].append(f"Skipped symlink: {source_path}")
+        return result
+
+    proto_gear_dir = Path(proto_gear_dir)
+    dest_path = proto_gear_dir / "orchestration" / source_path.name
+    try:
+        dest_path.resolve().relative_to(proto_gear_dir.resolve())
+    except ValueError:
+        result["errors"].append(
+            f"Security: Destination path escapes .proto-gear/: {dest_path}"
+        )
+        return result
+    if dest_path.exists():
+        result["errors"].append(
+            f"Paradigm already installed, kept existing: {dest_path.name}"
+        )
+        return result
+
+    try:
+        content = source_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        result["errors"].append(f"Encoding error in {source_path}: {e}")
+        return result
+    for key, value in replacements.items():
+        content = content.replace("{{" + key + "}}", value)
+
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_text(content, encoding="utf-8")
+    result["installed"] = str(dest_path)
+    return result
+
+
 def install_module_agents(
     proto_gear_dir: Path,
     replacements: Optional[Dict[str, str]] = None,

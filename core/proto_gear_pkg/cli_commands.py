@@ -884,6 +884,10 @@ def cmd_home_menu(args):
         ("Status — current project state", "status"),
         ("Capabilities — browse skills / workflows / commands", "capabilities"),
         ("Agents — browse installed + available", "agents"),
+        (
+            "Orchestration — browse paradigms (how sub-agents are distributed)",
+            "paradigms",
+        ),
         ("Tickets — list active", "tickets"),
         ("Release — readiness for a label", "release"),
     ]
@@ -904,10 +908,212 @@ def cmd_home_menu(args):
             cmd_agent_browse(_args_ns(agent_command=None))
         elif selection == "tickets":
             status_commands.cmd_ticket_list(_args_ns(status="", json=False))
+        elif selection == "paradigms":
+            cmd_orchestration_browse(_args_ns(orchestration_command=None))
         elif selection == "release":
             label = questionary.text("Release label (e.g. v0.10.0):").ask()
             if label and label.strip():
                 cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
+
+
+# ============================================================================
+# Orchestration Paradigm Commands (the paradigm pool)
+# ============================================================================
+
+
+def _collect_paradigm_entries(project_dir: Optional[Path] = None) -> List[dict]:
+    """Assemble the paradigm pool for browse/list. Pure data (unit-testable).
+
+    Each entry: ``id``, ``name``, ``description``, ``roles`` (list of
+    ``(role, model_tier)``), ``selectable_by``, ``installed`` (bool — a project
+    copy exists under ``.proto-gear/orchestration/``), ``module`` (source).
+    """
+    from . import orchestration_config
+    from .module_core import module_host
+
+    project_dir = Path(project_dir) if project_dir is not None else Path(".")
+    installed_dir = project_dir / ".proto-gear" / "orchestration"
+    installed_stems = (
+        {p.stem for p in installed_dir.glob("*.yaml")}
+        if installed_dir.is_dir()
+        else set()
+    )
+    source_module = {
+        r["name"]: r["module"] for r in module_host.list_bundled_paradigms()
+    }
+
+    entries: List[dict] = []
+    for p in orchestration_config.load_paradigms(project_dir=project_dir):
+        entries.append(
+            {
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "roles": [(r.role, r.model_tier) for r in p.roles],
+                "selectable_by": p.selectable_by,
+                "installed": p.id in installed_stems,
+                "module": source_module.get(p.id),
+            }
+        )
+    return entries
+
+
+def _paradigm_entry_label(entry: dict) -> str:
+    """One-line label for a paradigm in the browse list."""
+    roles = ", ".join(f"{role}·{tier}" for role, tier in entry["roles"])
+    installed = f" {Colors.GRAY}[installed]{Colors.ENDC}" if entry["installed"] else ""
+    tail = f" — {entry['description']}" if entry["description"] else ""
+    return f"{Colors.CYAN}{entry['id']}{Colors.ENDC} {Colors.GRAY}({roles}){Colors.ENDC}{installed}{tail}"
+
+
+def cmd_orchestration_list(args):
+    """List orchestration paradigms in the pool (bundled + installed overrides)."""
+    import json as _json
+
+    entries = _collect_paradigm_entries()
+
+    if getattr(args, "json", False):
+        print(_json.dumps({"paradigms": entries}, indent=2))
+        return 0
+
+    if not entries:
+        print(f"{Colors.YELLOW}No orchestration paradigms found.{Colors.ENDC}")
+        return 0
+
+    print(
+        f"\n{Colors.HEADER}Orchestration paradigms{Colors.ENDC} "
+        f"{Colors.GRAY}(how sub-agents are distributed — pick and switch on the fly){Colors.ENDC}\n"
+    )
+    for e in entries:
+        print(f"  {_paradigm_entry_label(e)}")
+    print(f"\n{Colors.GRAY}pg orchestration show <id>   - full details{Colors.ENDC}")
+    return 0
+
+
+def cmd_orchestration_show(args):
+    """Show detailed information about one orchestration paradigm."""
+    import json as _json
+    from . import orchestration_config
+
+    paradigm_id = args.id
+    pool = {p.id: p for p in orchestration_config.load_paradigms(project_dir=Path("."))}
+    paradigm = pool.get(paradigm_id)
+
+    if paradigm is None:
+        print(f"{Colors.FAIL}Paradigm not found: '{paradigm_id}'{Colors.ENDC}\n")
+        suggestions = get_close_matches(paradigm_id, list(pool), n=3, cutoff=0.5)
+        if suggestions:
+            print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
+            for s in suggestions:
+                print(f"  - {s}")
+            print()
+        print("Use 'pg orchestration list' to see the pool")
+        return 1
+
+    if getattr(args, "json", False):
+        print(_json.dumps(paradigm.to_dict(), indent=2))
+        return 0
+
+    print(f"\n{Colors.HEADER}=== {paradigm.name} ({paradigm.id}) ==={Colors.ENDC}\n")
+    print(f"{paradigm.description}\n")
+
+    if paradigm.roles:
+        print(f"{Colors.CYAN}Roles:{Colors.ENDC}")
+        for r in paradigm.roles:
+            slot = f" [agent: {r.agent}]" if r.agent else ""
+            print(
+                f"  - {r.role} {Colors.GRAY}(tier: {r.model_tier}){Colors.ENDC}{slot}"
+            )
+            if r.responsibility:
+                print(f"      {r.responsibility}")
+
+    if paradigm.when_to_use:
+        print(f"\n{Colors.CYAN}When to use:{Colors.ENDC}")
+        for item in paradigm.when_to_use:
+            print(f"  + {item}")
+    if paradigm.avoid_when:
+        print(f"\n{Colors.CYAN}Avoid when:{Colors.ENDC}")
+        for item in paradigm.avoid_when:
+            print(f"  - {item}")
+    if paradigm.coordination:
+        print(
+            f"\n{Colors.CYAN}Coordination:{Colors.ENDC}\n  {paradigm.coordination.strip()}"
+        )
+    if paradigm.efficiency:
+        print(
+            f"\n{Colors.CYAN}Efficiency:{Colors.ENDC}\n  {paradigm.efficiency.strip()}"
+        )
+    print(
+        f"\n{Colors.GRAY}Selectable by: {', '.join(paradigm.selectable_by)}{Colors.ENDC}"
+    )
+    return 0
+
+
+def cmd_orchestration_install(args):
+    """Install one bundled paradigm into .proto-gear/orchestration/ to customise."""
+    from .module_core import module_host
+
+    proto_gear_dir = Path(".proto-gear")
+    if not proto_gear_dir.is_dir():
+        print(f"{Colors.FAIL}No .proto-gear/ here — run 'pg init' first.{Colors.ENDC}")
+        return 1
+
+    result = module_host.install_bundled_paradigm(args.id, proto_gear_dir)
+    for err in result["errors"]:
+        print(f"{Colors.FAIL}{err}{Colors.ENDC}")
+    if result["errors"]:
+        print(f"\nUse 'pg orchestration list' to see the pool")
+        return 1
+
+    print(f"{Colors.GREEN}Installed paradigm: {result['installed']}{Colors.ENDC}")
+    print(f"  pg orchestration show {Path(result['installed']).stem}  - view it")
+    return 0
+
+
+def cmd_orchestration_browse(args):
+    """Interactive browse/select UI over the orchestration paradigm pool (§5.7).
+
+    UI-first entry for bare ``pg orchestration``: navigate the pool and inspect a
+    paradigm (and install it for project customisation). Degrades to the static
+    ``pg orchestration list`` without a TTY or ``questionary``.
+    """
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    if not interactive or questionary is None:
+        return cmd_orchestration_list(args)
+
+    while True:
+        entries = _collect_paradigm_entries()
+        if not entries:
+            print(f"{Colors.YELLOW}No orchestration paradigms found.{Colors.ENDC}")
+            return 0
+
+        choices = [
+            questionary.Choice(_paradigm_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Orchestration paradigms — pick one to view:",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        cmd_orchestration_show(_args_ns(id=entry["id"], json=False))
+        if not entry["installed"]:
+            confirm = questionary.confirm(
+                f"Install '{entry['id']}' into .proto-gear/orchestration/ to customise?",
+                default=False,
+            ).ask()
+            if confirm:
+                cmd_orchestration_install(_args_ns(id=entry["id"]))
 
 
 def _collect_agent_entries(agents_dir: Path, caps_dir: Path) -> List[dict]:
@@ -941,6 +1147,7 @@ def _collect_agent_entries(agents_dir: Path, caps_dir: Path) -> List[dict]:
                         "description": agent.description or "",
                         "module": None,
                         "status": status,
+                        "tier": agent.model.tier,
                     }
                 )
         except Exception:
@@ -973,8 +1180,10 @@ def _agent_entry_label(entry: dict) -> str:
             "invalid": f"{Colors.FAIL}[X]{Colors.ENDC}",
             "error": f"{Colors.FAIL}[X]{Colors.ENDC}",
         }.get(entry["status"], "")
+        tier = entry.get("tier")
+        tier_badge = f" {Colors.GRAY}·{tier}{Colors.ENDC}" if tier else ""
         tail = f" — {entry['description']}" if entry["description"] else ""
-        return f"{badge} {entry['name']}{tail}"
+        return f"{badge} {entry['name']}{tier_badge}{tail}"
     source = entry["module"] or "shared"
     tail = f" — {entry['description']}" if entry["description"] else ""
     return f"{Colors.CYAN}+ {entry['name']}{Colors.ENDC} {Colors.GRAY}[{source}, not installed]{Colors.ENDC}{tail}"
@@ -1117,6 +1326,13 @@ def cmd_agent_show(args):
 
     print(f"\n{Colors.CYAN}Description:{Colors.ENDC}")
     print(f"  {agent.description}")
+
+    # Model (declared tier the host honours; optional concrete override)
+    model_line = f"  Tier: {agent.model.tier}"
+    if agent.model.override:
+        model_line += f"  (override: {agent.model.override})"
+    print(f"\n{Colors.CYAN}Model:{Colors.ENDC}")
+    print(model_line)
 
     # Capabilities
     print(f"\n{Colors.CYAN}Capabilities:{Colors.ENDC}")
@@ -1451,6 +1667,7 @@ def cmd_agent_clone(args):
             created=datetime.now().strftime("%Y-%m-%d"),
             author=source_agent.author,
             capabilities=source_agent.capabilities,
+            model=source_agent.model,
             context_priority=(
                 source_agent.context_priority.copy()
                 if source_agent.context_priority

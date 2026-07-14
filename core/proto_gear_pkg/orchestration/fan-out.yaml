@@ -1,0 +1,38 @@
+# Orchestration paradigm — copy to .proto-gear/orchestration/ to customise.
+id: fan-out
+name: "Fan-Out"
+version: "1.0.0"
+description: "Several independent sub-agents work decomposable, low-coupling pieces in parallel; the overseer integrates the results."
+created: "2026-07-14"
+author: "Proto Gear Team"
+
+when_to_use:
+  - "Work splits cleanly into independent pieces with little shared state"
+  - "Breadth-heavy tasks: a mechanical change across many files/modules"
+  - "Throughput matters more than a single coherent narrative"
+
+avoid_when:
+  - "Pieces are tightly coupled — parallel edits would collide (solo/driver-reviewer)"
+  - "The work is inherently sequential (pipeline)"
+  - "Decomposition overhead would exceed the parallelism benefit"
+
+roles:
+  - role: overseer
+    responsibility: "Decomposes the work, dispatches workers, resolves conflicts, and integrates the pieces"
+    model_tier: deep
+  - role: worker
+    responsibility: "Owns one independent slice end to end; runs in parallel with peers"
+    model_tier: fast
+
+coordination: >
+  The overseer partitions the work so slices don't touch the same code, dispatches
+  a worker per slice in parallel, then integrates and reconciles. Independence is
+  the precondition — if slices start colliding, collapse to a sequential paradigm.
+
+efficiency: >
+  Parallelism trades coordination/integration cost for latency. Workers on
+  decomposed, low-judgment slices can run a fast tier; reserve the deep tier for
+  the overseer's decomposition and integration.
+
+selectable_by: [user, agent]
+status: active

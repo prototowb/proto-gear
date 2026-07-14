@@ -81,6 +81,34 @@ class AgentCapabilities:
         }
 
 
+# Model tiers express *intent* (efficiency), not a vendor's model name. The host
+# maps a tier to a concrete model; an explicit ``override`` pins one when needed.
+MODEL_TIERS = ("fast", "balanced", "deep")
+
+
+@dataclass
+class AgentModel:
+    """Declared model preference for an agent.
+
+    Proto Gear is host-agnostic: it *declares* which tier a sub-agent should run
+    on (``fast`` mechanical work · ``balanced`` default · ``deep`` judgment,
+    architecture, review) and the host honours it. ``override`` optionally pins a
+    concrete host model id (e.g. ``claude-opus-4-8``) when a specific model is
+    required. This is a declaration the core audits, never something it executes
+    (ADR-002, Principle 4).
+    """
+
+    tier: str = "balanced"
+    override: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary format (omit override when unset)"""
+        data: Dict[str, Any] = {"tier": self.tier}
+        if self.override:
+            data["override"] = self.override
+        return data
+
+
 @dataclass
 class AgentConfiguration:
     """Complete agent configuration"""
@@ -94,6 +122,9 @@ class AgentConfiguration:
 
     # Capabilities
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
+
+    # Model preference (host honours the declared tier / optional override)
+    model: AgentModel = field(default_factory=AgentModel)
 
     # Behavior
     context_priority: List[str] = field(default_factory=list)
@@ -119,6 +150,7 @@ class AgentConfiguration:
             "created": self.created,
             "author": self.author,
             "capabilities": self.capabilities.to_dict(),
+            "model": self.model.to_dict(),
             "context_priority": self.context_priority,
             "agent_instructions": self.agent_instructions,
             "required_files": self.required_files,
@@ -217,6 +249,9 @@ class AgentConfigParser:
                 f"Agent must have at least one capability in {source}"
             )
 
+        # Parse model preference (optional; defaults to the balanced tier)
+        model = AgentConfigParser._parse_model(data.get("model"), source)
+
         # Parse behavior
         context_priority = data.get("context_priority", [])
         agent_instructions = data.get("agent_instructions", [])
@@ -244,6 +279,7 @@ class AgentConfigParser:
             created=created,
             author=author,
             capabilities=capabilities,
+            model=model,
             context_priority=context_priority,
             agent_instructions=agent_instructions,
             required_files=required_files,
@@ -266,6 +302,37 @@ class AgentConfigParser:
             raise AgentValidationError(
                 f"Missing required fields in {source}: {', '.join(missing_fields)}"
             )
+
+    @staticmethod
+    def _parse_model(model_data: Any, source: str = "") -> AgentModel:
+        """Parse and validate the optional ``model`` block.
+
+        Absent → the default balanced tier. A bare string (``model: deep``) is a
+        convenience shorthand for ``{tier: deep}``.
+        """
+        if model_data is None:
+            return AgentModel()
+
+        if isinstance(model_data, str):
+            model_data = {"tier": model_data}
+
+        if not isinstance(model_data, dict):
+            raise AgentValidationError(
+                f"'model' must be a mapping (or tier string) in {source}"
+            )
+
+        tier = model_data.get("tier", "balanced")
+        if tier not in MODEL_TIERS:
+            raise AgentValidationError(
+                f"Invalid model tier '{tier}' in {source}. "
+                f"Must be one of: {list(MODEL_TIERS)}"
+            )
+
+        override = model_data.get("override")
+        if override is not None and not isinstance(override, str):
+            raise AgentValidationError(f"'model.override' must be a string in {source}")
+
+        return AgentModel(tier=tier, override=override or None)
 
 
 class AgentValidator:

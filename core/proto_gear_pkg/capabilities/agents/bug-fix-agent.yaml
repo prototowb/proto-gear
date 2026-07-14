@@ -7,6 +7,10 @@ description: "Specialized agent for investigating and fixing software defects"
 created: "2025-12-09"
 author: "Proto Gear Team"
 
+# Balanced default: diagnosis needs reasoning, the fixes are usually contained.
+model:
+  tier: balanced
+
 capabilities:
   skills:
     - "debugging"

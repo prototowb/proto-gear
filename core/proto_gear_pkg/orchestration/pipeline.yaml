@@ -1,0 +1,43 @@
+# Orchestration paradigm — copy to .proto-gear/orchestration/ to customise.
+id: pipeline
+name: "Discipline Pipeline"
+version: "1.0.0"
+description: "Sequential hand-off across engineering disciplines — engineering → QA → DevOps — mirroring `pg pipeline` and the graded-authority gates on the path to production."
+created: "2026-07-14"
+author: "Proto Gear Team"
+
+when_to_use:
+  - "Release-bound changes that must clear discipline gates in order"
+  - "Work whose stages have a natural, enforced sequence (build → verify → deploy)"
+  - "You want each hand-off recorded as evidence a gate can check"
+
+avoid_when:
+  - "Exploratory or early-stage work with no gates yet (dynamic/solo)"
+  - "Stages are independent rather than sequential (fan-out)"
+
+roles:
+  - role: engineering
+    responsibility: "Produces the change and its tests; hands off green to QA"
+    model_tier: balanced
+  - role: qa
+    responsibility: "Verifies against the QA state surface; records the sign-off gate"
+    agent: qa/qa-release-agent
+    model_tier: deep
+  - role: devops
+    responsibility: "Owns the deploy stage and its gate on the path to production"
+    agent: devops/deploy-agent
+    model_tier: deep
+
+coordination: >
+  Each discipline is the accountable actor for its stage and hands off across the
+  gate the next stage guards (see `pg pipeline` / `pg trace` / `pg release`).
+  Authority is graded per gate (ADR-002): agents verify and recommend; a human
+  ratifies residual risk at judgment gates.
+
+efficiency: >
+  Stages run in sequence, so latency is the cost, not fan-out. Give verification/
+  deploy stages a deep tier where judgment lives; keep upstream mechanical steps
+  leaner.
+
+selectable_by: [user, agent]
+status: active
