@@ -78,9 +78,9 @@ Before starting ANY development task, verify:
 ### Critical Rules
 
 1. **ALWAYS check `.proto-gear/INDEX.md` first** - if capabilities exist, use them for your task
-2. **NEVER commit directly to `main` or `development`** - always use feature branches
+2. **NEVER commit directly to `main`** - it lands only via a reviewed PR. `development` is open: commit to it directly when it helps; a feature branch + PR is still the norm for substantial or shared work, not a requirement.
 3. **ALWAYS update PROJECT_STATUS.md** when starting/completing tickets
-4. **ALWAYS follow branch naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
+4. **When you use a branch, follow naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
 5. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
 6. **ALWAYS read existing files before modifying** - use Read tool first
 
@@ -106,7 +106,7 @@ This project uses Proto Gear for AI agent coordination.
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations (if exists) |
 | `.proto-gear/INDEX.md` | Capabilities: commands, skills, workflows | When starting a task (if exists) |
 
-Rules: never commit to `main`/`development` directly · run `pg status` before starting work
+Rules: never commit to `main` directly (PR only) · `development` is open for direct commits · run `pg status` before starting work
 ---
 
 **Do not add** project name, tech stack, architecture notes, ticket lists, directory structure, or any other project information. Those live in Proto Gear files.

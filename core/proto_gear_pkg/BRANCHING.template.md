@@ -114,12 +114,16 @@ hotfix/v1.2.1-data-loss-bug
 
 ## Starting New Work
 
-### Critical Rule: Always Branch FROM Development
+### Critical Rule: Protect `{{MAIN_BRANCH}}`; `{{DEV_BRANCH}}` is open
 
-**Never work directly on `{{MAIN_BRANCH}}` or `{{DEV_BRANCH}}`** — always create a feature branch.
+**Never commit directly to `{{MAIN_BRANCH}}`** — it lands only via a reviewed PR.
+**`{{DEV_BRANCH}}` is open**: commit to it directly when that's the simplest thing
+(small fixes, docs, ticket bookkeeping). A feature branch + PR is still the norm
+for substantial or shared work — it gives you CI and review — but it is no longer
+required for everything. When in doubt on something sizeable, branch.
 
 ```bash
-# Create feature branch FROM development (regardless of current branch)
+# Substantial/shared work: branch FROM development (regardless of current branch)
 git checkout -b feature/{{TICKET_PREFIX}}-XXX-description {{DEV_BRANCH}}
 ```
 
@@ -245,8 +249,8 @@ When working with AI assistants (Claude, GPT, etc.), ensure they:
 - Update documentation when behavior changes
 
 **DON'T**:
-- Commit directly to `{{MAIN_BRANCH}}`
-- Commit directly to `{{DEV_BRANCH}}` for features
+- Commit directly to `{{MAIN_BRANCH}}` (PR only)
+- Skip a feature branch + PR for substantial or shared work (direct-to-`{{DEV_BRANCH}}` is fine for small/local changes)
 - Use vague commit messages
 - Skip testing
 - Force-push to shared branches
@@ -285,14 +289,14 @@ TYPES:
 feat, fix, docs, style, refactor, perf, test, build, ci, chore
 
 ALWAYS:
-✅ Branch from {{DEV_BRANCH}}
+✅ Branch from {{DEV_BRANCH}} for substantial/shared work
 ✅ Use descriptive names
 ✅ Write clear commits
 ✅ Test before committing
 {{QUICK_REMOTE_RULES}}
 NEVER:
-❌ Commit to {{MAIN_BRANCH}} directly
-❌ Commit to {{DEV_BRANCH}} directly for features
+❌ Commit to {{MAIN_BRANCH}} directly (PR only)
+❌ Skip branch + PR for substantial or shared work ({{DEV_BRANCH}} is open for small/local commits)
 ❌ Use vague messages
 ❌ Skip testing
 {{QUICK_NEVER_REMOTE}}```

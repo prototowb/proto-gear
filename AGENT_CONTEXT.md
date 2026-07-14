@@ -87,7 +87,8 @@ When the user's prose contains these keywords, load the matching capability befo
 
 ## 🚨 Critical Rules
 
-- NEVER commit directly to `main` or `development` — always branch from `development`
+- NEVER commit directly to `main` — it lands only via a reviewed PR
+- `development` is open: commit to it directly when it helps; feature branch + PR is still the norm for substantial or shared work, not a requirement
 - Run `pg status` before starting work to see active tickets and current sprint
 - Use `pg ticket create "title" --type feature` to register new work
 - Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket
@@ -122,6 +123,6 @@ When the user's prose contains these keywords, load the matching capability befo
 - **Proto Gear version**: v0.10.0
 - **Last release**: 2026-05-13
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-14 16:53
+- **Generated**: 2026-07-14 17:55
 
 <!-- proto-gear:agent-context end -->

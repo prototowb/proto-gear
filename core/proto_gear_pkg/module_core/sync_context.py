@@ -69,7 +69,8 @@ CORE_FILES: List[Tuple[str, str, str]] = [
 ]
 
 CRITICAL_RULES = [
-    "NEVER commit directly to `main` or `development` — always branch from `development`",
+    "NEVER commit directly to `main` — it lands only via a reviewed PR",
+    "`development` is open: commit to it directly when it helps; feature branch + PR is still the norm for substantial or shared work, not a requirement",
     "Run `pg status` before starting work to see active tickets and current sprint",
     'Use `pg ticket create "title" --type feature` to register new work',
     "Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket",
