@@ -34,9 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-083 | feat(agents): per-agent model tier (fast/balanced/deep + override) | feature | IN_PROGRESS | feature/proto-083-feat-agents-per-agent-model-tier-fast-ba |  |
-| PROTO-084 | feat(orchestration): selectable orchestration paradigm pool + pg orchestration | feature | IN_PROGRESS | feature/proto-084-feat-orchestration-selectable-orchestrat |  |
-| PROTO-085 | docs(agents): loosen AGENTS.md to dynamic paradigm-driven orchestration | feature | IN_PROGRESS | feature/proto-085-docs-agents-loosen-agents-md-to-dynamic- |  |
 
 _No active tickets — PROTO-066 just shipped._
 
@@ -837,6 +834,9 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-080 | Interactive agent browser: bare 'pg agent' navigate/select UI (§5.7 first slice) | 2026-07-12 | | |
 | PROTO-081 | Interactive capability browser: bare 'pg capabilities' navigate/select UI (§5.7 slice 2) | 2026-07-13 | | |
 | PROTO-082 | Top-level interactive home menu: bare 'pg' navigate to Status/Capabilities/Agents/Tickets/Release (§5.7 slice 3) | 2026-07-13 | | |
+| PROTO-083 | feat(agents): per-agent model tier (fast/balanced/deep + override) | 2026-07-14 | | |
+| PROTO-084 | feat(orchestration): selectable orchestration paradigm pool + pg orchestration | 2026-07-14 | | |
+| PROTO-085 | docs(agents): loosen AGENTS.md to dynamic paradigm-driven orchestration | 2026-07-14 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
