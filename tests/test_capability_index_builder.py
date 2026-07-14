@@ -12,7 +12,7 @@ import shutil
 import pytest
 from pathlib import Path
 
-from proto_gear_pkg.capability_index_builder import (
+from proto_gear_pkg.module_core.capability_index_builder import (
     BEGIN_MARKER,
     END_MARKER,
     render_top_index_block,
@@ -21,7 +21,7 @@ from proto_gear_pkg.capability_index_builder import (
     extract_managed_block,
     _replace_or_warn,
 )
-from proto_gear_pkg.capability_metadata import (
+from proto_gear_pkg.module_core.capability_metadata import (
     CapabilityMetadata,
     CapabilityType,
     CapabilityStatus,
@@ -30,12 +30,21 @@ from proto_gear_pkg.capability_metadata import (
     load_all_capabilities,
 )
 
+PACKAGE_CAPS_ROOT = (
+    Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
+)
 
-PACKAGE_CAPS_ROOT = Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
 
-
-def _make_cap(name, cap_type=CapabilityType.SKILL, triggers=None, deps=None,
-              version="1.0.0", description="desc", category="test", tags=None):
+def _make_cap(
+    name,
+    cap_type=CapabilityType.SKILL,
+    triggers=None,
+    deps=None,
+    version="1.0.0",
+    description="desc",
+    category="test",
+    tags=None,
+):
     return CapabilityMetadata(
         name=name,
         type=cap_type,
@@ -46,7 +55,8 @@ def _make_cap(name, cap_type=CapabilityType.SKILL, triggers=None, deps=None,
         status=CapabilityStatus.STABLE,
         author="t",
         last_updated="2026-01-01",
-        dependencies=deps or CapabilityDependencies(required=[], optional=[], suggested=[]),
+        dependencies=deps
+        or CapabilityDependencies(required=[], optional=[], suggested=[]),
         conflicts=[],
         composable_with=[],
         agent_roles=[],
@@ -55,6 +65,7 @@ def _make_cap(name, cap_type=CapabilityType.SKILL, triggers=None, deps=None,
 
 
 # ---------- shape tests on the package's own capabilities ----------
+
 
 class TestRenderingAgainstPackage:
     """The package ships 7 skills + 13 workflows + 4 commands. Render and inspect."""
@@ -98,6 +109,7 @@ class TestRenderingAgainstPackage:
 
 # ---------- rendering helpers in isolation ----------
 
+
 class TestRenderingPureHelpers:
     def test_skill_block_lists_trigger_strings(self):
         cap = _make_cap("Test Skill", triggers=["alpha", "beta"])
@@ -136,6 +148,7 @@ class TestRenderingPureHelpers:
 
 # ---------- sync_capability_indexes (file IO) ----------
 
+
 class TestSyncCapabilityIndexes:
     @pytest.fixture
     def synced_caps_root(self, tmp_path):
@@ -160,8 +173,11 @@ class TestSyncCapabilityIndexes:
         results = sync_capability_indexes(synced_caps_root, dry_run=False)
         # Every file we touched should now report unchanged or missing.
         for rel, action in results.items():
-            assert action in ("unchanged", "missing-markers", "missing-file"), \
-                f"{rel} -> {action}"
+            assert action in (
+                "unchanged",
+                "missing-markers",
+                "missing-file",
+            ), f"{rel} -> {action}"
 
     def test_dry_run_reports_would_update_without_writing(self, synced_caps_root):
         idx_top = synced_caps_root / "INDEX.md"
@@ -195,7 +211,84 @@ class TestSyncCapabilityIndexes:
         assert marker_text in after
 
 
+class TestSyncModuleSubtrees:
+    """PROTO-057 (seam S1, on-disk): a module's caps installed under
+    ``.proto-gear/<module>/`` are indexed *inside* that subtree, kept out of the
+    shared root index, and their INDEX.md is scaffolded on demand."""
+
+    _META = (
+        'name: "{name}"\ntype: "workflow"\nversion: "0.1.0"\n'
+        'description: "d"\ncategory: "c"\ntags: ["t"]\n'
+        'status: "beta"\nauthor: "a"\nlast_updated: "2026-07-10"\n'
+    )
+    _INDEX_WITH_MARKERS = f"# Workflows\n\n{BEGIN_MARKER}\nold\n{END_MARKER}\n"
+
+    @pytest.fixture
+    def root_and_modules(self, tmp_path):
+        from proto_gear_pkg.module_core.module_manifest import MANIFEST_FILENAME
+
+        root = tmp_path / ".proto-gear"
+        # Shared workflow + a real (markered) root workflows/INDEX.md.
+        shared = root / "workflows" / "release"
+        shared.mkdir(parents=True)
+        (shared / "metadata.yaml").write_text(
+            self._META.format(name="Release"), encoding="utf-8"
+        )
+        (root / "workflows" / "INDEX.md").write_text(
+            self._INDEX_WITH_MARKERS, encoding="utf-8"
+        )
+        (root / "INDEX.md").write_text(
+            f"# Capabilities\n\n{BEGIN_MARKER}\nold\n{END_MARKER}\n", encoding="utf-8"
+        )
+        # qa subtree cap (as pg init would install it).
+        qcap = root / "qa" / "workflows" / "release-signoff"
+        qcap.mkdir(parents=True)
+        (qcap / "metadata.yaml").write_text(
+            self._META.format(name="QA Sign-off"), encoding="utf-8"
+        )
+        # modules_root so discover_modules() recognizes "qa" as a namespace.
+        modules_root = tmp_path / "modules"
+        qa_mod = modules_root / "qa"
+        qa_mod.mkdir(parents=True)
+        (qa_mod / MANIFEST_FILENAME).write_text(
+            "module: qa\nname: QA\nstate_surface: QA_QUEUE.md\n", encoding="utf-8"
+        )
+        return root, modules_root
+
+    def test_module_index_created_and_scoped(self, root_and_modules):
+        root, modules_root = root_and_modules
+        results = sync_capability_indexes(root, modules_root=modules_root)
+
+        # Module INDEX files are scaffolded on demand…
+        assert results["qa/INDEX.md"] == "created"
+        assert results["qa/workflows/INDEX.md"] == "created"
+        assert (root / "qa" / "INDEX.md").is_file()
+        # …only for the types the module ships (no empty skills/ dir).
+        assert not (root / "qa" / "skills").exists()
+
+        # The module cap is indexed inside the subtree with its prefix stripped,
+        # and does NOT leak into the shared root workflows index.
+        qa_wf = (root / "qa" / "workflows" / "INDEX.md").read_text(encoding="utf-8")
+        assert "`workflows/release-signoff`" in qa_wf
+        root_wf = (root / "workflows" / "INDEX.md").read_text(encoding="utf-8")
+        assert "release-signoff" not in root_wf
+        assert "`workflows/release`" in root_wf  # shared cap still indexed
+
+    def test_dry_run_reports_would_create_without_writing(self, root_and_modules):
+        root, modules_root = root_and_modules
+        results = sync_capability_indexes(root, dry_run=True, modules_root=modules_root)
+        assert results["qa/INDEX.md"] == "would_create"
+        assert not (root / "qa" / "INDEX.md").exists()
+
+    def test_second_sync_idempotent_for_module(self, root_and_modules):
+        root, modules_root = root_and_modules
+        sync_capability_indexes(root, modules_root=modules_root)
+        results = sync_capability_indexes(root, modules_root=modules_root)
+        assert results["qa/workflows/INDEX.md"] == "unchanged"
+
+
 # ---------- _replace_or_warn helper ----------
+
 
 class TestReplaceOrWarn:
     def test_missing_file_reported(self, tmp_path):
@@ -205,7 +298,9 @@ class TestReplaceOrWarn:
     def test_missing_markers_reported(self, tmp_path):
         f = tmp_path / "x.md"
         f.write_text("no markers here\n", encoding="utf-8")
-        action = _replace_or_warn(f, BEGIN_MARKER + "\nnew\n" + END_MARKER, dry_run=True)
+        action = _replace_or_warn(
+            f, BEGIN_MARKER + "\nnew\n" + END_MARKER, dry_run=True
+        )
         assert action == "missing-markers"
 
     def test_replace_round_trip(self, tmp_path):

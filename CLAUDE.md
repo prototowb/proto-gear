@@ -11,8 +11,9 @@
 | File | Purpose | Read When |
 |------|---------|-----------|
 | `AGENTS.md` | Agent orchestration, roles, pre-flight checklist | First session or unclear on process |
+| `SESSION_HANDOFF.md` | Rolling session handoff — what just shipped, what's pending | Start of every session — before anything else |
 | `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
-| `PROJECT_SPECIFICATIONS.md` *(not present)* | Project planning doc — source for architecture | Starting features or design work (if exists) |
+| `PROJECT_SPECIFICATIONS.md` | Project planning doc — source for architecture | Starting features or design work (if exists) |
 | `PROJECT_ARCHITECTURE.md` *(not present)* | Project-specific architecture (agent-extracted) | Design decisions (if exists) |
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations |
 | `TESTING.md` | TDD patterns, test pyramid, coverage targets | When writing tests |
@@ -86,7 +87,8 @@ When the user's prose contains these keywords, load the matching capability befo
 
 ## 🚨 Critical Rules
 
-- NEVER commit directly to `main` or `development` — always branch from `development`
+- NEVER commit directly to `main` — it lands only via a reviewed PR
+- `development` is open: commit to it directly when it helps; feature branch + PR is still the norm for substantial or shared work, not a requirement
 - Run `pg status` before starting work to see active tickets and current sprint
 - Use `pg ticket create "title" --type feature` to register new work
 - Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket
@@ -100,7 +102,15 @@ When the user's prose contains these keywords, load the matching capability befo
 - `pg capabilities list [--type ...] [--json]` — Browse capabilities (--json for agent consumption)
 - `pg capabilities show <name>` — Show full details of a capability
 - `pg capabilities tree <name>` — Show dependency tree of a capability
-- `pg agent list` — List configured custom agents (if any)
+- `pg agent list [--available]` — List configured agents + bundled agents available to install
+- `pg agent install <name>` — Install one bundled/discipline agent on demand
+- `pg orchestration list [--json]` — Browse orchestration paradigms — how sub-agents are distributed (pick/switch on the fly)
+- `pg orchestration show <id>` — Show a paradigm's roles, model tiers, and when to use it
+- `pg module list/show [<name>]` — List/inspect engineering department modules (module.yaml manifests)
+- `pg --module <name> init-surface` — Render a department module's declared state surface
+- `pg pipeline [--json]` — Show the cross-discipline supervision pipeline (path to production)
+- `pg trace <ticket-id> [--json]` — Trace a change across discipline state surfaces (ticket → qa → deploy)
+- `pg release <label> [--json]` — Trace a release across its tickets — aggregate readiness verdict
 - `pg sync-context` — Regenerate Agent Context in all host files
 - `pg sync-indexes` — Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml
 - `pg doctor [--fix] [--json]` — Audit project for proto-gear sync drift (use --fix to repair)
@@ -110,10 +120,10 @@ When the user's prose contains these keywords, load the matching capability befo
 
 - **Project**: proto-gear
 - **Tech / type**: Python
-- **Proto Gear version**: v0.10.0
-- **Last release**: 2026-05-13
+- **Proto Gear version**: v0.20.0
+- **Last release**: 2026-07-14
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-05-13 19:06
+- **Generated**: 2026-07-14 19:15
 
 <!-- proto-gear:agent-context end -->
 

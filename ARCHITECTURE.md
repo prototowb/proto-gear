@@ -11,6 +11,8 @@ defines:
   - non-goals
 links:
   - CONTRIBUTING.md
+  - PROJECT_SPECIFICATIONS.md
+  - docs/dev/adr/ADR-001-departmental-module-platform.md
   - docs/dev/project-structure.md
   - docs/dev/universal-capabilities-design.md
 -->
@@ -194,6 +196,23 @@ Triggers are the bridge between user prose ("fix login bug") and capability invo
 - **Tech-stack opinions.** Proto Gear will not tell you to use Poetry over pip, or React over Svelte. It detects what you already have and adapts.
 - **Runtime orchestration.** Proto Gear does not start agent processes, route messages, or hold conversation state. AGENTS.md describes patterns; the agent host (Claude Code, Cursor, etc.) executes them.
 - **Mandatory CI infrastructure.** Generated `BRANCHING.md` describes conventions; it does not install GitHub Actions or git hooks unless the user runs `/workflows/cicd-setup` on their own.
+
+## Target Architecture (direction of travel)
+
+This document describes the **current** state. The accepted direction is to
+evolve proto-gear into a **software-engineering** module platform: a
+discipline-agnostic `module_core/` (capabilities, context sync, doctor,
+discovery, state interface) with the generalist engineering module re-homed
+under `modules/engineering/` and future engineering disciplines (QA, DevOps,
+security, docs) plugging in as their own modules. Scope stays the engineering
+circle — not a whole-business "agency OS." Supervision gates become data in
+workflow metadata, validated by `pg doctor`.
+
+- **Vision & phases**: `PROJECT_SPECIFICATIONS.md`
+- **Decision & trade-offs**: `docs/dev/adr/ADR-001-departmental-module-platform.md`
+
+When making non-trivial changes, prefer placements consistent with that target
+(ask: "is this generic engine, or engineering-module specific?").
 
 ## Where to Look Next
 

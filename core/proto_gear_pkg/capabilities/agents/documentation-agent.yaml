@@ -7,6 +7,10 @@ description: "Specialized agent for writing and maintaining technical documentat
 created: "2025-12-09"
 author: "Proto Gear Team"
 
+# Documentation is largely mechanical — a fast tier is cost-efficient here.
+model:
+  tier: fast
+
 capabilities:
   skills:
     - "documentation"

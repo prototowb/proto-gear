@@ -18,12 +18,12 @@ from .agent_config import (
     AgentConfiguration,
     AgentCapabilities,
     AgentValidationError,
-    create_agent_template
+    create_agent_template,
 )
-from .capability_metadata import (
+from .module_core.capability_metadata import (
     load_all_capabilities,
     CapabilityMetadata,
-    CapabilityType
+    CapabilityType,
 )
 
 ui = UIHelper()
@@ -35,6 +35,42 @@ def get_capabilities_dir() -> Path:
     return pkg_dir / "capabilities"
 
 
+def _load_bundled_capabilities():
+    """All bundled capabilities across every discipline (seam S1).
+
+    The shared/engineering bundle plus each module's own ``capabilities/``,
+    namespaced ``<module>/<cap_id>`` (see ``module_host.load_bundled_capabilities``).
+    Browse commands use this so a discipline's capabilities (e.g. qa's
+    ``qa/workflows/release-signoff``) are visible, not just engineering's.
+    """
+    from .module_core import module_host
+
+    return module_host.load_bundled_capabilities()
+
+
+def _resolve_capability(name, all_caps):
+    """Resolve a user-supplied capability name to ``(cap_id, metadata)``.
+
+    Accepts a full id (``skills/testing``, ``qa/workflows/release-signoff``), a
+    ``<type>/<name>`` shorthand for shared caps, or a bare trailing name
+    (``release-signoff``) when it is unambiguous across disciplines. Returns
+    ``(None, candidates)`` when nothing matches (``candidates == []``) or the
+    bare name is ambiguous (``len(candidates) > 1``), so the caller can report.
+    """
+    if name in all_caps:
+        return name, all_caps[name]
+    for category in ("skills", "workflows", "commands"):
+        test_id = f"{category}/{name}"
+        if test_id in all_caps:
+            return test_id, all_caps[test_id]
+    candidates = sorted(
+        cid for cid in all_caps if cid == name or cid.endswith(f"/{name}")
+    )
+    if len(candidates) == 1:
+        return candidates[0], all_caps[candidates[0]]
+    return None, candidates
+
+
 def get_agents_dir() -> Path:
     """Get agents directory (project location)"""
     proto_gear_dir = Path(".proto-gear")
@@ -42,7 +78,9 @@ def get_agents_dir() -> Path:
     return agents_dir
 
 
-def get_close_matches(query: str, options: List[str], n: int = 3, cutoff: float = 0.6) -> List[str]:
+def get_close_matches(
+    query: str, options: List[str], n: int = 3, cutoff: float = 0.6
+) -> List[str]:
     """
     Get close matches for a query string using fuzzy matching.
 
@@ -64,12 +102,11 @@ def get_close_matches(query: str, options: List[str], n: int = 3, cutoff: float 
 # Capabilities Commands
 # ============================================================================
 
+
 def cmd_capabilities_list(args):
     """List all available capabilities"""
-    caps_dir = get_capabilities_dir()
-
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
@@ -82,47 +119,52 @@ def cmd_capabilities_list(args):
     filtered_caps = all_caps.copy()
 
     # Filter by type
-    if hasattr(args, 'type') and args.type:
+    if hasattr(args, "type") and args.type:
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
-            if v.type.value == args.type
+            k: v for k, v in filtered_caps.items() if v.type.value == args.type
         }
 
     # Filter by tag
-    if hasattr(args, 'tag') and args.tag:
+    if hasattr(args, "tag") and args.tag:
         tag_lower = args.tag.lower()
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
+            k: v
+            for k, v in filtered_caps.items()
             if any(tag_lower in tag.lower() for tag in v.tags)
         }
 
     # Filter by role
-    if hasattr(args, 'role') and args.role:
+    if hasattr(args, "role") and args.role:
         role_lower = args.role.lower()
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
-            if v.agent_roles and any(role_lower in role.lower() for role in v.agent_roles)
+            k: v
+            for k, v in filtered_caps.items()
+            if v.agent_roles
+            and any(role_lower in role.lower() for role in v.agent_roles)
         }
 
     # Filter by status
-    if hasattr(args, 'status') and args.status:
+    if hasattr(args, "status") and args.status:
         filtered_caps = {
-            k: v for k, v in filtered_caps.items()
-            if v.status.value == args.status
+            k: v for k, v in filtered_caps.items() if v.status.value == args.status
         }
 
     if not filtered_caps:
-        if getattr(args, 'json', False):
+        if getattr(args, "json", False):
             import json
+
             print(json.dumps({"capabilities": []}, indent=2))
             return 0
-        print(f"{Colors.YELLOW}No capabilities match the specified filters{Colors.ENDC}")
+        print(
+            f"{Colors.YELLOW}No capabilities match the specified filters{Colors.ENDC}"
+        )
         print(f"\nTry: pg capabilities list (without filters)")
         return 0
 
     # JSON output path (for AI agent consumption)
-    if getattr(args, 'json', False):
+    if getattr(args, "json", False):
         import json
+
         items = []
         for cap_id in sorted(filtered_caps.keys()):
             cap = filtered_caps[cap_id]
@@ -131,19 +173,27 @@ def cmd_capabilities_list(args):
             if cap.relevance:
                 triggers = list(cap.relevance.triggers or [])
                 contexts = list(cap.relevance.contexts or [])
-            items.append({
-                "id": cap_id,
-                "type": cap.type.value if hasattr(cap.type, "value") else str(cap.type),
-                "name": cap.name,
-                "description": cap.description,
-                "category": cap.category,
-                "status": cap.status.value if hasattr(cap.status, "value") else str(cap.status),
-                "version": cap.version,
-                "tags": list(cap.tags or []),
-                "agent_roles": list(cap.agent_roles or []),
-                "triggers": triggers,
-                "contexts": contexts,
-            })
+            items.append(
+                {
+                    "id": cap_id,
+                    "type": (
+                        cap.type.value if hasattr(cap.type, "value") else str(cap.type)
+                    ),
+                    "name": cap.name,
+                    "description": cap.description,
+                    "category": cap.category,
+                    "status": (
+                        cap.status.value
+                        if hasattr(cap.status, "value")
+                        else str(cap.status)
+                    ),
+                    "version": cap.version,
+                    "tags": list(cap.tags or []),
+                    "agent_roles": list(cap.agent_roles or []),
+                    "triggers": triggers,
+                    "contexts": contexts,
+                }
+            )
         print(json.dumps({"capabilities": items}, indent=2))
         return 0
 
@@ -165,55 +215,79 @@ def cmd_capabilities_list(args):
 
     if skills:
         # Box header
-        print(f"{Colors.CYAN}+-- SKILLS ({len(skills)}) " + "-" * 45 + f"+{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}+-- SKILLS ({len(skills)}) " + "-" * 45 + f"+{Colors.ENDC}"
+        )
         for cap_id in sorted(skills.keys()):
             metadata = skills[cap_id]
             # Extract short ID (e.g., "skills/testing" -> "testing")
-            short_id = cap_id.split('/')[-1]
+            short_id = cap_id.split("/")[-1]
             status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
-            status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            status_color = (
+                Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            )
             # Format: | [OK] short-id          Full Name
-            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
-                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} "
+                + f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}"
+            )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     if workflows:
         # Box header
-        print(f"{Colors.CYAN}+-- WORKFLOWS ({len(workflows)}) " + "-" * 42 + f"+{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}+-- WORKFLOWS ({len(workflows)}) "
+            + "-" * 42
+            + f"+{Colors.ENDC}"
+        )
         for cap_id in sorted(workflows.keys()):
             metadata = workflows[cap_id]
-            short_id = cap_id.split('/')[-1]
+            short_id = cap_id.split("/")[-1]
             status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
-            status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
-                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+            status_color = (
+                Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            )
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} "
+                + f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}"
+            )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     if commands:
         # Box header
-        print(f"{Colors.CYAN}+-- COMMANDS ({len(commands)}) " + "-" * 43 + f"+{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}+-- COMMANDS ({len(commands)}) "
+            + "-" * 43
+            + f"+{Colors.ENDC}"
+        )
         for cap_id in sorted(commands.keys()):
             metadata = commands[cap_id]
-            short_id = cap_id.split('/')[-1]
+            short_id = cap_id.split("/")[-1]
             status_icon = "[OK]" if metadata.status.value == "stable" else "[!]"
-            status_color = Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
-            print(f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} " +
-                  f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}")
+            status_color = (
+                Colors.GREEN if metadata.status.value == "stable" else Colors.WARNING
+            )
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC} {status_color}{status_icon}{Colors.ENDC} "
+                + f"{Colors.CYAN}{short_id:18}{Colors.ENDC} {metadata.name}"
+            )
         print(f"{Colors.CYAN}+{'-' * 60}+{Colors.ENDC}\n")
 
     # Summary
     filters_applied = []
-    if hasattr(args, 'type') and args.type:
+    if hasattr(args, "type") and args.type:
         filters_applied.append(f"type={args.type}")
-    if hasattr(args, 'tag') and args.tag:
+    if hasattr(args, "tag") and args.tag:
         filters_applied.append(f"tag={args.tag}")
-    if hasattr(args, 'role') and args.role:
+    if hasattr(args, "role") and args.role:
         filters_applied.append(f"role={args.role}")
-    if hasattr(args, 'status') and args.status:
+    if hasattr(args, "status") and args.status:
         filters_applied.append(f"status={args.status}")
 
     if filters_applied:
-        print(f"{Colors.BOLD}Showing: {len(filtered_caps)} of {len(all_caps)} capabilities{Colors.ENDC}")
+        print(
+            f"{Colors.BOLD}Showing: {len(filtered_caps)} of {len(all_caps)} capabilities{Colors.ENDC}"
+        )
         print(f"{Colors.GRAY}Filters: {', '.join(filters_applied)}{Colors.ENDC}")
     else:
         print(f"{Colors.BOLD}Total: {len(all_caps)} capabilities{Colors.ENDC}")
@@ -223,13 +297,120 @@ def cmd_capabilities_list(args):
     return 0
 
 
+def _collect_capability_entries() -> List[dict]:
+    """Assemble the browse list of capabilities, grouped skills → workflows →
+    commands then sorted by id within each group.
+
+    Pure data (no prompts), so it is unit-testable. Each entry:
+    ``id`` (full), ``short_id`` (trailing segment), ``type`` (``skill`` /
+    ``workflow`` / ``command``), ``name``, ``description``, ``status``.
+    """
+    all_caps = _load_bundled_capabilities()
+
+    type_order = {
+        CapabilityType.SKILL: 0,
+        CapabilityType.WORKFLOW: 1,
+        CapabilityType.COMMAND: 2,
+    }
+
+    def _sort_key(cap_id):
+        meta = all_caps[cap_id]
+        return (type_order.get(meta.type, 9), cap_id)
+
+    entries: List[dict] = []
+    for cap_id in sorted(all_caps.keys(), key=_sort_key):
+        meta = all_caps[cap_id]
+        entries.append(
+            {
+                "id": cap_id,
+                "short_id": cap_id.split("/")[-1],
+                "type": (
+                    meta.type.value if hasattr(meta.type, "value") else str(meta.type)
+                ),
+                "name": meta.name,
+                "description": meta.description or "",
+                "status": (
+                    meta.status.value
+                    if hasattr(meta.status, "value")
+                    else str(meta.status)
+                ),
+            }
+        )
+    return entries
+
+
+def _capability_entry_label(entry: dict) -> str:
+    """One-line label for a capability entry in the browse list."""
+    badge = (
+        f"{Colors.GREEN}[OK]{Colors.ENDC}"
+        if entry["status"] == "stable"
+        else f"{Colors.WARNING}[!]{Colors.ENDC}"
+    )
+    tail = f" — {entry['name']}" if entry["name"] else ""
+    return (
+        f"{badge} {Colors.GRAY}{entry['type']:<8}{Colors.ENDC} "
+        f"{Colors.CYAN}{entry['short_id']}{Colors.ENDC}{tail}"
+    )
+
+
+def cmd_capabilities_browse(args):
+    """Interactive browse/select UI over the capability catalog (§5.7).
+
+    UI-first entry point for ``pg capabilities`` with no subcommand: navigate
+    skills / workflows / commands and pick one to view its detail (and, on
+    request, its dependency tree). Degrades to the classic ``pg capabilities
+    list`` without a TTY or without ``questionary``, so scripts/CI are
+    unaffected.
+    """
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    if not interactive or questionary is None:
+        return cmd_capabilities_list(args)
+
+    try:
+        entries = _collect_capability_entries()
+    except Exception as e:
+        print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
+        return 1
+
+    if not entries:
+        print(f"{Colors.YELLOW}No capabilities found.{Colors.ENDC}")
+        return 0
+
+    while True:
+        choices = [
+            questionary.Choice(_capability_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Capabilities — skills, workflows, commands (select to view):",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        cmd_capabilities_show(_args_ns(name=entry["id"]))
+        view_tree = questionary.confirm(
+            f"Show dependency tree for '{entry['short_id']}'?",
+            default=False,
+        ).ask()
+        if view_tree:
+            cmd_capabilities_tree(_args_ns(capability_id=entry["id"]))
+
+
 def cmd_capabilities_search(args):
     """Search capabilities by keyword"""
     query = args.query.lower()
-    caps_dir = get_capabilities_dir()
 
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
@@ -237,22 +418,28 @@ def cmd_capabilities_search(args):
     # Search in name, description, tags, and trigger keywords
     matches = []
     for cap_id, metadata in all_caps.items():
-        if (query in metadata.name.lower() or
-            query in metadata.description.lower() or
-            any(query in tag.lower() for tag in metadata.tags) or
-            (metadata.relevance and metadata.relevance.matches_trigger(query))):
+        if (
+            query in metadata.name.lower()
+            or query in metadata.description.lower()
+            or any(query in tag.lower() for tag in metadata.tags)
+            or (metadata.relevance and metadata.relevance.matches_trigger(query))
+        ):
             matches.append((cap_id, metadata))
 
     if not matches:
         print(f"{Colors.YELLOW}No capabilities found matching '{query}'{Colors.ENDC}")
         return 0
 
-    print(f"\n{Colors.HEADER}=== Search Results for '{query}' ({len(matches)} found) ==={Colors.ENDC}\n")
+    print(
+        f"\n{Colors.HEADER}=== Search Results for '{query}' ({len(matches)} found) ==={Colors.ENDC}\n"
+    )
 
     for cap_id, metadata in sorted(matches, key=lambda x: x[0]):
         print(f"{Colors.CYAN}{metadata.name}{Colors.ENDC} ({cap_id})")
         print(f"  {metadata.description}")
-        print(f"  Status: {metadata.status.value} | Tags: {', '.join(metadata.tags[:5])}")
+        print(
+            f"  Status: {metadata.status.value} | Tags: {', '.join(metadata.tags[:5])}"
+        )
         print()
 
     return 0
@@ -261,30 +448,33 @@ def cmd_capabilities_search(args):
 def cmd_capabilities_show(args):
     """Show detailed information about a capability"""
     name = args.name
-    caps_dir = get_capabilities_dir()
 
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
 
-    # Find capability (support both short name and full path)
-    metadata = None
-    cap_id = None
-
-    # Try exact match first
-    if name in all_caps:
-        cap_id = name
-        metadata = all_caps[name]
+    # Resolve name → id: full id, <type>/<name> shorthand, or an unambiguous
+    # bare trailing name across disciplines (e.g. qa/workflows/release-signoff).
+    cap_id, resolved = _resolve_capability(name, all_caps)
+    if cap_id is not None:
+        metadata = resolved
     else:
-        # Try searching in each category
-        for category in ["skills", "workflows", "commands"]:
-            test_id = f"{category}/{name}"
-            if test_id in all_caps:
-                cap_id = test_id
-                metadata = all_caps[test_id]
-                break
+        metadata = None
+        candidates = resolved  # list of colliding ids (empty if no match)
+        if len(candidates) > 1:
+            print(
+                f"{Colors.YELLOW}Ambiguous capability '{name}' — "
+                f"matches multiple disciplines:{Colors.ENDC}"
+            )
+            for cid in candidates:
+                print(f"  {cid}")
+            print(
+                f"\n{Colors.GRAY}Qualify it, e.g. "
+                f"'pg capabilities show {candidates[0]}'{Colors.ENDC}"
+            )
+            return 1
 
     if not metadata:
         print(f"{Colors.FAIL}Capability not found: '{name}'{Colors.ENDC}\n")
@@ -292,7 +482,7 @@ def cmd_capabilities_show(args):
         # Suggest similar capabilities using fuzzy matching
         all_cap_ids = list(all_caps.keys())
         # Also extract short names for matching
-        short_names = [cap_id.split('/')[-1] for cap_id in all_cap_ids]
+        short_names = [cap_id.split("/")[-1] for cap_id in all_cap_ids]
         all_searchable = all_cap_ids + short_names
 
         suggestions = get_close_matches(name, all_searchable, n=3, cutoff=0.6)
@@ -300,8 +490,10 @@ def cmd_capabilities_show(args):
             print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
             for suggestion in suggestions[:3]:
                 # If it's a short name, find the full ID
-                if '/' not in suggestion:
-                    matching_ids = [cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")]
+                if "/" not in suggestion:
+                    matching_ids = [
+                        cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")
+                    ]
                     full_id = matching_ids[0] if matching_ids else suggestion
                 else:
                     full_id = suggestion
@@ -366,37 +558,60 @@ def cmd_capabilities_show(args):
         for conflict in metadata.conflicts:
             print(f"  - {conflict}")
 
+    # Supervision gates (workflows) — explicit human approval points
+    if metadata.workflow and metadata.workflow.gates:
+        print(f"\n{Colors.CYAN}Supervision Gates (human approval):{Colors.ENDC}")
+        for g in metadata.workflow.gates:
+            req = "required" if g.required else "optional"
+            loc = f", before {g.before}" if g.before else ""
+            # ADR-002 primitives shown only when they deviate from §4 defaults,
+            # so the common all-human gate stays a one-glance line.
+            auth = f", authority: {g.authority}" if g.authority != "human" else ""
+            actor = f", actor: {g.actor}" if g.actor else ""
+            ev = (
+                f", evidence: {g.evidence} {g.evidence_predicate} {g.evidence_value}"
+                if g.evidence_predicate != "non-empty"
+                else ""
+            )
+            print(
+                f"  - {Colors.BOLD}{g.id}{Colors.ENDC} "
+                f"({g.approver}, {req}{loc}{auth}{actor}{ev})"
+            )
+            print(f"      {g.description}")
+
     return 0
 
 
 def cmd_capabilities_tree(args):
     """Show dependency tree for a capability"""
-    caps_dir = get_capabilities_dir()
     cap_id = args.capability_id
 
     # Load all capabilities
     try:
-        all_caps = load_all_capabilities(caps_dir)
+        all_caps = _load_bundled_capabilities()
     except Exception as e:
         print(f"{Colors.FAIL}Error loading capabilities: {e}{Colors.ENDC}")
         return 1
 
-    # Find the capability (support short names)
-    metadata = None
-    full_id = None
-
-    # Try exact match first
-    if cap_id in all_caps:
-        metadata = all_caps[cap_id]
-        full_id = cap_id
+    # Resolve name → id (full id, <type>/<name>, or unambiguous bare name).
+    full_id, resolved = _resolve_capability(cap_id, all_caps)
+    if full_id is not None:
+        metadata = resolved
     else:
-        # Try with type prefix
-        for cap_type in ["skills", "workflows", "commands"]:
-            test_id = f"{cap_type}/{cap_id}"
-            if test_id in all_caps:
-                metadata = all_caps[test_id]
-                full_id = test_id
-                break
+        metadata = None
+        candidates = resolved  # list of colliding ids (empty if no match)
+        if len(candidates) > 1:
+            print(
+                f"{Colors.YELLOW}Ambiguous capability '{cap_id}' — "
+                f"matches multiple disciplines:{Colors.ENDC}"
+            )
+            for cid in candidates:
+                print(f"  {cid}")
+            print(
+                f"\n{Colors.GRAY}Qualify it, e.g. "
+                f"'pg capabilities tree {candidates[0]}'{Colors.ENDC}"
+            )
+            return 1
 
     if not metadata:
         print(f"{Colors.FAIL}Capability not found: '{cap_id}'{Colors.ENDC}\n")
@@ -404,7 +619,7 @@ def cmd_capabilities_tree(args):
         # Suggest similar capabilities using fuzzy matching
         all_cap_ids = list(all_caps.keys())
         # Also extract short names for matching
-        short_names = [cid.split('/')[-1] for cid in all_cap_ids]
+        short_names = [cid.split("/")[-1] for cid in all_cap_ids]
         all_searchable = all_cap_ids + short_names
 
         suggestions = get_close_matches(cap_id, all_searchable, n=3, cutoff=0.6)
@@ -412,8 +627,10 @@ def cmd_capabilities_tree(args):
             print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
             for suggestion in suggestions[:3]:
                 # If it's a short name, find the full ID
-                if '/' not in suggestion:
-                    matching_ids = [cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")]
+                if "/" not in suggestion:
+                    matching_ids = [
+                        cid for cid in all_cap_ids if cid.endswith(f"/{suggestion}")
+                    ]
                     full_id = matching_ids[0] if matching_ids else suggestion
                 else:
                     full_id = suggestion
@@ -429,12 +646,20 @@ def cmd_capabilities_tree(args):
         return 1
 
     # Print header with box
-    print(f"\n{Colors.CYAN}+-- Dependency Tree: {metadata.name} " + "-" * (40 - len(metadata.name)) + f"+{Colors.ENDC}")
+    print(
+        f"\n{Colors.CYAN}+-- Dependency Tree: {metadata.name} "
+        + "-" * (40 - len(metadata.name))
+        + f"+{Colors.ENDC}"
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Show capability info
-    print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}{full_id}{Colors.ENDC} - {metadata.description}")
-    print(f"{Colors.CYAN}|{Colors.ENDC} Type: {metadata.type.value} | Status: {metadata.status.value}")
+    print(
+        f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}{full_id}{Colors.ENDC} - {metadata.description}"
+    )
+    print(
+        f"{Colors.CYAN}|{Colors.ENDC} Type: {metadata.type.value} | Status: {metadata.status.value}"
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Show dependencies
@@ -442,7 +667,9 @@ def cmd_capabilities_tree(args):
 
     if metadata.dependencies.required:
         has_dependencies = True
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Required Dependencies:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Required Dependencies:{Colors.ENDC}"
+        )
         for dep in metadata.dependencies.required:
             dep_name = all_caps[dep].name if dep in all_caps else dep
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
@@ -450,7 +677,9 @@ def cmd_capabilities_tree(args):
 
     if metadata.dependencies.optional:
         has_dependencies = True
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Optional Dependencies:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Optional Dependencies:{Colors.ENDC}"
+        )
         for dep in metadata.dependencies.optional:
             dep_name = all_caps[dep].name if dep in all_caps else dep
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
@@ -458,7 +687,9 @@ def cmd_capabilities_tree(args):
 
     if metadata.dependencies.suggested:
         has_dependencies = True
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Suggested Capabilities:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Suggested Capabilities:{Colors.ENDC}"
+        )
         for dep in metadata.dependencies.suggested:
             dep_name = all_caps[dep].name if dep in all_caps else dep
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {dep} ({dep_name})")
@@ -466,24 +697,34 @@ def cmd_capabilities_tree(args):
 
     # Show composable capabilities
     if metadata.composable_with:
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Composable With:{Colors.ENDC} {len(metadata.composable_with)} capabilities")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}Composable With:{Colors.ENDC} {len(metadata.composable_with)} capabilities"
+        )
         for comp in metadata.composable_with[:5]:
             comp_name = all_caps[comp].name if comp in all_caps else comp
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {comp} ({comp_name})")
         if len(metadata.composable_with) > 5:
-            print(f"{Colors.CYAN}|{Colors.ENDC}   ... and {len(metadata.composable_with) - 5} more")
+            print(
+                f"{Colors.CYAN}|{Colors.ENDC}   ... and {len(metadata.composable_with) - 5} more"
+            )
         print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Show conflicts
     if metadata.conflicts:
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.WARNING}Conflicts With:{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.WARNING}Conflicts With:{Colors.ENDC}"
+        )
         for conflict in metadata.conflicts:
-            conflict_name = all_caps[conflict].name if conflict in all_caps else conflict
+            conflict_name = (
+                all_caps[conflict].name if conflict in all_caps else conflict
+            )
             print(f"{Colors.CYAN}|{Colors.ENDC}   - {conflict} ({conflict_name})")
         print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     if not has_dependencies and not metadata.composable_with and not metadata.conflicts:
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.GRAY}No dependencies or relationships defined{Colors.ENDC}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.GRAY}No dependencies or relationships defined{Colors.ENDC}"
+        )
         print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Print footer
@@ -501,14 +742,50 @@ def cmd_capabilities_tree(args):
 # Agent Commands
 # ============================================================================
 
+
+def _print_available_agents(agents_dir: Path) -> None:
+    """Render the bundled agents not yet installed in this host (PROTO-076).
+
+    Surfaces discoverable agents *before* install — previously a discipline's
+    agent appeared only after `pg init` swept it in. Silent when everything
+    discoverable is already installed.
+    """
+    from .module_core import module_host
+
+    installed = (
+        {p.stem for p in agents_dir.glob("*.yaml")} if agents_dir.exists() else set()
+    )
+    available = [
+        r for r in module_host.list_bundled_agents() if r["name"] not in installed
+    ]
+    if not available:
+        return
+
+    print(f"\n{Colors.BOLD}Available bundled agents (not installed):{Colors.ENDC}")
+    for r in available:
+        source = r["module"] or "shared"
+        desc = f" — {r['description']}" if r["description"] else ""
+        print(
+            f"  {Colors.CYAN}{r['name']:<24}{Colors.ENDC} "
+            f"{Colors.GRAY}[{source}]{Colors.ENDC}{desc}"
+        )
+    print(f"\n  Install one with: pg agent install <name>")
+
+
 def cmd_agent_list(args):
-    """List all configured agents"""
+    """List configured agents, plus the bundled ones available to install."""
     agents_dir = get_agents_dir()
     caps_dir = get_capabilities_dir()
+
+    if getattr(args, "available", False):
+        # Filtered view: only what could be installed.
+        _print_available_agents(agents_dir)
+        return 0
 
     if not agents_dir.exists():
         print(f"{Colors.YELLOW}No agents directory found.{Colors.ENDC}")
         print(f"Create agents with: pg agent create <name>")
+        _print_available_agents(agents_dir)
         return 0
 
     try:
@@ -521,14 +798,21 @@ def cmd_agent_list(args):
     if not agents:
         print(f"{Colors.YELLOW}No agents configured.{Colors.ENDC}")
         print(f"Create agents with: pg agent create <name>")
+        _print_available_agents(agents_dir)
         return 0
 
     # Print header with box
-    print(f"\n{Colors.CYAN}+-- Configured Agents ({len(agents)}) " + "-" * 40 + f"+{Colors.ENDC}")
+    print(
+        f"\n{Colors.CYAN}+-- Configured Agents ({len(agents)}) "
+        + "-" * 40
+        + f"+{Colors.ENDC}"
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC}")
 
     # Print table header
-    print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}NAME{' ' * 16}CAPABILITIES  STATUS{Colors.ENDC}        ")
+    print(
+        f"{Colors.CYAN}|{Colors.ENDC} {Colors.BOLD}NAME{' ' * 16}CAPABILITIES  STATUS{Colors.ENDC}        "
+    )
     print(f"{Colors.CYAN}|{Colors.ENDC} " + "-" * 54)
 
     # Print agents in table format
@@ -561,8 +845,10 @@ def cmd_agent_list(args):
         cap_padding = " " * (14 - len(cap_text))
 
         # Print row
-        print(f"{Colors.CYAN}|{Colors.ENDC} {Colors.CYAN}{name_display}{Colors.ENDC}"
-              f"{name_padding}{cap_text}{cap_padding}{status_icon} {status_text}")
+        print(
+            f"{Colors.CYAN}|{Colors.ENDC} {Colors.CYAN}{name_display}{Colors.ENDC}"
+            f"{name_padding}{cap_text}{cap_padding}{status_icon} {status_text}"
+        )
 
     # Print footer
     print(f"{Colors.CYAN}|{Colors.ENDC}")
@@ -574,6 +860,427 @@ def cmd_agent_list(args):
     print(f"  pg agent validate <name>  - Check for configuration issues")
     print(f"  pg agent clone <src> <dst> - Duplicate an agent")
 
+    # Discoverable-but-not-installed bundled agents ride the same view, so a
+    # discipline's agent is visible before `pg init`/install (UI-first, §5.7).
+    _print_available_agents(agents_dir)
+
+    return 0
+
+
+def cmd_home_menu(args):
+    """Top-level interactive home menu (§5.7) — bare ``pg`` in a TTY.
+
+    The UI-first entry point to the whole tool: navigate to project status,
+    the capability/agent browsers, tickets, or a release readiness check,
+    instead of reading a static command list. The caller (``cli.app``) only
+    routes here when interactive and ``questionary`` is importable; without a
+    TTY it keeps the classic splash/command list, so scripts/CI are unaffected.
+    """
+    from .modules.engineering import status_commands
+
+    import questionary  # caller guarantees this import succeeds
+
+    routes = [
+        ("Status — current project state", "status"),
+        ("Capabilities — browse skills / workflows / commands", "capabilities"),
+        ("Agents — browse installed + available", "agents"),
+        (
+            "Orchestration — browse paradigms (how sub-agents are distributed)",
+            "paradigms",
+        ),
+        ("Tickets — list active", "tickets"),
+        ("Release — readiness for a label", "release"),
+    ]
+
+    while True:
+        choices = [questionary.Choice(label, value=key) for label, key in routes]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select("Proto Gear — where to?", choices=choices).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        if selection == "status":
+            status_commands.cmd_status(_args_ns(json=False))
+        elif selection == "capabilities":
+            cmd_capabilities_browse(_args_ns(capabilities_command=None))
+        elif selection == "agents":
+            cmd_agent_browse(_args_ns(agent_command=None))
+        elif selection == "tickets":
+            status_commands.cmd_ticket_list(_args_ns(status="", json=False))
+        elif selection == "paradigms":
+            cmd_orchestration_browse(_args_ns(orchestration_command=None))
+        elif selection == "release":
+            label = questionary.text("Release label (e.g. v0.10.0):").ask()
+            if label and label.strip():
+                cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
+
+
+# ============================================================================
+# Orchestration Paradigm Commands (the paradigm pool)
+# ============================================================================
+
+
+def _collect_paradigm_entries(project_dir: Optional[Path] = None) -> List[dict]:
+    """Assemble the paradigm pool for browse/list. Pure data (unit-testable).
+
+    Each entry: ``id``, ``name``, ``description``, ``roles`` (list of
+    ``(role, model_tier)``), ``selectable_by``, ``installed`` (bool — a project
+    copy exists under ``.proto-gear/orchestration/``), ``module`` (source).
+    """
+    from . import orchestration_config
+    from .module_core import module_host
+
+    project_dir = Path(project_dir) if project_dir is not None else Path(".")
+    installed_dir = project_dir / ".proto-gear" / "orchestration"
+    installed_stems = (
+        {p.stem for p in installed_dir.glob("*.yaml")}
+        if installed_dir.is_dir()
+        else set()
+    )
+    source_module = {
+        r["name"]: r["module"] for r in module_host.list_bundled_paradigms()
+    }
+
+    entries: List[dict] = []
+    for p in orchestration_config.load_paradigms(project_dir=project_dir):
+        entries.append(
+            {
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "roles": [(r.role, r.model_tier) for r in p.roles],
+                "selectable_by": p.selectable_by,
+                "installed": p.id in installed_stems,
+                "module": source_module.get(p.id),
+            }
+        )
+    return entries
+
+
+def _paradigm_entry_label(entry: dict) -> str:
+    """One-line label for a paradigm in the browse list."""
+    roles = ", ".join(f"{role}·{tier}" for role, tier in entry["roles"])
+    installed = f" {Colors.GRAY}[installed]{Colors.ENDC}" if entry["installed"] else ""
+    tail = f" — {entry['description']}" if entry["description"] else ""
+    return f"{Colors.CYAN}{entry['id']}{Colors.ENDC} {Colors.GRAY}({roles}){Colors.ENDC}{installed}{tail}"
+
+
+def cmd_orchestration_list(args):
+    """List orchestration paradigms in the pool (bundled + installed overrides)."""
+    import json as _json
+
+    entries = _collect_paradigm_entries()
+
+    if getattr(args, "json", False):
+        print(_json.dumps({"paradigms": entries}, indent=2))
+        return 0
+
+    if not entries:
+        print(f"{Colors.YELLOW}No orchestration paradigms found.{Colors.ENDC}")
+        return 0
+
+    print(
+        f"\n{Colors.HEADER}Orchestration paradigms{Colors.ENDC} "
+        f"{Colors.GRAY}(how sub-agents are distributed — pick and switch on the fly){Colors.ENDC}\n"
+    )
+    for e in entries:
+        print(f"  {_paradigm_entry_label(e)}")
+    print(f"\n{Colors.GRAY}pg orchestration show <id>   - full details{Colors.ENDC}")
+    return 0
+
+
+def cmd_orchestration_show(args):
+    """Show detailed information about one orchestration paradigm."""
+    import json as _json
+    from . import orchestration_config
+
+    paradigm_id = args.id
+    pool = {p.id: p for p in orchestration_config.load_paradigms(project_dir=Path("."))}
+    paradigm = pool.get(paradigm_id)
+
+    if paradigm is None:
+        print(f"{Colors.FAIL}Paradigm not found: '{paradigm_id}'{Colors.ENDC}\n")
+        suggestions = get_close_matches(paradigm_id, list(pool), n=3, cutoff=0.5)
+        if suggestions:
+            print(f"{Colors.BOLD}Did you mean:{Colors.ENDC}")
+            for s in suggestions:
+                print(f"  - {s}")
+            print()
+        print("Use 'pg orchestration list' to see the pool")
+        return 1
+
+    if getattr(args, "json", False):
+        print(_json.dumps(paradigm.to_dict(), indent=2))
+        return 0
+
+    print(f"\n{Colors.HEADER}=== {paradigm.name} ({paradigm.id}) ==={Colors.ENDC}\n")
+    print(f"{paradigm.description}\n")
+
+    if paradigm.roles:
+        print(f"{Colors.CYAN}Roles:{Colors.ENDC}")
+        for r in paradigm.roles:
+            slot = f" [agent: {r.agent}]" if r.agent else ""
+            print(
+                f"  - {r.role} {Colors.GRAY}(tier: {r.model_tier}){Colors.ENDC}{slot}"
+            )
+            if r.responsibility:
+                print(f"      {r.responsibility}")
+
+    if paradigm.when_to_use:
+        print(f"\n{Colors.CYAN}When to use:{Colors.ENDC}")
+        for item in paradigm.when_to_use:
+            print(f"  + {item}")
+    if paradigm.avoid_when:
+        print(f"\n{Colors.CYAN}Avoid when:{Colors.ENDC}")
+        for item in paradigm.avoid_when:
+            print(f"  - {item}")
+    if paradigm.coordination:
+        print(
+            f"\n{Colors.CYAN}Coordination:{Colors.ENDC}\n  {paradigm.coordination.strip()}"
+        )
+    if paradigm.efficiency:
+        print(
+            f"\n{Colors.CYAN}Efficiency:{Colors.ENDC}\n  {paradigm.efficiency.strip()}"
+        )
+    print(
+        f"\n{Colors.GRAY}Selectable by: {', '.join(paradigm.selectable_by)}{Colors.ENDC}"
+    )
+    return 0
+
+
+def cmd_orchestration_install(args):
+    """Install one bundled paradigm into .proto-gear/orchestration/ to customise."""
+    from .module_core import module_host
+
+    proto_gear_dir = Path(".proto-gear")
+    if not proto_gear_dir.is_dir():
+        print(f"{Colors.FAIL}No .proto-gear/ here — run 'pg init' first.{Colors.ENDC}")
+        return 1
+
+    result = module_host.install_bundled_paradigm(args.id, proto_gear_dir)
+    for err in result["errors"]:
+        print(f"{Colors.FAIL}{err}{Colors.ENDC}")
+    if result["errors"]:
+        print(f"\nUse 'pg orchestration list' to see the pool")
+        return 1
+
+    print(f"{Colors.GREEN}Installed paradigm: {result['installed']}{Colors.ENDC}")
+    print(f"  pg orchestration show {Path(result['installed']).stem}  - view it")
+    return 0
+
+
+def cmd_orchestration_browse(args):
+    """Interactive browse/select UI over the orchestration paradigm pool (§5.7).
+
+    UI-first entry for bare ``pg orchestration``: navigate the pool and inspect a
+    paradigm (and install it for project customisation). Degrades to the static
+    ``pg orchestration list`` without a TTY or ``questionary``.
+    """
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    if not interactive or questionary is None:
+        return cmd_orchestration_list(args)
+
+    while True:
+        entries = _collect_paradigm_entries()
+        if not entries:
+            print(f"{Colors.YELLOW}No orchestration paradigms found.{Colors.ENDC}")
+            return 0
+
+        choices = [
+            questionary.Choice(_paradigm_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Orchestration paradigms — pick one to view:",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        cmd_orchestration_show(_args_ns(id=entry["id"], json=False))
+        if not entry["installed"]:
+            confirm = questionary.confirm(
+                f"Install '{entry['id']}' into .proto-gear/orchestration/ to customise?",
+                default=False,
+            ).ask()
+            if confirm:
+                cmd_orchestration_install(_args_ns(id=entry["id"]))
+
+
+def _collect_agent_entries(agents_dir: Path, caps_dir: Path) -> List[dict]:
+    """Assemble the unified browse list: installed agents + available bundled ones.
+
+    Pure data (no I/O prompts) so it is unit-testable. Each entry is a dict:
+    ``kind`` (``installed`` | ``available``), ``name``, ``description``,
+    ``module`` (source, ``None`` for shared/installed) and, for installed
+    agents, a validation ``status`` (``valid`` / ``warnings`` / ``invalid`` /
+    ``error``). Installed first, then available — mirroring `pg agent list`.
+    """
+    from .module_core import module_host
+
+    entries: List[dict] = []
+
+    if agents_dir.exists():
+        try:
+            manager = AgentManager(agents_dir, caps_dir)
+            for agent in manager.list_agents():
+                try:
+                    errors, warnings = manager.validate_agent(agent)
+                    status = (
+                        "invalid" if errors else "warnings" if warnings else "valid"
+                    )
+                except Exception:
+                    status = "error"
+                entries.append(
+                    {
+                        "kind": "installed",
+                        "name": agent.name,
+                        "description": agent.description or "",
+                        "module": None,
+                        "status": status,
+                        "tier": agent.model.tier,
+                    }
+                )
+        except Exception:
+            pass  # a broken agents dir shouldn't hide the available ones
+
+    installed_stems = (
+        {p.stem for p in agents_dir.glob("*.yaml")} if agents_dir.exists() else set()
+    )
+    for r in module_host.list_bundled_agents():
+        if r["name"] in installed_stems:
+            continue
+        entries.append(
+            {
+                "kind": "available",
+                "name": r["name"],
+                "description": r["description"] or "",
+                "module": r["module"],
+                "status": None,
+            }
+        )
+    return entries
+
+
+def _agent_entry_label(entry: dict) -> str:
+    """One-line label for an agent entry in the browse list."""
+    if entry["kind"] == "installed":
+        badge = {
+            "valid": f"{Colors.GREEN}[OK]{Colors.ENDC}",
+            "warnings": f"{Colors.WARNING}[!]{Colors.ENDC}",
+            "invalid": f"{Colors.FAIL}[X]{Colors.ENDC}",
+            "error": f"{Colors.FAIL}[X]{Colors.ENDC}",
+        }.get(entry["status"], "")
+        tier = entry.get("tier")
+        tier_badge = f" {Colors.GRAY}·{tier}{Colors.ENDC}" if tier else ""
+        tail = f" — {entry['description']}" if entry["description"] else ""
+        return f"{badge} {entry['name']}{tier_badge}{tail}"
+    source = entry["module"] or "shared"
+    tail = f" — {entry['description']}" if entry["description"] else ""
+    return f"{Colors.CYAN}+ {entry['name']}{Colors.ENDC} {Colors.GRAY}[{source}, not installed]{Colors.ENDC}{tail}"
+
+
+def cmd_agent_browse(args):
+    """Interactive browse/select UI over installed + available agents (§5.7).
+
+    UI-first entry point for ``pg agent`` with no subcommand: navigate the
+    catalog and pick an agent to inspect (and install, if it's a bundled one not
+    yet here). Degrades gracefully — without a TTY or without ``questionary``
+    it falls back to the classic ``pg agent list`` so scripts/CI are unaffected.
+    """
+    agents_dir = get_agents_dir()
+    caps_dir = get_capabilities_dir()
+
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    # Non-interactive (piped/CI) or no questionary: the static list is correct.
+    if not interactive or questionary is None:
+        return cmd_agent_list(args)
+
+    while True:
+        entries = _collect_agent_entries(agents_dir, caps_dir)
+        if not entries:
+            print(
+                f"{Colors.YELLOW}No agents installed or available.{Colors.ENDC} "
+                f"Run 'pg init' to scaffold, or 'pg agent create <name>'."
+            )
+            return 0
+
+        choices = [
+            questionary.Choice(_agent_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Agents — installed + available (select to view):",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        if entry["kind"] == "installed":
+            cmd_agent_show(_args_ns(name=entry["name"]))
+        else:
+            _show_available_agent(entry)
+            confirm = questionary.confirm(
+                f"Install '{entry['name']}' into .proto-gear/agents/?",
+                default=False,
+            ).ask()
+            if confirm:
+                cmd_agent_install(_args_ns(name=entry["name"]))
+
+
+def _show_available_agent(entry: dict) -> None:
+    """Print the summary of a bundled agent that isn't installed yet."""
+    source = entry["module"] or "shared"
+    print(f"\n{Colors.HEADER}=== {entry['name']} ==={Colors.ENDC}\n")
+    print(f"Source: {source}")
+    print(f"Status: {Colors.YELLOW}not installed{Colors.ENDC}")
+    if entry["description"]:
+        print(f"\n{Colors.CYAN}Description:{Colors.ENDC}\n  {entry['description']}")
+    print()
+
+
+def _args_ns(**kw):
+    """Small argparse.Namespace shim for dispatching to sibling handlers."""
+    import argparse
+
+    return argparse.Namespace(**kw)
+
+
+def cmd_agent_install(args):
+    """Install one bundled agent (shared or discipline-shipped) on demand."""
+    from .module_core import module_host
+
+    proto_gear_dir = Path(".proto-gear")
+    if not proto_gear_dir.is_dir():
+        print(f"{Colors.FAIL}No .proto-gear/ here — run 'pg init' first.{Colors.ENDC}")
+        return 1
+
+    result = module_host.install_bundled_agent(args.name, proto_gear_dir)
+    for err in result["errors"]:
+        print(f"{Colors.FAIL}{err}{Colors.ENDC}")
+    if result["errors"]:
+        print(f"\nUse 'pg agent list --available' to see installable agents")
+        return 1
+
+    print(f"{Colors.GREEN}Installed agent: {result['installed']}{Colors.ENDC}")
+    print(f"  pg agent show {Path(result['installed']).stem}  - view it")
     return 0
 
 
@@ -619,6 +1326,13 @@ def cmd_agent_show(args):
 
     print(f"\n{Colors.CYAN}Description:{Colors.ENDC}")
     print(f"  {agent.description}")
+
+    # Model (declared tier the host honours; optional concrete override)
+    model_line = f"  Tier: {agent.model.tier}"
+    if agent.model.override:
+        model_line += f"  (override: {agent.model.override})"
+    print(f"\n{Colors.CYAN}Model:{Colors.ENDC}")
+    print(model_line)
 
     # Capabilities
     print(f"\n{Colors.CYAN}Capabilities:{Colors.ENDC}")
@@ -710,7 +1424,9 @@ def cmd_agent_validate(args):
     if not errors and not warnings:
         print(f"{Colors.GREEN}Agent configuration is valid!{Colors.ENDC}")
     elif not errors:
-        print(f"{Colors.GREEN}Agent configuration is valid (with warnings){Colors.ENDC}")
+        print(
+            f"{Colors.GREEN}Agent configuration is valid (with warnings){Colors.ENDC}"
+        )
     else:
         print(f"{Colors.FAIL}Agent configuration has errors{Colors.ENDC}")
         return 1
@@ -736,9 +1452,11 @@ def cmd_agent_delete(args):
 
     # Confirm deletion unless --force
     if not args.force:
-        print(f"{Colors.WARNING}Are you sure you want to delete agent '{agent_name}'?{Colors.ENDC}")
+        print(
+            f"{Colors.WARNING}Are you sure you want to delete agent '{agent_name}'?{Colors.ENDC}"
+        )
         response = input(f"Type 'yes' to confirm: ").strip().lower()
-        if response != 'yes':
+        if response != "yes":
             print(f"{Colors.YELLOW}Deletion cancelled.{Colors.ENDC}")
             return 0
 
@@ -755,7 +1473,9 @@ def cmd_agent_delete(args):
         return 1
 
 
-def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[AgentConfiguration]:
+def _create_from_template(
+    args, agents_dir: Path, caps_dir: Path
+) -> Optional[AgentConfiguration]:
     """
     Create agent from template.
 
@@ -770,9 +1490,11 @@ def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[Ag
     from .agent_templates import create_agent_from_template, get_template
 
     template_name = args.template
-    agent_name = args.name if hasattr(args, 'name') and args.name else None
-    author = args.author if hasattr(args, 'author') and args.author else None
-    description = args.description if hasattr(args, 'description') and args.description else None
+    agent_name = args.name if hasattr(args, "name") and args.name else None
+    author = args.author if hasattr(args, "author") and args.author else None
+    description = (
+        args.description if hasattr(args, "description") and args.description else None
+    )
 
     # Check if template exists
     template = get_template(template_name)
@@ -789,7 +1511,9 @@ def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[Ag
         if description:
             agent.description = description
 
-        print(f"\n{Colors.GREEN}[OK] Agent created from template: {template_name}{Colors.ENDC}")
+        print(
+            f"\n{Colors.GREEN}[OK] Agent created from template: {template_name}{Colors.ENDC}"
+        )
         print(f"  Name: {agent.name}")
         print(f"  Capabilities: {len(agent.capabilities.all_capabilities())}")
 
@@ -800,7 +1524,9 @@ def _create_from_template(args, agents_dir: Path, caps_dir: Path) -> Optional[Ag
         return None
 
 
-def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[AgentConfiguration]:
+def _create_quick_agent(
+    args, agents_dir: Path, caps_dir: Path
+) -> Optional[AgentConfiguration]:
     """
     Create agent from command-line arguments (quick mode).
 
@@ -815,7 +1541,7 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
     from datetime import datetime
 
     # Validate required arguments
-    if not hasattr(args, 'name') or not args.name:
+    if not hasattr(args, "name") or not args.name:
         print(f"{Colors.FAIL}Agent name is required in quick mode{Colors.ENDC}")
         print(f"Usage: pg agent create <name> --capabilities cap1,cap2,cap3")
         return None
@@ -826,7 +1552,7 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
         return None
 
     # Parse capabilities (comma-separated)
-    cap_list = [c.strip() for c in args.capabilities.split(',')]
+    cap_list = [c.strip() for c in args.capabilities.split(",")]
 
     # Load all capabilities for validation
     try:
@@ -858,7 +1584,7 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
             if cap in all_caps:
                 metadata = all_caps[cap]
                 # Extract short name from full path if needed
-                short_name = cap.split('/')[-1] if '/' in cap else cap
+                short_name = cap.split("/")[-1] if "/" in cap else cap
                 if metadata.type.value == "skill":
                     skills.append(short_name)
                 elif metadata.type.value == "workflow":
@@ -877,11 +1603,14 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
         return None
 
     # Get description
-    description = args.description if hasattr(args, 'description') and args.description else \
-                 f"Custom agent with {len(cap_list)} capabilities"
+    description = (
+        args.description
+        if hasattr(args, "description") and args.description
+        else f"Custom agent with {len(cap_list)} capabilities"
+    )
 
     # Get author
-    author = args.author if hasattr(args, 'author') and args.author else "User"
+    author = args.author if hasattr(args, "author") and args.author else "User"
 
     # Create agent configuration
     agent = AgentConfiguration(
@@ -891,22 +1620,22 @@ def _create_quick_agent(args, agents_dir: Path, caps_dir: Path) -> Optional[Agen
         created=datetime.now().strftime("%Y-%m-%d"),
         author=author,
         capabilities=AgentCapabilities(
-            skills=skills,
-            workflows=workflows,
-            commands=commands
+            skills=skills, workflows=workflows, commands=commands
         ),
         context_priority=["PROJECT_STATUS.md", "AGENTS.md"],
         agent_instructions=[],
         required_files=["PROJECT_STATUS.md", "AGENTS.md"],
         optional_files=[],
         tags=["custom", "quick-create"],
-        status="active"
+        status="active",
     )
 
     print(f"\n{Colors.GREEN}[OK] Quick agent created{Colors.ENDC}")
     print(f"  Name: {agent.name}")
-    print(f"  Capabilities: {len(agent.capabilities.all_capabilities())} " +
-          f"({len(skills)} skills, {len(workflows)} workflows, {len(commands)} commands)")
+    print(
+        f"  Capabilities: {len(agent.capabilities.all_capabilities())} "
+        + f"({len(skills)} skills, {len(workflows)} workflows, {len(commands)} commands)"
+    )
 
     return agent
 
@@ -926,19 +1655,41 @@ def cmd_agent_clone(args):
 
         # Create cloned agent with new name
         from datetime import datetime
+
         cloned_agent = AgentConfiguration(
             name=dest_name,
             version=source_agent.version,
-            description=args.description if hasattr(args, 'description') and args.description else f"Cloned from {source_name}",
+            description=(
+                args.description
+                if hasattr(args, "description") and args.description
+                else f"Cloned from {source_name}"
+            ),
             created=datetime.now().strftime("%Y-%m-%d"),
             author=source_agent.author,
             capabilities=source_agent.capabilities,
-            context_priority=source_agent.context_priority.copy() if source_agent.context_priority else [],
-            agent_instructions=source_agent.agent_instructions.copy() if source_agent.agent_instructions else [],
-            required_files=source_agent.required_files.copy() if source_agent.required_files else [],
-            optional_files=source_agent.optional_files.copy() if source_agent.optional_files else [],
+            model=source_agent.model,
+            context_priority=(
+                source_agent.context_priority.copy()
+                if source_agent.context_priority
+                else []
+            ),
+            agent_instructions=(
+                source_agent.agent_instructions.copy()
+                if source_agent.agent_instructions
+                else []
+            ),
+            required_files=(
+                source_agent.required_files.copy()
+                if source_agent.required_files
+                else []
+            ),
+            optional_files=(
+                source_agent.optional_files.copy()
+                if source_agent.optional_files
+                else []
+            ),
             tags=source_agent.tags.copy() if source_agent.tags else [],
-            status=source_agent.status
+            status=source_agent.status,
         )
 
         # Save cloned agent
@@ -972,17 +1723,18 @@ def cmd_agent_create(args):
     agents_dir.mkdir(parents=True, exist_ok=True)
 
     # Handle --list-templates flag
-    if hasattr(args, 'list_templates') and args.list_templates:
+    if hasattr(args, "list_templates") and args.list_templates:
         from .agent_templates import print_available_templates
+
         print_available_templates()
         return 0
 
     # Quick mode: --template or --capabilities
-    if hasattr(args, 'template') and args.template:
+    if hasattr(args, "template") and args.template:
         agent = _create_from_template(args, agents_dir, caps_dir)
         if not agent:
             return 1
-    elif hasattr(args, 'capabilities') and args.capabilities:
+    elif hasattr(args, "capabilities") and args.capabilities:
         agent = _create_quick_agent(args, agents_dir, caps_dir)
         if not agent:
             return 1
@@ -1011,8 +1763,14 @@ def cmd_agent_create(args):
     # Check if file already exists
     agent_file = agents_dir / agent_filename
     if agent_file.exists():
-        overwrite = input(f"\n{Colors.WARNING}Agent file already exists. Overwrite? (yes/no): {Colors.ENDC}").strip().lower()
-        if overwrite != 'yes':
+        overwrite = (
+            input(
+                f"\n{Colors.WARNING}Agent file already exists. Overwrite? (yes/no): {Colors.ENDC}"
+            )
+            .strip()
+            .lower()
+        )
+        if overwrite != "yes":
             print(f"{Colors.YELLOW}Agent not saved{Colors.ENDC}")
             return 0
 
@@ -1040,6 +1798,7 @@ def cmd_agent_create(args):
 # Template Update Commands
 # ============================================================================
 
+
 def cmd_template_update(args):
     """
     Update template files while preserving user data.
@@ -1047,25 +1806,28 @@ def cmd_template_update(args):
     Safely updates AGENTS.md and PROJECT_STATUS.md to latest template
     versions while preserving tickets, metrics, and custom configurations.
     """
-    from .template_updater import TemplateUpdater, TemplateUpdateError
+    from .modules.engineering.template_updater import (
+        TemplateUpdater,
+        TemplateUpdateError,
+    )
     import os
 
     # Get templates to update
     if args.templates and len(args.templates) > 0:
         # User specified which templates
-        template_names = [t.replace('.md', '') for t in args.templates]
+        template_names = [t.replace(".md", "") for t in args.templates]
     else:
         # Update all supported templates
-        template_names = ['PROJECT_STATUS', 'AGENTS']
+        template_names = ["PROJECT_STATUS", "AGENTS"]
 
     # Build project context for placeholders
     project_dir = Path.cwd()
     project_context = {
-        'PROJECT_NAME': project_dir.name,
-        'TICKET_PREFIX': _detect_ticket_prefix(project_dir),
-        'VERSION': _get_protogear_version(),
-        'MAIN_BRANCH': 'main',
-        'DEV_BRANCH': 'development',
+        "PROJECT_NAME": project_dir.name,
+        "TICKET_PREFIX": _detect_ticket_prefix(project_dir),
+        "VERSION": _get_protogear_version(),
+        "MAIN_BRANCH": "main",
+        "DEV_BRANCH": "development",
     }
 
     # Initialize updater
@@ -1095,20 +1857,25 @@ def cmd_template_update(args):
         try:
             # Perform update
             result = updater.update_template(
-                template_name,
-                project_context,
-                dry_run=args.dry_run,
-                force=args.force
+                template_name, project_context, dry_run=args.dry_run, force=args.force
             )
 
             # Report result
             if result.success:
                 if args.dry_run:
-                    print(f"{Colors.CYAN}[DRY RUN] {filename} - Would update{Colors.ENDC}")
-                    print(f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines")
+                    print(
+                        f"{Colors.CYAN}[DRY RUN] {filename} - Would update{Colors.ENDC}"
+                    )
+                    print(
+                        f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines"
+                    )
                 else:
-                    print(f"{Colors.GREEN}[OK] {filename} - Updated successfully{Colors.ENDC}")
-                    print(f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines")
+                    print(
+                        f"{Colors.GREEN}[OK] {filename} - Updated successfully{Colors.ENDC}"
+                    )
+                    print(
+                        f"  Changes: {Colors.GREEN}+{result.lines_added}{Colors.ENDC} / {Colors.FAIL}-{result.lines_removed}{Colors.ENDC} lines"
+                    )
                     if result.backup_created:
                         print(f"  Backup: {result.backup_path.name}")
 
@@ -1129,7 +1896,9 @@ def cmd_template_update(args):
             print(f"{Colors.FAIL}[ERROR] {filename} - {e}{Colors.ENDC}")
             error_count += 1
         except Exception as e:
-            print(f"{Colors.FAIL}[ERROR] {filename} - Unexpected error: {e}{Colors.ENDC}")
+            print(
+                f"{Colors.FAIL}[ERROR] {filename} - Unexpected error: {e}{Colors.ENDC}"
+            )
             error_count += 1
 
     # Summary
@@ -1163,13 +1932,14 @@ def _detect_ticket_prefix(project_dir: Path) -> str:
     status_file = project_dir / "PROJECT_STATUS.md"
     if status_file.exists():
         try:
-            content = status_file.read_text(encoding='utf-8')
+            content = status_file.read_text(encoding="utf-8")
             # Look for ticket IDs in completed tickets table
             import re
-            matches = re.findall(r'\|\s*([A-Z]+-\d+)\s*\|', content)
+
+            matches = re.findall(r"\|\s*([A-Z]+-\d+)\s*\|", content)
             if matches:
                 # Extract prefix from first match
-                prefix = matches[0].split('-')[0]
+                prefix = matches[0].split("-")[0]
                 return prefix
         except Exception:
             pass
@@ -1185,6 +1955,436 @@ def _get_protogear_version() -> str:
     """
     try:
         from . import __version__
+
         return __version__
     except Exception:
         return "0.8.1"  # Fallback
+
+
+# ---------------------------------------------------------------------------
+# Departmental modules (ADR-001 Phase B)
+# ---------------------------------------------------------------------------
+
+
+def cmd_module_list(args):
+    """List departmental modules discovered from module.yaml manifests."""
+    from .module_core import module_manifest
+
+    try:
+        modules = module_manifest.discover_modules()
+    except module_manifest.ModuleManifestError as e:
+        print(f"{Colors.FAIL}Error loading module manifests: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps([m.to_dict() for m in modules], indent=2))
+        return 0
+
+    if not modules:
+        print(f"{Colors.YELLOW}No departmental modules found.{Colors.ENDC}")
+        return 0
+
+    print(f"{Colors.BOLD}{Colors.CYAN}Departmental modules{Colors.ENDC}")
+    for m in modules:
+        print(
+            f"  {Colors.GREEN}{m.module}{Colors.ENDC} "
+            f"{Colors.GRAY}v{m.version}{Colors.ENDC} — {m.name}"
+        )
+        if m.description:
+            print(f"      {Colors.GRAY}{m.description.strip()}{Colors.ENDC}")
+    return 0
+
+
+def cmd_module_show(args):
+    """Show a single departmental module's manifest details."""
+    from .module_core import module_manifest
+
+    try:
+        modules = module_manifest.discover_modules()
+    except module_manifest.ModuleManifestError as e:
+        print(f"{Colors.FAIL}Error loading module manifests: {e}{Colors.ENDC}")
+        return 1
+
+    by_id = {m.module: m for m in modules}
+    manifest = by_id.get(args.name)
+    if manifest is None:
+        print(f"{Colors.FAIL}Module '{args.name}' not found.{Colors.ENDC}")
+        available = ", ".join(sorted(by_id)) or "(none)"
+        print(f"{Colors.GRAY}Available: {available}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps(manifest.to_dict(), indent=2))
+        return 0
+
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}{manifest.name}{Colors.ENDC} "
+        f"{Colors.GRAY}({manifest.module} v{manifest.version}){Colors.ENDC}"
+    )
+    if manifest.description:
+        print(f"  {manifest.description.strip()}")
+    print(f"\n  {Colors.BOLD}Contract surfaces{Colors.ENDC}")
+    print(f"    capabilities_root : {manifest.capabilities_root}")
+    print(
+        f"    state_surface     : {manifest.state_surface or Colors.GRAY + '(none)' + Colors.ENDC}"
+    )
+    print(f"    context_manifest  : {manifest.context_manifest}")
+    print(
+        f"    handoff           : {manifest.handoff or Colors.GRAY + '(none)' + Colors.ENDC}"
+    )
+    return 0
+
+
+def cmd_pipeline(args):
+    """Show the cross-discipline supervision pipeline (Phase D).
+
+    Composes every discipline's declared supervision gates into the org's path
+    to production, grouped by the action each gate guards — surfacing where
+    disciplines converge on the same control point.
+    """
+    from .module_core import pipeline
+
+    try:
+        stages = pipeline.build_pipeline()
+    except Exception as e:
+        print(f"{Colors.FAIL}Error building pipeline: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps({"stages": stages}, indent=2))
+        return 0
+
+    if not stages:
+        print(f"{Colors.YELLOW}No supervision gates declared.{Colors.ENDC}")
+        return 0
+
+    disciplines = sorted({g["discipline"] for s in stages for g in s["gates"]})
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Supervision pipeline{Colors.ENDC} — path to production"
+    )
+    print(
+        f"{Colors.GRAY}Human approval gates across {len(disciplines)} disciplines "
+        f"({', '.join(disciplines)}), grouped by the action they guard.{Colors.ENDC}\n"
+    )
+    for stage in stages:
+        gates = stage["gates"]
+        converge = (
+            f"  {Colors.YELLOW}← {len({g['discipline'] for g in gates})} disciplines converge{Colors.ENDC}"
+            if len({g["discipline"] for g in gates}) > 1
+            else ""
+        )
+        print(f"{Colors.BOLD}before {stage['action']}{Colors.ENDC}{converge}")
+        for g in gates:
+            req = "required" if g["required"] else "optional"
+            auth = g.get("authority", "human")
+            auth_note = f", authority: {auth}" if auth != "human" else ""
+            actor_note = f", actor: {g['actor']}" if g.get("actor") else ""
+            print(
+                f"  {Colors.GREEN}{g['gate']}{Colors.ENDC} "
+                f"{Colors.GRAY}[{g['discipline']}]{Colors.ENDC} "
+                f"— {g['approver']}, {req}{auth_note}{actor_note} "
+                f"{Colors.GRAY}({g['workflow']}){Colors.ENDC}"
+            )
+        print()
+    return 0
+
+
+def cmd_trace(args):
+    """Trace a change (engineering ticket id) across discipline state surfaces.
+
+    Phase D-2: follows the ticket-id correlation key through each discipline's
+    declared state_surface, showing where the change stands (engineering ticket
+    → qa sign-off → prod deploy) and which supervision approvals have cleared.
+    """
+    from .module_core import trace
+
+    change_id = args.change_id
+    try:
+        hits = trace.trace_change(change_id, Path("."))
+        checklist = trace.gate_checklist(change_id, Path("."))
+    except Exception as e:
+        print(f"{Colors.FAIL}Error tracing change: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(
+            json.dumps(
+                {"change": change_id, "hits": hits, "gates": checklist}, indent=2
+            )
+        )
+        return 0
+
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Trace {change_id}{Colors.ENDC} "
+        f"{Colors.GRAY}— cross-discipline{Colors.ENDC}"
+    )
+    if not hits:
+        print(
+            f"\n{Colors.YELLOW}No state-surface rows reference '{change_id}'.{Colors.ENDC}"
+        )
+        print(
+            f"{Colors.GRAY}Downstream disciplines link a change via a 'Ref' column "
+            f"in their state surface.{Colors.ENDC}"
+        )
+        return 0
+
+    for h in hits:
+        mark = ""
+        if h["approval_state"] == "cleared":
+            mark = f"  {Colors.GREEN}[approved: {h['approval'].strip()}]{Colors.ENDC}"
+        elif h["approval_state"] == "pending":
+            mark = f"  {Colors.YELLOW}[approval pending]{Colors.ENDC}"
+        row_id = h["id"] or "(no id)"
+        stage = h["stage"] or "—"
+        print(
+            f"  {Colors.GREEN}{h['discipline']:<12}{Colors.ENDC} "
+            f"{row_id:<14} {stage:<12}{mark} "
+            f"{Colors.GRAY}({h['surface']}){Colors.ENDC}"
+        )
+
+    # Required-approval checklist: which gates on the path to production this
+    # change has cleared vs still lacks (Phase D-3). Release-scoped gates aren't
+    # a single ticket's to clear — they're verified once via `pg release`.
+    required = [g for g in checklist if g["required"] and g.get("scope") != "release"]
+    release_scoped = [
+        g for g in checklist if g["required"] and g.get("scope") == "release"
+    ]
+    if required:
+        cleared = sum(1 for g in required if g["status"] == "cleared")
+        print(
+            f"\n{Colors.BOLD}Required approvals{Colors.ENDC} "
+            f"{Colors.GRAY}(path to production){Colors.ENDC} "
+            f"— {Colors.GREEN}{cleared}{Colors.ENDC}/{len(required)} cleared"
+        )
+        _marks = {
+            "cleared": f"{Colors.GREEN}[x]{Colors.ENDC}",
+            "pending": f"{Colors.YELLOW}[~]{Colors.ENDC}",
+            "outstanding": f"{Colors.GRAY}[ ]{Colors.ENDC}",
+            "untracked": f"{Colors.GRAY}[-]{Colors.ENDC}",
+        }
+        _labels = {
+            "cleared": "cleared",
+            "pending": "pending",
+            "outstanding": "not reached",
+            "untracked": "not recorded in surface",
+        }
+        for g in required:
+            # ADR-002 item 3: a cleared gate whose only signers are agent
+            # identities, when the gate demands a human rung, is flagged.
+            insufficient = (
+                f" {Colors.WARNING}!! agent-signed ({', '.join(g['signed_by'])}) "
+                f"— requires {g['authority']}{Colors.ENDC}"
+                if g.get("authority_ok") is False
+                else ""
+            )
+            print(
+                f"  {_marks[g['status']]} {g['gate']:<22} "
+                f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC} "
+                f"— {_labels[g['status']]}{insufficient}"
+            )
+    if release_scoped:
+        gates = ", ".join(sorted({g["gate"] for g in release_scoped}))
+        print(
+            f"\n{Colors.GRAY}Release-scoped gates ({gates}) are cleared per "
+            f"release, not per ticket — verify with `pg release <label>`.{Colors.ENDC}"
+        )
+    return 0
+
+
+def cmd_release(args):
+    """Trace a whole release across its tickets (Phase D-4).
+
+    A release ships only when every one of its tickets has cleared every required
+    approval on the path to production. This aggregates each ticket's gate
+    checklist (`pg trace`) into a single readiness verdict, listing which tickets
+    still block and on which gates. Membership is read from the disciplines'
+    state surfaces via a release column (PR/Commit / Release / Version).
+    """
+    from .module_core import release
+
+    release_id = args.release_id
+
+    # --notes: generate a release-notes block from the cleared gate checklist.
+    if getattr(args, "notes", False):
+        try:
+            notes = release.build_release_notes(release_id, Path("."))
+        except Exception as e:
+            print(f"{Colors.FAIL}Error building release notes: {e}{Colors.ENDC}")
+            return 1
+        if getattr(args, "json", False):
+            import json
+
+            print(json.dumps(notes, indent=2))
+        else:
+            print(release.render_release_notes(notes))
+        return 0
+
+    try:
+        report = release.trace_release(release_id, Path("."))
+    except Exception as e:
+        print(f"{Colors.FAIL}Error tracing release: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps(report, indent=2))
+        return 0
+
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Release {release_id}{Colors.ENDC} "
+        f"{Colors.GRAY}— readiness across {report['ticket_count']} ticket(s){Colors.ENDC}"
+    )
+    if not report["tickets"]:
+        print(
+            f"\n{Colors.YELLOW}No tickets reference release '{release_id}'.{Colors.ENDC}"
+        )
+        print(
+            f"{Colors.GRAY}A ticket joins a release via a 'PR/Commit', 'Release', "
+            f"or 'Version' column in a discipline's state surface.{Colors.ENDC}"
+        )
+        return 0
+
+    _mark = {
+        "cleared": f"{Colors.GREEN}[x]{Colors.ENDC}",
+        "pending": f"{Colors.YELLOW}[~]{Colors.ENDC}",
+        "outstanding": f"{Colors.GRAY}[ ]{Colors.ENDC}",
+        "untracked": f"{Colors.GRAY}[-]{Colors.ENDC}",
+    }
+    for e in report["tickets"]:
+        # Per-ticket rows show change-scoped gates only; release-scoped gates are
+        # listed once for the whole release below.
+        required = [g for g in e["gates"] if g["required"] and g["scope"] != "release"]
+        n_cleared = len(e["cleared"])
+        verdict = (
+            f"{Colors.GREEN}ready{Colors.ENDC}"
+            if e["ready"]
+            else f"{Colors.FAIL}blocked{Colors.ENDC}"
+        )
+        print(
+            f"\n{Colors.BOLD}{e['ticket']}{Colors.ENDC} "
+            f"{Colors.GRAY}({n_cleared}/{e['required_total']} required cleared){Colors.ENDC} "
+            f"— {verdict}"
+        )
+        for g in required:
+            insufficient = (
+                f" {Colors.WARNING}!! agent-signed — requires {g['authority']}{Colors.ENDC}"
+                if g.get("authority_ok") is False
+                else ""
+            )
+            print(
+                f"  {_mark[g['status']]} {g['gate']:<22} "
+                f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC}"
+                f"{insufficient}"
+            )
+
+    # Release-scoped gates — cleared once for the whole release (not per ticket).
+    rg = report.get("release_gates", {})
+    release_scoped = (
+        rg.get("cleared", []) + rg.get("blocking", []) + rg.get("unverified", [])
+    )
+    if release_scoped:
+        print(f"\n{Colors.BOLD}Release-scoped gates{Colors.ENDC}")
+        for g in sorted(release_scoped, key=lambda g: g["gate"]):
+            print(
+                f"  {_mark[g['status']]} {g['gate']:<22} "
+                f"{Colors.GRAY}[{g['discipline']}, before {g['action']}]{Colors.ENDC}"
+            )
+
+    # Release-level verdict.
+    if report["ready"]:
+        head = f"{Colors.BOLD}{Colors.GREEN}READY TO SHIP{Colors.ENDC}"
+        if report["unverified_total"]:
+            head += (
+                f" {Colors.YELLOW}({report['unverified_total']} required approval(s) "
+                f"unverifiable — discipline records no sign-off column){Colors.ENDC}"
+            )
+    else:
+        head = (
+            f"{Colors.BOLD}{Colors.FAIL}BLOCKED{Colors.ENDC} "
+            f"{Colors.GRAY}— {report['blocking_total']} required gate(s) not cleared"
+            f"{Colors.ENDC}"
+        )
+    if report.get("authority_insufficient_total"):
+        head += (
+            f" {Colors.WARNING}!! {report['authority_insufficient_total']} cleared "
+            f"gate(s) signed with insufficient authority (agent-signed, human "
+            f"required){Colors.ENDC}"
+        )
+    print(f"\n{Colors.BOLD}Release {release_id}:{Colors.ENDC} {head}")
+    return 0
+
+
+def cmd_module_init_surface(args):
+    """Materialise the selected module's declared state surface into the project.
+
+    Department-agnostic: renders ``<module>``'s state-surface template (e.g.
+    ``FOO.template.md`` → ``FOO.md``) via the module_host seam. The target
+    module comes from the global ``--module`` flag (default engineering). This
+    is a manifest-only department's counterpart to engineering's richer
+    ``pg init`` (PROTO-048, closes seam S2).
+    """
+    from .module_core import module_host
+    from .module_core.module_manifest import ModuleManifestError
+
+    try:
+        manifest = module_host.resolve_module(getattr(args, "module", None))
+    except ModuleManifestError as e:
+        print(f"{Colors.FAIL}{e}{Colors.ENDC}")
+        return 1
+
+    result = module_host.render_state_surface(
+        manifest,
+        Path("."),
+        force=getattr(args, "force", False),
+        dry_run=getattr(args, "dry_run", False),
+    )
+    status = result["status"]
+    target = result["target"]
+
+    if status == "no-state-surface":
+        print(
+            f"{Colors.YELLOW}Module '{manifest.module}' declares no state surface — "
+            f"nothing to initialise.{Colors.ENDC}"
+        )
+        return 0
+    if status == "no-template":
+        print(
+            f"{Colors.FAIL}No template found for '{target}' in module "
+            f"'{manifest.module}'.{Colors.ENDC}"
+        )
+        return 1
+    if status == "exists":
+        print(
+            f"{Colors.YELLOW}{target} already exists — pass --force to "
+            f"overwrite.{Colors.ENDC}"
+        )
+        return 1
+
+    verb = {
+        "created": "Created",
+        "overwritten": "Overwrote",
+        "would-create": "Would create",
+        "would-overwrite": "Would overwrite",
+    }.get(status, status)
+    print(
+        f"{Colors.GREEN}{verb} {target}{Colors.ENDC} "
+        f"{Colors.GRAY}(module: {manifest.module}){Colors.ENDC}"
+    )
+
+    if result["unresolved"]:
+        tokens = ", ".join(result["unresolved"])
+        print(
+            f"{Colors.YELLOW}Note: unresolved placeholders remain ({tokens}). "
+            f"This module's state surface needs a richer init than the generic "
+            f"renderer provides.{Colors.ENDC}"
+        )
+    return 0

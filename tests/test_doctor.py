@@ -5,7 +5,7 @@ Tests for the doctor module — pg doctor drift detector (PROTO-034).
 import pytest
 from pathlib import Path
 
-from proto_gear_pkg.doctor import (
+from proto_gear_pkg.module_core.doctor import (
     Finding,
     DiagnosticsReport,
     check_agent_context_sync,
@@ -13,12 +13,13 @@ from proto_gear_pkg.doctor import (
     check_core_doc_headers,
     check_capabilities,
     check_capability_indexes,
+    check_modules,
     run_diagnostics,
     fixable_by_sync,
     _normalize,
     CORE_DOC_FILES,
 )
-from proto_gear_pkg.sync_context import (
+from proto_gear_pkg.module_core.sync_context import (
     BEGIN_MARKER,
     END_MARKER,
     HOST_FILES,
@@ -45,23 +46,32 @@ def synced_project(tmp_path):
 
 # ---------- Finding / DiagnosticsReport ----------
 
+
 class TestFinding:
     def test_to_dict_round_trip(self):
-        f = Finding(id="x", severity="warning", target="a.md",
-                    message="m", fix_hint="hint")
+        f = Finding(
+            id="x", severity="warning", target="a.md", message="m", fix_hint="hint"
+        )
         d = f.to_dict()
-        assert d == {"id": "x", "severity": "warning", "target": "a.md",
-                     "message": "m", "fix_hint": "hint"}
+        assert d == {
+            "id": "x",
+            "severity": "warning",
+            "target": "a.md",
+            "message": "m",
+            "fix_hint": "hint",
+        }
 
 
 class TestDiagnosticsReport:
     def test_counts(self):
-        r = DiagnosticsReport(findings=[
-            Finding("a", "ok", "x", "m"),
-            Finding("b", "warning", "y", "m"),
-            Finding("c", "warning", "z", "m"),
-            Finding("d", "error", "w", "m"),
-        ])
+        r = DiagnosticsReport(
+            findings=[
+                Finding("a", "ok", "x", "m"),
+                Finding("b", "warning", "y", "m"),
+                Finding("c", "warning", "z", "m"),
+                Finding("d", "error", "w", "m"),
+            ]
+        )
         assert r.ok == 1
         assert r.warnings == 2
         assert r.errors == 1
@@ -84,6 +94,7 @@ class TestNormalize:
 
 # ---------- check_agent_context_sync ----------
 
+
 class TestAgentContextSync:
     def test_missing_file_is_error(self, tmp_path):
         findings = check_agent_context_sync(tmp_path)
@@ -99,11 +110,14 @@ class TestAgentContextSync:
 
     def test_drift_detected_when_modified(self, synced_project):
         canon = synced_project / "AGENT_CONTEXT.md"
-        canon.write_text(canon.read_text(encoding="utf-8") + "\nMANUAL EDIT\n",
-                         encoding="utf-8")
+        canon.write_text(
+            canon.read_text(encoding="utf-8") + "\nMANUAL EDIT\n", encoding="utf-8"
+        )
         findings = check_agent_context_sync(synced_project)
         assert any(f.id == "agent-context-drift" for f in findings)
-        assert all(f.severity == "warning" for f in findings if f.id == "agent-context-drift")
+        assert all(
+            f.severity == "warning" for f in findings if f.id == "agent-context-drift"
+        )
 
     def test_timestamp_only_change_is_not_drift(self, synced_project):
         canon = synced_project / "AGENT_CONTEXT.md"
@@ -117,6 +131,7 @@ class TestAgentContextSync:
 
 # ---------- check_host_files ----------
 
+
 class TestHostFiles:
     def test_synced_project_has_no_drift(self, synced_project):
         findings = check_host_files(synced_project)
@@ -124,7 +139,9 @@ class TestHostFiles:
         for hf in HOST_FILES:
             matches = [f for f in findings if f.target == hf]
             assert matches, f"Expected a finding for {hf}"
-            assert all(f.severity == "ok" for f in matches), f"{hf} should be in sync: {matches}"
+            assert all(
+                f.severity == "ok" for f in matches
+            ), f"{hf} should be in sync: {matches}"
 
     def test_missing_host_file_warns(self, synced_project):
         (synced_project / "CLAUDE.md").unlink()
@@ -135,8 +152,9 @@ class TestHostFiles:
         assert claude[0].severity == "warning"
 
     def test_host_without_managed_block_warns(self, synced_project):
-        (synced_project / "CLAUDE.md").write_text("only unmanaged content\n",
-                                                   encoding="utf-8")
+        (synced_project / "CLAUDE.md").write_text(
+            "only unmanaged content\n", encoding="utf-8"
+        )
         findings = check_host_files(synced_project)
         claude = [f for f in findings if f.target == "CLAUDE.md"]
         assert any(f.id == "host-block-missing" for f in claude)
@@ -153,14 +171,16 @@ class TestHostFiles:
 
 # ---------- check_core_doc_headers ----------
 
+
 class TestCoreDocHeaders:
     def test_silent_when_no_core_docs_present(self, tmp_path):
         findings = check_core_doc_headers(tmp_path)
         assert findings == []
 
     def test_warns_when_header_missing(self, tmp_path):
-        (tmp_path / "AGENTS.md").write_text("# AGENTS\n\nno header here\n",
-                                             encoding="utf-8")
+        (tmp_path / "AGENTS.md").write_text(
+            "# AGENTS\n\nno header here\n", encoding="utf-8"
+        )
         findings = check_core_doc_headers(tmp_path)
         assert len(findings) == 1
         assert findings[0].id == "missing-proto-gear-header"
@@ -183,6 +203,7 @@ class TestCoreDocHeaders:
 
 # ---------- check_capabilities ----------
 
+
 class TestCapabilities:
     def test_silent_when_proto_gear_dir_missing(self, tmp_path):
         assert check_capabilities(tmp_path) == []
@@ -201,15 +222,15 @@ class TestCapabilities:
             'version: "1.0.0"\n'
             'description: "Skill with no triggers"\n'
             'category: "test"\n'
-            'tags: []\n'
+            "tags: []\n"
             'status: "stable"\n'
             'author: "test"\n'
             'last_updated: "2026-01-01"\n'
-            'dependencies:\n  required: []\n  optional: []\n  suggested: []\n'
-            'conflicts: []\n'
-            'composable_with: []\n'
-            'agent_roles: []\n'
-            'relevance:\n  triggers: []\n  contexts: []\n',
+            "dependencies:\n  required: []\n  optional: []\n  suggested: []\n"
+            "conflicts: []\n"
+            "composable_with: []\n"
+            "agent_roles: []\n"
+            "relevance:\n  triggers: []\n  contexts: []\n",
             encoding="utf-8",
         )
         findings = check_capabilities(tmp_path)
@@ -218,13 +239,17 @@ class TestCapabilities:
 
 # ---------- check_capability_indexes ----------
 
+
 class TestCheckCapabilityIndexes:
     def test_silent_when_proto_gear_dir_missing(self, tmp_path):
         assert check_capability_indexes(tmp_path) == []
 
     def test_in_sync_after_sync_indexes(self, tmp_path):
         import shutil
-        from proto_gear_pkg.capability_index_builder import sync_capability_indexes
+        from proto_gear_pkg.module_core.capability_index_builder import (
+            sync_capability_indexes,
+        )
+
         pkg_caps = (
             Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
         )
@@ -239,9 +264,11 @@ class TestCheckCapabilityIndexes:
 
     def test_drift_detected_when_index_modified(self, tmp_path):
         import shutil
-        from proto_gear_pkg.capability_index_builder import (
-            sync_capability_indexes, BEGIN_MARKER,
+        from proto_gear_pkg.module_core.capability_index_builder import (
+            sync_capability_indexes,
+            BEGIN_MARKER,
         )
+
         pkg_caps = (
             Path(__file__).parent.parent / "core" / "proto_gear_pkg" / "capabilities"
         )
@@ -261,7 +288,38 @@ class TestCheckCapabilityIndexes:
         assert any(f.id == "capability-index-drift" for f in findings)
 
 
+class TestCheckModules:
+    def test_bundled_engineering_module_ok(self, tmp_path):
+        findings = check_modules(tmp_path)
+        eng = [f for f in findings if "engineering" in f.target]
+        assert len(eng) == 1
+        assert eng[0].severity == "ok"
+        assert eng[0].id == "module-manifest-valid"
+
+    def test_malformed_manifest_is_error(self, tmp_path, monkeypatch):
+        modules_root = tmp_path / "modules"
+        bad = modules_root / "broken"
+        bad.mkdir(parents=True)
+        (bad / "module.yaml").write_text("name: NoModuleId\n", encoding="utf-8")
+        monkeypatch.setattr(
+            "proto_gear_pkg.module_core.doctor.module_manifest.default_modules_root",
+            lambda: modules_root,
+        )
+        findings = check_modules(tmp_path)
+        assert len(findings) == 1
+        assert findings[0].severity == "error"
+        assert findings[0].id == "module-manifest-invalid"
+
+    def test_no_modules_dir_is_silent(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            "proto_gear_pkg.module_core.doctor.module_manifest.default_modules_root",
+            lambda: tmp_path / "nonexistent",
+        )
+        assert check_modules(tmp_path) == []
+
+
 # ---------- run_diagnostics + fixable_by_sync ----------
+
 
 class TestRunDiagnostics:
     def test_synced_project_has_no_warnings_or_errors(self, synced_project):
@@ -277,6 +335,7 @@ class TestRunDiagnostics:
 
     def test_to_dict_serializable(self, synced_project):
         import json
+
         report = run_diagnostics(synced_project)
         # Must round-trip through JSON without error.
         json.dumps(report.to_dict())
@@ -284,22 +343,32 @@ class TestRunDiagnostics:
 
 class TestFixableBySync:
     def test_true_when_drift_finding_present(self):
-        report = DiagnosticsReport(findings=[
-            Finding("agent-context-drift", "warning", "AGENT_CONTEXT.md", "m"),
-        ])
+        report = DiagnosticsReport(
+            findings=[
+                Finding("agent-context-drift", "warning", "AGENT_CONTEXT.md", "m"),
+            ]
+        )
         assert fixable_by_sync(report) is True
 
     def test_true_when_capability_index_drift_present(self):
-        report = DiagnosticsReport(findings=[
-            Finding("capability-index-drift", "warning",
-                    ".proto-gear/skills/INDEX.md", "m"),
-        ])
+        report = DiagnosticsReport(
+            findings=[
+                Finding(
+                    "capability-index-drift",
+                    "warning",
+                    ".proto-gear/skills/INDEX.md",
+                    "m",
+                ),
+            ]
+        )
         assert fixable_by_sync(report) is True
 
     def test_false_when_only_unrelated_findings(self):
-        report = DiagnosticsReport(findings=[
-            Finding("capability-no-triggers", "warning", "skills/x", "m"),
-        ])
+        report = DiagnosticsReport(
+            findings=[
+                Finding("capability-no-triggers", "warning", "skills/x", "m"),
+            ]
+        )
         assert fixable_by_sync(report) is False
 
     def test_false_when_empty(self):

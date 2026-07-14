@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "proto-gear"
-version = "0.10.0"
+version = "0.20.0"
 description = "AI Agent Framework for intelligent development workflows"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -37,6 +37,14 @@ dependencies = [
     "click>=8.0",
     "rich>=13.0",
     "questionary>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=24.0",
+    "flake8>=6.0",
 ]
 
 [project.scripts]

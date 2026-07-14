@@ -9,14 +9,17 @@ from pathlib import Path
 from textwrap import dedent
 import sys
 
-sys.path.insert(0, str(Path(__file__).parent.parent / 'core'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
 
-from proto_gear_pkg.template_updater import TemplateUpdater, TemplateUpdateError
-
+from proto_gear_pkg.modules.engineering.template_updater import (
+    TemplateUpdater,
+    TemplateUpdateError,
+)
 
 # ============================================================================
 # Integration Test Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def temp_project(tmp_path):
@@ -71,7 +74,7 @@ def temp_project(tmp_path):
         | API Integration | Not Started | 0% |
     """).strip()
 
-    status_file.write_text(status_content, encoding='utf-8')
+    status_file.write_text(status_content, encoding="utf-8")
 
     return project_dir
 
@@ -79,6 +82,7 @@ def temp_project(tmp_path):
 # ============================================================================
 # Full Update Workflow Tests
 # ============================================================================
+
 
 class TestFullUpdateWorkflow:
     """End-to-end integration tests for template updates"""
@@ -88,17 +92,14 @@ class TestFullUpdateWorkflow:
         updater = TemplateUpdater(temp_project)
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Perform update
         result = updater.update_template(
-            'PROJECT_STATUS',
-            project_context,
-            dry_run=False,
-            force=True
+            "PROJECT_STATUS", project_context, dry_run=False, force=True
         )
 
         # Verify success
@@ -107,24 +108,27 @@ class TestFullUpdateWorkflow:
 
         # Read updated file
         updated_file = temp_project / "PROJECT_STATUS.md"
-        updated_content = updated_file.read_text(encoding='utf-8')
+        updated_content = updated_file.read_text(encoding="utf-8")
 
         # Verify all tickets preserved
-        assert 'TEST-001' in updated_content
-        assert 'Implement auth' in updated_content
-        assert 'Alice' in updated_content
+        assert "TEST-001" in updated_content
+        assert "Implement auth" in updated_content
+        assert "Alice" in updated_content
 
-        assert 'TEST-002' in updated_content
-        assert 'Fix login bug' in updated_content
-        assert 'Bob' in updated_content
+        assert "TEST-002" in updated_content
+        assert "Fix login bug" in updated_content
+        assert "Bob" in updated_content
 
-        assert 'TEST-000' in updated_content
-        assert 'Setup project' in updated_content
+        assert "TEST-000" in updated_content
+        assert "Setup project" in updated_content
 
         # Verify YAML state preserved
-        assert 'current_sprint: 5' in updated_content
-        assert 'feature/test' in updated_content
-        assert 'last_ticket_id: "TEST-010"' in updated_content or 'last_ticket_id: TEST-010' in updated_content
+        assert "current_sprint: 5" in updated_content
+        assert "feature/test" in updated_content
+        assert (
+            'last_ticket_id: "TEST-010"' in updated_content
+            or "last_ticket_id: TEST-010" in updated_content
+        )
 
         # Note: Recent Updates is a freeform section that may not be fully extracted yet
         # This is expected - it's a known limitation for v0.8.2
@@ -136,28 +140,25 @@ class TestFullUpdateWorkflow:
 
         # Read original content
         original_file = temp_project / "PROJECT_STATUS.md"
-        original_content = original_file.read_text(encoding='utf-8')
+        original_content = original_file.read_text(encoding="utf-8")
         original_mtime = original_file.stat().st_mtime
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Perform dry-run update
         result = updater.update_template(
-            'PROJECT_STATUS',
-            project_context,
-            dry_run=True,
-            force=True
+            "PROJECT_STATUS", project_context, dry_run=True, force=True
         )
 
         # Verify no backup created
         assert result.backup_created is False
 
         # Verify file unchanged
-        new_content = original_file.read_text(encoding='utf-8')
+        new_content = original_file.read_text(encoding="utf-8")
         new_mtime = original_file.stat().st_mtime
 
         assert new_content == original_content
@@ -172,20 +173,17 @@ class TestFullUpdateWorkflow:
         updater = TemplateUpdater(temp_project)
 
         original_file = temp_project / "PROJECT_STATUS.md"
-        original_content = original_file.read_text(encoding='utf-8')
+        original_content = original_file.read_text(encoding="utf-8")
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Perform update
         result = updater.update_template(
-            'PROJECT_STATUS',
-            project_context,
-            dry_run=False,
-            force=True
+            "PROJECT_STATUS", project_context, dry_run=False, force=True
         )
 
         # Verify backup created
@@ -194,11 +192,11 @@ class TestFullUpdateWorkflow:
         assert result.backup_path.exists()
 
         # Verify backup contains original content
-        backup_content = result.backup_path.read_text(encoding='utf-8')
+        backup_content = result.backup_path.read_text(encoding="utf-8")
         assert backup_content == original_content
 
         # Verify original file was modified
-        new_content = original_file.read_text(encoding='utf-8')
+        new_content = original_file.read_text(encoding="utf-8")
         assert new_content != original_content
 
     def test_update_applies_new_template_structure(self, temp_project):
@@ -206,31 +204,28 @@ class TestFullUpdateWorkflow:
         updater = TemplateUpdater(temp_project)
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Perform update
         result = updater.update_template(
-            'PROJECT_STATUS',
-            project_context,
-            dry_run=False,
-            force=True
+            "PROJECT_STATUS", project_context, dry_run=False, force=True
         )
 
         # Read updated file
         updated_file = temp_project / "PROJECT_STATUS.md"
-        updated_content = updated_file.read_text(encoding='utf-8')
+        updated_content = updated_file.read_text(encoding="utf-8")
 
         # Verify new template sections appear
-        assert '## 📚 Related Documentation' in updated_content
-        assert '## 📖 State Management Guide' in updated_content
-        assert 'AGENTS.md' in updated_content  # Related docs section
+        assert "## 📚 Related Documentation" in updated_content
+        assert "## 📖 State Management Guide" in updated_content
+        assert "AGENTS.md" in updated_content  # Related docs section
 
         # But user data still preserved
-        assert 'TEST-001' in updated_content
-        assert 'Alice' in updated_content
+        assert "TEST-001" in updated_content
+        assert "Alice" in updated_content
 
     def test_update_nonexistent_file_fails(self, temp_project):
         """Update fails gracefully for non-existent files"""
@@ -240,18 +235,15 @@ class TestFullUpdateWorkflow:
         (temp_project / "PROJECT_STATUS.md").unlink()
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Attempt update should raise error
         with pytest.raises(TemplateUpdateError, match="File not found|Cannot update"):
             updater.update_template(
-                'PROJECT_STATUS',
-                project_context,
-                dry_run=True,
-                force=True
+                "PROJECT_STATUS", project_context, dry_run=True, force=True
             )
 
     def test_update_with_minimal_data(self, temp_project):
@@ -280,38 +272,42 @@ class TestFullUpdateWorkflow:
         """).strip()
 
         status_file = temp_project / "PROJECT_STATUS.md"
-        status_file.write_text(minimal_content, encoding='utf-8')
+        status_file.write_text(minimal_content, encoding="utf-8")
 
         updater = TemplateUpdater(temp_project)
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Perform update
         result = updater.update_template(
-            'PROJECT_STATUS',
-            project_context,
-            dry_run=False,
-            force=True
+            "PROJECT_STATUS", project_context, dry_run=False, force=True
         )
 
         # Should succeed
         assert result.success is True
 
         # Read updated file
-        updated_content = status_file.read_text(encoding='utf-8')
+        updated_content = status_file.read_text(encoding="utf-8")
 
         # Verify basic structure present
-        assert '## Current State' in updated_content or '## 📊 Current State' in updated_content
-        assert 'project_phase: "Planning"' in updated_content or "project_phase: Planning" in updated_content
+        assert (
+            "## Current State" in updated_content
+            or "## 📊 Current State" in updated_content
+        )
+        assert (
+            'project_phase: "Planning"' in updated_content
+            or "project_phase: Planning" in updated_content
+        )
 
 
 # ============================================================================
 # Error Recovery Tests
 # ============================================================================
+
 
 class TestErrorRecovery:
     """Tests for error handling and recovery"""
@@ -343,22 +339,19 @@ class TestErrorRecovery:
         """).strip()
 
         status_file = temp_project / "PROJECT_STATUS.md"
-        status_file.write_text(corrupted_content, encoding='utf-8')
+        status_file.write_text(corrupted_content, encoding="utf-8")
 
         updater = TemplateUpdater(temp_project)
 
         project_context = {
-            'PROJECT_NAME': 'Test Project',
-            'TICKET_PREFIX': 'TEST',
-            'VERSION': '0.8.2',
+            "PROJECT_NAME": "Test Project",
+            "TICKET_PREFIX": "TEST",
+            "VERSION": "0.8.2",
         }
 
         # Should not crash, might have warnings
         result = updater.update_template(
-            'PROJECT_STATUS',
-            project_context,
-            dry_run=True,
-            force=True
+            "PROJECT_STATUS", project_context, dry_run=True, force=True
         )
 
         # Update may succeed with warnings or fail
@@ -371,5 +364,5 @@ class TestErrorRecovery:
 # Run Tests
 # ============================================================================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

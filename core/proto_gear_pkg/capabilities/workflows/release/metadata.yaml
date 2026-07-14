@@ -64,3 +64,14 @@ workflow:
     - "type: release"
     - "type: deployment"
     - "type: documentation"
+  gates:
+    - id: "release-approval"
+      description: "Human reviews the version bump, changelog, and green test suite and approves before tagging and deploying to production."
+      before: "tag-and-deploy"
+      approver: "human"
+      required: true
+      # Release-scoped: cleared once for the whole release, not per ticket.
+      # `pg release <label>` evidences it against the "Release approved by"
+      # column of the Releases table (keyed by the release label).
+      scope: "release"
+      evidence: "Release approved by"

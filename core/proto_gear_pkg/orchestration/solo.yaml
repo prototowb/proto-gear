@@ -1,0 +1,33 @@
+# Orchestration paradigm — copy to .proto-gear/orchestration/ to customise.
+id: solo
+name: "Solo"
+version: "1.0.0"
+description: "A single overseer does the work directly, with no sub-agents. The cheapest paradigm."
+created: "2026-07-14"
+author: "Proto Gear Team"
+
+when_to_use:
+  - "Small, local, low-risk changes (a typo, a contained fix, a doc tweak)"
+  - "Work that does not benefit from an independent second perspective"
+  - "You want minimum overhead and cost"
+
+avoid_when:
+  - "The change touches shared or risky code — add an independent reviewer (driver-reviewer)"
+  - "Work is large or naturally decomposes into parallel pieces (fan-out)"
+  - "The change is release-bound and must clear discipline gates (pipeline)"
+
+roles:
+  - role: overseer
+    responsibility: "Plans, implements, tests, and self-verifies the whole change"
+    model_tier: balanced
+
+coordination: >
+  One actor, start to finish. Escalate to a richer paradigm the moment the work
+  outgrows a single perspective — silence is never consent (§4 escalation rule).
+
+efficiency: >
+  Zero coordination cost. Pick the overseer's tier to match the task's hardest
+  step rather than defaulting to deep.
+
+selectable_by: [user, agent]
+status: active

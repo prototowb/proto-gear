@@ -1,0 +1,39 @@
+# Orchestration paradigm — copy to .proto-gear/orchestration/ to customise.
+id: driver-reviewer
+name: "Driver–Reviewer"
+version: "1.0.0"
+description: "One agent implements; an independent agent reviews before the change clears. Pairs naturally with human-on-recommendation gates."
+created: "2026-07-14"
+author: "Proto Gear Team"
+
+when_to_use:
+  - "Changes touching shared, security-sensitive, or otherwise risky code"
+  - "Any change bound for a review gate (ADR-002 human-on-recommendation)"
+  - "You want an independent second perspective without full pipeline overhead"
+
+avoid_when:
+  - "Trivial, local, low-risk edits (solo is cheaper)"
+  - "Work decomposes into many independent pieces (fan-out)"
+
+roles:
+  - role: driver
+    responsibility: "Implements the change on a feature branch and writes/updates tests"
+    agent: bug-fix-agent
+    model_tier: balanced
+  - role: reviewer
+    responsibility: "Independently inspects the diff; must not be the agent that wrote the code"
+    agent: code-review-agent
+    model_tier: deep
+
+coordination: >
+  The driver implements and self-verifies on a feature branch. The reviewer
+  inspects the diff independently and records the review as evidence. Per ADR-002,
+  the reviewer is the accountable actor/recommender but clearing authority stays
+  with a human at judgment gates.
+
+efficiency: >
+  Two agents. Reserve the deep-tier reviewer for the review pass only; keep the
+  driver at the tier the implementation actually needs.
+
+selectable_by: [user, agent]
+status: active

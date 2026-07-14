@@ -1,0 +1,38 @@
+# DevOps Deploy Agent — second discipline-shipped agent (PROTO-067).
+#
+# The zero-core-edit falsifier for the agent seam: adding a SECOND discipline
+# agent required no change to module_core/ or cli/ — dropping this file into
+# modules/devops/agents/ is enough for the core to discover and install it. It
+# composes devops's own bundled deploy workflow (devops/deploy) via a
+# module-namespaced capability reference.
+
+name: "DevOps Deploy Agent"
+version: "1.0.0"
+description: "Drives the production deploy gate — verifies readiness and clears the deploy workflow"
+created: "2026-07-11"
+author: "Proto Gear Team"
+
+capabilities:
+  skills:
+    - "security"
+  workflows:
+    - "devops/deploy"   # module-namespaced: devops's own bundled workflow
+  commands: []
+
+context_priority:
+  - "Read the devops state surface for the current deploy queue"
+  - "Read PROJECT_STATUS.md for the release under deploy"
+  - "Confirm upstream sign-off gates are cleared before deploying"
+
+agent_instructions:
+  - "Do not deploy until the devops/deploy workflow gate and its upstream gates are satisfied"
+  - "Record the deploy approval on the state surface so `pg trace` can see it"
+  - "Prefer a rollback-safe path; verify the release is reversible"
+
+required_files: []
+
+optional_files:
+  - "PROJECT_STATUS.md"
+
+tags: ["devops", "deploy", "release", "production"]
+status: "active"

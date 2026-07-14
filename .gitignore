@@ -20,6 +20,10 @@ wheels/
 .installed.cfg
 *.egg
 
+# Backup artifacts (e.g. safe_write_file's .md.bak, stray *.backup snapshots)
+*.backup
+*.bak
+
 # Virtual environments
 venv/
 env/
@@ -48,3 +52,6 @@ temp_projects/
 
 # Logs
 *.log
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.github/instructions/snyk_rules.instructions.md

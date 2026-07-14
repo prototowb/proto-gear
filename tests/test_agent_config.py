@@ -21,13 +21,13 @@ from proto_gear_pkg.agent_config import (
     AgentManager,
     AgentCapabilities,
     AgentValidationError,
-    create_agent_template
+    create_agent_template,
 )
-
 
 # ============================================================================
 # Test Data Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def valid_agent_dict():
@@ -41,20 +41,14 @@ def valid_agent_dict():
         "capabilities": {
             "skills": ["testing", "debugging"],
             "workflows": ["feature-development"],
-            "commands": ["analyze-coverage"]
+            "commands": ["analyze-coverage"],
         },
-        "context_priority": [
-            "Read TESTING.md first",
-            "Check test coverage"
-        ],
-        "agent_instructions": [
-            "Follow TDD",
-            "Aim for 80%+ coverage"
-        ],
+        "context_priority": ["Read TESTING.md first", "Check test coverage"],
+        "agent_instructions": ["Follow TDD", "Aim for 80%+ coverage"],
         "required_files": ["TESTING.md"],
         "optional_files": ["PROJECT_STATUS.md"],
         "tags": ["testing", "tdd"],
-        "status": "active"
+        "status": "active",
     }
 
 
@@ -62,7 +56,7 @@ def valid_agent_dict():
 def temp_agent_file(tmp_path, valid_agent_dict):
     """Create temporary agent YAML file"""
     agent_file = tmp_path / "testing-agent.yaml"
-    with open(agent_file, 'w') as f:
+    with open(agent_file, "w") as f:
         yaml.dump(valid_agent_dict, f)
     return agent_file
 
@@ -96,9 +90,9 @@ def temp_capabilities_dir(tmp_path):
         "dependencies": {"required": [], "optional": [], "suggested": []},
         "conflicts": [],
         "composable_with": [],
-        "agent_roles": []
+        "agent_roles": [],
     }
-    with open(skills_dir / "metadata.yaml", 'w') as f:
+    with open(skills_dir / "metadata.yaml", "w") as f:
         yaml.dump(metadata, f)
 
     return caps_dir
@@ -107,6 +101,7 @@ def temp_capabilities_dir(tmp_path):
 # ============================================================================
 # Parsing Tests
 # ============================================================================
+
 
 class TestAgentConfigParser:
     """Tests for AgentConfigParser"""
@@ -159,7 +154,7 @@ class TestAgentConfigParser:
         valid_agent_dict["capabilities"] = {
             "skills": [],
             "workflows": [],
-            "commands": []
+            "commands": [],
         }
 
         with pytest.raises(AgentValidationError, match="at least one capability"):
@@ -179,9 +174,7 @@ class TestAgentConfigParser:
             "version": "1.0.0",
             "description": "Minimal description",
             "created": "2025-12-09",
-            "capabilities": {
-                "skills": ["testing"]
-            }
+            "capabilities": {"skills": ["testing"]},
         }
 
         agent = AgentConfigParser._parse_agent_dict(minimal)
@@ -197,6 +190,7 @@ class TestAgentConfigParser:
 # Agent Capabilities Tests
 # ============================================================================
 
+
 class TestAgentCapabilities:
     """Tests for AgentCapabilities"""
 
@@ -205,7 +199,7 @@ class TestAgentCapabilities:
         caps = AgentCapabilities(
             skills=["testing", "debugging"],
             workflows=["bug-fix"],
-            commands=["create-ticket"]
+            commands=["create-ticket"],
         )
 
         all_caps = caps.all_capabilities()
@@ -215,6 +209,20 @@ class TestAgentCapabilities:
         assert "workflows/bug-fix" in all_caps
         assert "commands/create-ticket" in all_caps
         assert len(all_caps) == 4
+
+    def test_all_capabilities_module_namespaced(self):
+        """A ``<module>/<name>`` entry qualifies to the module-namespaced id
+        the loaders use for a discipline's own bundle (agent-side of seam S1,
+        PROTO-067) — not ``workflows/<module>/<name>``."""
+        caps = AgentCapabilities(
+            skills=["testing"],
+            workflows=["qa/release-signoff"],
+            commands=[],
+        )
+        all_caps = caps.all_capabilities()
+        assert "skills/testing" in all_caps  # bare entry unchanged
+        assert "qa/workflows/release-signoff" in all_caps  # namespaced entry
+        assert "workflows/qa/release-signoff" not in all_caps
 
     def test_is_empty(self):
         """Test checking if capabilities are empty"""
@@ -226,11 +234,7 @@ class TestAgentCapabilities:
 
     def test_to_dict(self):
         """Test converting to dictionary"""
-        caps = AgentCapabilities(
-            skills=["testing"],
-            workflows=["bug-fix"],
-            commands=[]
-        )
+        caps = AgentCapabilities(skills=["testing"], workflows=["bug-fix"], commands=[])
 
         caps_dict = caps.to_dict()
 
@@ -240,11 +244,81 @@ class TestAgentCapabilities:
 
 
 # ============================================================================
+# Agent Model (tier + optional override) Tests
+# ============================================================================
+
+
+class TestAgentModel:
+    """Tests for the optional ``model`` field (tier + override)."""
+
+    def test_default_tier_when_absent(self, valid_agent_dict):
+        """No ``model`` block → balanced default, so existing configs work."""
+        assert "model" not in valid_agent_dict
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        assert agent.model.tier == "balanced"
+        assert agent.model.override is None
+
+    def test_parse_tier_and_override(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "deep", "override": "claude-opus-4-8"}
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        assert agent.model.tier == "deep"
+        assert agent.model.override == "claude-opus-4-8"
+
+    def test_string_shorthand(self, valid_agent_dict):
+        """``model: fast`` is sugar for ``model: {tier: fast}``."""
+        valid_agent_dict["model"] = "fast"
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        assert agent.model.tier == "fast"
+
+    def test_invalid_tier_rejected(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "ultra"}
+        with pytest.raises(AgentValidationError):
+            AgentConfigParser._parse_agent_dict(valid_agent_dict)
+
+    def test_invalid_override_type_rejected(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "deep", "override": 42}
+        with pytest.raises(AgentValidationError):
+            AgentConfigParser._parse_agent_dict(valid_agent_dict)
+
+    def test_to_dict_omits_empty_override(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "deep"}
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        model_dict = agent.to_dict()["model"]
+        assert model_dict == {"tier": "deep"}
+        assert "override" not in model_dict
+
+    def test_roundtrip_through_save_load(self, tmp_path, valid_agent_dict):
+        """to_dict → yaml → parse preserves the model block."""
+        valid_agent_dict["model"] = {"tier": "deep", "override": "claude-opus-4-8"}
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        agent_file = tmp_path / "roundtrip.yaml"
+        with open(agent_file, "w") as f:
+            yaml.dump(agent.to_dict(), f)
+        reloaded = AgentConfigParser.parse_agent_file(agent_file)
+        assert reloaded.model.tier == "deep"
+        assert reloaded.model.override == "claude-opus-4-8"
+
+
+# ============================================================================
 # Agent Manager Tests
 # ============================================================================
 
+
 class TestAgentManager:
     """Tests for AgentManager"""
+
+    def test_load_capabilities_overlays_module_caps(
+        self, temp_agents_dir, temp_capabilities_dir
+    ):
+        """PROTO-058 (seam S1): a discipline's bundled caps are visible to the
+        agent subsystem, namespaced <module>/<cap_id>, on top of the base dir —
+        so an agent can be built around qa/workflows/release-signoff."""
+        manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
+        caps = manager._load_capabilities()
+        # base dir cap still present…
+        assert "skills/testing" in caps
+        # …plus the real bundled qa capability, namespaced.
+        assert "qa/workflows/release-signoff" in caps
 
     def test_list_agents_empty_dir(self, temp_agents_dir, temp_capabilities_dir):
         """Test listing agents in empty directory"""
@@ -259,13 +333,13 @@ class TestAgentManager:
         """Test listing agents in directory with agents"""
         # Create agent files
         agent1_file = temp_agents_dir / "agent1.yaml"
-        with open(agent1_file, 'w') as f:
+        with open(agent1_file, "w") as f:
             yaml.dump(valid_agent_dict, f)
 
         agent2_dict = valid_agent_dict.copy()
         agent2_dict["name"] = "Another Agent"
         agent2_file = temp_agents_dir / "agent2.yaml"
-        with open(agent2_file, 'w') as f:
+        with open(agent2_file, "w") as f:
             yaml.dump(agent2_dict, f)
 
         manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
@@ -278,7 +352,7 @@ class TestAgentManager:
     def test_load_agent(self, temp_agents_dir, temp_capabilities_dir, valid_agent_dict):
         """Test loading specific agent"""
         agent_file = temp_agents_dir / "testing-agent.yaml"
-        with open(agent_file, 'w') as f:
+        with open(agent_file, "w") as f:
             yaml.dump(valid_agent_dict, f)
 
         manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
@@ -298,7 +372,7 @@ class TestAgentManager:
         agent = create_agent_template(
             name="Test Agent",
             description="Test description",
-            capabilities=AgentCapabilities(skills=["testing"])
+            capabilities=AgentCapabilities(skills=["testing"]),
         )
 
         manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
@@ -309,14 +383,16 @@ class TestAgentManager:
         assert agent_file.exists()
 
         # Verify content
-        with open(agent_file, 'r') as f:
+        with open(agent_file, "r") as f:
             data = yaml.safe_load(f)
         assert data["name"] == "Test Agent"
 
-    def test_delete_agent(self, temp_agents_dir, temp_capabilities_dir, valid_agent_dict):
+    def test_delete_agent(
+        self, temp_agents_dir, temp_capabilities_dir, valid_agent_dict
+    ):
         """Test deleting agent configuration"""
         agent_file = temp_agents_dir / "test-agent.yaml"
-        with open(agent_file, 'w') as f:
+        with open(agent_file, "w") as f:
             yaml.dump(valid_agent_dict, f)
 
         manager = AgentManager(temp_agents_dir, temp_capabilities_dir)
@@ -336,6 +412,7 @@ class TestAgentManager:
 # Template Creation Tests
 # ============================================================================
 
+
 class TestCreateAgentTemplate:
     """Tests for create_agent_template"""
 
@@ -345,7 +422,7 @@ class TestCreateAgentTemplate:
             name="My Agent",
             description="My description",
             capabilities=AgentCapabilities(skills=["testing"]),
-            author="Me"
+            author="Me",
         )
 
         assert agent.name == "My Agent"
@@ -361,7 +438,7 @@ class TestCreateAgentTemplate:
         agent = create_agent_template(
             name="Agent",
             description="Description",
-            capabilities=AgentCapabilities(workflows=["bug-fix"])
+            capabilities=AgentCapabilities(workflows=["bug-fix"]),
         )
 
         assert agent.author == ""
@@ -371,6 +448,7 @@ class TestCreateAgentTemplate:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestIntegration:
     """Integration tests for agent system"""
@@ -384,7 +462,7 @@ class TestIntegration:
             name="Test Agent",
             description="Test description",
             capabilities=AgentCapabilities(skills=["testing"]),
-            author="Test Author"
+            author="Test Author",
         )
 
         # Save agent

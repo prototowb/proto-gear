@@ -17,7 +17,7 @@ import shutil
 @pytest.fixture
 def temp_project_dir():
     """Create a temporary directory for testing"""
-    temp_dir = tempfile.mkdtemp(prefix='pg_test_')
+    temp_dir = tempfile.mkdtemp(prefix="pg_test_")
     yield Path(temp_dir)
     shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -28,11 +28,11 @@ class TestCLIBasics:
     def test_pg_command_exists(self):
         """Test that 'pg' command is available"""
         result = subprocess.run(
-            ['pg', '--version'],
+            ["pg", "--version"],
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=10
+            encoding="utf-8",
+            timeout=10,
         )
         # Command should either show version or at least not crash
         assert result.returncode in [0, 2]  # 0 = success, 2 = no --version flag
@@ -40,14 +40,10 @@ class TestCLIBasics:
     def test_pg_help_command(self):
         """Test 'pg help' command"""
         result = subprocess.run(
-            ['pg', 'help'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            timeout=10
+            ["pg", "help"], capture_output=True, text=True, encoding="utf-8", timeout=10
         )
         assert result.returncode == 0
-        assert 'Proto Gear' in result.stdout or 'Usage' in result.stdout
+        assert "Proto Gear" in result.stdout or "Usage" in result.stdout
 
 
 class TestDryRunMode:
@@ -56,41 +52,41 @@ class TestDryRunMode:
     def test_dry_run_basic(self, temp_project_dir):
         """Test basic dry-run shows what would be created"""
         result = subprocess.run(
-            ['pg', 'init', '--dry-run'],
+            ["pg", "init", "--dry-run"],
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=30
+            encoding="utf-8",
+            timeout=30,
         )
         assert result.returncode == 0
-        assert 'Dry run' in result.stdout or 'would be created' in result.stdout
+        assert "Dry run" in result.stdout or "would be created" in result.stdout
         # Verify no files were actually created
-        created_files = list(temp_project_dir.glob('*.md'))
+        created_files = list(temp_project_dir.glob("*.md"))
         assert len(created_files) == 0, "Dry run should not create files"
 
     def test_dry_run_with_branching(self, temp_project_dir):
         """Test dry-run with --with-branching flag"""
         result = subprocess.run(
-            ['pg', 'init', '--dry-run', '--with-branching'],
+            ["pg", "init", "--dry-run", "--with-branching"],
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=30
+            encoding="utf-8",
+            timeout=30,
         )
         assert result.returncode == 0
-        assert 'BRANCHING.md' in result.stdout or 'branching' in result.stdout.lower()
+        assert "BRANCHING.md" in result.stdout or "branching" in result.stdout.lower()
 
     def test_dry_run_with_ticket_prefix(self, temp_project_dir):
         """Test dry-run with custom ticket prefix"""
         result = subprocess.run(
-            ['pg', 'init', '--dry-run', '--ticket-prefix', 'TEST'],
+            ["pg", "init", "--dry-run", "--ticket-prefix", "TEST"],
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=30
+            encoding="utf-8",
+            timeout=30,
         )
         assert result.returncode == 0
 
@@ -101,20 +97,20 @@ class TestActualFileGeneration:
     def test_init_creates_core_templates(self, temp_project_dir):
         """Test 'pg init' creates core template files"""
         result = subprocess.run(
-            ['pg', 'init', '--no-interactive'],
+            ["pg", "init", "--no-interactive"],
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
-            encoding='utf-8',
+            encoding="utf-8",
             timeout=30,
-            input='n\n'  # Answer 'no' to any prompts
+            input="n\n",  # Answer 'no' to any prompts
         )
         # Should succeed or exit gracefully
         assert result.returncode in [0, 1]
 
         # Check if core files were created
-        agents_md = temp_project_dir / 'AGENTS.md'
-        status_md = temp_project_dir / 'PROJECT_STATUS.md'
+        agents_md = temp_project_dir / "AGENTS.md"
+        status_md = temp_project_dir / "PROJECT_STATUS.md"
 
         # At least one core file should exist if init succeeded
         if result.returncode == 0:
@@ -123,25 +119,32 @@ class TestActualFileGeneration:
     def test_init_with_branching_flag(self, temp_project_dir):
         """Test 'pg init --with-branching' creates BRANCHING.md"""
         # Initialize git repo first
-        subprocess.run(['git', 'init'], cwd=str(temp_project_dir), capture_output=True)
+        subprocess.run(["git", "init"], cwd=str(temp_project_dir), capture_output=True)
 
         result = subprocess.run(
-            ['pg', 'init', '--no-interactive', '--with-branching', '--ticket-prefix', 'TEST'],
+            [
+                "pg",
+                "init",
+                "--no-interactive",
+                "--with-branching",
+                "--ticket-prefix",
+                "TEST",
+            ],
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=30
+            encoding="utf-8",
+            timeout=30,
         )
 
         if result.returncode == 0:
-            branching_md = temp_project_dir / 'BRANCHING.md'
+            branching_md = temp_project_dir / "BRANCHING.md"
             # BRANCHING.md should be created with git workflow
             if branching_md.exists():
                 # pg writes UTF-8; force decoding to match (Path.read_text on
                 # Windows defaults to cp1252 which chokes on em-dash etc.).
-                content = branching_md.read_text(encoding='utf-8')
-                assert 'TEST' in content or 'branching' in content.lower()
+                content = branching_md.read_text(encoding="utf-8")
+                assert "TEST" in content or "branching" in content.lower()
 
 
 class TestErrorHandling:
@@ -150,11 +153,11 @@ class TestErrorHandling:
     def test_invalid_command(self):
         """Test CLI handles invalid commands gracefully"""
         result = subprocess.run(
-            ['pg', 'invalid-command-xyz'],
+            ["pg", "invalid-command-xyz"],
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=10
+            encoding="utf-8",
+            timeout=10,
         )
         # Should return non-zero exit code but not crash
         assert result.returncode != 0
@@ -170,11 +173,11 @@ class TestErrorHandling:
         bogus = tmp_path / "nonexistent_subdir_xyz123"
         try:
             result = subprocess.run(
-                ['pg', 'init'],
+                ["pg", "init"],
                 cwd=str(bogus),
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
+                encoding="utf-8",
                 timeout=10,
             )
             assert result.returncode != 0
@@ -189,12 +192,12 @@ class TestCrossPlatformCompatibility:
     def test_cli_works_on_current_platform(self, temp_project_dir):
         """Test CLI works on current platform (Windows/Mac/Linux)"""
         result = subprocess.run(
-            ['pg', 'init', '--dry-run'],
+            ["pg", "init", "--dry-run"],
             cwd=str(temp_project_dir),
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            timeout=30
+            encoding="utf-8",
+            timeout=30,
         )
         # Should work on any platform
         assert result.returncode == 0
@@ -210,18 +213,16 @@ class TestVersionInformation:
 
         # Try to get version from CLI (if supported)
         result = subprocess.run(
-            ['pg', 'help'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            timeout=10
+            ["pg", "help"], capture_output=True, text=True, encoding="utf-8", timeout=10
         )
 
         if result.returncode == 0:
             # Version should appear in output somewhere
             output = result.stdout + result.stderr
-            assert __version__ in output or f'v{__version__}' in output or len(output) > 0
+            assert (
+                __version__ in output or f"v{__version__}" in output or len(output) > 0
+            )
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

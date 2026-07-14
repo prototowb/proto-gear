@@ -128,11 +128,15 @@ hotfix/v1.2.1-data-loss-bug
 
 ## Starting New Work
 
-### Critical Rule: Always Branch FROM Development
+### Critical Rule: Protect `main`; `development` is open
 
-**Never work directly on `main` or `development`** - always create a feature branch.
+**Never commit directly to `main`** — it lands only via a reviewed PR.
+**`development` is open**: commit to it directly when that's the simplest thing
+(small fixes, docs, ticket bookkeeping). A feature branch + PR is still the norm
+for substantial or shared work — it gives you CI and review — but it is no longer
+required for everything. When in doubt on something sizeable, branch.
 
-**The Command** (works from any current branch):
+**The Command** (substantial/shared work, from any current branch):
 ```bash
 # Create feature branch FROM development (regardless of current branch)
 git checkout -b feature/PROTO-XXX-description development
@@ -284,8 +288,8 @@ When working with AI assistants (Claude, GPT, etc.), ensure they:
 - Update documentation when behavior changes
 
 ❌ **DON'T**:
-- Commit directly to `main`
-- Commit directly to `development` for features
+- Commit directly to `main` (PR only)
+- Skip a feature branch + PR for substantial or shared work (direct-to-`development` is fine for small/local changes)
 - Use vague commit messages
 - Skip testing
 - Make huge commits without breaking them down{{REMOTE_FORCE_PUSH}}
@@ -361,7 +365,7 @@ TYPES:
 feat, fix, docs, style, refactor, perf, test, build, ci, chore
 
 ALWAYS:
-✅ Branch from development
+✅ Branch from development for substantial/shared work
 ✅ Use descriptive names
 ✅ Write clear commits
 ✅ Test before committing

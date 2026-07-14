@@ -7,6 +7,11 @@ description: "Specialized agent for thorough code review and quality checks"
 created: "2025-12-09"
 author: "Proto Gear Team"
 
+# Declared model tier the host honours (fast | balanced | deep). Review is
+# judgment work — reserve the deep tier for it.
+model:
+  tier: deep
+
 capabilities:
   skills:
     - "code-review"

@@ -9,8 +9,9 @@ defines:
   - critical-rules
   - agent-self-configuration-protocol
   - decision-matrix
-  - agent-roles-4-core-2-flex
+  - orchestration-paradigms
 links:
+  - SESSION_HANDOFF.md
   - PROJECT_STATUS.md
   - BRANCHING.md
   - TESTING.md
@@ -26,29 +27,31 @@ links:
 
 **READ THESE FILES FIRST** using the Read tool before proceeding with any task:
 
-1. **`PROJECT_STATUS.md`** (REQUIRED) - Current project state, active tickets, sprint info
+1. **`SESSION_HANDOFF.md`** (REQUIRED, READ FIRST) - Rolling handoff from the previous session. What just shipped, what's pending, conventions in force. **Replace contents at the end of each session** — this is "what's true right now," not an append-only log.
+
+2. **`PROJECT_STATUS.md`** (REQUIRED) - Current project state, active tickets, sprint info
    - **Update this file** when completing tickets or changing project state
 
-2. **`BRANCHING.md`** (REQUIRED if git repo) - Git workflow and commit conventions
+3. **`BRANCHING.md`** (REQUIRED if git repo) - Git workflow and commit conventions
    - Follow: branch naming (`feature/TICKET-XXX-description`)
    - Follow: commit format (`type(scope): subject`)
    - **ALWAYS create feature branches** - never commit to main or development directly
 
-3. **`PROJECT_SPECIFICATIONS.md`** (REQUIRED IF EXISTS) - Project planning and architecture source
+4. **`PROJECT_SPECIFICATIONS.md`** (REQUIRED IF EXISTS) - Project planning and architecture source
    - **On first session**: extract architecture into `PROJECT_ARCHITECTURE.md` (see below)
    - If the file is a stub (brief description only), expand it with the user before extracting
 
-4. **`TESTING.md`** (RECOMMENDED) - Test-Driven Development workflow
+5. **`TESTING.md`** (RECOMMENDED) - Test-Driven Development workflow
    - Follow: Red-Green-Refactor cycle, test pyramid, coverage targets
    - **Write tests before implementation** when following TDD
 
-5. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
+6. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
    - Check: available skills, workflows, slash commands, and specialized agents
 
-6. **`CONTRIBUTING.md`** (OPTIONAL) - Contribution guidelines
-7. **`SECURITY.md`** (OPTIONAL) - Security policy and vulnerability reporting
-8. **`PROJECT_ARCHITECTURE.md`** (OPTIONAL) - Project-specific architecture (agent-generated from PROJECT_SPECIFICATIONS.md)
-9. **`CODE_OF_CONDUCT.md`** (OPTIONAL) - Community guidelines
+7. **`CONTRIBUTING.md`** (OPTIONAL) - Contribution guidelines
+8. **`SECURITY.md`** (OPTIONAL) - Security policy and vulnerability reporting
+9. **`PROJECT_ARCHITECTURE.md`** (OPTIONAL) - Project-specific architecture (agent-generated from PROJECT_SPECIFICATIONS.md)
+10. **`CODE_OF_CONDUCT.md`** (OPTIONAL) - Community guidelines
 
 ### Architecture Extraction Task
 
@@ -62,7 +65,8 @@ When `PROJECT_SPECIFICATIONS.md` is present and `PROJECT_ARCHITECTURE.md` does n
 ### Pre-Flight Checklist
 
 Before starting ANY development task, verify:
-- [ ] **FIRST**: Check if `.proto-gear/INDEX.md` exists - if yes, read it to discover available capabilities
+- [ ] **FIRST**: Read SESSION_HANDOFF.md — know what just shipped and what's pending
+- [ ] Check if `.proto-gear/INDEX.md` exists - if yes, read it to discover available capabilities
 - [ ] Read PROJECT_STATUS.md - know current sprint and active tickets
 - [ ] Read BRANCHING.md (if exists) - understand git workflow
 - [ ] Read TESTING.md (if exists) - understand testing requirements
@@ -74,9 +78,9 @@ Before starting ANY development task, verify:
 ### Critical Rules
 
 1. **ALWAYS check `.proto-gear/INDEX.md` first** - if capabilities exist, use them for your task
-2. **NEVER commit directly to `main` or `development`** - always use feature branches
+2. **NEVER commit directly to `main`** - it lands only via a reviewed PR. `development` is open: commit to it directly when it helps; a feature branch + PR is still the norm for substantial or shared work, not a requirement.
 3. **ALWAYS update PROJECT_STATUS.md** when starting/completing tickets
-4. **ALWAYS follow branch naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
+4. **When you use a branch, follow naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
 5. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
 6. **ALWAYS read existing files before modifying** - use Read tool first
 
@@ -95,13 +99,14 @@ This project uses Proto Gear for AI agent coordination.
 
 | File | Purpose | Read When |
 |------|---------|-----------|
+| `SESSION_HANDOFF.md` | Rolling session handoff — what just shipped, what's pending | Start of every session — before anything else |
 | `AGENTS.md` | Agent orchestration, roles, pre-flight checklist | First session or unclear on process |
 | `PROJECT_STATUS.md` | Current sprint, active tickets, project state | Every session before starting work |
 | `PROJECT_SPECIFICATIONS.md` | Project planning doc — source for architecture decisions | When starting features or design work (if exists) |
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations (if exists) |
 | `.proto-gear/INDEX.md` | Capabilities: commands, skills, workflows | When starting a task (if exists) |
 
-Rules: never commit to `main`/`development` directly · run `pg status` before starting work
+Rules: never commit to `main` directly (PR only) · `development` is open for direct commits · run `pg status` before starting work
 ---
 
 **Do not add** project name, tech stack, architecture notes, ticket lists, directory structure, or any other project information. Those live in Proto Gear files.
@@ -169,65 +174,48 @@ This is the **root AGENTS.md** - the master orchestrator. Directory-specific AGE
 
 ---
 
-## Adaptive Hybrid Agent System (4 Core + 2 Flex)
+## Orchestration
 
-The system uses 4 permanent core agents (always active) plus 2 flexible sprint-specific slots. Flex agents are dynamically assigned based on sprint type (feature development, bug fixing, performance optimization, deployment prep).
+There is **no fixed agent roster**. For each piece of work, compose the
+**minimal set of sub-agents** it actually needs and dissolve them when done —
+optimizing for efficiency at every step. Both the **human (via the interactive
+UI)** and the **overseeing agent** may (re)architect the roster and **switch
+orchestration paradigms on the fly** as circumstances change.
 
-### Core Agent Specifications (Always Active)
+Proto Gear *declares and audits* orchestration; it never executes agents
+(Principle 4 — *agents act, `pg` audits*). The paradigms and model tiers below
+are **declarations the host honours**, not a runtime that spawns models.
 
-#### 1. {{CORE_AGENT_1_NAME}}
-**Identity**: {{CORE_AGENT_1_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_1_RESPONSIBILITIES}}
+### Orchestration paradigms — a selectable pool
 
-#### 2. {{CORE_AGENT_2_NAME}}
-**Identity**: {{CORE_AGENT_2_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_2_RESPONSIBILITIES}}
+Pick the paradigm that fits the work, and change it when the work changes.
+Browse the pool with **`pg orchestration list`** (`pg orchestration show <id>`
+for detail); a project can `pg orchestration install <id>` to customise one.
 
-#### 3. {{CORE_AGENT_3_NAME}}
-**Identity**: {{CORE_AGENT_3_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_3_RESPONSIBILITIES}}
+| Paradigm | Use it for |
+|----------|-----------|
+| `dynamic` | **Default.** Compose the minimal set per task; re-architect mid-flight. |
+| `solo` | Trivial, local, low-risk changes — one actor, no sub-agents. |
+| `driver-reviewer` | Risky or shared code — an implementer plus an independent reviewer. |
+| `core-flex` | Sustained multi-domain sprints — a small persistent core plus situational flex (the former "4 core + 2 flex", now one option with open counts). |
+| `pipeline` | Release-bound work — sequential discipline hand-off (eng → qa → devops). |
+| `fan-out` | Decomposable, low-coupling breadth — parallel workers, then integrate. |
 
-#### 4. {{CORE_AGENT_4_NAME}}
-**Identity**: {{CORE_AGENT_4_DESCRIPTION}}
-**Core Responsibilities**:
-{{CORE_AGENT_4_RESPONSIBILITIES}}
+### Model tier per agent
 
-### Flexible Agent Pool (Sprint-Specific)
-
-{{FLEX_AGENTS_DEFINITIONS}}
-
-### Sprint Type Detection
-
-Analyze the backlog, recent commits, and current issues to determine the sprint type. Key indicators:
-- **Feature development**: Majority of backlog items labeled "feature"
-- **Bug fixing**: High volume of recent bugs (5+)
-- **Performance optimization**: Backlog items focused on performance
-- **Deployment prep**: Deployment date approaching
-
-The detected sprint type determines which 2 flex agents are activated.
+Each `pg agent` may declare a **model tier** — `fast` (mechanical), `balanced`
+(default), `deep` (judgment, architecture, review) — plus an optional concrete
+`override`. Match the tier to the work: cheap models for mechanical steps,
+strong models for judgment. See `pg agent show <name>`.
 
 ---
 
-## Automatic Workflow
+## On Session Start
 
-**EXECUTE IMMEDIATELY when AGENTS.md is accessed:**
-
-```workflow
-ON_AGENTS_MD_READ:
-  1. Initialize Hybrid System (4 core + 2 flex agents)
-  2. Analyze current sprint type and goals
-  3. Configure flex agents based on sprint needs
-  4. Check documentation consistency across AGENTS.md hierarchy
-  5. Update Project Status
-  6. Core agents process their domains
-  7. Flex agents handle sprint-specific tasks
-  8. Generate Development Plan
-  9. Propose Next Sprint with agent config
-  10. Request Human Approval
-```
+Run the **Pre-Flight Checklist** above, then choose an orchestration paradigm
+for the work at hand (default: `dynamic`). Re-architect the roster or switch
+paradigms whenever changing circumstances make a different shape more efficient —
+becoming *more minimal* never needs approval.
 
 ---
 
@@ -347,17 +335,16 @@ Lead AI → Human
 
 ## EXECUTION TRIGGER
 
-**IMPORTANT**: When an agent reads this AGENTS.md file, it MUST:
+**When an agent reads this AGENTS.md file, it should:**
 
-1. **Initialize** as Lead AI (Product Owner + Tech Lead + Software Architect)
-2. **Activate** 4 core agents + 2 flex agents (based on sprint type)
-3. **Execute** the Automatic Workflow above
-4. **Update** PROJECT_STATUS.md with current status
-5. **Generate** development tickets as needed
-6. **Propose** next sprint configuration
-7. **Request** human approval for critical changes
+1. **Run** the Pre-Flight Checklist (SESSION_HANDOFF.md → PROJECT_STATUS.md → BRANCHING.md → TESTING.md)
+2. **Choose** an orchestration paradigm for the work (default: `dynamic`) — see `pg orchestration list`
+3. **Compose** the minimal sub-agents the task needs, at appropriate model tiers
+4. **Update** PROJECT_STATUS.md as work progresses
+5. **Propose** and register tickets as needed
+6. **Request** human approval for critical changes (see the Decision Matrix)
 
 ---
 
-*Lead AI System - Adaptive Hybrid Agent Architecture*
-*4 Core Agents (always active) + 2 Flex Agents (sprint-adaptive) = Optimal resource utilization*
+*Lead AI System — dynamic, paradigm-driven orchestration*
+*Compose the minimal roster each task needs; pick and switch paradigms for optimal efficiency.*

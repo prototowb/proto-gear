@@ -1,0 +1,39 @@
+#!/bin/sh
+# Proto Gear pre-commit hook (version-controlled).
+#
+# Enable once per clone:   git config core.hooksPath dev/hooks
+#
+# This repo is private and the plan has no required-status-check / branch
+# protection, so formatting can't be enforced server-side. This hook is the
+# enforcement point: it BLOCKS the commit (exit 1) on a black or syntax
+# failure. Formatting-only, fast checks gate; the test run is informational.
+
+echo "🔍 Running pre-commit checks..."
+
+# --- Formatting gate (black) -------------------------------------------------
+if command -v black >/dev/null 2>&1; then
+    echo "  🎨 Checking formatting (black)..."
+    if ! black --check core/ tests/; then
+        echo "❌ black formatting check failed — run: black core/ tests/" >&2
+        exit 1
+    fi
+else
+    echo "  ⚠ black not installed — skipping format gate (pip install black)"
+fi
+
+# --- Syntax / undefined-name gate (flake8) -----------------------------------
+if command -v flake8 >/dev/null 2>&1; then
+    echo "  📝 Checking syntax (flake8 E9/F63/F7/F82)..."
+    if ! flake8 core/ --count --select=E9,F63,F7,F82 --show-source --statistics; then
+        echo "❌ flake8 found syntax/undefined-name errors" >&2
+        exit 1
+    fi
+fi
+
+# --- Tests (informational; does not block WIP commits) -----------------------
+if [ -d "tests" ]; then
+    echo "  🧪 Running tests..."
+    python -m pytest tests/ -q --tb=short || echo "⚠ tests reported failures (not blocking)" >&2
+fi
+
+echo "✅ Pre-commit checks passed!"

@@ -17,6 +17,7 @@ from datetime import datetime
 try:
     import questionary
     from questionary import Style
+
     QUESTIONARY_AVAILABLE = True
 except ImportError:
     QUESTIONARY_AVAILABLE = False
@@ -26,6 +27,7 @@ try:
     from rich.panel import Panel
     from rich.table import Table
     from rich.markdown import Markdown
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -35,13 +37,13 @@ from .agent_config import (
     AgentCapabilities,
     AgentManager,
     AgentValidator,
-    create_agent_template
+    create_agent_template,
 )
-from .capability_metadata import (
+from .module_core.capability_metadata import (
     load_all_capabilities,
     CapabilityMetadata,
     CapabilityType,
-    CompositionEngine
+    CompositionEngine,
 )
 from .ui_helper import UIHelper, Colors
 
@@ -49,19 +51,23 @@ ui = UIHelper()
 
 
 # Custom style for questionary
-custom_style = Style([
-    ('question', 'bold'),
-    ('answer', 'fg:#00ff00 bold'),
-    ('pointer', 'fg:#00ff00 bold'),
-    ('highlighted', 'fg:#00ff00 bold'),
-    ('selected', 'fg:#00ff00'),
-    ('separator', 'fg:#cc5454'),
-    ('instruction', ''),
-    ('text', ''),
-])
+custom_style = Style(
+    [
+        ("question", "bold"),
+        ("answer", "fg:#00ff00 bold"),
+        ("pointer", "fg:#00ff00 bold"),
+        ("highlighted", "fg:#00ff00 bold"),
+        ("selected", "fg:#00ff00"),
+        ("separator", "fg:#cc5454"),
+        ("instruction", ""),
+        ("text", ""),
+    ]
+)
 
 
-def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optional[AgentConfiguration]:
+def run_agent_creation_wizard(
+    agents_dir: Path, capabilities_dir: Path
+) -> Optional[AgentConfiguration]:
     """
     Run interactive agent creation wizard.
 
@@ -73,7 +79,9 @@ def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optio
         AgentConfiguration if successful, None if cancelled
     """
     if not QUESTIONARY_AVAILABLE:
-        print(f"{Colors.FAIL}Interactive wizard requires 'questionary' package{Colors.ENDC}")
+        print(
+            f"{Colors.FAIL}Interactive wizard requires 'questionary' package{Colors.ENDC}"
+        )
         print(f"Install with: pip install questionary")
         return None
 
@@ -103,17 +111,19 @@ def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optio
                 "Agent name:",
                 instruction=f"(press Enter to use default: '{template_name.replace('-', ' ').title()}')",
                 default="",
-                style=custom_style
+                style=custom_style,
             ).ask()
 
             # Create agent from template
-            agent = create_agent_from_template(template_name, name if name else None, None)
+            agent = create_agent_from_template(
+                template_name, name if name else None, None
+            )
 
             # Ask if user wants to customize further
             customize = questionary.confirm(
                 "Would you like to customize this template further?",
                 default=False,
-                style=custom_style
+                style=custom_style,
             ).ask()
 
             if not customize:
@@ -134,7 +144,9 @@ def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optio
             # Step 3: Capability Selection (most important)
             capabilities = select_capabilities(all_caps, console)
             if not capabilities or capabilities.is_empty():
-                print(f"\n{Colors.YELLOW}Agent creation cancelled - no capabilities selected{Colors.ENDC}")
+                print(
+                    f"\n{Colors.YELLOW}Agent creation cancelled - no capabilities selected{Colors.ENDC}"
+                )
                 return None
 
         # Step 4: Validate selections
@@ -148,7 +160,7 @@ def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optio
             fix = questionary.confirm(
                 "Would you like to go back and fix the selections?",
                 default=True,
-                style=custom_style
+                style=custom_style,
             ).ask()
 
             if fix:
@@ -181,14 +193,12 @@ def run_agent_creation_wizard(agents_dir: Path, capabilities_dir: Path) -> Optio
             required_files=required_files,
             optional_files=optional_files,
             tags=[],
-            status="active"
+            status="active",
         )
 
         if not preview_and_confirm(agent, console):
             retry = questionary.confirm(
-                "Would you like to start over?",
-                default=False,
-                style=custom_style
+                "Would you like to start over?", default=False, style=custom_style
             ).ask()
 
             if retry:
@@ -237,9 +247,7 @@ Let's get started!
 
     print()
     proceed = questionary.confirm(
-        "Ready to create your agent?",
-        default=True,
-        style=custom_style
+        "Ready to create your agent?", default=True, style=custom_style
     ).ask()
 
     return proceed if proceed is not None else False
@@ -261,7 +269,7 @@ def ask_template_or_custom(console: Optional[Console]) -> Tuple[Optional[str], b
     choices = [
         questionary.Choice(
             title="Build from scratch - Full customization (recommended for advanced users)",
-            value="custom"
+            value="custom",
         ),
         questionary.Separator("--- OR START FROM TEMPLATE ---"),
     ]
@@ -272,15 +280,12 @@ def ask_template_or_custom(console: Optional[Console]) -> Tuple[Optional[str], b
         desc = get_template_description(template_name)
         choices.append(
             questionary.Choice(
-                title=f"{template_name:20} - {desc[:50]}...",
-                value=template_name
+                title=f"{template_name:20} - {desc[:50]}...", value=template_name
             )
         )
 
     choice = questionary.select(
-        "How would you like to start?",
-        choices=choices,
-        style=custom_style
+        "How would you like to start?", choices=choices, style=custom_style
     ).ask()
 
     if not choice or choice == "custom":
@@ -300,7 +305,7 @@ def get_basic_info() -> Tuple[str, str, str]:
     name = questionary.text(
         "Agent name:",
         instruction="(e.g., 'My Testing Agent', 'Backend Developer Agent')",
-        style=custom_style
+        style=custom_style,
     ).ask()
 
     if not name:
@@ -310,7 +315,7 @@ def get_basic_info() -> Tuple[str, str, str]:
     description = questionary.text(
         "Short description:",
         instruction="(one-line summary of what this agent does)",
-        style=custom_style
+        style=custom_style,
     ).ask()
 
     if not description:
@@ -321,21 +326,22 @@ def get_basic_info() -> Tuple[str, str, str]:
         "Author (optional):",
         instruction="(your name or team name)",
         default="",
-        style=custom_style
+        style=custom_style,
     ).ask()
 
     return name or "", description or "", author or ""
 
 
 def select_capabilities(
-    all_caps: Dict[str, CapabilityMetadata],
-    console: Optional[Console]
+    all_caps: Dict[str, CapabilityMetadata], console: Optional[Console]
 ) -> AgentCapabilities:
     """Interactive capability selection"""
 
     print(f"\n{Colors.HEADER}=== Step 2: Select Capabilities ==={Colors.ENDC}\n")
     print("Choose capabilities for your agent. You can select multiple items.")
-    print(f"{Colors.GRAY}Tip: Use arrow keys to navigate, space to select, enter to confirm{Colors.ENDC}\n")
+    print(
+        f"{Colors.GRAY}Tip: Use arrow keys to navigate, space to select, enter to confirm{Colors.ENDC}\n"
+    )
 
     # Group capabilities
     skills = {k: v for k, v in all_caps.items() if v.type == CapabilityType.SKILL}
@@ -348,15 +354,13 @@ def select_capabilities(
         questionary.Choice(
             title=f"{v.name} - {v.description[:60]}...",
             value=k.replace("skills/", ""),
-            checked=False
+            checked=False,
         )
         for k, v in sorted(skills.items())
     ]
 
     selected_skills = questionary.checkbox(
-        "Select skills:",
-        choices=skill_choices,
-        style=custom_style
+        "Select skills:", choices=skill_choices, style=custom_style
     ).ask()
 
     if selected_skills is None:
@@ -368,15 +372,13 @@ def select_capabilities(
         questionary.Choice(
             title=f"{v.name} - {v.description[:60]}...",
             value=k.replace("workflows/", ""),
-            checked=False
+            checked=False,
         )
         for k, v in sorted(workflows.items())
     ]
 
     selected_workflows = questionary.checkbox(
-        "Select workflows:",
-        choices=workflow_choices,
-        style=custom_style
+        "Select workflows:", choices=workflow_choices, style=custom_style
     ).ask()
 
     if selected_workflows is None:
@@ -388,30 +390,25 @@ def select_capabilities(
         questionary.Choice(
             title=f"{v.name} - {v.description[:60]}...",
             value=k.replace("commands/", ""),
-            checked=False
+            checked=False,
         )
         for k, v in sorted(commands.items())
     ]
 
     selected_commands = questionary.checkbox(
-        "Select commands:",
-        choices=command_choices,
-        style=custom_style
+        "Select commands:", choices=command_choices, style=custom_style
     ).ask()
 
     if selected_commands is None:
         return AgentCapabilities()
 
     return AgentCapabilities(
-        skills=selected_skills,
-        workflows=selected_workflows,
-        commands=selected_commands
+        skills=selected_skills, workflows=selected_workflows, commands=selected_commands
     )
 
 
 def validate_capability_selections(
-    capabilities: AgentCapabilities,
-    all_caps: Dict[str, CapabilityMetadata]
+    capabilities: AgentCapabilities, all_caps: Dict[str, CapabilityMetadata]
 ) -> List[str]:
     """Validate capability selections"""
 
@@ -427,7 +424,8 @@ def validate_capability_selections(
 
     # Check for circular dependencies
     try:
-        from .capability_metadata import CapabilityValidator
+        from .module_core.capability_metadata import CapabilityValidator
+
         for cap_id in capabilities.all_capabilities():
             cycle = CapabilityValidator.detect_circular_dependencies(cap_id, all_caps)
             if cycle:
@@ -438,8 +436,7 @@ def validate_capability_selections(
     # Check for conflicts
     try:
         conflicts = CompositionEngine.detect_conflicts(
-            capabilities.all_capabilities(),
-            all_caps
+            capabilities.all_capabilities(), all_caps
         )
         if conflicts:
             for c1, c2, reason in conflicts:
@@ -453,14 +450,13 @@ def validate_capability_selections(
 def show_recommendations(
     capabilities: AgentCapabilities,
     all_caps: Dict[str, CapabilityMetadata],
-    console: Optional[Console]
+    console: Optional[Console],
 ):
     """Show smart capability recommendations"""
 
     try:
         recommendations = CompositionEngine.get_recommended_capabilities(
-            capabilities.all_capabilities(),
-            all_caps
+            capabilities.all_capabilities(), all_caps
         )
 
         if recommendations:
@@ -477,11 +473,13 @@ def show_recommendations(
             add_recommended = questionary.confirm(
                 "\nWould you like to add any of these? (you can add them manually later)",
                 default=False,
-                style=custom_style
+                style=custom_style,
             ).ask()
 
             if add_recommended:
-                print(f"{Colors.YELLOW}Note: Manually edit the agent file to add these capabilities{Colors.ENDC}")
+                print(
+                    f"{Colors.YELLOW}Note: Manually edit the agent file to add these capabilities{Colors.ENDC}"
+                )
 
     except Exception:
         pass  # Recommendations are optional
@@ -492,19 +490,19 @@ def get_context_priority() -> List[str]:
 
     print(f"\n{Colors.HEADER}=== Step 3: Context Priority ==={Colors.ENDC}\n")
     print("Define what your agent should focus on (in order of importance).")
-    print(f"{Colors.GRAY}Examples: 'Read README.md first', 'Check PROJECT_STATUS.md'{Colors.ENDC}\n")
+    print(
+        f"{Colors.GRAY}Examples: 'Read README.md first', 'Check PROJECT_STATUS.md'{Colors.ENDC}\n"
+    )
 
     use_template = questionary.confirm(
-        "Use default context priority template?",
-        default=True,
-        style=custom_style
+        "Use default context priority template?", default=True, style=custom_style
     ).ask()
 
     if use_template:
         return [
             "Read PROJECT_STATUS.md for current work",
             "Review relevant files for the task",
-            "Check for existing patterns in codebase"
+            "Check for existing patterns in codebase",
         ]
     else:
         priorities = []
@@ -514,7 +512,7 @@ def get_context_priority() -> List[str]:
             priority = questionary.text(
                 f"Priority {i}:",
                 instruction="(or press enter to finish)",
-                style=custom_style
+                style=custom_style,
             ).ask()
 
             if not priority:
@@ -530,19 +528,19 @@ def get_agent_instructions() -> List[str]:
 
     print(f"\n{Colors.HEADER}=== Step 4: Agent Instructions ==={Colors.ENDC}\n")
     print("Define specific behavioral guidelines for your agent.")
-    print(f"{Colors.GRAY}Examples: 'Follow TDD methodology', 'Update docs as you code'{Colors.ENDC}\n")
+    print(
+        f"{Colors.GRAY}Examples: 'Follow TDD methodology', 'Update docs as you code'{Colors.ENDC}\n"
+    )
 
     use_template = questionary.confirm(
-        "Use default instructions template?",
-        default=True,
-        style=custom_style
+        "Use default instructions template?", default=True, style=custom_style
     ).ask()
 
     if use_template:
         return [
             "Follow project conventions and best practices",
             "Update PROJECT_STATUS.md as work progresses",
-            "Write clear, maintainable code"
+            "Write clear, maintainable code",
         ]
     else:
         instructions = []
@@ -552,7 +550,7 @@ def get_agent_instructions() -> List[str]:
             instruction = questionary.text(
                 f"Instruction {i}:",
                 instruction="(or press enter to finish)",
-                style=custom_style
+                style=custom_style,
             ).ask()
 
             if not instruction:
@@ -570,9 +568,7 @@ def get_file_dependencies() -> Tuple[List[str], List[str]]:
     print("Specify files your agent needs (optional).\n")
 
     add_files = questionary.confirm(
-        "Add file dependencies?",
-        default=False,
-        style=custom_style
+        "Add file dependencies?", default=False, style=custom_style
     ).ask()
 
     if not add_files:
@@ -585,7 +581,7 @@ def get_file_dependencies() -> Tuple[List[str], List[str]]:
         file = questionary.text(
             f"Required file {i}:",
             instruction="(or press enter to skip)",
-            style=custom_style
+            style=custom_style,
         ).ask()
 
         if not file:
@@ -599,7 +595,7 @@ def get_file_dependencies() -> Tuple[List[str], List[str]]:
         file = questionary.text(
             f"Optional file {i}:",
             instruction="(or press enter to skip)",
-            style=custom_style
+            style=custom_style,
         ).ask()
 
         if not file:
@@ -622,9 +618,15 @@ def preview_and_confirm(agent: AgentConfiguration, console: Optional[Console]) -
     print(f"  Version: {agent.version}")
     print(f"  Created: {agent.created}")
     print(f"\n{Colors.CYAN}Capabilities:{Colors.ENDC}")
-    print(f"  Skills ({len(agent.capabilities.skills)}): {', '.join(agent.capabilities.skills) or 'none'}")
-    print(f"  Workflows ({len(agent.capabilities.workflows)}): {', '.join(agent.capabilities.workflows) or 'none'}")
-    print(f"  Commands ({len(agent.capabilities.commands)}): {', '.join(agent.capabilities.commands) or 'none'}")
+    print(
+        f"  Skills ({len(agent.capabilities.skills)}): {', '.join(agent.capabilities.skills) or 'none'}"
+    )
+    print(
+        f"  Workflows ({len(agent.capabilities.workflows)}): {', '.join(agent.capabilities.workflows) or 'none'}"
+    )
+    print(
+        f"  Commands ({len(agent.capabilities.commands)}): {', '.join(agent.capabilities.commands) or 'none'}"
+    )
     print(f"\n{Colors.CYAN}Context Priority:{Colors.ENDC}")
     for i, priority in enumerate(agent.context_priority, 1):
         print(f"  {i}. {priority}")
@@ -640,9 +642,7 @@ def preview_and_confirm(agent: AgentConfiguration, console: Optional[Console]) -
     print()
 
     confirm = questionary.confirm(
-        "Create this agent?",
-        default=True,
-        style=custom_style
+        "Create this agent?", default=True, style=custom_style
     ).ask()
 
     return confirm if confirm is not None else False

@@ -20,12 +20,12 @@ links:
 ```yaml
 project_phase: "Production"
 protogear_enabled: true
-protogear_version: "v0.10.0"
+protogear_version: "v0.20.0"
 framework: "Unknown"
 project_type: "Python"
 initialization_date: "2025-11-21"
-last_release: "v0.9.0"
-release_date: "2026-05-13"
+last_release: "v0.20.0"
+release_date: "2026-07-14"
 current_sprint: null
 current_branch: "main"
 ```
@@ -35,12 +35,27 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 
-_No active tickets — v0.10.0 just shipped._
+_No active tickets — PROTO-066 just shipped._
+
+## 🚀 Releases
+
+<!-- Release-scoped supervision gates (release-approval, announcement-approval)
+     are cleared once per release here — `pg release <label>` reads this table,
+     keyed by the release label in the ID column. -->
+
+| ID | Date | Release approved by | Announced by |
+|----|------|---------------------|--------------|
+| v0.20.0 | 2026-07-14 | prototowb | prototowb |
+| v0.10.0 | 2026-05-13 | prototowb | prototowb |
+| v0.9.0 | 2026-02-19 | prototowb | prototowb |
 
 ## ✅ Completed Tickets
 
-| ID | Title | Completed | PR/Commit |
-|----|-------|-----------|-----------|
+| ID | Title | Completed | PR/Commit | Reviewed by |
+|----|-------|-----------|-----------|-------------|
+| PROTO-066 | Release-scoped gate evidence — `pg release` verifies `release-approval`/`announcement-approval` from a Releases surface | 2026-07-11 | | prototowb |
+| PROTO-065 | Make engineering gates evidenceable — per-gate `evidence` column (closes the `untracked` wart) | 2026-07-11 | | prototowb |
+| PROTO-064 | Phase D-4: release trace — aggregate per-ticket gate checklists into a release readiness verdict (`pg release`) | 2026-07-11 | | prototowb |
 | PROTO-038 | Trim stale inline tables in capabilities/INDEX.md | 2026-05-13 | v0.10.0 |
 | PROTO-037 | Strip duplicate frontmatter from capability content files | 2026-05-13 | v0.10.0 |
 | PROTO-036 | Auto-generate capability INDEX.md from metadata.yaml | 2026-05-13 | v0.10.0 |
@@ -57,6 +72,369 @@ _No active tickets — v0.10.0 just shipped._
 | PROTO-024 | Template cross-references & capability discovery | 2025-12-07 | 3e88847 |
 | PROTO-023 | Incremental wizard & file protection (v0.7.1) | 2025-11-22 | - |
 | PROTO-022 | Release workflow documentation (v0.7.0) | 2025-11-21 | - |
+
+### PROTO-066 Details (COMPLETE)
+**Release-scoped gate evidence — `pg release` verifies `release-approval` /
+`announcement-approval`.** PROTO-065 made engineering's *per-change* gate
+(`pr-review-approval`) evidenceable but left its *release-level* gates
+`untracked`/unverified per ticket — correctly, since a single ticket doesn't
+clear a release gate. This closes that half: release-level gates are evidenced
+**once for the whole release**.
+
+**Delivered** (generic, reuses all existing machinery):
+1. ✅ Optional **`scope: change | release`** on a gate (default `change`).
+   Parsed in `capability_metadata.Gate`; propagated through `pipeline`; surfaced
+   on each `trace.gate_checklist` entry.
+2. ✅ `release.trace_release` splits evaluation by scope: **change-scoped** gates
+   are aggregated per ticket (as before); **release-scoped** gates are evaluated
+   **once**, against the release label itself — `gate_checklist(<label>)` reads a
+   new `Releases` table keyed by the label in its `ID` column, so *no new
+   matching logic* was needed. The verdict blocks if any release-scoped gate is
+   pending/outstanding (e.g. no release-approval recorded → not ready).
+3. ✅ `release`/`complete-release` workflows mark `release-approval` (`scope:
+   release`, `evidence: "Release approved by"`) and `announcement-approval`
+   (`evidence: "Announced by"`). `PROJECT_STATUS` template gains a `Releases`
+   table; the CLI shows a "Release-scoped gates" section in `pg release` and
+   notes them in `pg trace` (they're not a single ticket's to clear).
+4. ✅ `tests/test_release.py` +3, `test_trace.py`/metadata updated. Dogfood:
+   `pg release v0.10.0` shows `release-approval`/`announcement-approval` cleared
+   from the Releases row.
+
+**Verification**: full suite **839 passed** (was 837). `pg doctor` 0/0/29 ok.
+`black --check` clean.
+
+**Files Modified**: `core/proto_gear_pkg/module_core/capability_metadata.py`, `core/proto_gear_pkg/module_core/pipeline.py`, `core/proto_gear_pkg/module_core/trace.py`, `core/proto_gear_pkg/module_core/release.py`, `core/proto_gear_pkg/cli_commands.py`, `core/proto_gear_pkg/capabilities/workflows/release/metadata.yaml`, `core/proto_gear_pkg/capabilities/workflows/complete-release/metadata.yaml`, `core/proto_gear_pkg/PROJECT_STATUS.template.md`, `tests/test_release.py`, `tests/test_trace.py`, `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-065 Details (COMPLETE)
+**Make engineering's own gates evidenceable — closes the `untracked` wart.**
+`pg trace`/`pg release` showed engineering's gates (`release-approval`,
+`pr-review-approval`, …) as `untracked` because `gate_checklist` evidenced
+approvals at the **discipline** level (one approval column per discipline) and
+`PROJECT_STATUS.md` carries none. That works for single-gate disciplines
+(qa/devops/security) but engineering has several heterogeneous gates, so one
+column can't disambiguate them — and naively adding a generic approval column
+would have *falsely* cleared release-level gates in `pg release` (false "ready").
+
+**Delivered** (generic, opt-in, backward compatible):
+1. ✅ Optional **`evidence`** field on a supervision gate (workflow
+   `metadata.yaml`) — names the state-surface column (case-insensitive
+   substring) that records *that specific gate's* sign-off. Parsed in
+   `capability_metadata.Gate`; propagated through `pipeline.collect_supervision_gates`.
+2. ✅ `trace.gate_checklist` is now gate-evidence-aware: a gate with `evidence`
+   is verified against its own column (cleared / pending / untracked); a gate
+   without keeps the discipline-level generic fallback unchanged. Refactored row
+   iteration into `_iter_change_rows` so the checklist can read arbitrary columns.
+3. ✅ Engineering's **per-change** gate `pr-review-approval` (before `merge`)
+   declares `evidence: "Reviewed by"`; the `PROJECT_STATUS` completed-tickets
+   template gains a `Reviewed by` column (and `pg ticket ... --status COMPLETED`
+   writes the extra cell). Deliberately named outside the generic approval-column
+   set so engineering's **release-level** gates stay honestly unverified per
+   ticket — no false clears in `pg release`.
+4. ✅ `tests/test_trace.py` — 4 new tests (evidence cleared/pending, release-level
+   gates not falsely cleared, bundled gate ships its column).
+
+**Verification**: full suite **837 passed** (was 833). `pg doctor` 0/0/29 ok.
+`black --check` clean. `pg trace PROTO-065` now shows `pr-review-approval:
+cleared` (Reviewed by: prototowb) while release-level gates remain unverified.
+
+**Files Modified**: `core/proto_gear_pkg/module_core/capability_metadata.py`, `core/proto_gear_pkg/module_core/pipeline.py`, `core/proto_gear_pkg/module_core/trace.py`, `core/proto_gear_pkg/capabilities/workflows/code-review-process/metadata.yaml`, `core/proto_gear_pkg/PROJECT_STATUS.template.md`, `core/proto_gear_pkg/modules/engineering/status_commands.py`, `tests/test_trace.py`, `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-064 Details (COMPLETE)
+**Phase D-4 — release trace (`pg release <label>`).** `pg trace <ticket>` (D-2/D-3)
+follows one change to production and reports which required approvals it lacks. A
+*release* bundles many tickets and ships only when **every** ticket has cleared
+**every** required gate. This aggregates the per-ticket gate checklists into one
+release-level readiness verdict.
+
+**Delivered** (generic, read-only, **zero edits to `modules/`** — pure
+`module_core` + CLI, the correct layer for cross-discipline logic):
+1. ✅ `module_core/release.py` — `find_release_tickets(release_id, ...)` reads
+   release membership from a release column (`PR/Commit` / `Release` / `Version`)
+   across every discipline's `state_surface` (selection by *column name*, not
+   discipline name, so it stays generic like `trace`); `trace_release(...)`
+   folds each member ticket's `trace.gate_checklist` into one verdict.
+2. ✅ **Honest unverifiable handling** — a required gate whose discipline records
+   no approval column (engineering's `PROJECT_STATUS`) reads `untracked`. We
+   neither count it cleared (false confidence) nor blocking (would wedge every
+   release): it's reported as *unverified*, and the verdict says so. `ready` =
+   at least one ticket AND no ticket has a `pending`/`outstanding` gate.
+3. ✅ `pg release <label> [--json]` — per-ticket checklist + `READY TO SHIP` /
+   `BLOCKED` roll-up. Wired in `cli/parser.py`, `cli/app.py`, `cli_commands.py`;
+   added to `sync_context.CLI_COMMANDS` (regenerated AGENT_CONTEXT + host files).
+4. ✅ `tests/test_release.py` — 11 tests: membership discovery (incl. `Target`
+   column is NOT release membership), aggregation (blocked/cleared/unverified),
+   CLI render/json/no-match.
+
+**Verification**: full suite **833 passed** (was 822). `pg doctor` 0/0/29 ok.
+`black --check` clean. `pg release v0.10.0` on this repo correctly reports each
+ticket blocked (repo dogfoods engineering-only; downstream gates legitimately
+outstanding — no qa/devops/security surfaces present).
+
+**Files Created**: `core/proto_gear_pkg/module_core/release.py`, `tests/test_release.py`.
+**Files Modified**: `core/proto_gear_pkg/cli/parser.py`, `core/proto_gear_pkg/cli/app.py`, `core/proto_gear_pkg/cli_commands.py`, `core/proto_gear_pkg/module_core/sync_context.py`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-050 Details (COMPLETE)
+**Raise core coverage to ≥70% (spec Phase A criterion).** Coverage went from
+**45% → 70.04%** (measured with `pytest --cov`). The `module_core/` engine was
+already ~95%; the drag was the untested CLI, status, detection, and init layers.
+
+**Tooling fix**: `pytest.ini` used `[tool:pytest]` — the setup.cfg/tox.ini
+spelling, silently ignored in a `pytest.ini` file — so *every* option (including
+`--cov`) had never applied and coverage couldn't be measured at all. Fixed to
+`[pytest]`, dropped `--cov` from `addopts` (kept opt-in so the pre-commit hook
+stays fast), removed the inert `timeout=` line, and added a `dev` extra
+(`pytest-cov`, `black`, `flake8`) in `pyproject.toml`.
+
+**New tests** (≈150 cases, all business logic — interactive questionary wizards
+deliberately out of scope):
+- `test_status_commands.py` — ticket/status handlers (0→97%).
+- `test_cli_parser.py` — full argparse surface (2→100%).
+- `test_agent_templates.py` — templates + AgentManager resolution (0→100%).
+- `test_cli_commands_handlers.py` — capabilities + agent handlers (11→~70%).
+- `test_cli_app.py` — `main()` dispatch across commands (2→~65%).
+- `test_init_engine.py` — full non-interactive `pg init` (proto_gear 40→87%).
+- `test_detection_engine.py` — stack detection across ecosystems.
+- `test_interactive_setup_wizard.py` — the input()-based fallback wizard.
+- `test_safe_write_file.py`, `test_template_updater_confirm.py`,
+  `test_presentation.py`, `test_capability_validator.py` — remaining gaps.
+
+**Verification**: full suite **748 passed** (was 566). `pytest --cov` → **70.04%**.
+`pg doctor` 0/0/25. `black --check` clean.
+
+**Files Created**: 11 test modules (above).
+**Files Modified**: `pytest.ini` (section fix + opt-in coverage), `pyproject.toml` (dev extra), `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-054 Details (COMPLETE)
+**Phase C — ship the QA/Test module (2nd engineering discipline) as the
+zero-core-edits contract falsifier.** With content removed (PROTO-053), the
+module contract needed a *real, in-scope* second implementation to prove the
+department-agnostic core hosts a brand-new engineering discipline through the
+same interfaces as engineering — with **zero `module_core/` edits**.
+
+**Delivered** (all under `core/proto_gear_pkg/modules/qa/` + one test):
+1. ✅ `module.yaml` — QA manifest (state_surface `QA_QUEUE.md`, context/handoff),
+   same schema engineering uses.
+2. ✅ `QA_QUEUE.template.md` — the QA state surface (test plans / defects:
+   `planned → in-test → failed → verified → signed-off`, with a "Signed off by"
+   column for the gate).
+3. ✅ `capabilities/workflows/release-signoff/` — a gated workflow with the
+   `qa-signoff` supervision gate (human sign-off before a release ships;
+   composes before engineering's `release`). Exercises PROTO-052's multi-source
+   gate audit against a real module.
+4. ✅ `tests/test_qa_module.py` — 14 acceptance tests: qa discovered alongside
+   engineering, surfaces validate, `doctor.check_modules` reports it valid,
+   `doctor.check_supervision_gates` audits `qa/workflows/release-signoff`
+   (gate-ok), `iter_capability_sources` includes it, `pg module list/show qa`
+   and `pg --module qa init-surface` (writes `QA_QUEUE.md` verbatim).
+
+**Falsifier result (the whole point)**: `git status` confirms the change set is
+**only** `modules/qa/` + the test — **zero edits to `module_core/`, `cli/`, or
+`doctor`**. The contract is real: a second engineering discipline runs on the
+core unmodified (ADR-001 Phase C exit / contract v1.0). `pg doctor` auto-picked
+up the qa manifest + gate (23 → **25** checks) with no code change.
+
+**Verification**: full suite **750 passed** (was 736). `pg doctor` 0/0/25 ok.
+`black --check` clean. `pg module list` shows engineering + qa.
+
+**Files Created**: `core/proto_gear_pkg/modules/qa/{__init__.py,module.yaml,QA_QUEUE.template.md,capabilities/workflows/release-signoff/{metadata.yaml,WORKFLOW.template.md}}`, `tests/test_qa_module.py`.
+**Files Modified**: `PROJECT_STATUS.md` only. *(No core edits — that's the proof.)*
+
+---
+
+### PROTO-053 Details (COMPLETE)
+**Engineering-only reframe: remove the content/marketing module; rescope the
+vision from "agency OS" → "software-engineering OS."** The departmental-module
+*platform* is the right abstraction, but it was pitched one level too high.
+Proto Gear's scope is the **software-engineering circle**, whose "departments"
+are engineering disciplines (dev, QA, DevOps, security, docs, release/PM) — not
+agency-wide functions. Content/marketing belongs to a separate product (honk),
+which already implements a full content pipeline (queue, policy-gate, social
+adapters) far beyond the toy proto-gear content module.
+
+**Removed** (content/marketing — out of scope):
+- `core/proto_gear_pkg/modules/content/` (manifest, CONTENT_QUEUE template, the
+  `publish` workflow + `content-approval` gate) — reverses PROTO-047/052's
+  content deliverables.
+- `docs/dev/content-module-design.md`, `tests/test_content_module.py`.
+
+**Kept (platform stays, rescoped to engineering departments):** `module_core/`,
+`modules/engineering/`, `module.yaml`, `module_host`, `module_manifest`,
+`pg --module` / `pg module list/show` / `pg init-surface`, the supervision-gate
+machinery. Content-specific test/doc examples re-pointed to engineering or a
+neutral `qa` department; the multi-source gate audit and init-surface now
+demonstrate against `engineering`.
+
+**Reframed vision docs** (agency → software-engineering OS; departments =
+engineering disciplines; Phase C falsifier is now a second *engineering*
+discipline e.g. QA/DevOps, not Content): `PROJECT_SPECIFICATIONS.md`,
+`docs/dev/adr/ADR-001-departmental-module-platform.md`, `ARCHITECTURE.md`,
+`modules/engineering/__init__.py`.
+
+**Verification**: full suite **736 passed** (was 748; −12 content/obsolete
+tests). `pg doctor` 0/0/**23** ok (was 25 — content's manifest + gate checks
+correctly gone). `black --check` clean.
+
+---
+
+### PROTO-052 Details (COMPLETE — content demo removed by PROTO-053)
+> ⚠️ The `iter_capability_sources` + multi-source gate-audit machinery below
+> **stays**; only its *content module* demonstration was removed (PROTO-053).
+> The behaviour is now exercised against engineering / a neutral `qa` module.
+
+**Manifest-driven capability sources — modules ship their own `capabilities/`
+(seam S1, supervision half).** PROTO-047 surfaced S1: gate auditing read only
+the shared `package_root()/capabilities`, so a department couldn't ship its own
+gated capability. This closes the supervision-critical half.
+
+**Delivered**:
+1. ✅ `module_host.iter_capability_sources()` — enumerates every *bundled*
+   capability dir: the shared root (source `None`) + each
+   `modules/<name>/capabilities/` that exists. The source-side counterpart to
+   the manifest's `capabilities_root`.
+2. ✅ `doctor.check_supervision_gates` rewired to audit gates across **all**
+   sources (was: shared root only). Module-owned capabilities target as
+   `<module>/<cap_id>` to disambiguate.
+3. ✅ Demonstration: `modules/content/capabilities/workflows/publish/` — the
+   content module's own `publish` workflow with the `content-approval` gate.
+   `pg doctor` now reports `content/workflows/publish: 1 supervision gate(s)
+   declared` (25 ok, was 24).
+4. ✅ Tests: 3 for `iter_capability_sources`, 2 for module-owned gate auditing +
+   namespacing; existing gate unit tests pinned to a single fake source.
+
+**Scope note**: this is the *supervision* half of S1 (the half with product
+value — gates are the whole point). The *listing* half — routing host-side
+capability surfaces (`discovery`/`pg suggest`, `sync_context`/AGENT_CONTEXT,
+`agent_config`, wizard) through the same sources — is deferred until a module
+ships non-gate capabilities that need listing. Captured in
+`docs/dev/content-module-design.md` §6.
+
+**Verification**: full suite **566 passed** (was 562). `pg doctor` 0/0/25 ok.
+`black --check` clean.
+
+**Files Created**: `core/proto_gear_pkg/modules/content/capabilities/workflows/publish/{metadata.yaml,WORKFLOW.template.md}`.
+**Files Modified**: `core/proto_gear_pkg/module_core/module_host.py`, `core/proto_gear_pkg/module_core/doctor.py`, `tests/test_module_host.py`, `tests/test_supervision_gates.py`, `docs/dev/content-module-design.md` (S1 marked closed), `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-049 Details (COMPLETE)
+**Sync `pg module` commands into the AGENT_CONTEXT cheatsheet.** The PROTO-048
+commands existed but weren't advertised in the agent-facing CLI cheatsheet, so a
+fresh agent session wouldn't know multi-module hosting exists.
+
+**Delivered**:
+1. ✅ Two new entries in `module_core/sync_context.py::CLI_COMMANDS`:
+   `pg module list/show [<name>]` and `pg --module <name> init-surface`.
+2. ✅ Ran `pg sync-context` — regenerated `AGENT_CONTEXT.md` and mirrored the
+   managed block into all four host configs (`CLAUDE.md`, `.cursorrules`,
+   `.windsurfrules`, `.github/copilot-instructions.md`).
+3. ✅ `tests/test_sync_context.py::test_cheatsheet_lists_module_commands` — locks
+   in that both commands appear in generated context so they can't silently drop.
+
+**Verification**: full suite **562 passed** (was 561). `pg doctor` 0/0/24 ok
+(host files back in sync — no drift). `black --check` clean.
+
+**Files Modified**: `core/proto_gear_pkg/module_core/sync_context.py`, `tests/test_sync_context.py`, `AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-048 Details (COMPLETE)
+**Multi-module hosting — `pg --module <name> <cmd>`.** Closes seam **S2** that
+PROTO-047 surfaced: the core had no neutral path to materialise a *non-
+engineering* module's state surface. Engineering's `pg init` (and its template
+engine) correctly live under `modules/engineering/`, but a manifest-only module
+like content had no way to lay down its `CONTENT_QUEUE.md`.
+
+**Delivered**:
+1. ✅ `core/proto_gear_pkg/module_core/module_host.py` — the department-agnostic
+   seam: `resolve_module(name)` (default engineering; unknown → clear error
+   listing available), `state_surface_template_path(manifest)` (locate
+   `<stem>.template.md` in the module dir, then package root), and
+   `render_state_surface(...)` (copy declared template → declared surface,
+   applying a caller-supplied substitution map — none → verbatim — and reporting
+   unresolved `{{placeholders}}`).
+2. ✅ Global `--module <name>` flag on the top-level parser (default
+   engineering, so the single-module case needs no flag).
+3. ✅ `pg --module <name> init-surface [--force] [--dry-run]` — renders the
+   selected module's state surface. `pg --module content init-surface` writes
+   `CONTENT_QUEUE.md`; `pg init-surface` (engineering) writes `PROJECT_STATUS.md`
+   but honestly warns that its 21 placeholders need the richer `pg init`.
+4. ✅ `tests/test_module_host.py` — 21 tests (resolution, template lookup,
+   render matrix incl. force/dry-run/substitutions/unresolved, CLI handler).
+
+**Layer note**: unlike PROTO-047 (which proved the contract by touching *no*
+core), PROTO-048 *is* the core-side work — it adds a new generic `module_core`
+primitive that any department uses. That's the correct layer: the seam is
+department-agnostic; nothing engineering- or content-specific leaked into it.
+
+**Deferred to a follow-up**: seam **S1** (manifest-driven capability/gate
+loading so a module ships its own `capabilities/`). It touches ~15 call sites
+across 6 files and has no consumer until content bundles capabilities — its own
+ticket, not folded into hosting.
+
+**Verification**: full suite **561 passed** (was 540). `pg doctor` 0/0/24 ok.
+`black --check` clean. Manual: content create / dry-run / exists / --force /
+unknown-module / engineering-placeholder-warning all correct.
+
+**Files Created**: `core/proto_gear_pkg/module_core/module_host.py`, `tests/test_module_host.py`.
+**Files Modified**: `core/proto_gear_pkg/cli/parser.py`, `core/proto_gear_pkg/cli/app.py`, `core/proto_gear_pkg/cli_commands.py`, `docs/dev/content-module-design.md` (S2 marked closed), `PROJECT_STATUS.md`.
+
+---
+
+### PROTO-047 Details (COMPLETE — content module removed by PROTO-053)
+> ⚠️ Historical. The Content module shipped here was **removed** in PROTO-053
+> (content/marketing is out of scope; the engineering OS keeps the *platform*,
+> not the content department). It served its purpose as the Phase-C falsifier
+> that proved zero-core-edits before being retired.
+
+**ADR-001 Phase C entry — ship the Content module to falsify the module contract.**
+
+The Content module is the **second** implementation of the module contract
+(PROJECT_SPECIFICATIONS.md §3). Its job is to prove the department-agnostic
+`module_core/` discovers, loads, and audits a brand-new department through the
+same interfaces as engineering — with **zero `module_core/` edits** (the Phase B
+exit criterion, now proven against a real bundled module, not just the tmp_path
+toy in `test_module_manifest.py`).
+
+**Delivered**:
+1. ✅ `core/proto_gear_pkg/modules/content/module.yaml` — manifest declaring the
+   content contract surfaces: `state_surface: CONTENT_QUEUE.md`,
+   `context_manifest: AGENT_CONTEXT.md`, `handoff: SESSION_HANDOFF.md`.
+2. ✅ `modules/content/CONTENT_QUEUE.template.md` — the content state surface
+   (draft → review → scheduled → published) with the `content-approval`
+   supervision gate recorded in an "Approved by" column.
+3. ✅ `modules/content/__init__.py` — module docstring.
+4. ✅ `docs/dev/content-module-design.md` — the ADR-001 **action-item-7** design
+   doc: contract mapping, capability/gate design, and the **seam analysis**.
+5. ✅ `tests/test_content_module.py` — 11 acceptance tests: bundled module is
+   discovered alongside engineering, surfaces validate, `doctor.check_modules`
+   reports it valid, `pg module list/show content` render it.
+
+**Falsifier payoff (open question answered)**: the second module surfaced **two
+real core seams**, captured for **PROTO-048** (fixing them now would be a core
+edit and defeat the zero-core-edit proof):
+- **S1** — capabilities + gate checks read from one shared
+  `package_root()/capabilities`, ignoring each manifest's `capabilities_root`; a
+  module can't yet ship its own capabilities.
+- **S2** — no neutral per-module init/template-render seam, so
+  `pg --module content init` can't lay down `CONTENT_QUEUE.md` yet.
+Contract *surfaces* (items 2/3/4/6) work unmodified today; only capability
+*plumbing* (items 1/5) is still engineering-routed.
+
+**Verification**: `pg doctor --all` → 0 errors, 0 warnings, **24 ok** (was 23;
+content manifest adds one). Full suite **540 passed** (was 529). `black --check`
+clean. `git status` confirms no `module_core/` changes.
+
+**Files Created**: `core/proto_gear_pkg/modules/content/{module.yaml,__init__.py,CONTENT_QUEUE.template.md}`, `docs/dev/content-module-design.md`, `tests/test_content_module.py`.
+
+---
 
 ### PROTO-035 Details (IN PROGRESS)
 **Windows-environment CLI integration bugs** — the six failures that persisted across PROTO-031..038 were a mix of real production bugs in `pg` and pure test portability issues. All five distinct root causes fixed:
@@ -413,6 +791,53 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-019 | Template version fixes (v0.6.3) | 2025-11-14 | - |
 | PROTO-018 | Integration tests for CLI commands (v0.6.4) | 2025-11-14 | - |
 | INIT-001 | ProtoGear Agent Framework integrated | 2025-11-21 | - |
+| PROTO-039 | Vision: PROJECT_SPECIFICATIONS.md — AI-supervised departmental modules | 2026-07-07 | |
+| PROTO-040 | Architecture ADR: evolve proto-gear into departmental module platform | 2026-07-07 | |
+| PROTO-041 | Fix: interactive_wizard crashes on import when questionary missing (Style NameError) | 2026-07-07 | |
+| PROTO-042 | Split proto_gear.py monolith into cli/ + engine modules (ADR-001 Phase A) | 2026-07-08 | |
+| PROTO-045 | Module manifest contract + pg module + doctor check (ADR-001 Phase B foundation) | 2026-07-08 | |
+| PROTO-046 | Re-home engine into module_core/ + modules/engineering/ (ADR-001 Phase B item 5) | 2026-07-09 | |
+| PROTO-043 | Supervision gates as data: gates field in workflow metadata + doctor check | 2026-07-09 | |
+| PROTO-044 | Repo hygiene: untrack .backup files, relocate root strays to dev/ | 2026-07-09 | |
+| PROTO-051 | Black-format the repo and make the CI black --check gate required | 2026-07-09 | |
+| PROTO-047 | ADR-001 Phase C: ship a second (Content) module to falsify the module contract | 2026-07-09 | |
+| PROTO-048 | Multi-module hosting: pg --module <name> <cmd> (Phase B → C) | 2026-07-09 | |
+| PROTO-049 | Sync pg module commands into AGENT_CONTEXT cheatsheet (sync_context.CLI_COMMANDS) | 2026-07-09 | |
+| PROTO-052 | Manifest-driven capability sources: modules ship their own capabilities/ (seam S1) | 2026-07-10 | |
+| PROTO-050 | Raise coverage on core business logic to >=70% (spec Phase A criterion) | 2026-07-10 | |
+| PROTO-053 | Teardown: remove departmental-module platform + content; proto-gear is engineering-only | 2026-07-10 | |
+| PROTO-054 | Phase C: ship QA/Test module (2nd engineering discipline) — zero-core-edits contract falsifier | 2026-07-10 | |
+| PROTO-055 | CI green: pinned black lint job + PROTO-053 docstring scrub | 2026-07-10 | |
+| PROTO-056 | S1 multi-source capability listings — per-module namespaced (<module>/<cap_id>) | 2026-07-11 | |
+| PROTO-057 | S1 Phase 2: on-disk per-module subtree — install + per-module INDEX + doctor drift | 2026-07-11 | |
+| PROTO-058 | S1 follow-up: agent subsystem reads module capabilities (multi-source) | 2026-07-11 | |
+| PROTO-059 | DevOps/SRE module — 3rd discipline, zero core edits (deploy queue + prod-approval gate) | 2026-07-11 | |
+| PROTO-060 | Phase D: cross-discipline supervision pipeline view (pg pipeline) | 2026-07-11 | |
+| PROTO-061 | Phase D-2: cross-discipline change trace (pg trace) — ticket-id correlation | 2026-07-11 | |
+| PROTO-062 | Phase D-3: pg trace gate checklist — required approvals cleared vs outstanding | 2026-07-11 | |
+| PROTO-063 | Security/AppSec module — 4th discipline, zero core edits (findings queue + security-signoff gate) | 2026-07-11 | |
+| PROTO-064 | Phase D-4: release trace (pg release) — aggregate per-ticket gate checklists into a release readiness verdict | 2026-07-11 | |
+| PROTO-065 | Make engineering gates evidenceable — per-gate evidence column (closes the untracked wart) | 2026-07-11 | |
+| PROTO-066 | Release-scoped gate evidence — pg release verifies release-approval/announcement-approval from a Releases surface | 2026-07-11 | |
+| PROTO-067 | Agent seam: disciplines ship & compose agents | 2026-07-11 | | |
+| PROTO-068 | ADR-002: supervision primitives for autonomous agents | 2026-07-11 | | |
+| PROTO-069 | Accept ADR-002 + defer agent authority rung | 2026-07-11 | | |
+| PROTO-070 | Spec: add UI-first product principle | 2026-07-11 | | |
+| PROTO-071 | Gate schema: actor + graded authority — ADR-002 action item 1 | 2026-07-12 | | |
+| PROTO-072 | Evidence-predicate vocabulary for supervision gates — ADR-002 action item 2 | 2026-07-12 | | |
+| PROTO-073 | Dogfood falsifier: migrate pr-review-approval to human-on-recommendation — ADR-002 action item 4 | 2026-07-12 | | |
+| PROTO-074 | Authority sufficiency in pg trace / pg release — ADR-002 action item 3 | 2026-07-12 | | |
+| PROTO-075 | Spec: describe graded authority in the supervision model (section 4) — ADR-002 action item 5 | 2026-07-12 | | |
+| PROTO-076 | Agent surfacing: pg agent list --available + pg agent install | 2026-07-12 | | |
+| PROTO-077 | Release/PM module — 5th discipline, zero core edits | 2026-07-12 | | |
+| PROTO-078 | pg init --no-interactive skips wizard substitutions (blank name, --ticket-prefix ignored, placeholder leakage) | 2026-07-12 | | |
+| PROTO-079 | pg release --notes: generate release notes from cleared gate checklist | 2026-07-12 | | |
+| PROTO-080 | Interactive agent browser: bare 'pg agent' navigate/select UI (§5.7 first slice) | 2026-07-12 | | |
+| PROTO-081 | Interactive capability browser: bare 'pg capabilities' navigate/select UI (§5.7 slice 2) | 2026-07-13 | | |
+| PROTO-082 | Top-level interactive home menu: bare 'pg' navigate to Status/Capabilities/Agents/Tickets/Release (§5.7 slice 3) | 2026-07-13 | | |
+| PROTO-083 | feat(agents): per-agent model tier (fast/balanced/deep + override) | 2026-07-14 | | |
+| PROTO-084 | feat(orchestration): selectable orchestration paradigm pool + pg orchestration | 2026-07-14 | | |
+| PROTO-085 | docs(agents): loosen AGENTS.md to dynamic paradigm-driven orchestration | 2026-07-14 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

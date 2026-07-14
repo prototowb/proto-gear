@@ -1,0 +1,515 @@
+"""Tests for cross-discipline change trace (PROTO-061, Phase D-2).
+
+`module_core.trace` follows a change (engineering ticket id) through each
+discipline's declared state surface via a `Ref` column — the ticket-id
+correlation key. Generic: a discipline joins tracing by carrying a `Ref` column,
+no code change here.
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
+
+from proto_gear_pkg.module_core import trace
+
+
+def _args(**kw):
+    return argparse.Namespace(**kw)
+
+
+def _write_surfaces(root: Path, *, qa_ref="PROTO-054", dep_ref="PROTO-054, PROTO-055"):
+    (root / "PROJECT_STATUS.md").write_text(
+        "# Status\n\n| ID | Title | Type | Status | Branch | Assignee |\n"
+        "|----|-------|------|--------|--------|----------|\n"
+        "| PROTO-054 | QA module | feature | DONE | - | towb |\n",
+        encoding="utf-8",
+    )
+    (root / "QA_QUEUE.md").write_text(
+        "# QA\n\n| ID | Ref | Title | Area | Stage | Owner | Signed off by | Target |\n"
+        "|----|-----|-------|------|-------|-------|---------------|--------|\n"
+        f"| QA-007 | {qa_ref} | sweep | auth | signed-off | ann | ann | v0.11 |\n",
+        encoding="utf-8",
+    )
+    (root / "DEPLOY_QUEUE.md").write_text(
+        "# Deploy\n\n| ID | Ref | Change | Environment | Stage | Owner | Approved by | Target |\n"
+        "|----|-----|--------|-------------|-------|-------|-------------|--------|\n"
+        f"| DEP-003 | {dep_ref} | ship v2 | prod | deployed | sam | sam | v0.11 |\n"
+        "| DEP-004 | PROTO-099 | other | prod | staged | sam | _(pending gate)_ | v0.11 |\n",
+        encoding="utf-8",
+    )
+
+
+class TestParseMarkdownTables:
+    def test_parses_rows_as_header_keyed_dicts(self):
+        text = "| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n"
+        tables = trace.parse_markdown_tables(text)
+        assert tables == [[{"A": "1", "B": "2"}, {"A": "3", "B": "4"}]]
+
+    def test_ignores_non_table_prose(self):
+        text = "# Title\n\nsome prose\n\n| X |\n|---|\n| v |\n\nmore prose\n"
+        tables = trace.parse_markdown_tables(text)
+        assert tables == [[{"X": "v"}]]
+
+
+class TestTraceChange:
+    def test_matches_ticket_across_disciplines(self, tmp_path):
+        _write_surfaces(tmp_path)
+        hits = trace.trace_change("PROTO-054", tmp_path)
+        by_disc = {h["discipline"]: h for h in hits}
+        assert by_disc["engineering"]["id"] == "PROTO-054"  # matched by ID
+        assert by_disc["qa"]["id"] == "QA-007"  # matched by Ref
+        assert by_disc["devops"]["id"] == "DEP-003"
+
+    def test_engineering_listed_first(self, tmp_path):
+        _write_surfaces(tmp_path)
+        hits = trace.trace_change("PROTO-054", tmp_path)
+        assert hits[0]["discipline"] == "engineering"
+
+    def test_comma_separated_ref_matches(self, tmp_path):
+        # DEP-003 ships "PROTO-054, PROTO-055" — tracing either finds it.
+        _write_surfaces(tmp_path)
+        hits = trace.trace_change("PROTO-055", tmp_path)
+        assert any(h["id"] == "DEP-003" for h in hits)
+
+    def test_approval_state_cleared_vs_pending(self, tmp_path):
+        _write_surfaces(tmp_path)
+        cleared = trace.trace_change("PROTO-054", tmp_path)
+        assert {h["discipline"]: h["approval_state"] for h in cleared}[
+            "qa"
+        ] == "cleared"
+        pending = trace.trace_change("PROTO-099", tmp_path)
+        assert pending[0]["approval_state"] == "pending"
+
+    def test_no_match_returns_empty(self, tmp_path):
+        _write_surfaces(tmp_path)
+        assert trace.trace_change("PROTO-777", tmp_path) == []
+
+    def test_missing_surfaces_are_skipped(self, tmp_path):
+        # No state surfaces at all → no hits, no error.
+        assert trace.trace_change("PROTO-054", tmp_path) == []
+
+
+class TestGateChecklist:
+    """Phase D-3: fold the pipeline gate chain into the trace — which required
+    approvals a change has cleared vs still lacks."""
+
+    def test_evidenced_gates_cleared(self, tmp_path):
+        _write_surfaces(tmp_path)  # qa signed-off; DEP-003 deployed + approved
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-054", tmp_path)
+        }
+        assert by_gate["qa-signoff"] == "cleared"
+        assert by_gate["prod-approval"] == "cleared"
+
+    def test_checklist_entries_carry_authority(self, tmp_path):
+        # ADR-002: every checklist entry reports the gate's required authority,
+        # so trace/release surfaces can report authority sufficiency without
+        # re-reading workflow metadata. The corpus is all-human except the
+        # dogfood falsifier gate (pr-review-approval, PROTO-073).
+        _write_surfaces(tmp_path)
+        entries = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entries
+        by_auth = {g["gate"]: g["authority"] for g in entries}
+        assert by_auth.pop("pr-review-approval") == "human-on-recommendation"
+        assert all(a == "human" for a in by_auth.values())
+
+    def test_engineering_gates_untracked(self, tmp_path):
+        # engineering's PROJECT_STATUS has no approval column → gates are reached
+        # (the ticket exists) but not evidenceable, not silently "outstanding".
+        _write_surfaces(tmp_path)
+        eng = [
+            g
+            for g in trace.gate_checklist("PROTO-054", tmp_path)
+            if g["discipline"] == "engineering"
+        ]
+        assert eng and all(g["status"] == "untracked" for g in eng)
+
+    def test_outstanding_when_change_has_not_reached_discipline(self, tmp_path):
+        # A ticket present only in engineering: downstream gates are outstanding.
+        (tmp_path / "PROJECT_STATUS.md").write_text(
+            "| ID | Title | Type | Status | Branch | Assignee |\n"
+            "|----|-------|------|--------|--------|----------|\n"
+            "| PROTO-080 | new | feature | IN_PROGRESS | - | towb |\n",
+            encoding="utf-8",
+        )
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-080", tmp_path)
+        }
+        assert by_gate["qa-signoff"] == "outstanding"
+        assert by_gate["prod-approval"] == "outstanding"
+
+    def test_pending_when_reached_but_awaiting_approval(self, tmp_path):
+        _write_surfaces(tmp_path)  # DEP-004 refs PROTO-099, approval pending
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-099", tmp_path)
+        }
+        assert by_gate["prod-approval"] == "pending"
+
+
+def _pin_pipeline(monkeypatch, gates):
+    """Pin the pipeline to one stage with controlled gate records — the
+    comparison-predicate gates don't exist in the bundled corpus (it is
+    deliberately all-default), so checklist evaluation is tested in isolation."""
+    monkeypatch.setattr(
+        "proto_gear_pkg.module_core.pipeline.build_pipeline",
+        lambda modules_root=None: [{"action": "release", "gates": gates}],
+    )
+
+
+class TestEvidencePredicates:
+    """ADR-002 §2: a gate clears iff its declarative evidence predicate holds."""
+
+    def test_predicate_holds_equals_is_case_insensitive(self):
+        assert trace._predicate_holds("Green", "equals", "green")
+        assert trace._predicate_holds("_deployed_", "equals", "deployed")
+        assert not trace._predicate_holds("red", "equals", "green")
+
+    def test_predicate_holds_at_least_reads_first_number(self):
+        assert trace._predicate_holds("93%", "at-least", "90")
+        assert trace._predicate_holds("coverage 90.5", "at-least", "90")
+        assert not trace._predicate_holds("87%", "at-least", "90")
+        assert not trace._predicate_holds("n/a", "at-least", "90")
+
+    def test_unknown_predicate_never_holds(self):
+        # An unverifiable claim must not clear a gate; doctor flags the schema.
+        assert not trace._predicate_holds("anything", "python:check()", "x")
+
+    def test_equals_gate_cleared_when_cell_matches(self, tmp_path, monkeypatch):
+        _write_surfaces(tmp_path)  # qa row: Stage = signed-off
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "stage-check",
+                    "required": True,
+                    "evidence": "Stage",
+                    "evidence_predicate": "equals",
+                    "evidence_value": "signed-off",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+
+    def test_equals_gate_pending_when_cell_differs(self, tmp_path, monkeypatch):
+        # A FILLED cell that fails the claim is pending, never cleared — the
+        # sharpening over non-empty that makes evidence a predicate.
+        _write_surfaces(tmp_path)
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "stage-check",
+                    "required": True,
+                    "evidence": "Stage",
+                    "evidence_predicate": "equals",
+                    "evidence_value": "verified",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "pending"
+
+    def test_at_least_gate_over_numeric_cell(self, tmp_path, monkeypatch):
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Stage | Coverage | Signed off by |\n"
+            "|----|-----|-------|----------|---------------|\n"
+            "| QA-009 | PROTO-060 | verified | 93% | ann |\n",
+            encoding="utf-8",
+        )
+        gate = {
+            "discipline": "qa",
+            "gate": "coverage-floor",
+            "required": True,
+            "evidence": "Coverage",
+            "evidence_predicate": "at-least",
+            "evidence_value": "90",
+        }
+        _pin_pipeline(monkeypatch, [dict(gate)])
+        (entry,) = trace.gate_checklist("PROTO-060", tmp_path)
+        assert entry["status"] == "cleared"
+
+        _pin_pipeline(monkeypatch, [dict(gate, evidence_value="95")])
+        (entry,) = trace.gate_checklist("PROTO-060", tmp_path)
+        assert entry["status"] == "pending"
+
+    def test_human_gate_cleared_without_signature_is_unjudgeable(
+        self, tmp_path, monkeypatch
+    ):
+        # A comparison predicate clears on a measurement, not a signature — a
+        # human-authority gate cleared that way reports authority_ok None.
+        _write_surfaces(tmp_path)  # qa row: Stage = signed-off
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "stage-check",
+                    "required": True,
+                    "evidence": "Stage",
+                    "evidence_predicate": "equals",
+                    "evidence_value": "signed-off",
+                    "authority": "human",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["authority_ok"] is None
+
+    def test_non_empty_gate_keeps_historical_behaviour(self, tmp_path, monkeypatch):
+        _write_surfaces(tmp_path)
+        _pin_pipeline(
+            monkeypatch,
+            [
+                {
+                    "discipline": "qa",
+                    "gate": "qa-signoff",
+                    "required": True,
+                    "evidence": "Signed off by",
+                    "evidence_predicate": "non-empty",
+                }
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+
+
+def _write_status_with_review(root: Path, reviewer: str):
+    """Engineering completed-tickets table carrying the per-gate 'Reviewed by'
+    evidence column that pr-review-approval names."""
+    (root / "PROJECT_STATUS.md").write_text(
+        "# Status\n\n## Completed Tickets\n\n"
+        "| ID | Title | Completed | PR | Reviewed by |\n"
+        "|----|-------|-----------|----|-------------|\n"
+        f"| PROTO-054 | QA module | 2026-07-11 | | {reviewer} |\n",
+        encoding="utf-8",
+    )
+
+
+class TestGateSpecificEvidence:
+    """PROTO-065: a gate that names an ``evidence`` column is verified against
+    THAT column, so engineering's per-change pr-review-approval becomes
+    evidenceable without falsely clearing its release-level gates."""
+
+    def test_pr_review_cleared_from_reviewed_by_column(self, tmp_path):
+        _write_status_with_review(tmp_path, "ann")
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-054", tmp_path)
+        }
+        assert by_gate["pr-review-approval"] == "cleared"
+
+    def test_pr_review_pending_when_column_present_but_empty(self, tmp_path):
+        _write_status_with_review(tmp_path, "")
+        by_gate = {
+            g["gate"]: g["status"] for g in trace.gate_checklist("PROTO-054", tmp_path)
+        }
+        assert by_gate["pr-review-approval"] == "pending"
+
+    def test_release_level_gates_not_falsely_cleared(self, tmp_path):
+        # The "Reviewed by" evidence must NOT bleed into engineering's other
+        # gates: release-approval is a release-level gate, unverifiable per ticket.
+        _write_status_with_review(tmp_path, "ann")
+        eng = {
+            g["gate"]: g["status"]
+            for g in trace.gate_checklist("PROTO-054", tmp_path)
+            if g["discipline"] == "engineering" and g["gate"] != "pr-review-approval"
+        }
+        assert eng  # there are other engineering gates
+        assert all(status != "cleared" for status in eng.values())
+
+
+class TestGateEvidenceShipped:
+    """The bundled pr-review-approval gate ships its evidence column."""
+
+    def test_pr_review_gate_declares_reviewed_by(self):
+        from proto_gear_pkg.module_core import pipeline
+
+        gate = next(
+            g
+            for s in pipeline.build_pipeline()
+            for g in s["gates"]
+            if g["gate"] == "pr-review-approval"
+        )
+        assert gate["evidence"] == "Reviewed by"
+
+
+class TestTraceCLI:
+    def test_trace_renders(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        _write_surfaces(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_trace(_args(change_id="PROTO-054", json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "PROTO-054" in out and "QA-007" in out and "DEP-003" in out
+        assert "approved: ann" in out
+        # Phase D-3: the required-approval checklist folds in the pipeline gates.
+        assert "Required approvals" in out
+        assert "qa-signoff" in out and "cleared" in out
+
+    def test_trace_json(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        _write_surfaces(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_trace(_args(change_id="PROTO-054", json=True))
+        data = json.loads(capsys.readouterr().out)
+        assert rc == 0
+        assert data["change"] == "PROTO-054"
+        assert {h["discipline"] for h in data["hits"]} == {
+            "engineering",
+            "qa",
+            "devops",
+        }
+
+    def test_trace_no_match_message(self, tmp_path, monkeypatch, capsys):
+        from proto_gear_pkg import cli_commands
+
+        _write_surfaces(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        rc = cli_commands.cmd_trace(_args(change_id="PROTO-777", json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "No state-surface rows reference" in out
+
+
+class TestStateSurfacesCarryRefColumn:
+    """The bundled qa/devops surfaces ship the Ref correlation column."""
+
+    def test_qa_and_devops_templates_have_ref(self):
+        from proto_gear_pkg.module_core.module_manifest import default_modules_root
+
+        qa = (default_modules_root() / "qa" / "QA_QUEUE.template.md").read_text(
+            encoding="utf-8"
+        )
+        devops = (
+            default_modules_root() / "devops" / "DEPLOY_QUEUE.template.md"
+        ).read_text(encoding="utf-8")
+        assert "| ID | Ref |" in qa
+        assert "| ID | Ref |" in devops
+
+
+def _qa_gate(**overrides):
+    """A pinned qa gate with no evidence column — the generic approval fallback."""
+    g = {
+        "discipline": "qa",
+        "gate": "qa-signoff",
+        "required": True,
+        "authority": "human",
+    }
+    g.update(overrides)
+    return g
+
+
+def _qa_row(root, signer):
+    (root / "QA_QUEUE.md").write_text(
+        "| ID | Ref | Stage | Signed off by |\n"
+        "|----|-----|-------|---------------|\n"
+        f"| QA-1 | PROTO-054 | signed-off | {signer} |\n",
+        encoding="utf-8",
+    )
+
+
+class TestAuthoritySufficiency:
+    """ADR-002 action item 3: was each cleared gate cleared by a signer of
+    sufficient authority? An agent identity (bundled agent slug, or an
+    'agent:' prefix) cannot clear a gate that demands a human rung."""
+
+    def test_human_signer_is_sufficient(self, tmp_path, monkeypatch):
+        _qa_row(tmp_path, "ann")
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["signed_by"] == ["ann"]
+        assert entry["authority_ok"] is True
+
+    def test_agent_slug_signer_is_insufficient_for_human_gate(
+        self, tmp_path, monkeypatch
+    ):
+        # qa really ships qa-release-agent — its id in a sign-off cell is an
+        # agent signature, and an agent may never be the clearer (ADR-002 §3).
+        _qa_row(tmp_path, "qa-release-agent")
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"  # the cell IS filled…
+        assert entry["authority_ok"] is False  # …but the signer lacks authority
+
+    def test_agent_prefix_marks_agent_signer(self, tmp_path, monkeypatch):
+        _qa_row(tmp_path, "agent:some-future-helper")
+        _pin_pipeline(monkeypatch, [_qa_gate(authority="human-on-recommendation")])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["authority_ok"] is False
+
+    def test_any_human_signer_among_agents_suffices(self, tmp_path, monkeypatch):
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Stage | Signed off by |\n"
+            "|----|-----|-------|---------------|\n"
+            "| QA-1 | PROTO-054 | signed-off | qa-release-agent |\n"
+            "| QA-2 | PROTO-054 | signed-off | ann |\n",
+            encoding="utf-8",
+        )
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["authority_ok"] is True
+
+    def test_auto_gate_needs_no_signer(self, tmp_path, monkeypatch):
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Coverage | Signed off by |\n"
+            "|----|-----|----------|---------------|\n"
+            "| QA-1 | PROTO-054 | 93% | |\n",
+            encoding="utf-8",
+        )
+        _pin_pipeline(
+            monkeypatch,
+            [
+                _qa_gate(
+                    gate="coverage-floor",
+                    evidence="Coverage",
+                    evidence_predicate="at-least",
+                    evidence_value="90",
+                    authority="auto",
+                )
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["authority_ok"] is True
+
+    def test_uncleared_gate_has_no_sufficiency_verdict(self, tmp_path, monkeypatch):
+        _qa_row(tmp_path, "_(pending gate)_")
+        _pin_pipeline(monkeypatch, [_qa_gate()])
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "pending"
+        assert entry["authority_ok"] is None
+        assert entry["signed_by"] == []
+
+    def test_evidence_column_signers_are_judged_too(self, tmp_path, monkeypatch):
+        # The non-empty evidence path collects signers the same way the
+        # fallback does — code-review-agent is a shared bundled agent id.
+        (tmp_path / "QA_QUEUE.md").write_text(
+            "| ID | Ref | Reviewed by |\n"
+            "|----|-----|-------------|\n"
+            "| QA-1 | PROTO-054 | code-review-agent |\n",
+            encoding="utf-8",
+        )
+        _pin_pipeline(
+            monkeypatch,
+            [
+                _qa_gate(
+                    gate="pr-review-approval",
+                    evidence="Reviewed by",
+                    authority="human-on-recommendation",
+                )
+            ],
+        )
+        (entry,) = trace.gate_checklist("PROTO-054", tmp_path)
+        assert entry["status"] == "cleared"
+        assert entry["signed_by"] == ["code-review-agent"]
+        assert entry["authority_ok"] is False

@@ -20,33 +20,52 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import yaml
 
-from .capability_metadata import (
+from .module_core.capability_metadata import (
     load_all_capabilities,
     CompositionEngine,
     CapabilityValidator,
     CapabilityMetadata,
-    ValidationError as CapabilityValidationError
+    ValidationError as CapabilityValidationError,
 )
 
 
 class AgentValidationError(Exception):
     """Raised when agent configuration validation fails"""
+
     pass
 
 
 @dataclass
 class AgentCapabilities:
     """Agent capability composition"""
+
     skills: List[str] = field(default_factory=list)
     workflows: List[str] = field(default_factory=list)
     commands: List[str] = field(default_factory=list)
 
+    @staticmethod
+    def _qualify(kind: str, entry: str) -> str:
+        """Turn a capability entry into a full capability id.
+
+        A bare entry (``testing``) targets the shared/engineering bundle and
+        qualifies to ``<kind>/<entry>`` (``skills/testing``). An entry that
+        names a discipline as ``<module>/<name>`` (``qa/release-signoff``)
+        qualifies to the module-namespaced id the loaders use for that
+        discipline's own bundle (``qa/workflows/release-signoff``) — so an agent
+        can compose capabilities its own department ships, not just the shared
+        ones (the agent-side of seam S1).
+        """
+        if "/" in entry:
+            module, name = entry.split("/", 1)
+            return f"{module}/{kind}/{name}"
+        return f"{kind}/{entry}"
+
     def all_capabilities(self) -> List[str]:
-        """Get all capabilities as full paths"""
+        """Get all capabilities as full (optionally module-namespaced) ids"""
         result = []
-        result.extend([f"skills/{skill}" for skill in self.skills])
-        result.extend([f"workflows/{workflow}" for workflow in self.workflows])
-        result.extend([f"commands/{command}" for command in self.commands])
+        result.extend([self._qualify("skills", skill) for skill in self.skills])
+        result.extend([self._qualify("workflows", wf) for wf in self.workflows])
+        result.extend([self._qualify("commands", cmd) for cmd in self.commands])
         return result
 
     def is_empty(self) -> bool:
@@ -58,8 +77,36 @@ class AgentCapabilities:
         return {
             "skills": self.skills,
             "workflows": self.workflows,
-            "commands": self.commands
+            "commands": self.commands,
         }
+
+
+# Model tiers express *intent* (efficiency), not a vendor's model name. The host
+# maps a tier to a concrete model; an explicit ``override`` pins one when needed.
+MODEL_TIERS = ("fast", "balanced", "deep")
+
+
+@dataclass
+class AgentModel:
+    """Declared model preference for an agent.
+
+    Proto Gear is host-agnostic: it *declares* which tier a sub-agent should run
+    on (``fast`` mechanical work · ``balanced`` default · ``deep`` judgment,
+    architecture, review) and the host honours it. ``override`` optionally pins a
+    concrete host model id (e.g. ``claude-opus-4-8``) when a specific model is
+    required. This is a declaration the core audits, never something it executes
+    (ADR-002, Principle 4).
+    """
+
+    tier: str = "balanced"
+    override: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary format (omit override when unset)"""
+        data: Dict[str, Any] = {"tier": self.tier}
+        if self.override:
+            data["override"] = self.override
+        return data
 
 
 @dataclass
@@ -75,6 +122,9 @@ class AgentConfiguration:
 
     # Capabilities
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
+
+    # Model preference (host honours the declared tier / optional override)
+    model: AgentModel = field(default_factory=AgentModel)
 
     # Behavior
     context_priority: List[str] = field(default_factory=list)
@@ -100,20 +150,21 @@ class AgentConfiguration:
             "created": self.created,
             "author": self.author,
             "capabilities": self.capabilities.to_dict(),
+            "model": self.model.to_dict(),
             "context_priority": self.context_priority,
             "agent_instructions": self.agent_instructions,
             "required_files": self.required_files,
             "optional_files": self.optional_files,
             "tags": self.tags,
-            "status": self.status
+            "status": self.status,
         }
 
 
 class AgentConfigParser:
     """Parser for agent configuration files"""
 
-    VERSION_PATTERN = re.compile(r'^\d+\.\d+\.\d+$')
-    DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+    VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
+    DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
     @staticmethod
     def parse_agent_file(file_path: Path) -> AgentConfiguration:
@@ -134,7 +185,7 @@ class AgentConfigParser:
         if not file_path.exists():
             raise FileNotFoundError(f"Agent configuration file not found: {file_path}")
 
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if not isinstance(data, dict):
@@ -181,8 +232,7 @@ class AgentConfigParser:
         # Validate date format
         if not AgentConfigParser.DATE_PATTERN.match(created):
             raise AgentValidationError(
-                f"Invalid date format '{created}' in {source}. "
-                f"Must be YYYY-MM-DD"
+                f"Invalid date format '{created}' in {source}. " f"Must be YYYY-MM-DD"
             )
 
         # Parse capabilities
@@ -190,7 +240,7 @@ class AgentConfigParser:
         capabilities = AgentCapabilities(
             skills=capabilities_data.get("skills", []),
             workflows=capabilities_data.get("workflows", []),
-            commands=capabilities_data.get("commands", [])
+            commands=capabilities_data.get("commands", []),
         )
 
         # Validate at least one capability
@@ -198,6 +248,9 @@ class AgentConfigParser:
             raise AgentValidationError(
                 f"Agent must have at least one capability in {source}"
             )
+
+        # Parse model preference (optional; defaults to the balanced tier)
+        model = AgentConfigParser._parse_model(data.get("model"), source)
 
         # Parse behavior
         context_priority = data.get("context_priority", [])
@@ -226,12 +279,13 @@ class AgentConfigParser:
             created=created,
             author=author,
             capabilities=capabilities,
+            model=model,
             context_priority=context_priority,
             agent_instructions=agent_instructions,
             required_files=required_files,
             optional_files=optional_files,
             tags=tags,
-            status=status
+            status=status,
         )
 
     @staticmethod
@@ -249,14 +303,44 @@ class AgentConfigParser:
                 f"Missing required fields in {source}: {', '.join(missing_fields)}"
             )
 
+    @staticmethod
+    def _parse_model(model_data: Any, source: str = "") -> AgentModel:
+        """Parse and validate the optional ``model`` block.
+
+        Absent → the default balanced tier. A bare string (``model: deep``) is a
+        convenience shorthand for ``{tier: deep}``.
+        """
+        if model_data is None:
+            return AgentModel()
+
+        if isinstance(model_data, str):
+            model_data = {"tier": model_data}
+
+        if not isinstance(model_data, dict):
+            raise AgentValidationError(
+                f"'model' must be a mapping (or tier string) in {source}"
+            )
+
+        tier = model_data.get("tier", "balanced")
+        if tier not in MODEL_TIERS:
+            raise AgentValidationError(
+                f"Invalid model tier '{tier}' in {source}. "
+                f"Must be one of: {list(MODEL_TIERS)}"
+            )
+
+        override = model_data.get("override")
+        if override is not None and not isinstance(override, str):
+            raise AgentValidationError(f"'model.override' must be a string in {source}")
+
+        return AgentModel(tier=tier, override=override or None)
+
 
 class AgentValidator:
     """Validator for agent configurations"""
 
     @staticmethod
     def validate_agent(
-        agent: AgentConfiguration,
-        all_capabilities: Dict[str, CapabilityMetadata]
+        agent: AgentConfiguration, all_capabilities: Dict[str, CapabilityMetadata]
     ) -> Tuple[List[str], List[str]]:
         """
         Validate agent configuration completely.
@@ -294,8 +378,7 @@ class AgentValidator:
         # Detect conflicts
         try:
             conflicts = CompositionEngine.detect_conflicts(
-                agent.capabilities.all_capabilities(),
-                all_capabilities
+                agent.capabilities.all_capabilities(), all_capabilities
             )
             if conflicts:
                 for c1, c2, reason in conflicts:
@@ -305,10 +388,14 @@ class AgentValidator:
 
         # Warnings for missing optional elements
         if not agent.context_priority:
-            warnings.append("No context_priority specified - agent won't know what to focus on")
+            warnings.append(
+                "No context_priority specified - agent won't know what to focus on"
+            )
 
         if not agent.agent_instructions:
-            warnings.append("No agent_instructions specified - agent won't have specific guidance")
+            warnings.append(
+                "No agent_instructions specified - agent won't have specific guidance"
+            )
 
         if not agent.author:
             warnings.append("No author specified")
@@ -316,8 +403,7 @@ class AgentValidator:
         # Warn if too many capabilities
         try:
             resolved = CompositionEngine.resolve_dependencies(
-                agent.capabilities.all_capabilities(),
-                all_capabilities
+                agent.capabilities.all_capabilities(), all_capabilities
             )
             if len(resolved) > 15:
                 warnings.append(
@@ -331,8 +417,7 @@ class AgentValidator:
 
     @staticmethod
     def get_recommendations(
-        agent: AgentConfiguration,
-        all_capabilities: Dict[str, CapabilityMetadata]
+        agent: AgentConfiguration, all_capabilities: Dict[str, CapabilityMetadata]
     ) -> List[str]:
         """
         Get capability recommendations for an agent.
@@ -346,8 +431,7 @@ class AgentValidator:
         """
         try:
             return CompositionEngine.get_recommended_capabilities(
-                agent.capabilities.all_capabilities(),
-                all_capabilities
+                agent.capabilities.all_capabilities(), all_capabilities
             )
         except Exception:
             return []
@@ -369,9 +453,27 @@ class AgentManager:
         self._all_capabilities = None
 
     def _load_capabilities(self) -> Dict[str, CapabilityMetadata]:
-        """Load all capabilities (cached)"""
+        """Load all capabilities (cached).
+
+        Reads ``capabilities_dir`` then overlays each discipline's own bundled
+        capabilities, namespaced ``<module>/<cap_id>`` (seam S1), so an agent can
+        be built around e.g. ``qa/workflows/release-signoff`` — not just the
+        shared/engineering bundle. An already-present id (an installed subtree)
+        wins over the bundled overlay.
+        """
         if self._all_capabilities is None:
-            self._all_capabilities = load_all_capabilities(self.capabilities_dir)
+            caps = load_all_capabilities(self.capabilities_dir) or {}
+            from .module_core import module_host
+
+            for module, caps_dir in module_host.iter_capability_sources():
+                if module is None:
+                    continue
+                try:
+                    for cap_id, meta in load_all_capabilities(caps_dir).items():
+                        caps.setdefault(f"{module}/{cap_id}", meta)
+                except Exception:
+                    pass
+            self._all_capabilities = caps
         return self._all_capabilities
 
     def list_agents(self) -> List[AgentConfiguration]:
@@ -477,7 +579,7 @@ class AgentManager:
 
         # Save to file
         agent_file = self.agents_dir / f"{agent_name}.yaml"
-        with open(agent_file, 'w', encoding='utf-8') as f:
+        with open(agent_file, "w", encoding="utf-8") as f:
             yaml.dump(agent.to_dict(), f, default_flow_style=False, sort_keys=False)
 
     def delete_agent(self, agent_name: str):
@@ -497,10 +599,7 @@ class AgentManager:
 
 
 def create_agent_template(
-    name: str,
-    description: str,
-    capabilities: AgentCapabilities,
-    author: str = ""
+    name: str, description: str, capabilities: AgentCapabilities, author: str = ""
 ) -> AgentConfiguration:
     """
     Create a new agent configuration from template.
@@ -526,15 +625,15 @@ def create_agent_template(
         context_priority=[
             "Read PROJECT_STATUS.md for current work",
             "Review relevant files for the task",
-            "Check for existing patterns in codebase"
+            "Check for existing patterns in codebase",
         ],
         agent_instructions=[
             "Follow project conventions and best practices",
             "Update PROJECT_STATUS.md as work progresses",
-            "Write clear, maintainable code"
+            "Write clear, maintainable code",
         ],
         required_files=["PROJECT_STATUS.md"],
         optional_files=[],
         tags=[],
-        status="active"
+        status="active",
     )

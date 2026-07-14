@@ -14,10 +14,10 @@ import pytest
 from pathlib import Path
 
 from proto_gear_pkg.agent_config import AgentCapabilities
-from proto_gear_pkg.capability_metadata import load_all_capabilities
+from proto_gear_pkg.module_core.capability_metadata import load_all_capabilities
 from proto_gear_pkg.agent_wizard import (
     validate_capability_selections,
-    QUESTIONARY_AVAILABLE
+    QUESTIONARY_AVAILABLE,
 )
 
 
@@ -31,6 +31,7 @@ def temp_capabilities_dir(tmp_path):
     skills_dir.mkdir(parents=True)
 
     import yaml
+
     metadata = {
         "name": "Test Skill",
         "type": "skill",
@@ -44,10 +45,10 @@ def temp_capabilities_dir(tmp_path):
         "dependencies": {"required": [], "optional": [], "suggested": []},
         "conflicts": [],
         "composable_with": [],
-        "agent_roles": []
+        "agent_roles": [],
     }
 
-    with open(skills_dir / "metadata.yaml", 'w') as f:
+    with open(skills_dir / "metadata.yaml", "w") as f:
         yaml.dump(metadata, f)
 
     return caps_dir
@@ -60,9 +61,7 @@ class TestValidateCapabilitySelections:
         """Test validation with valid capabilities"""
         all_caps = load_all_capabilities(temp_capabilities_dir)
 
-        capabilities = AgentCapabilities(
-            skills=["test-skill"]
-        )
+        capabilities = AgentCapabilities(skills=["test-skill"])
 
         errors = validate_capability_selections(capabilities, all_caps)
         assert errors == []
@@ -71,9 +70,7 @@ class TestValidateCapabilitySelections:
         """Test validation with missing capability"""
         all_caps = load_all_capabilities(temp_capabilities_dir)
 
-        capabilities = AgentCapabilities(
-            skills=["nonexistent-skill"]
-        )
+        capabilities = AgentCapabilities(skills=["nonexistent-skill"])
 
         errors = validate_capability_selections(capabilities, all_caps)
         assert len(errors) > 0

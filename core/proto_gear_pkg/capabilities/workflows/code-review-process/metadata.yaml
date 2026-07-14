@@ -77,3 +77,27 @@ workflow:
   outputs:
     - "type: merged-code"
     - "type: documentation"
+  gates:
+    # ADR-002 dogfood falsifier (action item 4, PROTO-073): the ONE engineering
+    # gate migrated to the graded-authority model — declared here in metadata
+    # alone, with zero core edits (if it had needed one, the primitive was
+    # wrong). The code-review agent is the accountable actor: it verifies the
+    # PR and recommends; a human ratifies before merge, and their name in the
+    # "Reviewed by" cell records the residual-risk acceptance. Pure-human gates
+    # elsewhere (release-approval, announcement-approval) stay `human`.
+    - id: "pr-review-approval"
+      description: "The code-review agent verifies the pull request and recommends; a human ratifies before merge, recording their sign-off in the Reviewed-by column."
+      before: "merge"
+      approver: "human"
+      required: true
+      actor: "code-review-agent"
+      authority: "human-on-recommendation"
+      # Per-change engineering gate: evidenced by the "Reviewed by" column on the
+      # completed-tickets table in PROJECT_STATUS.md, so `pg trace`/`pg release`
+      # can verify each ticket was reviewed. (Release-level engineering gates —
+      # release-approval, announcement-approval — stay unverified per-ticket: a
+      # single ticket doesn't clear a release gate.) Mapping form: the predicate
+      # is the explicit non-empty claim — the human ratifier's name is present.
+      evidence:
+        column: "Reviewed by"
+        predicate: "non-empty"

@@ -1,0 +1,57 @@
+name: "QA Release Sign-off"
+type: "workflow"
+version: "0.1.0"
+description: "Verify a release candidate against the QA queue and record the human QA sign-off before it ships."
+
+category: "qa"
+tags: ["qa", "testing", "release", "sign-off", "approval"]
+
+status: "beta"
+author: "QA Module"
+last_updated: "2026-07-10"
+
+dependencies:
+  required: []
+  optional:
+    - "workflows/release"
+  suggested:
+    - "skills/testing"
+
+conflicts: []
+
+composable_with:
+  - "workflows/release"
+  - "skills/testing"
+
+agent_roles:
+  - "QA Agent"
+  - "Release Manager Agent"
+
+relevance:
+  triggers:
+    - "qa sign-off"
+    - "release sign-off"
+    - "sign off release"
+    - "qa approval"
+  contexts:
+    - "When a release candidate is built and QA must verify it before it ships"
+
+usage_notes: |
+  Walk the QA_QUEUE items targeted at this release: confirm each is `verified`,
+  then record the human QA owner's sign-off. The qa-signoff gate is mandatory —
+  nothing ships without a name in the queue's "Signed off by" column.
+
+required_files:
+  - "QA_QUEUE.md"
+
+workflow:
+  steps: 4
+  estimated_duration: "20-40 minutes"
+  outputs:
+    - "type: release"
+  gates:
+    - id: "qa-signoff"
+      description: "A human QA owner confirms every release-targeted item is verified and approves the candidate for release; nothing ships without their sign-off recorded in QA_QUEUE.md."
+      before: "release"
+      approver: "human"
+      required: true

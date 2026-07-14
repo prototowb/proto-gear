@@ -6,7 +6,7 @@ and host config mirroring (PROTO-031).
 import pytest
 from pathlib import Path
 
-from proto_gear_pkg.sync_context import (
+from proto_gear_pkg.module_core.sync_context import (
     BEGIN_MARKER,
     END_MARKER,
     HOST_FILES,
@@ -111,8 +111,13 @@ class TestGenerateAgentContext:
     def test_no_unresolved_placeholders(self, project):
         content = generate_agent_context(project)
         for placeholder in (
-            "{{PROJECT_NAME}}", "{{REFERENCE_INDEX}}", "{{CAPABILITIES_SKIM}}",
-            "{{TRIGGER_MAP}}", "{{CRITICAL_RULES}}", "{{CLI_COMMANDS}}", "{{PROJECT_META}}"
+            "{{PROJECT_NAME}}",
+            "{{REFERENCE_INDEX}}",
+            "{{CAPABILITIES_SKIM}}",
+            "{{TRIGGER_MAP}}",
+            "{{CRITICAL_RULES}}",
+            "{{CLI_COMMANDS}}",
+            "{{PROJECT_META}}",
         ):
             assert placeholder not in content, f"Unresolved placeholder: {placeholder}"
 
@@ -120,6 +125,13 @@ class TestGenerateAgentContext:
         content = generate_agent_context(project)
         assert BEGIN_MARKER in content
         assert END_MARKER in content
+
+    def test_cheatsheet_lists_module_commands(self, project):
+        # PROTO-049: pg module + pg --module init-surface must be advertised in
+        # the agent-facing CLI cheatsheet, not just implemented.
+        content = generate_agent_context(project)
+        assert "pg module list/show" in content
+        assert "pg --module <name> init-surface" in content
 
     def test_reads_version_from_status(self, project):
         content = generate_agent_context(project)

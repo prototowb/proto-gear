@@ -56,18 +56,20 @@ CANCELLED
 - **BLOCKED**: Cannot proceed due to dependency/blocker
 - **CANCELLED**: No longer needed or  deprioritized
 
-### Sprint Types
+### Sprint Types → suggested paradigm
 
-Your project may be in different sprint types that affect agent focus:
+The kind of work in flight suggests an **orchestration paradigm** (see
+`pg orchestration list`). These are starting points, not mandates — the user or
+the overseeing agent picks and switches paradigms on the fly for efficiency.
 
-| Sprint Type | Focus | Flex Agents Suggested |
-|-------------|-------|----------------------|
-| **feature_development** | Building new features | UI/UX, Integration |
-| **bug_fixing** | Resolving defects | Testing, Debug |
-| **performance_optimization** | Speed/efficiency | Performance, Profiling |
-| **deployment_prep** | Release readiness | DevOps, Documentation |
-| **refactoring** | Code quality | Architecture, Testing |
-| **research_integration** | New tech/libraries | Research, Prototyping |
+| Sprint Type | Focus | Suggested paradigm |
+|-------------|-------|--------------------|
+| **feature_development** | Building new features | `dynamic` (or `core-flex` for a sustained multi-domain sprint) |
+| **bug_fixing** | Resolving defects | `driver-reviewer` |
+| **performance_optimization** | Speed/efficiency | `driver-reviewer` |
+| **deployment_prep** | Release readiness | `pipeline` |
+| **refactoring** | Code quality | `fan-out` (mechanical breadth) or `solo` |
+| **research_integration** | New tech/libraries | `dynamic` |
 
 ### State Update Rules
 
@@ -103,8 +105,8 @@ ticket_prefix: "{{TICKET_PREFIX}}"  # e.g., "PROJ", "MCP", etc.
 
 ## ✅ Completed Tickets
 
-| ID | Title | Completed | PR |
-|----|-------|-----------|-----|
+| ID | Title | Completed | PR | Reviewed by |
+|----|-------|-----------|-----|-------------|
 {{COMPLETED_TICKETS}}
 
 ## 🚧 Blocked Tickets
@@ -112,6 +114,16 @@ ticket_prefix: "{{TICKET_PREFIX}}"  # e.g., "PROJ", "MCP", etc.
 | ID | Title | Blocker | Since |
 |----|-------|---------|-------|
 {{BLOCKED_TICKETS}}
+
+## 🚀 Releases
+
+<!-- Release-scoped supervision gates (release-approval, announcement-approval)
+     are cleared once per release here — `pg release <label>` reads this table,
+     keyed by the release label in the ID column. Per-change gates stay in the
+     tickets tables above. -->
+
+| ID | Date | Release approved by | Announced by |
+|----|------|---------------------|--------------|
 
 ## 📈 Feature Progress
 
@@ -142,12 +154,9 @@ tech_debt_ratio: {{TECH_DEBT}}%
 ## 🔍 Sprint Configuration
 
 ```yaml
-sprint_type: "{{SPRINT_TYPE}}"  # feature_development, bug_fixing, etc.
-active_agents:
-  core:
-    {{CORE_AGENTS}}
-  flex:
-    {{FLEX_AGENTS}}
+sprint_type: "{{SPRINT_TYPE}}"       # feature_development, bug_fixing, etc.
+orchestration_paradigm: "dynamic"    # see `pg orchestration list` — pick/switch on the fly
+active_agents: []                    # the minimal set the current work needs (tier per agent)
 ```
 
 ---

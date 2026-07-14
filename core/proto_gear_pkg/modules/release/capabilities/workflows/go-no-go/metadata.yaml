@@ -1,0 +1,67 @@
+name: "Release Go/No-Go"
+type: "workflow"
+version: "0.1.0"
+description: "Verify a release candidate's cross-discipline readiness (pg release) and record the human go decision before it ships."
+
+category: "release-management"
+tags: ["release", "pm", "go-no-go", "readiness", "sign-off", "approval"]
+
+status: "beta"
+author: "Release Management Module"
+last_updated: "2026-07-12"
+
+dependencies:
+  required: []
+  optional:
+    - "workflows/release"
+  suggested:
+    - "commands/generate-changelog"
+
+conflicts: []
+
+composable_with:
+  - "workflows/release"
+  - "workflows/finalize-release"
+  - "qa/workflows/release-signoff"
+  - "security/workflows/security-review"
+
+agent_roles:
+  - "Release Manager Agent"
+  - "Release Coordinator Agent"
+
+relevance:
+  triggers:
+    - "go no go"
+    - "go/no-go"
+    - "release decision"
+    - "ship it"
+    - "release readiness decision"
+  contexts:
+    - "When a release candidate's scope is frozen and a human must decide whether it ships"
+
+usage_notes: |
+  Run `pg release <label>` for the candidate: every required gate must be
+  cleared (qa-signoff, security-signoff, prod-approval per ticket; the
+  release-scoped approvals once). Review blocking/unverified gates with their
+  owners, then record the human go decision in RELEASE_QUEUE.md — the go-no-go
+  gate is release-scoped and mandatory; no name in the candidate row's
+  "Signed off by" cell means no ship.
+
+required_files:
+  - "RELEASE_QUEUE.md"
+
+workflow:
+  steps: 4
+  estimated_duration: "15-30 minutes"
+  outputs:
+    - "type: release"
+  gates:
+    # Release-scoped: `pg release <label>` evidences this once for the whole
+    # candidate, against the RELEASE_QUEUE row keyed by the label itself.
+    - id: "go-no-go"
+      description: "A human release owner reviews the candidate's cross-discipline readiness (pg release) and records the go decision; nothing ships without their sign-off in the RELEASE_QUEUE row for the label."
+      before: "release"
+      approver: "human"
+      required: true
+      scope: "release"
+      evidence: "Signed off by"

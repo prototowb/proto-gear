@@ -348,7 +348,7 @@ PROTO-005: Create configuration examples
 
 #### DO ✅
 
-- **Always create a branch** for your work (never commit to `main` or `development` directly)
+- **Create a branch** for substantial or shared work (`development` is open for small/local commits; `main` is PR-only)
 - **Use descriptive branch names** that clearly indicate the purpose
 - **Write clear commit messages** following the convention
 - **Make atomic commits** (one logical change per commit)
@@ -362,8 +362,8 @@ PROTO-005: Create configuration examples
 
 #### DON'T ❌
 
-- **Don't commit directly to `main`** - ever
-- **Don't commit directly to `development`** for features/refactors (only via PR)
+- **Don't commit directly to `main`** - ever (PR only)
+- **Don't skip a feature branch + PR** for substantial or shared work (direct-to-`development` is fine for small/local changes — it gets no CI/review, so keep it small)
 - **Don't make huge commits** - break them down
 - **Don't use vague commit messages** like "fix stuff" or "updates"
 - **Don't skip testing** - even basic manual testing
