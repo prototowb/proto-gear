@@ -120,9 +120,9 @@ When the user's prose contains these keywords, load the matching capability befo
 
 - **Project**: proto-gear
 - **Tech / type**: Python
-- **Proto Gear version**: v0.10.0
-- **Last release**: 2026-05-13
+- **Proto Gear version**: v0.20.0
+- **Last release**: 2026-07-14
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-14 17:55
+- **Generated**: 2026-07-14 19:15
 
 <!-- proto-gear:agent-context end -->

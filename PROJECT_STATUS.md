@@ -20,12 +20,12 @@ links:
 ```yaml
 project_phase: "Production"
 protogear_enabled: true
-protogear_version: "v0.10.0"
+protogear_version: "v0.20.0"
 framework: "Unknown"
 project_type: "Python"
 initialization_date: "2025-11-21"
-last_release: "v0.9.0"
-release_date: "2026-05-13"
+last_release: "v0.20.0"
+release_date: "2026-07-14"
 current_sprint: null
 current_branch: "main"
 ```
@@ -45,6 +45,7 @@ _No active tickets — PROTO-066 just shipped._
 
 | ID | Date | Release approved by | Announced by |
 |----|------|---------------------|--------------|
+| v0.20.0 | 2026-07-14 | prototowb | prototowb |
 | v0.10.0 | 2026-05-13 | prototowb | prototowb |
 | v0.9.0 | 2026-02-19 | prototowb | prototowb |
 

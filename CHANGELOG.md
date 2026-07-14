@@ -5,6 +5,49 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-07-14
+
+**Milestone Release**: The version had been stuck at 0.10.0 across 133 commits — this cuts the accumulated work into a release. The minor jumps to `20` to signal the scale of the change (two new architectural platforms), not merely the next increment. Two architectural platforms land (departmental modules, supervision primitives), the human surface becomes UI-first, and agent orchestration becomes dynamic and paradigm-driven. ~20,000 lines changed across 163 files; 997 tests.
+
+### Added — Departmental module platform (ADR-001)
+
+- **Multi-module hosting**: proto-gear is now an engineering-discipline platform. The `--module <name>` flag targets a department; the core resolves a `ModuleManifest`, discovers each module's bundled capabilities/agents (seam S1), and materialises a module's declared state surface — with zero core edits per department (PROTO-048, PROTO-056–059).
+- **QA, DevOps, and Security modules** ship as departments with their own capabilities, agents, and state surfaces (PROTO-054, PROTO-059, PROTO-063).
+- **`pg module list/show`** to inspect department manifests; **`pg --module <name> init-surface`** to render a department's declared surface.
+- Agents can compose their own department's capabilities, not just the shared bundle (PROTO-058, PROTO-067).
+
+### Added — Supervision primitives (ADR-002)
+
+- **Gates as data**: workflows declare `gates:` in `metadata.yaml`; `pg doctor` audits them (PROTO-043, PROTO-062, PROTO-065).
+- **`pg pipeline`** composes gates into the path to production; **`pg trace <ticket>`** follows a change across discipline state surfaces; **`pg release <label>`** aggregates a release-readiness verdict (PROTO-060, PROTO-061, PROTO-064, PROTO-066).
+- **Evidence-as-predicate** — a gate clears iff a machine-checkable, non-executing predicate over a markdown cell holds (`non-empty | equals | at-least`) (PROTO-072).
+- **Graded authority** — each gate declares the minimum authority to clear it (`human`, `human-on-recommendation`, `auto`); `pg trace`/`pg release` report authority sufficiency. Agents become accountable **actors** and **recommenders**; a human still ratifies residual risk (PROTO-071, PROTO-073, PROTO-074, PROTO-075).
+
+### Added — UI-first human surface
+
+- **Interactive home menu** — bare `pg` opens a navigable menu (PROTO-082).
+- **Interactive capability browser** — bare `pg capabilities` (PROTO-081).
+- **Interactive agent browser** — bare `pg agent`, surfacing installed + installable bundled agents; **`pg agent install <name>`** pulls one in on demand (PROTO-076, PROTO-080).
+- **`pg release --notes`** generates release notes (PROTO-079).
+
+### Added — Dynamic, paradigm-driven orchestration (ADR-003)
+
+- **Per-agent model tier** — agents declare `model: { tier: fast|balanced|deep, override? }`; the host honours it. Surfaced in `pg agent show` (PROTO-083).
+- **Orchestration paradigm pool** — `pg orchestration list/show/install` over six bundled paradigms (`dynamic`, `solo`, `driver-reviewer`, `core-flex`, `pipeline`, `fan-out`); the user (via UI) or overseeing agent picks and switches on the fly (PROTO-084).
+
+### Changed
+
+- **Orchestration doctrine loosened**: the mandated "4 Core + 2 Flex" roster and the "EXECUTE IMMEDIATELY" auto-trigger are replaced by dynamic composition — compose the minimal sub-agents each task needs, at appropriate model tiers (PROTO-085).
+- **Branching policy**: `development` is now open for direct commits; only `main` is PR-protected. A feature branch + PR remains the norm for substantial/shared work.
+- **Repo restructure**: the monolith was split, `module_core` rehomed, and a `black` pre-commit hook added (PROTO-042, PROTO-046, PROTO-051).
+- **UI-first product principle** made explicit (PROTO-070); vision + architecture docs added (PROTO-039).
+
+### Removed
+
+- **Content/marketing module** removed — proto-gear's scope is engineering-only; content lives elsewhere (PROTO-047 added it experimentally, PROTO-053 tore it out).
+
+**Full Changelog**: https://github.com/prototowb/proto-gear/compare/v0.10.0...v0.20.0
+
 ## [0.10.0] - 2026-05-13
 
 ### Added - Indexing & Discovery System
