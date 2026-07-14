@@ -1,0 +1,36 @@
+# Orchestration paradigm — copy to .proto-gear/orchestration/ to customise.
+id: core-flex
+name: "Core + Flex"
+version: "1.0.0"
+description: "A small persistent core of agents plus situational flex slots activated for the sprint at hand. The generalization of the former fixed '4 core + 2 flex' roster — now one option among many, with the counts left open."
+created: "2026-07-14"
+author: "Proto Gear Team"
+
+when_to_use:
+  - "A sustained, multi-domain sprint where a stable roster earns its keep"
+  - "Work spans several disciplines at once and benefits from standing ownership"
+
+avoid_when:
+  - "Short or uncertain tasks — a standing roster is pure overhead (use dynamic or solo)"
+  - "You would be activating agents 'just in case' rather than for a concrete need"
+
+roles:
+  - role: core
+    responsibility: "Persistent owners of the always-present concerns (e.g. tech lead, testing). Count is open — pick the few that genuinely need to stand."
+    model_tier: deep
+  - role: flex
+    responsibility: "Situational specialists activated for the current sprint type (feature, bug-fixing, performance, deployment) and dissolved after"
+    model_tier: balanced
+
+coordination: >
+  Keep the core deliberately small. Activate flex roles only for a concrete
+  sprint need and retire them when the need passes. There is no mandated count —
+  this paradigm replaces the old fixed 4+2 mandate with a sizing judgment.
+
+efficiency: >
+  A standing roster costs even when idle — size the core to what must persist and
+  keep flex ephemeral. Give routine flex roles a fast/balanced tier; reserve deep
+  for the core owners who exercise judgment.
+
+selectable_by: [user, agent]
+status: active

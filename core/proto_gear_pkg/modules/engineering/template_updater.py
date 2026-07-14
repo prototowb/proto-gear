@@ -152,12 +152,8 @@ class UserDataExtractor:
                 ],
             },
             "AGENTS": {
-                "agent_configs": [
-                    # Custom core agent configurations
-                    ("core_agents", r"{{CORE_AGENT_1}}.*?{{CORE_AGENT_4}}", re.DOTALL),
-                    # Custom flex agent assignments
-                    ("flex_agents", r"{{FLEX_AGENT_1}}.*?{{FLEX_AGENT_5}}", re.DOTALL),
-                ],
+                # Orchestration is now static, paradigm-driven doctrine (no
+                # per-project core/flex agent fill-ins to preserve on update).
                 "directory_configs": [
                     # Directory-specific agent notes
                     (

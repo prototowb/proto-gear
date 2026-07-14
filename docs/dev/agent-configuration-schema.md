@@ -47,6 +47,11 @@ capabilities:
   commands:
     - "command-name"
 
+# Model preference (optional) — declared intent the host honours
+model:
+  tier: "deep"                 # fast | balanced | deep  (default: balanced)
+  override: "claude-opus-4-8"  # optional: pin a concrete host model id
+
 # Agent Behavior
 context_priority:
   - "What to read/focus on first"
@@ -97,6 +102,19 @@ status: "active"  # active | inactive | experimental
 - Capability names are relative to category (e.g., "testing" not "skills/testing")
 - At least one capability must be specified
 - Dependencies are automatically resolved by composition engine
+
+#### Model Section
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `model.tier` | string | No | Model *tier* the agent should run on: `fast` (mechanical), `balanced` (default), `deep` (judgment, architecture, review) |
+| `model.override` | string | No | Concrete host model id to pin (e.g. `claude-opus-4-8`) when a specific model is required |
+
+**Notes**:
+- Proto Gear is **host-agnostic**: the tier expresses *intent*; the host maps it to a concrete model. This is a **declaration the core audits, never executes** (ADR-002, Principle 4).
+- The whole `model:` block is optional — when omitted, an agent defaults to the `balanced` tier, so every existing config keeps working unchanged.
+- Shorthand: `model: deep` is accepted as sugar for `model: {tier: deep}`.
+- The orchestrating user (via the interactive UI) or the overseeing agent picks tiers per role to optimize efficiency — cheap models for mechanical work, strong models for judgment.
 
 #### Behavior Section
 

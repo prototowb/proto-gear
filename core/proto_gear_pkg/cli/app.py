@@ -259,6 +259,24 @@ def main():
                 )
                 sys.exit(1)
 
+        # Handle 'orchestration' command (alias: 'paradigm')
+        elif args.command in ("orchestration", "paradigm"):
+            if args.orchestration_command == "list":
+                sys.exit(cli_commands.cmd_orchestration_list(args))
+            elif args.orchestration_command == "show":
+                sys.exit(cli_commands.cmd_orchestration_show(args))
+            elif args.orchestration_command == "install":
+                sys.exit(cli_commands.cmd_orchestration_install(args))
+            elif args.orchestration_command is None:
+                # Bare `pg orchestration` → interactive browse/select UI (§5.7),
+                # falling back to the static list when non-interactive.
+                sys.exit(cli_commands.cmd_orchestration_browse(args))
+            else:
+                print(
+                    f"{Colors.YELLOW}Use 'pg orchestration --help' to see available commands{Colors.ENDC}"
+                )
+                sys.exit(1)
+
         # Handle 'module' command
         elif args.command == "module":
             if args.module_command == "list":
@@ -525,6 +543,9 @@ def main():
             )
             print(
                 f"  {Colors.BOLD}pg agent{Colors.ENDC}             - Manage agent configurations"
+            )
+            print(
+                f"  {Colors.BOLD}pg orchestration{Colors.ENDC}     - Browse orchestration paradigms"
             )
             print(
                 f"  {Colors.BOLD}pg help{Colors.ENDC}              - Show detailed documentation"

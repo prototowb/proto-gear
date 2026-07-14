@@ -100,6 +100,30 @@ class TestAgent:
         assert args.source == "src" and args.destination == "dst"
 
 
+class TestOrchestration:
+    def test_list_json(self, parser):
+        args = parser.parse_args(["orchestration", "list", "--json"])
+        assert args.orchestration_command == "list" and args.json
+
+    def test_show(self, parser):
+        args = parser.parse_args(["orchestration", "show", "driver-reviewer"])
+        assert args.orchestration_command == "show"
+        assert args.id == "driver-reviewer"
+
+    def test_install(self, parser):
+        args = parser.parse_args(["orchestration", "install", "core-flex"])
+        assert args.orchestration_command == "install" and args.id == "core-flex"
+
+    def test_paradigm_alias(self, parser):
+        args = parser.parse_args(["paradigm", "list"])
+        assert args.command in ("orchestration", "paradigm")
+        assert args.orchestration_command == "list"
+
+    def test_bare_group(self, parser):
+        args = parser.parse_args(["orchestration"])
+        assert args.orchestration_command is None
+
+
 class TestTicket:
     def test_create(self, parser):
         args = parser.parse_args(["ticket", "create", "Fix bug", "--type", "bugfix"])

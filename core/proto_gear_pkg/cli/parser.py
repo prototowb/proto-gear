@@ -267,6 +267,45 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         "--description", type=str, help="Override description for cloned agent"
     )
 
+    # 'orchestration' command group — the paradigm pool
+    orchestration_parser = subparsers.add_parser(
+        "orchestration",
+        help="Browse orchestration paradigms (how sub-agents are distributed)",
+        aliases=["paradigm"],
+    )
+    orchestration_subparsers = orchestration_parser.add_subparsers(
+        dest="orchestration_command", help="Orchestration commands"
+    )
+
+    # orchestration list
+    orchestration_list_parser = orchestration_subparsers.add_parser(
+        "list", help="List orchestration paradigms in the pool"
+    )
+    orchestration_list_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
+    # orchestration show
+    orchestration_show_parser = orchestration_subparsers.add_parser(
+        "show", help="Show detailed information about a paradigm"
+    )
+    orchestration_show_parser.add_argument(
+        "id", type=str, help="Paradigm id (e.g. dynamic, driver-reviewer)"
+    )
+    orchestration_show_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
+    # orchestration install
+    orchestration_install_parser = orchestration_subparsers.add_parser(
+        "install", help="Install one paradigm into .proto-gear/orchestration/"
+    )
+    orchestration_install_parser.add_argument(
+        "id",
+        type=str,
+        help="Paradigm id (filename stem), or <module>/<id> to disambiguate",
+    )
+
     # 'status' command
     status_parser = subparsers.add_parser(
         "status", help="Show project status from PROJECT_STATUS.md"

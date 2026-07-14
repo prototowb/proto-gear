@@ -244,6 +244,62 @@ class TestAgentCapabilities:
 
 
 # ============================================================================
+# Agent Model (tier + optional override) Tests
+# ============================================================================
+
+
+class TestAgentModel:
+    """Tests for the optional ``model`` field (tier + override)."""
+
+    def test_default_tier_when_absent(self, valid_agent_dict):
+        """No ``model`` block → balanced default, so existing configs work."""
+        assert "model" not in valid_agent_dict
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        assert agent.model.tier == "balanced"
+        assert agent.model.override is None
+
+    def test_parse_tier_and_override(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "deep", "override": "claude-opus-4-8"}
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        assert agent.model.tier == "deep"
+        assert agent.model.override == "claude-opus-4-8"
+
+    def test_string_shorthand(self, valid_agent_dict):
+        """``model: fast`` is sugar for ``model: {tier: fast}``."""
+        valid_agent_dict["model"] = "fast"
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        assert agent.model.tier == "fast"
+
+    def test_invalid_tier_rejected(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "ultra"}
+        with pytest.raises(AgentValidationError):
+            AgentConfigParser._parse_agent_dict(valid_agent_dict)
+
+    def test_invalid_override_type_rejected(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "deep", "override": 42}
+        with pytest.raises(AgentValidationError):
+            AgentConfigParser._parse_agent_dict(valid_agent_dict)
+
+    def test_to_dict_omits_empty_override(self, valid_agent_dict):
+        valid_agent_dict["model"] = {"tier": "deep"}
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        model_dict = agent.to_dict()["model"]
+        assert model_dict == {"tier": "deep"}
+        assert "override" not in model_dict
+
+    def test_roundtrip_through_save_load(self, tmp_path, valid_agent_dict):
+        """to_dict → yaml → parse preserves the model block."""
+        valid_agent_dict["model"] = {"tier": "deep", "override": "claude-opus-4-8"}
+        agent = AgentConfigParser._parse_agent_dict(valid_agent_dict)
+        agent_file = tmp_path / "roundtrip.yaml"
+        with open(agent_file, "w") as f:
+            yaml.dump(agent.to_dict(), f)
+        reloaded = AgentConfigParser.parse_agent_file(agent_file)
+        assert reloaded.model.tier == "deep"
+        assert reloaded.model.override == "claude-opus-4-8"
+
+
+# ============================================================================
 # Agent Manager Tests
 # ============================================================================
 

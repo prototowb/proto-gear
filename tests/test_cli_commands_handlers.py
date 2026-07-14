@@ -294,3 +294,81 @@ class TestAgentSurfacing:
         rc = cc.cmd_agent_install(argparse.Namespace(name="devops/deploy-agent"))
         assert rc == 0
         assert (tmp_path / ".proto-gear" / "agents" / "deploy-agent.yaml").is_file()
+
+
+class TestAgentModelSurface:
+    """PROTO-090: pg agent show/list surface the declared model tier."""
+
+    def test_show_prints_model_tier(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".proto-gear").mkdir()
+        cc.cmd_agent_install(argparse.Namespace(name="code-review-agent"))
+        capsys.readouterr()
+        rc = cc.cmd_agent_show(argparse.Namespace(name="code-review-agent"))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "Model:" in out
+        assert "deep" in out
+
+
+class TestOrchestrationHandlers:
+    """PROTO-091: the orchestration paradigm pool surfaces via list/show/install."""
+
+    def test_list_shows_pool(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        rc = cc.cmd_orchestration_list(_args(json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        for pid in (
+            "dynamic",
+            "solo",
+            "driver-reviewer",
+            "core-flex",
+            "pipeline",
+            "fan-out",
+        ):
+            assert pid in out
+
+    def test_list_json(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        rc = cc.cmd_orchestration_list(_args(json=True))
+        out = capsys.readouterr().out
+        assert rc == 0
+        data = json.loads(out)
+        ids = {p["id"] for p in data["paradigms"]}
+        assert {"dynamic", "driver-reviewer"} <= ids
+
+    def test_show_renders_roles(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        rc = cc.cmd_orchestration_show(_args(id="driver-reviewer", json=False))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "driver" in out and "reviewer" in out
+        assert "deep" in out  # reviewer tier
+
+    def test_show_unknown_hints(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        rc = cc.cmd_orchestration_show(_args(id="ghost", json=False))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "not found" in out.lower()
+
+    def test_install_requires_init(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)  # no .proto-gear/
+        rc = cc.cmd_orchestration_install(_args(id="core-flex"))
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "pg init" in out
+
+    def test_install_writes_file_and_marks_installed(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".proto-gear").mkdir()
+        rc = cc.cmd_orchestration_install(_args(id="core-flex"))
+        assert rc == 0
+        assert (tmp_path / ".proto-gear" / "orchestration" / "core-flex.yaml").is_file()
+        capsys.readouterr()
+        # the installed copy is now flagged in the pool entries
+        entries = {e["id"]: e for e in cc._collect_paradigm_entries(tmp_path)}
+        assert entries["core-flex"]["installed"] is True

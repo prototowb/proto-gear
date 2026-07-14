@@ -7,6 +7,10 @@ description: "Specialized agent for TDD, test automation, and quality assurance"
 created: "2025-12-09"
 author: "Proto Gear Team"
 
+# Balanced default: TDD needs judgment on coverage, most test code is routine.
+model:
+  tier: balanced
+
 capabilities:
   skills:
     - "testing"

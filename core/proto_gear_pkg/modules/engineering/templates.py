@@ -170,11 +170,8 @@ def build_default_replacements(
         "COVERAGE_TARGET": "80",
         "MIN_COVERAGE": "80",
         "NEW_CODE_COVERAGE": "90",
-        # Agents / sprint cadence (AGENTS.md)
+        # Sprint cadence (AGENTS.md)
         "SPRINT_DURATION": "2 weeks",
-        "FLEX_AGENTS_DEFINITIONS": (
-            "_No flex agents configured yet. Add them as the team grows._"
-        ),
         # Illustrative example fillers so shipped code samples read naturally
         "MODULE_NAME": "example",
         "module": "example",

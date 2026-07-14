@@ -7,6 +7,10 @@ description: "Specialized agent for managing software releases and deployments"
 created: "2025-12-09"
 author: "Proto Gear Team"
 
+# Release cutting is high-stakes judgment work — reserve the deep tier.
+model:
+  tier: deep
+
 capabilities:
   skills:
     - "testing"
