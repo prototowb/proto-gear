@@ -77,61 +77,31 @@ CRITICAL_RULES = [
 ]
 
 CLI_COMMANDS: List[Tuple[str, str]] = [
-    ("pg status", "Current project state — version, sprint, active tickets"),
-    ("pg context [--regenerate]", "Print this Agent Context to stdout (pipe-friendly)"),
-    (
-        'pg suggest "<task prose>" [--json]',
-        "Match a free-form task description to the best-fitting capabilities",
-    ),
+    ("pg status", "Version, sprint, active tickets"),
+    ("pg context [--regenerate]", "Print this Agent Context to stdout"),
+    ('pg suggest "<task prose>" [--json]', "Match task prose to capabilities"),
     ("pg ticket create/update/list", "Manage tickets in PROJECT_STATUS.md"),
     (
         "pg capabilities list [--type ...] [--json]",
-        "Browse capabilities (--json for agent consumption)",
+        "List capabilities (--json for agents)",
     ),
-    ("pg capabilities show <name>", "Show full details of a capability"),
-    ("pg capabilities tree <name>", "Show dependency tree of a capability"),
-    (
-        "pg agent list [--available]",
-        "List configured agents + bundled agents available to install",
-    ),
-    ("pg agent install <name>", "Install one bundled/discipline agent on demand"),
-    (
-        "pg orchestration list [--json]",
-        "Browse orchestration paradigms — how sub-agents are distributed (pick/switch on the fly)",
-    ),
-    (
-        "pg orchestration show <id>",
-        "Show a paradigm's roles, model tiers, and when to use it",
-    ),
-    (
-        "pg module list/show [<name>]",
-        "List/inspect engineering department modules (module.yaml manifests)",
-    ),
-    (
-        "pg --module <name> init-surface",
-        "Render a department module's declared state surface",
-    ),
-    (
-        "pg pipeline [--json]",
-        "Show the cross-discipline supervision pipeline (path to production)",
-    ),
+    ("pg capabilities show <name>", "Show a capability's details"),
+    ("pg capabilities tree <name>", "Show a capability's dependency tree"),
+    ("pg agent list [--available]", "List configured + installable agents"),
+    ("pg agent install <name>", "Install a bundled agent"),
+    ("pg orchestration list [--json]", "Browse orchestration paradigms"),
+    ("pg orchestration show <id>", "Show a paradigm's roles + model tiers"),
+    ("pg module list/show [<name>]", "List/inspect department modules"),
+    ("pg --module <name> init-surface", "Render a module's state surface"),
+    ("pg pipeline [--json]", "Show the supervision pipeline to production"),
     (
         "pg trace <ticket-id> [--json]",
-        "Trace a change across discipline state surfaces (ticket → qa → deploy)",
+        "Trace a ticket across disciplines to production",
     ),
-    (
-        "pg release <label> [--json]",
-        "Trace a release across its tickets — aggregate readiness verdict",
-    ),
-    ("pg sync-context", "Regenerate Agent Context in all host files"),
-    (
-        "pg sync-indexes",
-        "Regenerate .proto-gear/INDEX.md and per-type INDEX.md from metadata.yaml",
-    ),
-    (
-        "pg doctor [--fix] [--json]",
-        "Audit project for proto-gear sync drift (use --fix to repair)",
-    ),
+    ("pg release <label> [--json]", "Aggregate a release's readiness verdict"),
+    ("pg sync-context", "Regenerate Agent Context + host files"),
+    ("pg sync-indexes", "Regenerate capability INDEX.md files"),
+    ("pg doctor [--fix] [--json]", "Audit for sync drift (--fix repairs)"),
     ("pg help", "Full CLI help"),
 ]
 
@@ -190,33 +160,9 @@ def _build_capabilities_skim(capabilities: dict) -> str:
             continue
         sections.append(f"\n### {label}\n")
         for cap_id, cap in items:
-            triggers = []
-            if cap.relevance and cap.relevance.triggers:
-                triggers = cap.relevance.triggers[:4]
-            trigger_str = f" · _triggers:_ {', '.join(triggers)}" if triggers else ""
-            sections.append(f"- `{cap_id}` — {cap.description}{trigger_str}")
+            sections.append(f"- `{cap_id}` — {cap.description}")
 
     return "\n".join(sections).strip() or "_No capabilities loaded._"
-
-
-def _build_trigger_map(capabilities: dict) -> str:
-    if not capabilities:
-        return "_No triggers — install capabilities to enable trigger routing._"
-
-    rows = []
-    for cap_id, cap in sorted(capabilities.items()):
-        if not cap.relevance or not cap.relevance.triggers:
-            continue
-        rows.append((cap_id, cap.relevance.triggers))
-
-    if not rows:
-        return "_No triggers declared in installed capability metadata._"
-
-    lines = ["| If user says... | Load |", "|-----------------|------|"]
-    for cap_id, triggers in rows:
-        trig_str = ", ".join(f"`{t}`" for t in triggers[:6])
-        lines.append(f"| {trig_str} | `{cap_id}` |")
-    return "\n".join(lines)
 
 
 def _build_critical_rules() -> str:
@@ -292,7 +238,6 @@ def generate_agent_context(project_dir: Path) -> str:
         "{{PROJECT_NAME}}": project_name,
         "{{REFERENCE_INDEX}}": _build_reference_index(project_dir),
         "{{CAPABILITIES_SKIM}}": _build_capabilities_skim(capabilities),
-        "{{TRIGGER_MAP}}": _build_trigger_map(capabilities),
         "{{CRITICAL_RULES}}": _build_critical_rules(),
         "{{CLI_COMMANDS}}": _build_cli_commands(),
         "{{PROJECT_META}}": _build_project_meta(project_dir, capabilities),
@@ -300,6 +245,29 @@ def generate_agent_context(project_dir: Path) -> str:
     for k, v in replacements.items():
         template = template.replace(k, v)
     return template
+
+
+# Soft budget for the generated agent-context block (the managed BEGIN..END
+# region mirrored into every host file). Every line here is a per-session
+# attention tax on every agent in every downstream project, so the block is
+# kept lean; `doctor.check_agent_context_budget` warns when it is exceeded.
+AGENT_CONTEXT_TOKEN_BUDGET = 1500
+
+
+def estimate_tokens(text: str) -> int:
+    """Rough, offline token estimate for a piece of text.
+
+    Uses the standard ~4-chars-per-token English heuristic, floored at the
+    word count so punctuation-dense markdown is never underestimated too far.
+    Deliberately dependency-free and network-free so `pg doctor` stays hermetic
+    — this is an estimate, not the exact `count_tokens` API figure.
+    """
+    return max(len(text) // 4, len(text.split()))
+
+
+def managed_block(project_dir: Path) -> str:
+    """Return only the generated BEGIN..END agent-context block for a project."""
+    return _extract_managed_block(generate_agent_context(project_dir))
 
 
 def _extract_managed_block(content: str) -> str:

@@ -9,6 +9,7 @@ from proto_gear_pkg.module_core.doctor import (
     Finding,
     DiagnosticsReport,
     check_agent_context_sync,
+    check_agent_context_budget,
     check_host_files,
     check_core_doc_headers,
     check_capabilities,
@@ -127,6 +128,37 @@ class TestAgentContextSync:
         canon.write_text(bumped, encoding="utf-8")
         findings = check_agent_context_sync(synced_project)
         assert findings[0].id == "agent-context-sync"
+
+
+# ---------- check_agent_context_budget ----------
+
+
+class TestAgentContextBudget:
+    def test_slim_block_is_within_budget(self, synced_project):
+        findings = check_agent_context_budget(synced_project)
+        assert len(findings) == 1
+        assert findings[0].severity == "ok"
+        assert findings[0].id == "agent-context-budget"
+
+    def test_no_finding_when_template_missing_block(self, tmp_path, monkeypatch):
+        # managed_block returns "" if the template has no markers; check bails out.
+        import proto_gear_pkg.module_core.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod.sync_context_module, "managed_block", lambda _p: ""
+        )
+        assert check_agent_context_budget(tmp_path) == []
+
+    def test_over_budget_warns(self, synced_project, monkeypatch):
+        import proto_gear_pkg.module_core.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod.sync_context_module, "AGENT_CONTEXT_TOKEN_BUDGET", 1
+        )
+        findings = check_agent_context_budget(synced_project)
+        assert len(findings) == 1
+        assert findings[0].severity == "warning"
+        assert findings[0].id == "agent-context-over-budget"
 
 
 # ---------- check_host_files ----------

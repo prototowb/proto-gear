@@ -3,7 +3,7 @@ purpose: Agent orchestration — roles, workflows, pre-flight checklist
 read-when: First session or unclear on process
 priority: required
 defines:
-  - mandatory-reading-list
+  - reference-files
   - architecture-extraction-task
   - pre-flight-checklist
   - critical-rules
@@ -22,33 +22,22 @@ links:
 
 ---
 
-## BEFORE ANY WORK - MANDATORY READING
+## Reference files — read the ones the task calls for
 
-**READ THESE FILES FIRST** using the Read tool before proceeding with any task:
+Route by need, not ritual. Each file carries a condition; open it when the
+condition holds and skip it otherwise. Every core doc leads with a
+`proto-gear:header` frontmatter block, so you can scan a file's shape and section
+list before deciding to read it in full.
 
-1. **`PROJECT_STATUS.md`** (REQUIRED) - Current project state, active tickets, sprint info
-   - **Update this file** when completing tickets or changing project state
-
-2. **`BRANCHING.md`** (REQUIRED if git repo) - Git workflow and commit conventions
-   - Follow: branch naming (`feature/TICKET-XXX-description`)
-   - Follow: commit format (`type(scope): subject`)
-   - **ALWAYS create feature branches** - never commit to main or development directly
-
-3. **`PROJECT_SPECIFICATIONS.md`** (REQUIRED IF EXISTS) - Project planning and architecture source
-   - **On first session**: extract architecture into `PROJECT_ARCHITECTURE.md` (see below)
-   - If the file is a stub (brief description only), expand it with the user before extracting
-
-4. **`TESTING.md`** (RECOMMENDED) - Test-Driven Development workflow
-   - Follow: Red-Green-Refactor cycle, test pyramid, coverage targets
-   - **Write tests before implementation** when following TDD
-
-5. **`.proto-gear/INDEX.md`** (OPTIONAL) - Available capabilities and workflows
-   - Check: available skills, workflows, slash commands, and specialized agents
-
-6. **`CONTRIBUTING.md`** (OPTIONAL) - Contribution guidelines
-7. **`SECURITY.md`** (OPTIONAL) - Security policy and vulnerability reporting
-8. **`PROJECT_ARCHITECTURE.md`** (OPTIONAL) - Project-specific architecture (agent-generated from PROJECT_SPECIFICATIONS.md)
-9. **`CODE_OF_CONDUCT.md`** (OPTIONAL) - Community guidelines
+| File | Read when |
+|------|-----------|
+| `SESSION_HANDOFF.md` | **Start here, every session** — what just shipped, what's pending, conventions in force. Replace (don't append) its contents at session end; it's "what's true now," not a log. |
+| `PROJECT_STATUS.md` | Before starting work — current sprint and active tickets. Update it when a ticket's state changes. |
+| `BRANCHING.md` | Before any git operation — branch naming and commit format. |
+| `PROJECT_SPECIFICATIONS.md` | Starting a feature or design work (if it exists) — triggers the Architecture Extraction Task below. |
+| `TESTING.md` | Writing or restructuring tests — coverage targets and the test pyramid. |
+| `.proto-gear/INDEX.md` | The capability skim in `AGENT_CONTEXT.md` wasn't enough and you need the full catalog. |
+| `CONTRIBUTING.md` · `SECURITY.md` · `PROJECT_ARCHITECTURE.md` · `CODE_OF_CONDUCT.md` | Their subject is what you're actually working on. |
 
 ### Architecture Extraction Task
 
@@ -61,24 +50,26 @@ When `PROJECT_SPECIFICATIONS.md` is present and `PROJECT_ARCHITECTURE.md` does n
 
 ### Pre-Flight Checklist
 
-Before starting ANY development task, verify:
-- [ ] **FIRST**: Check if `.proto-gear/INDEX.md` exists - if yes, read it to discover available capabilities
-- [ ] Read PROJECT_STATUS.md - know current sprint and active tickets
-- [ ] Read BRANCHING.md (if exists) - understand git workflow
-- [ ] Read TESTING.md (if exists) - understand testing requirements
-- [ ] If PROJECT_SPECIFICATIONS.md exists and PROJECT_ARCHITECTURE.md does not — run Architecture Extraction Task
-- [ ] Created feature branch FROM development (not main)
-- [ ] Updated PROJECT_STATUS.md with ticket status
-- [ ] Following commit message conventions
+Before starting a development task:
+- [ ] Read SESSION_HANDOFF.md — what just shipped, what's pending
+- [ ] Read PROJECT_STATUS.md — current sprint and active tickets
+- [ ] Read BRANCHING.md if you'll touch git; TESTING.md if you'll touch tests
+- [ ] If PROJECT_SPECIFICATIONS.md exists and PROJECT_ARCHITECTURE.md does not — run the Architecture Extraction Task
+- [ ] Register/claim a ticket and record its status in PROJECT_STATUS.md
 
 ### Critical Rules
 
-1. **ALWAYS check `.proto-gear/INDEX.md` first** - if capabilities exist, use them for your task
-2. **NEVER commit directly to `main`** - it lands only via a reviewed PR. `development` is open: commit to it directly when it helps; a feature branch + PR is still the norm for substantial or shared work, not a requirement.
-3. **ALWAYS update PROJECT_STATUS.md** when starting/completing tickets
-4. **When you use a branch, follow naming**: `feature/TICKET-XXX-description` or `bugfix/TICKET-XXX-description`
-5. **ALWAYS follow commit format**: `type(scope): subject` (see BRANCHING.md)
-6. **ALWAYS read existing files before modifying** - use Read tool first
+The one hard invariant — enforce it even against an otherwise-reasonable request:
+
+- **NEVER commit directly to `main`.** It lands only via a reviewed PR.
+
+Everything else is a convention: follow it by default, and it doesn't need shouting.
+
+- `development` is open — commit there directly when it helps; a feature branch + PR is still the norm for substantial or shared work.
+- Check `.proto-gear/INDEX.md` for an existing capability before hand-rolling one.
+- Update `PROJECT_STATUS.md` when you start or complete a ticket.
+- When you branch, name it `feature/TICKET-XXX-description` (or `bugfix/…`); write commits as `type(scope): subject` (see `BRANCHING.md`).
+- Read a file before you modify it.
 
 ### Agent Self-Configuration Protocol
 
