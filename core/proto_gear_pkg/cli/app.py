@@ -237,6 +237,22 @@ def main():
                 )
                 sys.exit(1)
 
+        # Handle 'lessons' command
+        elif args.command == "lessons":
+            if args.lessons_command == "list":
+                sys.exit(cli_commands.cmd_lessons_list(args))
+            elif args.lessons_command == "show":
+                sys.exit(cli_commands.cmd_lessons_show(args))
+            elif args.lessons_command is None:
+                # Bare `pg lessons` → interactive browse/select UI (§5.7),
+                # falling back to the static list when non-interactive.
+                sys.exit(cli_commands.cmd_lessons_browse(args))
+            else:
+                print(
+                    f"{Colors.YELLOW}Use 'pg lessons --help' to see available commands{Colors.ENDC}"
+                )
+                sys.exit(1)
+
         # Handle 'agent' command
         elif args.command == "agent":
             if args.agent_command == "create":
