@@ -18,6 +18,7 @@ from proto_gear_pkg.module_core.metadata_parser import (
     MetadataParser,
     apply_conditional_content,
 )
+from proto_gear_pkg.module_core import capability_profile
 from proto_gear_pkg.paths import package_root
 
 # ---------------------------------------------------------------------------
@@ -585,6 +586,7 @@ def copy_capability_templates(
     version: str = None,
     dry_run: bool = False,
     capabilities_config: dict = None,
+    profile: str = "verbose",
 ) -> dict:
     """
     Copy capability templates to .proto-gear/ directory with security hardening
@@ -596,6 +598,10 @@ def copy_capability_templates(
         dry_run: If True, don't create files, just report what would be done
         capabilities_config: Dict with granular capability selection (skills, workflows, commands)
                             If None, includes all capabilities
+        profile: Output profile — "verbose" (full methodology bodies, the default
+                 for library callers) or "frontier" (slim stubs generated from
+                 metadata; the methodology is omitted for capable models). See
+                 module_core.capability_profile.
 
     Returns:
         dict with 'status', 'files_created', 'errors'
@@ -611,6 +617,8 @@ def copy_capability_templates(
     # Use package version if not specified
     if version is None:
         version = __version__
+
+    profile = capability_profile.normalize_profile(profile)
 
     result = {"status": "success", "files_created": [], "errors": []}
 
@@ -726,12 +734,24 @@ def copy_capability_templates(
                     # Some platforms don't support chmod
                     pass
 
-                # Read source file with UTF-8 encoding
-                try:
-                    content = source_path.read_text(encoding="utf-8")
-                except UnicodeDecodeError as e:
-                    result["errors"].append(f"Encoding error in {source_path}: {e}")
-                    continue
+                # Frontier profile: ship a slim stub for capability bodies instead
+                # of the full methodology doc. Metadata/INDEX files still copy
+                # verbatim so routing + `pg suggest` keep working.
+                stub = None
+                if profile == "frontier" and capability_profile.is_capability_body(
+                    rel_path
+                ):
+                    stub = capability_profile.frontier_stub_for_capability(source_path)
+
+                if stub is not None:
+                    content = stub
+                else:
+                    # Read source file with UTF-8 encoding
+                    try:
+                        content = source_path.read_text(encoding="utf-8")
+                    except UnicodeDecodeError as e:
+                        result["errors"].append(f"Encoding error in {source_path}: {e}")
+                        continue
 
                 # Replace placeholders
                 content = content.replace("{{VERSION}}", version)
@@ -760,6 +780,7 @@ def copy_capability_templates(
             dest_dir,
             replacements={"VERSION": version, "PROJECT_NAME": project_name},
             dry_run=dry_run,
+            profile=profile,
         )
         result["files_created"].extend(module_result["files_created"])
         result["errors"].extend(module_result["errors"])
@@ -782,6 +803,17 @@ def copy_capability_templates(
         if dry_run:
             for rel in agent_result["files_created"]:
                 print(f"    - {rel}")
+
+        # Record the chosen profile so `pg`/doctor and re-runs can see it.
+        if not dry_run:
+            try:
+                (dest_dir / "PROFILE").write_text(profile + "\n", encoding="utf-8")
+                result["files_created"].append(
+                    str((dest_dir / "PROFILE").relative_to(target_dir))
+                )
+            except OSError as e:
+                result["errors"].append(f"Could not record profile: {e}")
+        result["profile"] = profile
 
         if result["errors"]:
             result["status"] = "partial"

@@ -146,3 +146,31 @@ capability source, rendered at different verbosity per consumer.
 
 *Prepared 2026-07-16, based on proto-gear @ main (v0.20.0) and the Claude
 Fable 5 prompting guide.*
+
+---
+
+## Implementation log
+
+- **Phase 1 — DONE** (PROTO-086, PR #56). Dropped the keyword `Trigger →
+  Capability` table and the per-capability `_triggers:_` suffix from the
+  generated block; agents route off descriptions now. Rewrote the AGENTS.md
+  "MANDATORY READING" wall as a conditional "read what the task calls for"
+  table, reserving `NEVER` for the one true invariant. Added
+  `estimate_tokens` + `AGENT_CONTEXT_TOKEN_BUDGET` (1500) enforced by
+  `doctor.check_agent_context_budget`; the dogfood block sits at ~1486/1500.
+
+- **Phases 2 + 3 — DONE** (PROTO-087). Merged per the "cut, but preserve via
+  profiles" decision: rather than hand-fencing 15k lines, proto-gear keeps the
+  verbose `*.template.md` bodies as the single source and *renders* them per
+  profile. `pg init --profile frontier|verbose` (default **frontier**):
+  `frontier` ships a slim stub generated from each capability's `metadata.yaml`
+  (title, description, when-to-use, pointer to host docs) in place of the
+  methodology; `verbose` ships the full playbooks unchanged. Nothing is lost —
+  `verbose` is one flag away. The chosen profile is recorded in
+  `.proto-gear/PROFILE`. Machinery lives in
+  `module_core/capability_profile.py`; both the shared installer and the
+  per-module installer honour it. This makes tiering a permanent architecture
+  (one source, rendered at different verbosity), not a one-off deletion.
+
+- **Phase 4 — TODO.** Lessons/memory directory + long-run grounding lines.
+- **Phase 5 — TODO.** Move invariants from prose to enforcement (hooks/CI/doctor).

@@ -81,6 +81,7 @@ def setup_agent_framework_only(
     with_all=False,
     core_templates=None,
     project_description=None,
+    profile="frontier",
 ):
     """Set up ProtoGear agent framework in existing project"""
     from datetime import datetime
@@ -430,13 +431,22 @@ def setup_agent_framework_only(
                     project_name,
                     dry_run=False,
                     capabilities_config=capabilities_config,
+                    profile=profile,
                 )
 
                 if capability_result["status"] == "success":
                     files_created.extend(capability_result["files_created"])
+                    prof = capability_result.get("profile", profile)
                     print(
-                        f"{Colors.GREEN}+ Capability system created in .proto-gear/{Colors.ENDC}"
+                        f"{Colors.GREEN}+ Capability system created in .proto-gear/ "
+                        f"({prof} profile){Colors.ENDC}"
                     )
+                    if prof == "frontier":
+                        print(
+                            f"{Colors.GRAY}  Slim stubs installed; "
+                            f"`pg init --profile verbose` ships the full playbooks."
+                            f"{Colors.ENDC}"
+                        )
                 elif capability_result["status"] == "warning":
                     print(
                         f"{Colors.YELLOW}! {capability_result['errors'][0]}{Colors.ENDC}"
@@ -527,6 +537,7 @@ def setup_agent_framework_only(
                 project_name,
                 dry_run=True,
                 capabilities_config=capabilities_config,
+                profile=profile,
             )
 
         return {"status": "success", "dry_run": True}
@@ -726,6 +737,7 @@ def run_simple_protogear_init(
     with_all=False,
     core_templates=None,
     project_description=None,
+    profile="frontier",
 ):
     """
     Initialize ProtoGear AI Agent Framework in current project
@@ -761,6 +773,7 @@ def run_simple_protogear_init(
             with_all=with_all,
             core_templates=core_templates,
             project_description=project_description,
+            profile=profile,
         )
     except KeyboardInterrupt:
         return {"status": "cancelled"}
