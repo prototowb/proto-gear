@@ -6,6 +6,20 @@
 
 ## ▶ Start here (next session)
 
+**Just shipped: PROTO-090 (#60) — init profile wizard prompt.** The
+`--profile frontier|verbose` choice (PROTO-087) was previously only reachable
+via the CLI flag; the interactive `pg init` wizard always fell through to the
+`frontier` default. Added `RichWizard.ask_capability_profile()` (questionary +
+plain-`input` fallback) and wired it into every wizard path that installs
+capabilities — enhanced preset + custom flows, and the incremental
+add-capabilities/custom flows. The pick rides `config["profile"]`, which
+`cli/app.py` already read, so no app.py change. Surfaced in the config summary
+before confirmation; only asked when capabilities are actually being generated;
+always returns a valid `CAPABILITY_PROFILES` name. This was one of the
+documented steering follow-ons. Remaining follow-ons (all optional): a `pg
+lessons` interactive browser (mirrors §5.7); a `standard` middle profile *if a
+consumer needs it*; a doctor audit that the branch-guard hook is installed.
+
 **The steering-framework action plan is fully shipped** (all 5 phases, PRs
 #56–#59, on `development`). This reworked proto-gear's markdown steering surface
 against the Claude Fable 5 prompting guidance — the thesis being *shrink
@@ -46,15 +60,16 @@ What changed, phase by phase:
    `pg guard` / hook / CI as the *how*, keeping the prose as the *why*.
 
 **No steering work pending.** Natural follow-ons if picking this thread back up:
-a `standard` middle profile if a consumer needs it; a wizard prompt for the init
-profile; a `pg lessons` interactive browser (mirrors the §5.7 pattern); a doctor
-audit that the branch-guard hook is installed.
+a `standard` middle profile if a consumer needs it; a `pg lessons` interactive
+browser (mirrors the §5.7 pattern); a doctor audit that the branch-guard hook is
+installed. (The init-profile wizard prompt — previously listed here — shipped as
+PROTO-090.)
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through **PROTO-089** (PRs #56–#59). **1073 tests pass; `pg
+- `development` = through **PROTO-090** (PRs #56–#60). **1080 tests pass; `pg
   doctor` green (32 checks); `black --check` clean.** CI parity: bare
   `pytest tests/`.
 - **Generated agent-context block is description-routed** (no keyword table),
@@ -74,6 +89,9 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Shipped this cycle (recent)
 
+- **PROTO-090** (#60) — init profile wizard prompt (frontier vs verbose),
+  merge-on-green. Reaches the PROTO-087 profile choice from the interactive
+  `pg init`, not just the `--profile` flag.
 - **PROTO-086–089** — the five-phase steering-framework rework (above), PRs
   #56–#59. Each phase its own reviewed, merge-on-green PR.
 - (Earlier: ADR-002 arc PROTO-071–075, the 5th discipline PROTO-077, the §5.7
