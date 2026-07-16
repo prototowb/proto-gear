@@ -21,6 +21,10 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 
 {{CRITICAL_RULES}}
 
+## 🧭 Working Agreement
+
+{{WORKING_AGREEMENT}}
+
 ## 🤖 CLI Commands
 
 {{CLI_COMMANDS}}

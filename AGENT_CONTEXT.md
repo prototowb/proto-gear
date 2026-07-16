@@ -18,6 +18,7 @@
 | `BRANCHING.md` | Git workflow, branch naming, commit format | Before any git operations |
 | `TESTING.md` | TDD patterns, test pyramid, coverage targets | When writing tests |
 | `.proto-gear/INDEX.md` | Capability catalog (full reference) | When the skim below is insufficient |
+| `.proto-gear/lessons/` *(not present)* | Accumulated agent-written lessons (corrections, confirmed approaches) | When relevant; write one when you learn something worth keeping |
 
 ## 🛠 Available Capabilities
 
@@ -65,6 +66,12 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - Use `pg ticket create "title" --type feature` to register new work
 - Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket
 
+## 🧭 Working Agreement
+
+- Audit progress claims against tool results — don't report something done, passing, or fixed without checking the actual output.
+- When the user is describing a problem rather than requesting a change, report what you find and stop; don't jump straight to editing.
+- Pause for input only on destructive/irreversible actions, a scope change, or a decision only the user can make — otherwise keep moving.
+
 ## 🤖 CLI Commands
 
 - `pg status` — Version, sprint, active tickets
@@ -95,6 +102,6 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - **Proto Gear version**: v0.20.0
 - **Last release**: 2026-07-14
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-16 18:02
+- **Generated**: 2026-07-16 18:45
 
 <!-- proto-gear:agent-context end -->

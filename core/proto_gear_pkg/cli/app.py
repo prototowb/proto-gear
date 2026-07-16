@@ -425,6 +425,15 @@ def main():
                         print(
                             f"  {Colors.GREEN}{action}{Colors.ENDC}: .proto-gear/{rel}"
                         )
+                    from ..module_core import lessons as lessons_module
+
+                    lessons_result = lessons_module.sync_lessons_index(
+                        caps_root, dry_run=False
+                    )
+                    print(
+                        f"  {Colors.GREEN}{lessons_result['status']}{Colors.ENDC}: "
+                        f".proto-gear/lessons/INDEX.md"
+                    )
                 print(f"{Colors.GREEN}Re-run `pg doctor` to verify.{Colors.ENDC}")
 
             sys.exit(0 if report.errors == 0 else 1)
@@ -474,6 +483,19 @@ def main():
                             else Colors.GRAY
                         )
                         print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]")
+
+                # Also refresh the lessons index (Phase 4)
+                from ..module_core import lessons as lessons_module
+
+                lessons_result = lessons_module.sync_lessons_index(
+                    caps_root, dry_run=args.dry_run
+                )
+                if lessons_result["status"] not in ("no-dir", "missing-markers"):
+                    print(
+                        f"{Colors.CYAN}{label} Lessons Index:{Colors.ENDC}\n"
+                        f"  {Colors.GRAY}.proto-gear/lessons/INDEX.md{Colors.ENDC}  "
+                        f"[{lessons_result['status']}]"
+                    )
             sys.exit(0)
 
         # Handle 'sync-indexes' command

@@ -118,6 +118,7 @@ class TestGenerateAgentContext:
             "{{REFERENCE_INDEX}}",
             "{{CAPABILITIES_SKIM}}",
             "{{CRITICAL_RULES}}",
+            "{{WORKING_AGREEMENT}}",
             "{{CLI_COMMANDS}}",
             "{{PROJECT_META}}",
         ):

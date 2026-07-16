@@ -9,6 +9,7 @@ Audits the project for sync drift across:
   5. departmental module manifests (module.yaml) validity
   6. supervision gates declared in workflow metadata (contract item 5)
   7. agent-context token budget (the generated block stays a skim, not a manual)
+  8. lessons layer — malformed lesson files + stale lessons/INDEX.md (Phase 4)
 
 Each check produces a list of Finding records. The dispatcher in proto_gear.py
 turns these into human-readable output or JSON.
@@ -399,6 +400,67 @@ def check_capability_indexes(project_dir: Path) -> List[Finding]:
     return findings
 
 
+def check_lessons(project_dir: Path) -> List[Finding]:
+    """Validate the agent-writable lessons layer (Phase 4).
+
+    Silent when no lessons directory exists (it's optional). When present:
+    flags malformed lesson files and a stale lessons/INDEX.md, both fixable by
+    `pg sync-context`.
+    """
+    from . import lessons as lessons_module
+
+    caps_root = project_dir / ".proto-gear"
+    lessons_dir = caps_root / lessons_module.LESSONS_DIRNAME
+    if not lessons_dir.exists():
+        return []
+
+    findings: List[Finding] = []
+    for path, problem in lessons_module.validate_lessons(lessons_dir):
+        rel = path.relative_to(project_dir) if path.is_absolute() else path
+        findings.append(
+            Finding(
+                id="lesson-malformed",
+                severity="warning",
+                target=str(rel),
+                message=f"Malformed lesson: {problem}.",
+                fix_hint="Lead with `# Title` then a `> summary` line",
+            )
+        )
+
+    try:
+        status = lessons_module.sync_lessons_index(caps_root, dry_run=True)["status"]
+    except Exception as e:
+        return findings + [
+            Finding(
+                id="lessons-index-error",
+                severity="error",
+                target=".proto-gear/lessons/INDEX.md",
+                message=f"Lessons index render failed: {e}",
+            )
+        ]
+
+    if status == "would-update":
+        findings.append(
+            Finding(
+                id="lessons-index-drift",
+                severity="warning",
+                target=".proto-gear/lessons/INDEX.md",
+                message="Lessons index is stale.",
+                fix_hint="Run `pg sync-context` to regenerate",
+            )
+        )
+    elif status in ("unchanged", "no-dir", "missing-markers", "would-create"):
+        findings.append(
+            Finding(
+                id="lessons-ok",
+                severity="ok",
+                target=".proto-gear/lessons/",
+                message=f"{len(lessons_module.load_lessons(lessons_dir))} lesson(s), index in sync.",
+            )
+        )
+    return findings
+
+
 def check_modules(project_dir: Path) -> List[Finding]:
     """Validate every bundled departmental module manifest (module.yaml).
 
@@ -691,6 +753,7 @@ def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report.findings.extend(check_core_doc_headers(project_dir))
     report.findings.extend(check_capabilities(project_dir))
     report.findings.extend(check_capability_indexes(project_dir))
+    report.findings.extend(check_lessons(project_dir))
     report.findings.extend(check_modules(project_dir))
     report.findings.extend(check_supervision_gates(project_dir))
     return report
@@ -703,6 +766,7 @@ _SYNC_FIXABLE_IDS = {
     "host-block-missing",
     "host-block-drift",
     "capability-index-drift",
+    "lessons-index-drift",
 }
 
 
