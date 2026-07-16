@@ -6,19 +6,30 @@
 
 ## ▶ Start here (next session)
 
-**Just shipped: PROTO-090 (#60) — init profile wizard prompt.** The
-`--profile frontier|verbose` choice (PROTO-087) was previously only reachable
-via the CLI flag; the interactive `pg init` wizard always fell through to the
-`frontier` default. Added `RichWizard.ask_capability_profile()` (questionary +
-plain-`input` fallback) and wired it into every wizard path that installs
-capabilities — enhanced preset + custom flows, and the incremental
-add-capabilities/custom flows. The pick rides `config["profile"]`, which
-`cli/app.py` already read, so no app.py change. Surfaced in the config summary
-before confirmation; only asked when capabilities are actually being generated;
-always returns a valid `CAPABILITY_PROFILES` name. This was one of the
-documented steering follow-ons. Remaining follow-ons (all optional): a `pg
-lessons` interactive browser (mirrors §5.7); a `standard` middle profile *if a
-consumer needs it*; a doctor audit that the branch-guard hook is installed.
+**Just shipped two steering follow-ons: PROTO-090 (#60) + PROTO-091 (#61).**
+
+- **PROTO-090 — init profile wizard prompt.** The `--profile frontier|verbose`
+  choice (PROTO-087) was previously only reachable via the CLI flag; the
+  interactive `pg init` wizard always fell through to the `frontier` default.
+  Added `RichWizard.ask_capability_profile()` (questionary + plain-`input`
+  fallback) and wired it into every wizard path that installs capabilities —
+  enhanced preset + custom flows, and the incremental add-capabilities/custom
+  flows. The pick rides `config["profile"]`, which `cli/app.py` already read, so
+  no app.py change. Surfaced in the config summary; only asked when capabilities
+  are actually being generated; always returns a valid `CAPABILITY_PROFILES`
+  name.
+- **PROTO-091 — doctor audits the branch-guard hook.** PROTO-089 shipped `pg
+  hooks install` but nothing verified it. `doctor.check_branch_guard_hook` is an
+  advisory audit (**warning, never error** — CI's `pg guard branch` is the hard
+  gate): `ok` when the bundled guard hook is installed, `warning` only when a git
+  repo has *no* pre-commit hook at all, and **silent** both outside a git repo
+  and when a non-guard pre-commit hook already exists (no-clobber territory — the
+  user runs their own hooks). That last branch is why this repo's own
+  test-running `dev/hooks/pre-commit` keeps `pg doctor` green. Not sync-fixable
+  (fix is `pg hooks install`), so it's out of `_SYNC_FIXABLE_IDS`.
+
+**Remaining follow-ons (all optional):** a `pg lessons` interactive browser
+(mirrors §5.7); a `standard` middle profile *if a consumer needs it*.
 
 **The steering-framework action plan is fully shipped** (all 5 phases, PRs
 #56–#59, on `development`). This reworked proto-gear's markdown steering surface
@@ -61,15 +72,14 @@ What changed, phase by phase:
 
 **No steering work pending.** Natural follow-ons if picking this thread back up:
 a `standard` middle profile if a consumer needs it; a `pg lessons` interactive
-browser (mirrors the §5.7 pattern); a doctor audit that the branch-guard hook is
-installed. (The init-profile wizard prompt — previously listed here — shipped as
-PROTO-090.)
+browser (mirrors the §5.7 pattern). (The init-profile wizard prompt shipped as
+PROTO-090; the branch-guard doctor audit as PROTO-091.)
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through **PROTO-090** (PRs #56–#60). **1080 tests pass; `pg
+- `development` = through **PROTO-091** (PRs #56–#61). **1086 tests pass; `pg
   doctor` green (32 checks); `black --check` clean.** CI parity: bare
   `pytest tests/`.
 - **Generated agent-context block is description-routed** (no keyword table),
@@ -89,6 +99,8 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Shipped this cycle (recent)
 
+- **PROTO-091** (#61) — `pg doctor` advisory audit that the branch-guard
+  pre-commit hook is installed (closes the PROTO-089 loop), merge-on-green.
 - **PROTO-090** (#60) — init profile wizard prompt (frontier vs verbose),
   merge-on-green. Reaches the PROTO-087 profile choice from the interactive
   `pg init`, not just the `--profile` flag.
