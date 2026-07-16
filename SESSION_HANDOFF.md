@@ -6,7 +6,8 @@
 
 ## ▶ Start here (next session)
 
-**Just shipped two steering follow-ons: PROTO-090 (#60) + PROTO-091 (#61).**
+**Just shipped three steering follow-ons: PROTO-090 (#60), PROTO-091 (#61),
+PROTO-092 (#62).**
 
 - **PROTO-090 — init profile wizard prompt.** The `--profile frontier|verbose`
   choice (PROTO-087) was previously only reachable via the CLI flag; the
@@ -27,9 +28,17 @@
   user runs their own hooks). That last branch is why this repo's own
   test-running `dev/hooks/pre-commit` keeps `pg doctor` green. Not sync-fixable
   (fix is `pg hooks install`), so it's out of `_SYNC_FIXABLE_IDS`.
+- **PROTO-092 — `pg lessons` interactive browser.** The lessons layer
+  (PROTO-088) had no reader surface. Added `pg lessons` mirroring the §5.7
+  browsers: bare `pg lessons` → questionary browse/select (pick → read full
+  body), `pg lessons list [--json]`, `pg lessons show <name>` (resolve by
+  filename ±`.md` or exact title). Degrades to the static list without a
+  TTY/questionary. Wired into the home menu ("Lessons" route) and the canonical
+  CLI-command list in `sync_context` (host files carry the real line). Pure data
+  helpers unit-tested; 20 tests mirror `test_orchestration_browse.py`.
 
-**Remaining follow-ons (all optional):** a `pg lessons` interactive browser
-(mirrors §5.7); a `standard` middle profile *if a consumer needs it*.
+**Remaining follow-on (optional):** a `standard` middle output profile *if a
+consumer needs it* (speculative — the only documented steering follow-on left).
 
 **The steering-framework action plan is fully shipped** (all 5 phases, PRs
 #56–#59, on `development`). This reworked proto-gear's markdown steering surface
@@ -79,7 +88,7 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through **PROTO-091** (PRs #56–#61). **1086 tests pass; `pg
+- `development` = through **PROTO-092** (PRs #56–#62). **1106 tests pass; `pg
   doctor` green (32 checks); `black --check` clean.** CI parity: bare
   `pytest tests/`.
 - **Generated agent-context block is description-routed** (no keyword table),
@@ -99,6 +108,8 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Shipped this cycle (recent)
 
+- **PROTO-092** (#62) — `pg lessons` interactive browser over the
+  accumulated-knowledge layer (§5.7 pattern), merge-on-green.
 - **PROTO-091** (#61) — `pg doctor` advisory audit that the branch-guard
   pre-commit hook is installed (closes the PROTO-089 loop), merge-on-green.
 - **PROTO-090** (#60) — init profile wizard prompt (frontier vs verbose),
