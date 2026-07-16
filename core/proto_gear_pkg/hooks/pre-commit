@@ -1,0 +1,22 @@
+#!/bin/sh
+# Proto Gear branch-guard pre-commit hook.
+# Enforces the one hard invariant: never commit directly to `main`.
+# Installed by `pg hooks install`. Safe to remove or extend.
+#
+# proto-gear:branch-guard  (marker — do not remove; `pg hooks install` looks for it)
+
+if command -v pg >/dev/null 2>&1; then
+    pg guard branch || exit 1
+else
+    # Fallback if the `pg` CLI isn't on PATH: block main/master directly.
+    branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
+    case "$branch" in
+        main|master)
+            echo "Refusing to commit directly to protected branch '$branch'." >&2
+            echo "Branch off first (git switch -c feature/TICKET-XXX-desc)." >&2
+            exit 1
+            ;;
+    esac
+fi
+
+exit 0

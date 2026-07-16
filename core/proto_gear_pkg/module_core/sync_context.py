@@ -119,6 +119,8 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ("pg sync-context", "Regenerate Agent Context + host files"),
     ("pg sync-indexes", "Regenerate capability INDEX.md files"),
     ("pg doctor [--fix] [--json]", "Audit for sync drift (--fix repairs)"),
+    ("pg guard branch", "Fail if on a protected branch (for hooks/CI)"),
+    ("pg hooks install", "Install the branch-guard pre-commit hook"),
     ("pg help", "Full CLI help"),
 ]
 
