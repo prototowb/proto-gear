@@ -8,6 +8,9 @@ Audits the project for sync drift across:
   4. capability metadata validity
   5. departmental module manifests (module.yaml) validity
   6. supervision gates declared in workflow metadata (contract item 5)
+  7. agent-context token budget (the generated block stays a skim, not a manual)
+  8. lessons layer — malformed lesson files + stale lessons/INDEX.md (Phase 4)
+  9. branch-guard pre-commit hook installed (Phase 5; advisory nudge)
 
 Each check produces a list of Finding records. The dispatcher in proto_gear.py
 turns these into human-readable output or JSON.
@@ -116,6 +119,45 @@ def check_agent_context_sync(project_dir: Path) -> List[Finding]:
             target="AGENT_CONTEXT.md",
             message="AGENT_CONTEXT.md does not match current project state.",
             fix_hint="Run `pg sync-context` to regenerate",
+        )
+    ]
+
+
+def check_agent_context_budget(project_dir: Path) -> List[Finding]:
+    """Warn when the generated agent-context block outgrows its token budget.
+
+    The managed block is mirrored into every host file and re-read on every
+    agent session across every downstream project, so its size is a recurring
+    attention tax. Estimated locally (no network) — see
+    `sync_context.estimate_tokens`.
+    """
+    block = sync_context_module.managed_block(project_dir)
+    if not block:
+        return []  # template breakage is already reported by check_host_files
+    budget = sync_context_module.AGENT_CONTEXT_TOKEN_BUDGET
+    tokens = sync_context_module.estimate_tokens(block)
+    if tokens > budget:
+        return [
+            Finding(
+                id="agent-context-over-budget",
+                severity="warning",
+                target="AGENT_CONTEXT.md",
+                message=(
+                    f"Generated agent-context block is ~{tokens} tokens, over the "
+                    f"{budget}-token budget — every line taxes every agent session."
+                ),
+                fix_hint=(
+                    "Trim capability descriptions/rules, or move detail behind a "
+                    "pointer; the block is meant to be a skim, not a manual."
+                ),
+            )
+        ]
+    return [
+        Finding(
+            id="agent-context-budget",
+            severity="ok",
+            target="AGENT_CONTEXT.md",
+            message=f"~{tokens}/{budget} token budget.",
         )
     ]
 
@@ -357,6 +399,112 @@ def check_capability_indexes(project_dir: Path) -> List[Finding]:
             )
         # 'updated' / 'created' shouldn't appear under dry_run=True
     return findings
+
+
+def check_lessons(project_dir: Path) -> List[Finding]:
+    """Validate the agent-writable lessons layer (Phase 4).
+
+    Silent when no lessons directory exists (it's optional). When present:
+    flags malformed lesson files and a stale lessons/INDEX.md, both fixable by
+    `pg sync-context`.
+    """
+    from . import lessons as lessons_module
+
+    caps_root = project_dir / ".proto-gear"
+    lessons_dir = caps_root / lessons_module.LESSONS_DIRNAME
+    if not lessons_dir.exists():
+        return []
+
+    findings: List[Finding] = []
+    for path, problem in lessons_module.validate_lessons(lessons_dir):
+        rel = path.relative_to(project_dir) if path.is_absolute() else path
+        findings.append(
+            Finding(
+                id="lesson-malformed",
+                severity="warning",
+                target=str(rel),
+                message=f"Malformed lesson: {problem}.",
+                fix_hint="Lead with `# Title` then a `> summary` line",
+            )
+        )
+
+    try:
+        status = lessons_module.sync_lessons_index(caps_root, dry_run=True)["status"]
+    except Exception as e:
+        return findings + [
+            Finding(
+                id="lessons-index-error",
+                severity="error",
+                target=".proto-gear/lessons/INDEX.md",
+                message=f"Lessons index render failed: {e}",
+            )
+        ]
+
+    if status == "would-update":
+        findings.append(
+            Finding(
+                id="lessons-index-drift",
+                severity="warning",
+                target=".proto-gear/lessons/INDEX.md",
+                message="Lessons index is stale.",
+                fix_hint="Run `pg sync-context` to regenerate",
+            )
+        )
+    elif status in ("unchanged", "no-dir", "missing-markers", "would-create"):
+        findings.append(
+            Finding(
+                id="lessons-ok",
+                severity="ok",
+                target=".proto-gear/lessons/",
+                message=f"{len(lessons_module.load_lessons(lessons_dir))} lesson(s), index in sync.",
+            )
+        )
+    return findings
+
+
+def check_branch_guard_hook(project_dir: Path) -> List[Finding]:
+    """Audit local enforcement of the "never commit to `main`" invariant (Phase 5).
+
+    Advisory, never an error — the invariant is also enforced by `pg guard
+    branch` in CI, so a missing local hook is a nudge, not a failure. Silent
+    outside a git repo, and silent when the repo already has *some* pre-commit
+    hook that isn't ours: the user manages their own hooks and `pg hooks
+    install` is deliberately no-clobber, so nagging would be noise. Emits:
+
+      - ``ok``      when the bundled branch-guard hook is installed;
+      - ``warning`` when a git repo has no pre-commit hook at all — nothing
+        stops a local commit to a protected branch.
+    """
+    from . import hooks as hooks_module
+
+    hooks_dir = hooks_module.git_hooks_dir(str(project_dir))
+    if hooks_dir is None:
+        return []  # not a git repo — local hook enforcement is N/A
+
+    pre_commit = hooks_dir / "pre-commit"
+    if pre_commit.exists():
+        existing = pre_commit.read_text(encoding="utf-8", errors="replace")
+        if hooks_module.BRANCH_GUARD_MARKER in existing:
+            return [
+                Finding(
+                    id="branch-guard-hook-ok",
+                    severity="ok",
+                    target=str(pre_commit),
+                    message="Branch-guard pre-commit hook installed.",
+                )
+            ]
+        # A non-guard pre-commit hook exists — the user runs their own hooks.
+        return []
+
+    return [
+        Finding(
+            id="branch-guard-hook-missing",
+            severity="warning",
+            target="pre-commit",
+            message='"never commit to `main`" is not enforced locally — no pre-commit hook.',
+            fix_hint="Run `pg hooks install` to add the branch-guard hook",
+        )
+    ]
 
 
 def check_modules(project_dir: Path) -> List[Finding]:
@@ -646,10 +794,13 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
 def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report = DiagnosticsReport()
     report.findings.extend(check_agent_context_sync(project_dir))
+    report.findings.extend(check_agent_context_budget(project_dir))
     report.findings.extend(check_host_files(project_dir))
     report.findings.extend(check_core_doc_headers(project_dir))
     report.findings.extend(check_capabilities(project_dir))
     report.findings.extend(check_capability_indexes(project_dir))
+    report.findings.extend(check_lessons(project_dir))
+    report.findings.extend(check_branch_guard_hook(project_dir))
     report.findings.extend(check_modules(project_dir))
     report.findings.extend(check_supervision_gates(project_dir))
     return report
@@ -662,6 +813,7 @@ _SYNC_FIXABLE_IDS = {
     "host-block-missing",
     "host-block-drift",
     "capability-index-drift",
+    "lessons-index-drift",
 }
 
 

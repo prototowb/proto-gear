@@ -12,17 +12,18 @@
 
 ## 🛠 Available Capabilities
 
+Load a capability when its description fits the task in front of you — route by
+judgment, not keyword match. Each is optional; skip any that doesn't earn its place.
+
 {{CAPABILITIES_SKIM}}
-
-## 🔑 Trigger → Capability
-
-When the user's prose contains these keywords, load the matching capability before responding.
-
-{{TRIGGER_MAP}}
 
 ## 🚨 Critical Rules
 
 {{CRITICAL_RULES}}
+
+## 🧭 Working Agreement
+
+{{WORKING_AGREEMENT}}
 
 ## 🤖 CLI Commands
 

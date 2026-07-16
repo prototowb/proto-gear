@@ -18,6 +18,7 @@ setup(
             "orchestration/*.md",
             "modules/**/*.yaml",
             "modules/**/*.md",
+            "hooks/*",
         ],
     },
     include_package_data=True,

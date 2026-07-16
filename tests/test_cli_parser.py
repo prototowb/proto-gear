@@ -50,6 +50,38 @@ class TestInit:
         args = parser.parse_args(["init", "--ticket-prefix", "APP"])
         assert args.ticket_prefix == "APP"
 
+    def test_init_profile_defaults_to_frontier(self, parser):
+        # Plan Phase 3: new inits default to the slim profile.
+        args = parser.parse_args(["init"])
+        assert args.profile == "frontier"
+
+    def test_init_profile_verbose(self, parser):
+        args = parser.parse_args(["init", "--profile", "verbose"])
+        assert args.profile == "verbose"
+
+    def test_init_profile_rejects_unknown(self, parser):
+        with pytest.raises(SystemExit):
+            parser.parse_args(["init", "--profile", "nonsense"])
+
+
+class TestGuardAndHooks:
+    def test_guard_defaults_to_branch(self, parser):
+        args = parser.parse_args(["guard"])
+        assert args.command == "guard"
+        assert args.aspect == "branch"
+
+    def test_guard_protected_repeatable(self, parser):
+        args = parser.parse_args(
+            ["guard", "branch", "--protected", "main", "--protected", "release"]
+        )
+        assert args.protected == ["main", "release"]
+
+    def test_hooks_install(self, parser):
+        args = parser.parse_args(["hooks", "install", "--force"])
+        assert args.command == "hooks"
+        assert args.hooks_command == "install"
+        assert args.force is True
+
 
 class TestInitSurface:
     def test_defaults(self, parser):

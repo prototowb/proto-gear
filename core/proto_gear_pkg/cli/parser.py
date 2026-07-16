@@ -74,6 +74,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help="Generate .proto-gear/ capability system (skills, workflows, commands)",
     )
     init_parser.add_argument(
+        "--profile",
+        choices=["frontier", "verbose"],
+        default="frontier",
+        help=(
+            "Capability verbosity: 'frontier' (default) ships slim stubs — the "
+            "methodology is left to the model; 'verbose' ships the full playbooks "
+            "for smaller/older models. Nothing is lost: re-init with --profile "
+            "verbose for the full corpus."
+        ),
+    )
+    init_parser.add_argument(
         "--all",
         action="store_true",
         help="Generate ALL available project templates (TESTING, BRANCHING, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT)",
@@ -103,6 +114,39 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         "--dry-run",
         action="store_true",
         help="Preview without writing the file",
+    )
+
+    # 'guard' — enforce a repo invariant; exit non-zero on violation (hooks/CI).
+    guard_parser = subparsers.add_parser(
+        "guard",
+        help="Enforce a repo invariant; exit non-zero on violation (for hooks/CI)",
+    )
+    guard_parser.add_argument(
+        "aspect",
+        nargs="?",
+        choices=["branch"],
+        default="branch",
+        help="What to guard (default: branch — refuse commits on a protected branch)",
+    )
+    guard_parser.add_argument(
+        "--protected",
+        action="append",
+        metavar="NAME",
+        help="Protected branch name (repeatable). Default: main, master",
+    )
+
+    # 'hooks' — manage git hooks (branch-guard pre-commit).
+    hooks_parser = subparsers.add_parser("hooks", help="Manage git hooks")
+    hooks_subparsers = hooks_parser.add_subparsers(
+        dest="hooks_command", help="Hooks commands"
+    )
+    hooks_install_parser = hooks_subparsers.add_parser(
+        "install", help="Install the branch-guard pre-commit hook"
+    )
+    hooks_install_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing pre-commit hook (backs it up first)",
     )
 
     # 'capabilities' command group
@@ -164,6 +208,28 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         type=str,
         help="Capability ID (e.g., testing, skills/debugging)",
     )
+
+    # 'lessons' command group — the agent-writable accumulated-knowledge layer
+    lessons_parser = subparsers.add_parser(
+        "lessons", help="Browse accumulated lessons (.proto-gear/lessons/)"
+    )
+    lessons_subparsers = lessons_parser.add_subparsers(
+        dest="lessons_command", help="Lessons commands"
+    )
+
+    # lessons list
+    lessons_list_parser = lessons_subparsers.add_parser(
+        "list", help="List accumulated lessons"
+    )
+    lessons_list_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
+    # lessons show
+    lessons_show_parser = lessons_subparsers.add_parser(
+        "show", help="Show a lesson's full content"
+    )
+    lessons_show_parser.add_argument("name", type=str, help="Lesson filename or title")
 
     # 'agent' command group
     agent_parser = subparsers.add_parser("agent", help="Manage agent configurations")

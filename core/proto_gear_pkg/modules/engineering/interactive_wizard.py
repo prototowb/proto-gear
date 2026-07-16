@@ -584,6 +584,93 @@ class RichWizard:
 
         return answer if answer is not None else False
 
+    def ask_capability_profile(self, default: Optional[str] = None) -> str:
+        """
+        Ask which capability output profile to install.
+
+        Only meaningful once capabilities are being generated: ``frontier``
+        ships slim stubs (title, when-to-use, a pointer to the host docs — the
+        generic methodology is left to the model), ``verbose`` ships the full
+        playbooks for smaller / local / older models. Returns a name from
+        ``CAPABILITY_PROFILES``. Nothing is lost either way — re-init with the
+        other profile swaps the corpus.
+        """
+        from proto_gear_pkg.module_core.capability_profile import (
+            CAPABILITY_PROFILES,
+            normalize_profile,
+        )
+
+        default = normalize_profile(default)
+
+        if not QUESTIONARY_AVAILABLE:
+            # Fallback to a simple text prompt
+            print(f"\n{CHARS['gear']} Capability Profile")
+            print("-" * 30)
+            print("  frontier - slim stubs (recommended for frontier models)")
+            print("  verbose  - full playbooks (for smaller/older models)")
+            while True:
+                response = (
+                    input(
+                        f"\nCapability profile [frontier/verbose] "
+                        f"(Enter for '{default}'): "
+                    )
+                    .strip()
+                    .lower()
+                )
+                if not response:
+                    return default
+                if response in CAPABILITY_PROFILES:
+                    return response
+                print("Please enter 'frontier' or 'verbose'")
+
+        # Enhanced questionary prompt
+        description = [
+            "",
+            "How verbose should the installed capabilities be?",
+            "",
+            "[bold]frontier[/bold] - slim stubs: title, when-to-use, a pointer to",
+            "  the host docs. The generic methodology is left to the model.",
+            "  Best for frontier models (fewer per-session tokens).",
+            "",
+            "[bold]verbose[/bold] - the full playbooks: methodology, worked",
+            "  examples, checklists. Best for smaller / local / older models,",
+            "  or humans who want the whole guide.",
+            "",
+            "[dim]Nothing is lost either way — re-init with the other profile "
+            "swaps the corpus.[/dim]",
+            "",
+        ]
+        if self.console:
+            self.print_panel(
+                "\n".join(description),
+                title=f"{CHARS['gear']} Capability Profile",
+                border_style="cyan",
+            )
+
+        choices = [
+            questionary.Choice(
+                f"{CHARS['check']} frontier - slim stubs (recommended for frontier models)",
+                value="frontier",
+            ),
+            questionary.Choice(
+                f"{CHARS['bullet']} verbose - full playbooks (for smaller/older models)",
+                value="verbose",
+            ),
+        ]
+        # Pre-select the caller's default by putting it first
+        if default == "verbose":
+            choices = list(reversed(choices))
+
+        answer = questionary.select(
+            "Capability profile:",
+            choices=choices,
+            default=choices[0],
+            style=PROTO_GEAR_STYLE,
+            instruction="(Use arrow keys, Enter to select)",
+        ).ask()
+
+        return normalize_profile(answer) if answer else default
+
     def ask_core_templates_selection(self) -> Dict[str, bool]:
         """
         Ask user which core templates to generate (Custom path)
@@ -1307,6 +1394,8 @@ class RichWizard:
                 print(
                     f"  {CHARS['check']} .proto-gear/ (Universal Capabilities System)"
                 )
+                if config.get("profile"):
+                    print(f"      Profile: {config['profile']}")
             else:
                 print(f"  {CHARS['cross']} .proto-gear/ (not selected)")
 
@@ -1358,6 +1447,8 @@ class RichWizard:
                 else f"{CHARS['cross']} Disabled"
             ),
         )
+        if config.get("with_capabilities") and config.get("profile"):
+            table.add_row("Profile", config["profile"])
 
         files_list = [
             f"{CHARS['check']} AGENTS.md (AI agent integration guide)",
@@ -1628,6 +1719,14 @@ def run_enhanced_wizard(
                     except KeyboardInterrupt:
                         return None
 
+                # If capabilities are enabled, ask for the output profile
+                if config.get("with_capabilities"):
+                    wizard.clear_screen()
+                    try:
+                        config["profile"] = wizard.ask_capability_profile()
+                    except KeyboardInterrupt:
+                        return None
+
                 config["confirmed"] = True
                 return config
             else:
@@ -1693,6 +1792,8 @@ def run_enhanced_wizard(
         capabilities_config = wizard.ask_capabilities_selection()
         config["capabilities_config"] = capabilities_config
         config["with_capabilities"] = capabilities_config.get("enabled", False)
+        if config["with_capabilities"]:
+            config["profile"] = wizard.ask_capability_profile()
     except KeyboardInterrupt:
         return None
 
@@ -1966,6 +2067,8 @@ def run_incremental_wizard(
                 capabilities_config = wizard.ask_capabilities_selection()
                 config["capabilities_config"] = capabilities_config
                 config["with_capabilities"] = capabilities_config.get("enabled", False)
+                if config["with_capabilities"]:
+                    config["profile"] = wizard.ask_capability_profile()
             except KeyboardInterrupt:
                 return None
 
@@ -2043,6 +2146,8 @@ def run_incremental_wizard(
                         config["with_capabilities"] = capabilities_config.get(
                             "enabled", False
                         )
+                        if config["with_capabilities"]:
+                            config["profile"] = wizard.ask_capability_profile()
                     except KeyboardInterrupt:
                         return None
 

@@ -9,6 +9,9 @@ from proto_gear_pkg.module_core.doctor import (
     Finding,
     DiagnosticsReport,
     check_agent_context_sync,
+    check_agent_context_budget,
+    check_lessons,
+    check_branch_guard_hook,
     check_host_files,
     check_core_doc_headers,
     check_capabilities,
@@ -127,6 +130,152 @@ class TestAgentContextSync:
         canon.write_text(bumped, encoding="utf-8")
         findings = check_agent_context_sync(synced_project)
         assert findings[0].id == "agent-context-sync"
+
+
+# ---------- check_agent_context_budget ----------
+
+
+class TestAgentContextBudget:
+    def test_slim_block_is_within_budget(self, synced_project):
+        findings = check_agent_context_budget(synced_project)
+        assert len(findings) == 1
+        assert findings[0].severity == "ok"
+        assert findings[0].id == "agent-context-budget"
+
+    def test_no_finding_when_template_missing_block(self, tmp_path, monkeypatch):
+        # managed_block returns "" if the template has no markers; check bails out.
+        import proto_gear_pkg.module_core.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod.sync_context_module, "managed_block", lambda _p: ""
+        )
+        assert check_agent_context_budget(tmp_path) == []
+
+    def test_over_budget_warns(self, synced_project, monkeypatch):
+        import proto_gear_pkg.module_core.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod.sync_context_module, "AGENT_CONTEXT_TOKEN_BUDGET", 1
+        )
+        findings = check_agent_context_budget(synced_project)
+        assert len(findings) == 1
+        assert findings[0].severity == "warning"
+        assert findings[0].id == "agent-context-over-budget"
+
+
+# ---------- check_lessons ----------
+
+
+class TestCheckLessons:
+    def _mk(self, root):
+        d = root / ".proto-gear" / "lessons"
+        d.mkdir(parents=True)
+        return d
+
+    def test_no_dir_is_silent(self, tmp_path):
+        (tmp_path / ".proto-gear").mkdir()
+        assert check_lessons(tmp_path) == []
+
+    def test_ok_when_valid_and_synced(self, tmp_path):
+        d = self._mk(tmp_path)
+        (d / "a.md").write_text("# T\n> S\n", encoding="utf-8")
+        # generate a matching index first
+        from proto_gear_pkg.module_core import lessons as L
+
+        L.sync_lessons_index(tmp_path / ".proto-gear")
+        findings = check_lessons(tmp_path)
+        assert any(f.id == "lessons-ok" and f.severity == "ok" for f in findings)
+        assert not any(f.severity in ("warning", "error") for f in findings)
+
+    def test_malformed_lesson_warns(self, tmp_path):
+        d = self._mk(tmp_path)
+        (d / "bad.md").write_text("no title\n", encoding="utf-8")
+        findings = check_lessons(tmp_path)
+        assert any(
+            f.id == "lesson-malformed" and f.severity == "warning" for f in findings
+        )
+
+    def test_index_drift_warns(self, tmp_path):
+        d = self._mk(tmp_path)
+        from proto_gear_pkg.module_core import lessons as L
+
+        (d / "INDEX.md").write_text(
+            f"{L.BEGIN_MARKER}\nstale\n{L.END_MARKER}\n", encoding="utf-8"
+        )
+        (d / "a.md").write_text("# T\n> S\n", encoding="utf-8")
+        findings = check_lessons(tmp_path)
+        assert any(f.id == "lessons-index-drift" for f in findings)
+
+
+# ---------- check_branch_guard_hook ----------
+
+
+class TestCheckBranchGuardHook:
+    """The advisory audit that the branch-guard pre-commit hook is installed."""
+
+    def _patch_hooks_dir(self, monkeypatch, hooks_dir):
+        from proto_gear_pkg.module_core import hooks as H
+
+        monkeypatch.setattr(H, "git_hooks_dir", lambda *a, **k: hooks_dir)
+
+    def test_silent_when_not_a_repo(self, tmp_path, monkeypatch):
+        self._patch_hooks_dir(monkeypatch, None)
+        assert check_branch_guard_hook(tmp_path) == []
+
+    def test_ok_when_guard_hook_installed(self, tmp_path, monkeypatch):
+        from proto_gear_pkg.module_core import hooks as H
+
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        (hooks_dir / "pre-commit").write_text(
+            f"#!/bin/sh\n# {H.BRANCH_GUARD_MARKER}\nexec pg guard branch\n",
+            encoding="utf-8",
+        )
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        findings = check_branch_guard_hook(tmp_path)
+        assert any(
+            f.id == "branch-guard-hook-ok" and f.severity == "ok" for f in findings
+        )
+        assert not any(f.severity in ("warning", "error") for f in findings)
+
+    def test_silent_when_foreign_pre_commit_exists(self, tmp_path, monkeypatch):
+        """A non-guard hook means the user runs their own — no nagging."""
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        (hooks_dir / "pre-commit").write_text("#!/bin/sh\nnpm test\n", encoding="utf-8")
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        assert check_branch_guard_hook(tmp_path) == []
+
+    def test_warns_when_no_pre_commit_hook(self, tmp_path, monkeypatch):
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        findings = check_branch_guard_hook(tmp_path)
+        assert any(
+            f.id == "branch-guard-hook-missing" and f.severity == "warning"
+            for f in findings
+        )
+        assert "pg hooks install" in findings[0].fix_hint
+
+    def test_never_errors(self, tmp_path, monkeypatch):
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        assert all(f.severity != "error" for f in check_branch_guard_hook(tmp_path))
+
+    def test_missing_hook_is_not_sync_fixable(self):
+        """The fix is `pg hooks install`, not `pg sync-context`."""
+        report = DiagnosticsReport(
+            findings=[
+                Finding(
+                    id="branch-guard-hook-missing",
+                    severity="warning",
+                    target="pre-commit",
+                    message="m",
+                )
+            ]
+        )
+        assert fixable_by_sync(report) is False
 
 
 # ---------- check_host_files ----------

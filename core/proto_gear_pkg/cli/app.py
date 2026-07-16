@@ -129,6 +129,9 @@ def main():
                         with_all=wizard_config.get("with_all", False),
                         core_templates=wizard_config.get("core_templates"),
                         project_description=wizard_config.get("project_description"),
+                        profile=wizard_config.get(
+                            "profile", getattr(args, "profile", "frontier")
+                        ),
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -186,6 +189,7 @@ def main():
                     ticket_prefix=ticket_prefix,
                     with_capabilities=args.with_capabilities,
                     with_all=args.all if hasattr(args, "all") else False,
+                    profile=getattr(args, "profile", "frontier"),
                 )
 
             if result["status"] == "success":
@@ -230,6 +234,22 @@ def main():
             else:
                 print(
                     f"{Colors.YELLOW}Use 'pg capabilities --help' to see available commands{Colors.ENDC}"
+                )
+                sys.exit(1)
+
+        # Handle 'lessons' command
+        elif args.command == "lessons":
+            if args.lessons_command == "list":
+                sys.exit(cli_commands.cmd_lessons_list(args))
+            elif args.lessons_command == "show":
+                sys.exit(cli_commands.cmd_lessons_show(args))
+            elif args.lessons_command is None:
+                # Bare `pg lessons` → interactive browse/select UI (§5.7),
+                # falling back to the static list when non-interactive.
+                sys.exit(cli_commands.cmd_lessons_browse(args))
+            else:
+                print(
+                    f"{Colors.YELLOW}Use 'pg lessons --help' to see available commands{Colors.ENDC}"
                 )
                 sys.exit(1)
 
@@ -421,6 +441,15 @@ def main():
                         print(
                             f"  {Colors.GREEN}{action}{Colors.ENDC}: .proto-gear/{rel}"
                         )
+                    from ..module_core import lessons as lessons_module
+
+                    lessons_result = lessons_module.sync_lessons_index(
+                        caps_root, dry_run=False
+                    )
+                    print(
+                        f"  {Colors.GREEN}{lessons_result['status']}{Colors.ENDC}: "
+                        f".proto-gear/lessons/INDEX.md"
+                    )
                 print(f"{Colors.GREEN}Re-run `pg doctor` to verify.{Colors.ENDC}")
 
             sys.exit(0 if report.errors == 0 else 1)
@@ -470,6 +499,19 @@ def main():
                             else Colors.GRAY
                         )
                         print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]")
+
+                # Also refresh the lessons index (Phase 4)
+                from ..module_core import lessons as lessons_module
+
+                lessons_result = lessons_module.sync_lessons_index(
+                    caps_root, dry_run=args.dry_run
+                )
+                if lessons_result["status"] not in ("no-dir", "missing-markers"):
+                    print(
+                        f"{Colors.CYAN}{label} Lessons Index:{Colors.ENDC}\n"
+                        f"  {Colors.GRAY}.proto-gear/lessons/INDEX.md{Colors.ENDC}  "
+                        f"[{lessons_result['status']}]"
+                    )
             sys.exit(0)
 
         # Handle 'sync-indexes' command
@@ -504,6 +546,67 @@ def main():
                     hint = "  (INDEX.md not present)"
                 print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]{hint}")
             sys.exit(0)
+
+        # Handle 'guard' command — enforce a repo invariant (for hooks/CI).
+        elif args.command == "guard":
+            from ..module_core import guard as guard_module
+
+            aspect = getattr(args, "aspect", "branch") or "branch"
+            if aspect == "branch":
+                result = guard_module.check_protected_branch(
+                    protected=getattr(args, "protected", None)
+                )
+                colour = Colors.GREEN if result.ok else Colors.FAIL
+                icon = "OK" if result.ok else "BLOCKED"
+                print(f"{colour}[{icon}]{Colors.ENDC} {result.message}")
+                sys.exit(result.exit_code)
+            print(f"{Colors.FAIL}Unknown guard aspect: {aspect}{Colors.ENDC}")
+            sys.exit(2)
+
+        # Handle 'hooks' command — install the branch-guard pre-commit hook.
+        elif args.command == "hooks":
+            from ..module_core import hooks as hooks_module
+
+            if getattr(args, "hooks_command", None) != "install":
+                print(f"{Colors.YELLOW}Usage: pg hooks install [--force]{Colors.ENDC}")
+                sys.exit(2)
+
+            result = hooks_module.install_pre_commit(
+                cwd=".", force=getattr(args, "force", False)
+            )
+            status = result["status"]
+            if status in ("installed", "overwritten"):
+                print(
+                    f"{Colors.GREEN}+ Branch-guard pre-commit hook installed{Colors.ENDC} "
+                    f"({result['path']})"
+                )
+                if status == "overwritten":
+                    print(
+                        f"{Colors.GRAY}  Previous hook backed up to "
+                        f"pre-commit.pre-guard.bak{Colors.ENDC}"
+                    )
+                sys.exit(0)
+            elif status == "already-present":
+                print(
+                    f"{Colors.GRAY}Branch-guard hook already installed "
+                    f"({result['path']}).{Colors.ENDC}"
+                )
+                sys.exit(0)
+            elif status == "exists-different":
+                print(
+                    f"{Colors.YELLOW}A pre-commit hook already exists "
+                    f"({result['path']}).{Colors.ENDC}\n"
+                    f"{Colors.GRAY}  Add `pg guard branch || exit 1` near its top, "
+                    f"or run `pg hooks install --force` to replace it (a backup is "
+                    f"kept).{Colors.ENDC}"
+                )
+                sys.exit(1)
+            else:  # not-a-repo
+                print(
+                    f"{Colors.YELLOW}Not a git repository — nothing to install."
+                    f"{Colors.ENDC}"
+                )
+                sys.exit(1)
 
         # No command provided - show help
         else:

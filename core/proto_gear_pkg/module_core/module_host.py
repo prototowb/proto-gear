@@ -140,6 +140,7 @@ def install_module_capabilities(
     replacements: Optional[Dict[str, str]] = None,
     dry_run: bool = False,
     modules_root: Optional[Path] = None,
+    profile: str = "verbose",
 ) -> dict:
     """Copy every module's own bundled capabilities into ``.proto-gear/<module>/``.
 
@@ -160,8 +161,10 @@ def install_module_capabilities(
     ``proto_gear_dir``'s parent, matching ``copy_capability_templates``).
     """
     import os
+    from . import capability_profile
 
     replacements = replacements or {}
+    profile = capability_profile.normalize_profile(profile)
     result: dict = {"files_created": [], "errors": []}
     proto_gear_dir = Path(proto_gear_dir)
     project_dir = proto_gear_dir.parent
@@ -201,11 +204,20 @@ def install_module_capabilities(
                 result["files_created"].append(str(dest_path.relative_to(project_dir)))
                 continue
 
-            try:
-                content = source_path.read_text(encoding="utf-8")
-            except UnicodeDecodeError as e:
-                result["errors"].append(f"Encoding error in {source_path}: {e}")
-                continue
+            stub = None
+            if profile == "frontier" and capability_profile.is_capability_body(
+                rel_path
+            ):
+                stub = capability_profile.frontier_stub_for_capability(source_path)
+
+            if stub is not None:
+                content = stub
+            else:
+                try:
+                    content = source_path.read_text(encoding="utf-8")
+                except UnicodeDecodeError as e:
+                    result["errors"].append(f"Encoding error in {source_path}: {e}")
+                    continue
             for key, value in replacements.items():
                 content = content.replace("{{" + key + "}}", value)
 

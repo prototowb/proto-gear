@@ -1,10 +1,42 @@
 # Proto Gear - Readiness Assessment
 
-**Current Version**: v0.10.0 (Production Ready)
-**Assessment Date**: 2026-05-13
-**Previous Assessment**: v0.8.0 (2025-12-10)
+**Current Version**: v0.21.0 (Production Ready)
+**Assessment Date**: 2026-07-17
+**Previous Assessment**: v0.10.0 (2026-05-13)
 
-> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system documented in the *v0.10.0 Update* section below). A full per-category rescore is captured for a future session — none of the v0.8.0 scores would *decrease*.
+> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system; v0.20.0 added the departmental module platform, supervision primitives, a UI-first surface, and dynamic orchestration; v0.21.0 reworked the markdown steering surface against the Fable 5 guidance — see the *Update* sections below). A full per-category rescore is captured for a future session — none of the earlier scores would *decrease*.
+
+## v0.21.0 Update (2026-07-17)
+
+**Shipped**: A steering-framework release — reworks proto-gear's markdown steering surface against the Claude Fable 5 prompting guidance (*shrink procedural prose, grow durable state and machine-checked boundaries*), plus the interactive/enforcement follow-ons that make the new surfaces reachable and self-auditing.
+
+**Net change since v0.20.0**:
+- ✅ Test count **997 → 1106 passing**; `pg doctor` green; `black` clean; full macOS/Linux/Windows × Python 3.8–3.12 CI parity held
+- ✅ **Steering surface reworked (PROTO-086–089)** — description-routed agent-context with a token budget; capability output profiles (`frontier`/`verbose`); an agent-writable lessons layer; branch-guard enforcement via `pg guard branch` + `pg hooks install` (exit codes, not just NEVER-lines)
+- ✅ **Interactive/enforcement follow-ons (PROTO-090–092)** — `pg init` wizard prompts for the capability profile; `pg doctor` audits the branch-guard hook (advisory); `pg lessons` interactive browser over the lessons layer
+- ➖ No breaking changes; all additive and backwards-compatible
+
+## v0.20.0 Update (2026-07-14)
+
+**Shipped**: The version had been stuck at 0.10.0 across 133 commits; v0.20.0 cuts that accumulated work into a milestone release. Two architectural platforms land, the human surface becomes UI-first, and agent orchestration becomes dynamic and paradigm-driven. The minor jumps to `20` to signal scale, not merely the next increment.
+
+**Net change since v0.10.0**:
+- ✅ Test count more than doubled (489 → **997 passing**), full macOS/Linux/Windows × Python 3.8–3.12 CI parity, `black` clean
+- ✅ **Departmental module platform (ADR-001)** — multi-module hosting; QA/DevOps/Security ship as first-class departments; `pg module`, `pg --module <name> init-surface`; a department adds itself with zero core edits (seam S1)
+- ✅ **Supervision primitives (ADR-002)** — gates-as-data audited by `pg doctor`; `pg pipeline`/`trace`/`release`; evidence-as-predicate (non-executing); graded authority (`human` / `human-on-recommendation` / `auto`) with sufficiency reporting
+- ✅ **UI-first human surface** — interactive home menu (`pg`), capability browser (`pg capabilities`), agent browser (`pg agent`), `pg agent install`, `pg release --notes`
+- ✅ **Dynamic orchestration (ADR-003)** — per-agent model tier (`fast`/`balanced`/`deep`); `pg orchestration` paradigm pool; the fixed "4 Core + 2 Flex" mandate retired for minimal-set composition
+- ✅ **Governance** — three ADRs (001/002/003) capture the platform, supervision, and orchestration decisions; branching relaxed so `development` is open while `main` stays PR-only
+- ➖ Removed the experimental content/marketing module — scope is engineering-only
+
+**PROTO tickets closed in this release**: PROTO-039 through PROTO-085 (~47 tickets across 53 merged PRs).
+
+**Next category to revisit when rescoring**:
+- *Architecture* (now a multi-discipline platform with declared seams and three ADRs)
+- *Supervision / Governance* (graded authority + evidence predicates + auditable gates — new dimension since v0.8.0)
+- *User Experience* (UI-first: every feature reachable by navigation, not just command recall)
+
+---
 
 ## v0.10.0 Update (2026-05-13)
 

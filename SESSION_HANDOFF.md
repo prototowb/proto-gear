@@ -6,172 +6,145 @@
 
 ## ▶ Start here (next session)
 
-**ADR-002 (supervision primitives) is Accepted and its first slice is code.**
-The gate contract now carries the three ADR-002 primitives: **actor** (who is
-accountable for the guarded work), **evidence** (what proves it — v1 predicate
-is the implicit "cell non-empty and not 'pending'" check), and **authority**
-(minimum authority to clear, three-rung ladder: `human` →
-`human-on-recommendation` → `auto`; the `agent` clearing rung is **deferred**
-per the PROTO-069 amendment and the doctor rejects it). Defaults reproduce §4
-exactly — the whole bundled corpus is unchanged, all-human.
+**Just shipped three steering follow-ons: PROTO-090 (#60), PROTO-091 (#61),
+PROTO-092 (#62).**
 
-**The ADR-002 arc is COMPLETE** — all five action items shipped (PROTO-071
-schema, PROTO-072 evidence predicates, PROTO-073 dogfood falsifier [held,
-zero core edits], PROTO-074 authority sufficiency, PROTO-075 spec §4.1).
-The supervision contract now separates actor / evidence / authority, with a
-three-rung graded-authority ladder, doctor validation, trace/release
-sufficiency auditing, and one live `human-on-recommendation` gate.
+- **PROTO-090 — init profile wizard prompt.** The `--profile frontier|verbose`
+  choice (PROTO-087) was previously only reachable via the CLI flag; the
+  interactive `pg init` wizard always fell through to the `frontier` default.
+  Added `RichWizard.ask_capability_profile()` (questionary + plain-`input`
+  fallback) and wired it into every wizard path that installs capabilities —
+  enhanced preset + custom flows, and the incremental add-capabilities/custom
+  flows. The pick rides `config["profile"]`, which `cli/app.py` already read, so
+  no app.py change. Surfaced in the config summary; only asked when capabilities
+  are actually being generated; always returns a valid `CAPABILITY_PROFILES`
+  name.
+- **PROTO-091 — doctor audits the branch-guard hook.** PROTO-089 shipped `pg
+  hooks install` but nothing verified it. `doctor.check_branch_guard_hook` is an
+  advisory audit (**warning, never error** — CI's `pg guard branch` is the hard
+  gate): `ok` when the bundled guard hook is installed, `warning` only when a git
+  repo has *no* pre-commit hook at all, and **silent** both outside a git repo
+  and when a non-guard pre-commit hook already exists (no-clobber territory — the
+  user runs their own hooks). That last branch is why this repo's own
+  test-running `dev/hooks/pre-commit` keeps `pg doctor` green. Not sync-fixable
+  (fix is `pg hooks install`), so it's out of `_SYNC_FIXABLE_IDS`.
+- **PROTO-092 — `pg lessons` interactive browser.** The lessons layer
+  (PROTO-088) had no reader surface. Added `pg lessons` mirroring the §5.7
+  browsers: bare `pg lessons` → questionary browse/select (pick → read full
+  body), `pg lessons list [--json]`, `pg lessons show <name>` (resolve by
+  filename ±`.md` or exact title). Degrades to the static list without a
+  TTY/questionary. Wired into the home menu ("Lessons" route) and the canonical
+  CLI-command list in `sync_context` (host files carry the real line). Pure data
+  helpers unit-tested; 20 tests mirror `test_orchestration_browse.py`.
 
-1. **Everything through PROTO-077 is merged** (PRs #41–#47). **FIVE
-   disciplines ship**: engineering, qa, devops, security, **release**
-   (Release Management / PM, PROTO-077) — the 5th landed with zero core
-   edits, again. `release` owns RELEASE_QUEUE.md (rows keyed by the release
-   *label*), ships the first `modules/` **release-scoped** gate
-   (`go-no-go`, before `release` — a three-way convergence with qa +
-   security), and ships `release-coordinator-agent` via the PROTO-067 seam.
-   `pg release <label>` now requires a recorded human go decision.
-2. **Post-ADR-002 backlog — now largely worked through** (PRs #49–#51):
-   - **PROTO-078** — `pg init --no-interactive` substitution gaps: shared
-     defaulted-replacement dict on every init path, PROJECT_STATUS via the
-     headered template, `--force` refresh, fence-aware + comment-tolerant
-     `pg status` parsing. **Prod-verified in `../arsenal-gear/`** (86→0 leaks).
-   - **PROTO-079** — **`pg release --notes`**: release notes generated from the
-     cleared gate checklist (tickets grouped Features/Fixes/Changes + approvers
-     per discipline; draft caveat when not ready). Reuses `trace_release`.
-   - **PROTO-080** — **interactive agent browser (§5.7 slice 1)**: bare
-     `pg agent` → navigate/select installed + available agents (view + install
-     on pick), `questionary`-driven, falls back to `pg agent list` without a
-     TTY. First non-wizard interactive surface.
-   - **PROTO-081** — **interactive capability browser (§5.7 slice 2)**: bare
-     `pg capabilities` → navigate skills/workflows/commands, view detail +
-     optional dependency tree; same fallback contract.
-   - **PROTO-082** — **top-level home menu (§5.7 slice 3)**: bare `pg` in a TTY
-     → navigate to Status / Capabilities / Agents / Tickets / Release, routing
-     into the browsers + status/ticket/release handlers; non-TTY keeps the
-     classic splash. **§5.7 UI-first slices complete** for capabilities/agents.
-   - **§5.7 follow-on ideas** (not started): richer in-menu actions (create/
-     clone/delete from the agent browser; ticket create/update from the menu),
-     and a `rich`-rendered detail pane. All follow the same
-     `_collect_* data + thin questionary loop + non-TTY fallback` pattern.
+**Remaining follow-on (optional):** a `standard` middle output profile *if a
+consumer needs it* (speculative — the only documented steering follow-on left).
+
+**The steering-framework action plan is fully shipped** (all 5 phases, PRs
+#56–#59, on `development`). This reworked proto-gear's markdown steering surface
+against the Claude Fable 5 prompting guidance — the thesis being *shrink
+procedural prose, grow durable state and machine-checked boundaries*. Source of
+truth for the arc: `proto-gear-steering-action-plan.md` (each phase checked off
+in its Implementation Log).
+
+What changed, phase by phase:
+
+1. **PROTO-086 (#56) — slim generated context block.** Dropped the keyword
+   `Trigger → Capability` table and the per-capability `_triggers:_` suffix from
+   `AGENT_CONTEXT`; agents route off descriptions now. Rewrote the AGENTS.md
+   "MANDATORY READING" wall as a conditional per-file table, reserving `NEVER`
+   for the one true invariant. Added a token budget: `sync_context.estimate_tokens`
+   + `AGENT_CONTEXT_TOKEN_BUDGET` (now **1800**), enforced by
+   `doctor.check_agent_context_budget` (warns, never errors; offline estimate).
+2. **PROTO-087 (#57) — capability output profiles.** `pg init --profile
+   frontier|verbose`, **default frontier**. One canonical corpus (the verbose
+   `*.template.md` bodies) rendered at two verbosities: `frontier` ships a slim
+   stub generated from each capability's `metadata.yaml` (the 379-line TDD skill
+   → 7-line stub); `verbose` ships the full playbooks. Chosen profile recorded in
+   `.proto-gear/PROFILE`. Machinery: `module_core/capability_profile.py`; honored
+   by both `copy_capability_templates` (defaults **verbose** at the library layer)
+   and `module_host.install_module_capabilities`.
+3. **PROTO-088 (#58) — lessons layer + grounding lines.** `.proto-gear/lessons/`
+   agent-writable accumulated knowledge (bundled README + INDEX scaffold; one
+   lesson per file: `# Title` + `> summary` + body). `module_core/lessons.py`
+   parses/validates/indexes; `sync_lessons_index` wired into `pg sync-context` +
+   `pg doctor --fix`; `doctor.check_lessons` flags malformed lessons / stale
+   index. Plus a **Working Agreement** section in the generated context (audit
+   progress claims; report-and-stop when the user describes a problem; pause only
+   for destructive/scope/user-only decisions).
+4. **PROTO-089 (#59) — enforce "never commit to `main`".** `pg guard branch`
+   (`module_core/guard.py`) exits non-zero on a protected branch — a primitive
+   for hooks/CI/agents; never rewrites history. `pg hooks install` (bundled
+   `hooks/pre-commit`, `module_core/hooks.py`) drops a **no-clobber** branch-guard
+   pre-commit hook. `.gitattributes` pins the hook to LF. BRANCHING documents
+   `pg guard` / hook / CI as the *how*, keeping the prose as the *why*.
+
+**No steering work pending.** Natural follow-ons if picking this thread back up:
+a `standard` middle profile if a consumer needs it; a `pg lessons` interactive
+browser (mirrors the §5.7 pattern). (The init-profile wizard prompt shipped as
+PROTO-090; the branch-guard doctor audit as PROTO-091.)
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through PROTO-082 (PRs #49–#53). **960 tests pass; `pg
-  doctor` green.** Init/release + the three §5.7 interactive surfaces (agent
-  browser, capability browser, home menu) ride those PRs; run `pg status` /
-  `pg ticket list` for the live picture.
-- **Five disciplines**: `modules/release/` = module.yaml +
-  RELEASE_QUEUE.template.md (stages planned→…→go→shipped; ID = release
-  label; Ref = member tickets; no Release/Version column, so the label row
-  never reads as ticket membership) + `workflows/go-no-go` (gate: human,
-  required, `scope: release`, evidence "Signed off by") +
-  `agents/release-coordinator-agent.yaml`. Fixtures in test_release.py
-  gained `_write_release_queue`; a ready release now needs the go row.
-- **892 tests pass; `black --check` clean.** CI parity: bare `pytest tests/`.
-- **Authority sufficiency (PROTO-074, ADR-002 item 3)**: checklist entries
-  carry `signed_by` + `authority_ok`. Signer convention: an agent signs with
-  its agent id (config filename stem, optionally namespaced) or `agent:`
-  prefix; anything else is presumed human. Cleared human-rung gate with only
-  agent signers → flagged `!!` in trace/release + counted in the release
-  report's `authority_insufficient_total`. Reported, never blocking. `auto`
-  needs no signer; a signature-less comparison clear is `None` (unjudgeable).
-- **The corpus is no longer all-default**: `pr-review-approval`
-  (workflows/code-review-process) carries `actor: code-review-agent`,
-  `authority: human-on-recommendation`, evidence as a mapping. Tests encode
-  this: exactly ONE gate deviates from §4 defaults (test_pipeline /
-  test_trace assert it by name). Every other gate stays pure `human`.
-- **Gate schema (capability_metadata.Gate)**: `id`, `description`, `before`,
-  `approver`, `required`, `evidence` (+ `evidence_predicate`,
-  `evidence_value`), `scope: change|release`, **`actor`** (discipline agent
-  `<module>/<agent-slug>`, human role, or "" = unassigned), **`authority`**
-  (`GATE_AUTHORITY_LADDER = human | human-on-recommendation | auto`;
-  `GATE_DEFERRED_AUTHORITIES = agent`). All defaults §4-preserving.
-- **Evidence predicates (PROTO-072, ADR-002 §2)**:
-  `GATE_EVIDENCE_PREDICATES = non-empty | equals | at-least`. YAML `evidence:`
-  is a plain column string (predicate non-empty) or a
-  `{column, predicate, value}` mapping. `trace._predicate_holds` evaluates
-  comparisons (pure string/number checks over a markdown cell — provably
-  non-executing; unknown predicates never clear). A filled cell that fails
-  the claim is `pending`, never `cleared`. Doctor: predicate must be in the
-  vocabulary; equals/at-least need column + value; at-least value numeric.
-- **Doctor gate audit** (`check_supervision_gates`) now enforces:
-  `gate-authority-deferred` (error — `agent` rung, ADR-002 amendment),
-  `gate-authority-invalid` (error), `gate-auto-needs-evidence` (error — an
-  `auto` gate clears by evidence alone), `gate-actor-unknown` (warning — a
-  namespaced actor must match a `modules/<name>/agents/*.yaml` stem).
-- **Plumbing**: `pipeline.collect_supervision_gates` records and
-  `trace.gate_checklist` entries carry `actor`/`authority`; `pg pipeline` and
-  `pg capabilities show` render them only when non-default (all-human corpus
-  renders unchanged). `pg trace`/`pg release` JSON gains the fields for free.
-- **Four disciplines ship:** `engineering`, `qa`, `devops`, `security` — all on
-  the unmodified core; agent seam (PROTO-067) proven with qa + devops agents.
-- **Scope (PROTO-053):** proto-gear = software-engineering OS; no
-  content/marketing — that's honk (`../_Plugins/honk/`), a separate product.
-- **UI-first (PROTO-070, §5.7):** every feature reachable through the
-  interactive CLI UI first; a dedicated command is a shortcut, never the only
-  way in.
+- `development` = through **PROTO-092** (PRs #56–#62). **1106 tests pass; `pg
+  doctor` green (32 checks); `black --check` clean.** CI parity: bare
+  `pytest tests/`.
+- **Generated agent-context block is description-routed** (no keyword table),
+  carries a Working Agreement section, and is budgeted (~1600–1650 tokens for
+  this repo; warns >1800). The capability skim is the block's growth vector.
+- **Capabilities are profile-tiered.** New `pg init` defaults to `frontier`
+  (slim stubs); `verbose` ships the full corpus. `.proto-gear/PROFILE` records it.
+- **Lessons layer is live** (`.proto-gear/lessons/`), doctor-validated,
+  sync-indexed. Distinct from this file: SESSION_HANDOFF = current state; lessons
+  = accumulated knowledge.
+- **Branch invariant is enforced**, not just documented: `pg guard branch` +
+  `pg hooks install`. This repo's own `.git/hooks/pre-commit` still runs tests;
+  the guard installer correctly declines to clobber it (no-clobber path).
+- **Five disciplines** ship (engineering, qa, devops, security, release) on the
+  unmodified core; ADR-002 supervision primitives (actor/evidence/authority) are
+  complete. (Unchanged this session — see git history / PROJECT_STATUS.)
 
 ## Shipped this cycle (recent)
 
-- **PROTO-068/069** — ADR-002 proposed, then **Accepted with amendment**: the
-  `agent` clearing rung is deferred; `human-on-recommendation` is the ceiling
-  for judgment gates; `auto` reserved for deterministic non-judgment facts.
-  PRs #38, #39.
-- **PROTO-070** — UI-first product principle (§5.7). PR #40.
-- **PROTO-071** — ADR-002 action item 1: gate schema `actor` + graded
-  `authority`, doctor validation, plumbed through pipeline/trace/CLI. Zero
-  behavior change for the existing all-default corpus. PR #41.
-- **PROTO-072** — ADR-002 action item 2: declarative evidence-predicate
-  vocabulary (non-empty/equals/at-least), doctor-validated, evaluated by
-  `gate_checklist` (so `pg trace` AND `pg release` get it). PR #42.
-- **PROTO-073** — ADR-002 action item 4, the dogfood falsifier:
-  `pr-review-approval` migrated to `human-on-recommendation` + actor +
-  mapping-form evidence, in the workflow's metadata.yaml alone. PR #43.
-- **PROTO-074** — ADR-002 action item 3: authority-sufficiency reporting in
-  `pg trace`/`pg release` (signers + `authority_ok`), no new commands. PR #44.
-- **PROTO-075** — ADR-002 action item 5: PROJECT_SPECIFICATIONS §4.1 describes
-  graded authority as the capability-growth axis. **Closes the ADR-002 action
-  list.** PR #45.
-- **PROTO-076** — agent surfacing: `module_host.list_bundled_agents` +
-  `install_bundled_agent`; `pg agent list [--available]` + `pg agent
-  install <name>`. PR #46.
-- **PROTO-077** — Release Management / PM, the 5th discipline: RELEASE_QUEUE
-  surface keyed by release label, release-scoped `go-no-go` gate (three-way
-  `release` convergence), discipline agent. Zero core edits. PR #47.
-- (Earlier: PROTO-054–067 — module seam S1, pipeline/trace/release D-series,
-  per-gate evidence + scope, agent seam. See git history.)
+- **PROTO-092** (#62) — `pg lessons` interactive browser over the
+  accumulated-knowledge layer (§5.7 pattern), merge-on-green.
+- **PROTO-091** (#61) — `pg doctor` advisory audit that the branch-guard
+  pre-commit hook is installed (closes the PROTO-089 loop), merge-on-green.
+- **PROTO-090** (#60) — init profile wizard prompt (frontier vs verbose),
+  merge-on-green. Reaches the PROTO-087 profile choice from the interactive
+  `pg init`, not just the `--profile` flag.
+- **PROTO-086–089** — the five-phase steering-framework rework (above), PRs
+  #56–#59. Each phase its own reviewed, merge-on-green PR.
+- (Earlier: ADR-002 arc PROTO-071–075, the 5th discipline PROTO-077, the §5.7
+  interactive surfaces PROTO-080–082. See git history / PROJECT_STATUS.)
 
 ## Pending / In Progress
 
-- **Nothing in flight** beyond PR #47 (PROTO-077). **Paused by the user**
-  before the remaining backlog (release polish / interactive UI) — see
-  "Start here".
+- **Nothing in flight.** All steering PRs merged to `development`. No release cut
+  this session (these land in the next `development → main` release).
 
 ## Conventions In Force
 
 - **Scope discipline:** engineering-only. Flag, don't build, anything else.
-- **New discipline = zero core edits.** Drop `modules/<name>/` (manifest +
-  capabilities + state surface). If it needs a `module_core/`/`cli/` change,
-  the abstraction is wrong — stop. `modules/qa|devops|security/` are reference.
+- **New discipline = zero core edits.** Drop `modules/<name>/`. If it needs a
+  `module_core/`/`cli/` change, the abstraction is wrong — stop.
 - **Layering:** `cli/` → `module_core/` (generic) → `modules/<dept>/`. Lower
-  never imports higher.
-- **Namespacing:** shared/engineering caps bare; module caps `<module>/<cap_id>`
-  everywhere. Discipline agents install flat as `<agent-slug>.yaml`; a gate's
-  namespaced `actor` is `<module>/<agent-slug>`.
-- **Bundled resources:** resolve via `paths.package_root()`.
-- **Supervision gates are data** (workflow `metadata.yaml` `gates:`); a workflow
-  with a risky output (release/deploy/publish) must declare one. ADR-002
-  primitives: `actor` / `evidence` / `authority` — ceiling for judgment gates is
-  `human-on-recommendation`; never introduce an `agent` clearing rung.
+  never imports higher. Branch guard / profiles / lessons all live in
+  `module_core/` (generic); engineering's installer calls them.
+- **Steering philosophy (new this cycle):** conditions over keyword triggers;
+  boundaries over behavioral micro-tuning; durable state (handoff, lessons,
+  tickets, gates) over procedural prose; enforce invariants with exit codes
+  (hooks/CI), not just NEVER-lines. Model-specific scaffolding belongs in the
+  `verbose` profile, not the default.
 - **Testing:** argparse.Namespace + capsys + tmp dirs; wizards out of scope.
   **Verify CI parity with bare `pytest tests/`** (not `python -m pytest`).
 - **Git:** never commit to `main`/`development`; branch from `development`, PR
-  back; **black is a hard CI gate** (`black core/ tests/`) + pre-commit hook.
-  Mark a ticket COMPLETED **in its own branch** so the status rides the PR.
-- **Regen noise:** `AGENT_CONTEXT.md`/host configs carry a `Generated:`
-  timestamp — `git restore` when the diff is timestamp-only.
+  back; **black is a hard CI gate**. Mark a ticket COMPLETED **in its own branch**
+  so the status rides the PR.
+- **Regen noise:** `AGENT_CONTEXT.md`/host configs carry a `Generated:` timestamp
+  (and can pick up CRLF churn) — `git restore` when the diff is timestamp/EOL-only.
 - SESSION_HANDOFF.md is agent-owned; replace entirely at session end.
 
 ---

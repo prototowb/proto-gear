@@ -20,12 +20,12 @@ links:
 ```yaml
 project_phase: "Production"
 protogear_enabled: true
-protogear_version: "v0.20.0"
+protogear_version: "v0.21.0"
 framework: "Unknown"
 project_type: "Python"
 initialization_date: "2025-11-21"
-last_release: "v0.20.0"
-release_date: "2026-07-14"
+last_release: "v0.21.0"
+release_date: "2026-07-17"
 current_sprint: null
 current_branch: "main"
 ```
@@ -45,6 +45,7 @@ _No active tickets — PROTO-066 just shipped._
 
 | ID | Date | Release approved by | Announced by |
 |----|------|---------------------|--------------|
+| v0.21.0 | 2026-07-17 | prototowb | prototowb |
 | v0.20.0 | 2026-07-14 | prototowb | prototowb |
 | v0.10.0 | 2026-05-13 | prototowb | prototowb |
 | v0.9.0 | 2026-02-19 | prototowb | prototowb |
@@ -838,6 +839,13 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-083 | feat(agents): per-agent model tier (fast/balanced/deep + override) | 2026-07-14 | | |
 | PROTO-084 | feat(orchestration): selectable orchestration paradigm pool + pg orchestration | 2026-07-14 | | |
 | PROTO-085 | docs(agents): loosen AGENTS.md to dynamic paradigm-driven orchestration | 2026-07-14 | | |
+| PROTO-086 | Phase 1: slim generated agent-context block — drop keyword trigger table, conditions over keywords, token-budget doctor check | 2026-07-16 | | |
+| PROTO-087 | Phase 2+3: capability output profiles — pg init --profile frontier | 2026-07-16 | | |
+| PROTO-088 | Phase 4: agent-writable lessons memory layer (.proto-gear/lessons/) + long-run grounding lines in generated context | 2026-07-16 | | |
+| PROTO-089 | Phase 5: enforce invariants — pg guard branch primitive + installable pre-commit hook + doctor audit (never-commit-to-main) | 2026-07-16 | | |
+| PROTO-090 | Init profile wizard prompt — pg init asks frontier vs verbose interactively | 2026-07-16 | | |
+| PROTO-091 | pg doctor audit — advisory check that the branch-guard pre-commit hook is installed | 2026-07-16 | | |
+| PROTO-092 | pg lessons — interactive browser for the accumulated-knowledge layer (§5.7) | 2026-07-16 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
