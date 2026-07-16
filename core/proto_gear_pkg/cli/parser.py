@@ -209,6 +209,28 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help="Capability ID (e.g., testing, skills/debugging)",
     )
 
+    # 'lessons' command group — the agent-writable accumulated-knowledge layer
+    lessons_parser = subparsers.add_parser(
+        "lessons", help="Browse accumulated lessons (.proto-gear/lessons/)"
+    )
+    lessons_subparsers = lessons_parser.add_subparsers(
+        dest="lessons_command", help="Lessons commands"
+    )
+
+    # lessons list
+    lessons_list_parser = lessons_subparsers.add_parser(
+        "list", help="List accumulated lessons"
+    )
+    lessons_list_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
+    # lessons show
+    lessons_show_parser = lessons_subparsers.add_parser(
+        "show", help="Show a lesson's full content"
+    )
+    lessons_show_parser.add_argument("name", type=str, help="Lesson filename or title")
+
     # 'agent' command group
     agent_parser = subparsers.add_parser("agent", help="Manage agent configurations")
     agent_subparsers = agent_parser.add_subparsers(

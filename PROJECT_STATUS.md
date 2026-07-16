@@ -844,6 +844,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-089 | Phase 5: enforce invariants — pg guard branch primitive + installable pre-commit hook + doctor audit (never-commit-to-main) | 2026-07-16 | | |
 | PROTO-090 | Init profile wizard prompt — pg init asks frontier vs verbose interactively | 2026-07-16 | | |
 | PROTO-091 | pg doctor audit — advisory check that the branch-guard pre-commit hook is installed | 2026-07-16 | | |
+| PROTO-092 | pg lessons — interactive browser for the accumulated-knowledge layer (§5.7) | 2026-07-16 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

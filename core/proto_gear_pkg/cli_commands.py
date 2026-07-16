@@ -889,6 +889,7 @@ def cmd_home_menu(args):
             "paradigms",
         ),
         ("Tickets — list active", "tickets"),
+        ("Lessons — browse accumulated knowledge", "lessons"),
         ("Release — readiness for a label", "release"),
     ]
 
@@ -914,6 +915,161 @@ def cmd_home_menu(args):
             label = questionary.text("Release label (e.g. v0.10.0):").ask()
             if label and label.strip():
                 cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
+        elif selection == "lessons":
+            cmd_lessons_browse(_args_ns(lessons_command=None, json=False))
+
+
+# ============================================================================
+# Lessons — the agent-writable accumulated-knowledge layer (§5.7 browser)
+# ============================================================================
+
+
+def _collect_lesson_entries(project_dir: Optional[Path] = None) -> List[dict]:
+    """Assemble the lessons list for browse/list. Pure data (unit-testable).
+
+    Each entry: ``filename``, ``title``, ``summary``, ``path`` (str), sorted by
+    filename (``load_lessons`` sorts). Empty when no lessons directory exists or
+    it holds no well-formed lessons.
+    """
+    from .module_core import lessons as lessons_module
+
+    base = Path(project_dir) if project_dir is not None else Path(".")
+    lessons_dir = base / ".proto-gear" / lessons_module.LESSONS_DIRNAME
+
+    entries: List[dict] = []
+    for lesson in lessons_module.load_lessons(lessons_dir):
+        entries.append(
+            {
+                "filename": lesson.filename,
+                "title": lesson.title,
+                "summary": lesson.summary,
+                "path": str(lesson.path),
+            }
+        )
+    return entries
+
+
+def _lesson_entry_label(entry: dict) -> str:
+    """One-line label for a lesson in the browse list."""
+    tail = (
+        f" {Colors.GRAY}— {entry['summary']}{Colors.ENDC}" if entry["summary"] else ""
+    )
+    return f"{Colors.CYAN}{entry['title']}{Colors.ENDC}{tail}"
+
+
+def _resolve_lesson(slug, entries: List[dict]) -> Optional[dict]:
+    """Resolve a slug to a lesson entry: filename (with or without ``.md``), or
+    a case-insensitive exact title match. Returns the entry, or ``None``."""
+    s_lower = str(slug).strip().lower()
+    for entry in entries:
+        fn_lower = entry["filename"].lower()
+        if s_lower == fn_lower or s_lower + ".md" == fn_lower:
+            return entry
+    for entry in entries:
+        if s_lower == entry["title"].lower():
+            return entry
+    return None
+
+
+def cmd_lessons_list(args):
+    """List accumulated lessons (title + summary). ``--json`` for agents."""
+    entries = _collect_lesson_entries()
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps(entries, indent=2))
+        return 0
+
+    if not entries:
+        print(
+            f"{Colors.YELLOW}No lessons recorded yet.{Colors.ENDC} "
+            f"{Colors.GRAY}Write one under .proto-gear/lessons/ when you learn "
+            f"something worth keeping.{Colors.ENDC}"
+        )
+        return 0
+
+    print(f"\n{Colors.HEADER}=== Lessons ({len(entries)}) ==={Colors.ENDC}\n")
+    for entry in entries:
+        print(
+            f"{Colors.CYAN}{entry['title']}{Colors.ENDC} "
+            f"{Colors.GRAY}({entry['filename']}){Colors.ENDC}"
+        )
+        if entry["summary"]:
+            print(f"  {entry['summary']}")
+        print()
+    print(
+        f"{Colors.GRAY}Use 'pg lessons show <name>' to read one in full.{Colors.ENDC}"
+    )
+    return 0
+
+
+def cmd_lessons_show(args):
+    """Print a lesson's full content, resolved by filename or title."""
+    entries = _collect_lesson_entries()
+    if not entries:
+        print(f"{Colors.YELLOW}No lessons recorded yet.{Colors.ENDC}")
+        return 0
+
+    entry = _resolve_lesson(args.name, entries)
+    if entry is None:
+        print(f"{Colors.YELLOW}No lesson matching '{args.name}'.{Colors.ENDC}")
+        print(
+            f"{Colors.GRAY}Try 'pg lessons list' to see available lessons.{Colors.ENDC}"
+        )
+        return 1
+
+    try:
+        body = Path(entry["path"]).read_text(encoding="utf-8")
+    except OSError as e:
+        print(f"{Colors.FAIL}Could not read {entry['filename']}: {e}{Colors.ENDC}")
+        return 1
+
+    print(f"\n{Colors.GRAY}# {entry['filename']}{Colors.ENDC}\n")
+    print(body.rstrip())
+    return 0
+
+
+def cmd_lessons_browse(args):
+    """Interactive browse/select UI over the lessons layer (§5.7).
+
+    Bare ``pg lessons`` in a TTY: pick a lesson to read its full body. Degrades
+    to ``pg lessons list`` without a TTY or without ``questionary``, so
+    scripts/CI are unaffected.
+    """
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    try:
+        import questionary
+    except Exception:
+        questionary = None
+
+    if not interactive or questionary is None:
+        return cmd_lessons_list(args)
+
+    entries = _collect_lesson_entries()
+    if not entries:
+        print(
+            f"{Colors.YELLOW}No lessons recorded yet.{Colors.ENDC} "
+            f"{Colors.GRAY}Write one under .proto-gear/lessons/.{Colors.ENDC}"
+        )
+        return 0
+
+    while True:
+        choices = [
+            questionary.Choice(_lesson_entry_label(e), value=i)
+            for i, e in enumerate(entries)
+        ]
+        choices.append(questionary.Choice("Quit", value="__quit__"))
+        selection = questionary.select(
+            "Lessons — accumulated knowledge (select to read):",
+            choices=choices,
+        ).ask()
+
+        if selection is None or selection == "__quit__":
+            return 0
+
+        entry = entries[selection]
+        cmd_lessons_show(_args_ns(name=entry["filename"]))
 
 
 # ============================================================================

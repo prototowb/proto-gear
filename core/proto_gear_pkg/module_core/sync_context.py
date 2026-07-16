@@ -104,6 +104,10 @@ CLI_COMMANDS: List[Tuple[str, str]] = [
     ),
     ("pg capabilities show <name>", "Show a capability's details"),
     ("pg capabilities tree <name>", "Show a capability's dependency tree"),
+    (
+        "pg lessons [list|show <name>]",
+        "Browse accumulated lessons (.proto-gear/lessons/)",
+    ),
     ("pg agent list [--available]", "List configured + installable agents"),
     ("pg agent install <name>", "Install a bundled agent"),
     ("pg orchestration list [--json]", "Browse orchestration paradigms"),

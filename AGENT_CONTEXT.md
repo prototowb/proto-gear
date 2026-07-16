@@ -81,6 +81,7 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - `pg capabilities list [--type ...] [--json]` — List capabilities (--json for agents)
 - `pg capabilities show <name>` — Show a capability's details
 - `pg capabilities tree <name>` — Show a capability's dependency tree
+- `pg lessons [list|show <name>]` — Browse accumulated lessons (.proto-gear/lessons/)
 - `pg agent list [--available]` — List configured + installable agents
 - `pg agent install <name>` — Install a bundled agent
 - `pg orchestration list [--json]` — Browse orchestration paradigms
@@ -104,6 +105,6 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - **Proto Gear version**: v0.20.0
 - **Last release**: 2026-07-14
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-16 19:00
+- **Generated**: 2026-07-16 23:45
 
 <!-- proto-gear:agent-context end -->
