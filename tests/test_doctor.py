@@ -11,6 +11,7 @@ from proto_gear_pkg.module_core.doctor import (
     check_agent_context_sync,
     check_agent_context_budget,
     check_lessons,
+    check_branch_guard_hook,
     check_host_files,
     check_core_doc_headers,
     check_capabilities,
@@ -204,6 +205,77 @@ class TestCheckLessons:
         (d / "a.md").write_text("# T\n> S\n", encoding="utf-8")
         findings = check_lessons(tmp_path)
         assert any(f.id == "lessons-index-drift" for f in findings)
+
+
+# ---------- check_branch_guard_hook ----------
+
+
+class TestCheckBranchGuardHook:
+    """The advisory audit that the branch-guard pre-commit hook is installed."""
+
+    def _patch_hooks_dir(self, monkeypatch, hooks_dir):
+        from proto_gear_pkg.module_core import hooks as H
+
+        monkeypatch.setattr(H, "git_hooks_dir", lambda *a, **k: hooks_dir)
+
+    def test_silent_when_not_a_repo(self, tmp_path, monkeypatch):
+        self._patch_hooks_dir(monkeypatch, None)
+        assert check_branch_guard_hook(tmp_path) == []
+
+    def test_ok_when_guard_hook_installed(self, tmp_path, monkeypatch):
+        from proto_gear_pkg.module_core import hooks as H
+
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        (hooks_dir / "pre-commit").write_text(
+            f"#!/bin/sh\n# {H.BRANCH_GUARD_MARKER}\nexec pg guard branch\n",
+            encoding="utf-8",
+        )
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        findings = check_branch_guard_hook(tmp_path)
+        assert any(
+            f.id == "branch-guard-hook-ok" and f.severity == "ok" for f in findings
+        )
+        assert not any(f.severity in ("warning", "error") for f in findings)
+
+    def test_silent_when_foreign_pre_commit_exists(self, tmp_path, monkeypatch):
+        """A non-guard hook means the user runs their own — no nagging."""
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        (hooks_dir / "pre-commit").write_text("#!/bin/sh\nnpm test\n", encoding="utf-8")
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        assert check_branch_guard_hook(tmp_path) == []
+
+    def test_warns_when_no_pre_commit_hook(self, tmp_path, monkeypatch):
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        findings = check_branch_guard_hook(tmp_path)
+        assert any(
+            f.id == "branch-guard-hook-missing" and f.severity == "warning"
+            for f in findings
+        )
+        assert "pg hooks install" in findings[0].fix_hint
+
+    def test_never_errors(self, tmp_path, monkeypatch):
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        self._patch_hooks_dir(monkeypatch, hooks_dir)
+        assert all(f.severity != "error" for f in check_branch_guard_hook(tmp_path))
+
+    def test_missing_hook_is_not_sync_fixable(self):
+        """The fix is `pg hooks install`, not `pg sync-context`."""
+        report = DiagnosticsReport(
+            findings=[
+                Finding(
+                    id="branch-guard-hook-missing",
+                    severity="warning",
+                    target="pre-commit",
+                    message="m",
+                )
+            ]
+        )
+        assert fixable_by_sync(report) is False
 
 
 # ---------- check_host_files ----------
