@@ -172,5 +172,15 @@ Fable 5 prompting guide.*
   per-module installer honour it. This makes tiering a permanent architecture
   (one source, rendered at different verbosity), not a one-off deletion.
 
-- **Phase 4 — TODO.** Lessons/memory directory + long-run grounding lines.
+- **Phase 4 — DONE** (PROTO-088). Shipped the agent-writable lessons layer:
+  `.proto-gear/lessons/` (bundled README + INDEX scaffold), one lesson per file
+  (`# Title` + `> summary` + body), machine-validated by `doctor.check_lessons`
+  and indexed by `sync_lessons_index` (wired into `pg sync-context`).
+  `SESSION_HANDOFF.md` stays current-state; lessons are accumulated knowledge.
+  Also added the three long-run grounding lines (item 8) as a **Working
+  Agreement** section in the generated context — audit progress claims against
+  tool results; report-and-stop when the user is describing a problem; pause only
+  for destructive actions / scope changes / user-only decisions. Machinery in
+  `module_core/lessons.py`; budget recalibrated to 1800 (fully-loaded project).
+
 - **Phase 5 — TODO.** Move invariants from prose to enforcement (hooks/CI/doctor).

@@ -10,6 +10,7 @@ from proto_gear_pkg.module_core.doctor import (
     DiagnosticsReport,
     check_agent_context_sync,
     check_agent_context_budget,
+    check_lessons,
     check_host_files,
     check_core_doc_headers,
     check_capabilities,
@@ -159,6 +160,50 @@ class TestAgentContextBudget:
         assert len(findings) == 1
         assert findings[0].severity == "warning"
         assert findings[0].id == "agent-context-over-budget"
+
+
+# ---------- check_lessons ----------
+
+
+class TestCheckLessons:
+    def _mk(self, root):
+        d = root / ".proto-gear" / "lessons"
+        d.mkdir(parents=True)
+        return d
+
+    def test_no_dir_is_silent(self, tmp_path):
+        (tmp_path / ".proto-gear").mkdir()
+        assert check_lessons(tmp_path) == []
+
+    def test_ok_when_valid_and_synced(self, tmp_path):
+        d = self._mk(tmp_path)
+        (d / "a.md").write_text("# T\n> S\n", encoding="utf-8")
+        # generate a matching index first
+        from proto_gear_pkg.module_core import lessons as L
+
+        L.sync_lessons_index(tmp_path / ".proto-gear")
+        findings = check_lessons(tmp_path)
+        assert any(f.id == "lessons-ok" and f.severity == "ok" for f in findings)
+        assert not any(f.severity in ("warning", "error") for f in findings)
+
+    def test_malformed_lesson_warns(self, tmp_path):
+        d = self._mk(tmp_path)
+        (d / "bad.md").write_text("no title\n", encoding="utf-8")
+        findings = check_lessons(tmp_path)
+        assert any(
+            f.id == "lesson-malformed" and f.severity == "warning" for f in findings
+        )
+
+    def test_index_drift_warns(self, tmp_path):
+        d = self._mk(tmp_path)
+        from proto_gear_pkg.module_core import lessons as L
+
+        (d / "INDEX.md").write_text(
+            f"{L.BEGIN_MARKER}\nstale\n{L.END_MARKER}\n", encoding="utf-8"
+        )
+        (d / "a.md").write_text("# T\n> S\n", encoding="utf-8")
+        findings = check_lessons(tmp_path)
+        assert any(f.id == "lessons-index-drift" for f in findings)
 
 
 # ---------- check_host_files ----------

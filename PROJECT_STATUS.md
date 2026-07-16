@@ -840,6 +840,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-085 | docs(agents): loosen AGENTS.md to dynamic paradigm-driven orchestration | 2026-07-14 | | |
 | PROTO-086 | Phase 1: slim generated agent-context block — drop keyword trigger table, conditions over keywords, token-budget doctor check | 2026-07-16 | | |
 | PROTO-087 | Phase 2+3: capability output profiles — pg init --profile frontier | 2026-07-16 | | |
+| PROTO-088 | Phase 4: agent-writable lessons memory layer (.proto-gear/lessons/) + long-run grounding lines in generated context | 2026-07-16 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

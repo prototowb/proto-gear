@@ -66,6 +66,11 @@ CORE_FILES: List[Tuple[str, str, str]] = [
         "Capability catalog (full reference)",
         "When the skim below is insufficient",
     ),
+    (
+        ".proto-gear/lessons/",
+        "Accumulated agent-written lessons (corrections, confirmed approaches)",
+        "When relevant; write one when you learn something worth keeping",
+    ),
 ]
 
 CRITICAL_RULES = [
@@ -74,6 +79,18 @@ CRITICAL_RULES = [
     "Run `pg status` before starting work to see active tickets and current sprint",
     'Use `pg ticket create "title" --type feature` to register new work',
     "Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket",
+]
+
+# Long-run grounding (steering-plan Phase 4, item 8) — small, high-leverage lines
+# straight from the Fable 5 guidance. They keep autonomous runs honest without
+# re-teaching the model how to work.
+WORKING_AGREEMENT = [
+    "Audit progress claims against tool results — don't report something done, "
+    "passing, or fixed without checking the actual output.",
+    "When the user is describing a problem rather than requesting a change, "
+    "report what you find and stop; don't jump straight to editing.",
+    "Pause for input only on destructive/irreversible actions, a scope change, "
+    "or a decision only the user can make — otherwise keep moving.",
 ]
 
 CLI_COMMANDS: List[Tuple[str, str]] = [
@@ -169,6 +186,10 @@ def _build_critical_rules() -> str:
     return "\n".join(f"- {r}" for r in CRITICAL_RULES)
 
 
+def _build_working_agreement() -> str:
+    return "\n".join(f"- {r}" for r in WORKING_AGREEMENT)
+
+
 def _build_cli_commands() -> str:
     return "\n".join(f"- `{cmd}` — {desc}" for cmd, desc in CLI_COMMANDS)
 
@@ -239,6 +260,7 @@ def generate_agent_context(project_dir: Path) -> str:
         "{{REFERENCE_INDEX}}": _build_reference_index(project_dir),
         "{{CAPABILITIES_SKIM}}": _build_capabilities_skim(capabilities),
         "{{CRITICAL_RULES}}": _build_critical_rules(),
+        "{{WORKING_AGREEMENT}}": _build_working_agreement(),
         "{{CLI_COMMANDS}}": _build_cli_commands(),
         "{{PROJECT_META}}": _build_project_meta(project_dir, capabilities),
     }
@@ -250,8 +272,13 @@ def generate_agent_context(project_dir: Path) -> str:
 # Soft budget for the generated agent-context block (the managed BEGIN..END
 # region mirrored into every host file). Every line here is a per-session
 # attention tax on every agent in every downstream project, so the block is
-# kept lean; `doctor.check_agent_context_budget` warns when it is exceeded.
-AGENT_CONTEXT_TOKEN_BUDGET = 1500
+# kept lean; `doctor.check_agent_context_budget` warns (never errors) when it is
+# exceeded. Calibrated for a fully-loaded project: the reference index, the
+# working agreement, the rules and the CLI cheatsheet are near-fixed (~1000
+# tokens); the capability skim scales with how many capabilities are installed
+# (~25 tokens each) and is the real growth vector — the budget is a nudge to keep
+# that list a skim, not a manual.
+AGENT_CONTEXT_TOKEN_BUDGET = 1800
 
 
 def estimate_tokens(text: str) -> int:
