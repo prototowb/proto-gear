@@ -531,6 +531,67 @@ def main():
                 print(f"  {colour}.proto-gear/{rel}{Colors.ENDC}  [{action}]{hint}")
             sys.exit(0)
 
+        # Handle 'guard' command — enforce a repo invariant (for hooks/CI).
+        elif args.command == "guard":
+            from ..module_core import guard as guard_module
+
+            aspect = getattr(args, "aspect", "branch") or "branch"
+            if aspect == "branch":
+                result = guard_module.check_protected_branch(
+                    protected=getattr(args, "protected", None)
+                )
+                colour = Colors.GREEN if result.ok else Colors.FAIL
+                icon = "OK" if result.ok else "BLOCKED"
+                print(f"{colour}[{icon}]{Colors.ENDC} {result.message}")
+                sys.exit(result.exit_code)
+            print(f"{Colors.FAIL}Unknown guard aspect: {aspect}{Colors.ENDC}")
+            sys.exit(2)
+
+        # Handle 'hooks' command — install the branch-guard pre-commit hook.
+        elif args.command == "hooks":
+            from ..module_core import hooks as hooks_module
+
+            if getattr(args, "hooks_command", None) != "install":
+                print(f"{Colors.YELLOW}Usage: pg hooks install [--force]{Colors.ENDC}")
+                sys.exit(2)
+
+            result = hooks_module.install_pre_commit(
+                cwd=".", force=getattr(args, "force", False)
+            )
+            status = result["status"]
+            if status in ("installed", "overwritten"):
+                print(
+                    f"{Colors.GREEN}+ Branch-guard pre-commit hook installed{Colors.ENDC} "
+                    f"({result['path']})"
+                )
+                if status == "overwritten":
+                    print(
+                        f"{Colors.GRAY}  Previous hook backed up to "
+                        f"pre-commit.pre-guard.bak{Colors.ENDC}"
+                    )
+                sys.exit(0)
+            elif status == "already-present":
+                print(
+                    f"{Colors.GRAY}Branch-guard hook already installed "
+                    f"({result['path']}).{Colors.ENDC}"
+                )
+                sys.exit(0)
+            elif status == "exists-different":
+                print(
+                    f"{Colors.YELLOW}A pre-commit hook already exists "
+                    f"({result['path']}).{Colors.ENDC}\n"
+                    f"{Colors.GRAY}  Add `pg guard branch || exit 1` near its top, "
+                    f"or run `pg hooks install --force` to replace it (a backup is "
+                    f"kept).{Colors.ENDC}"
+                )
+                sys.exit(1)
+            else:  # not-a-repo
+                print(
+                    f"{Colors.YELLOW}Not a git repository — nothing to install."
+                    f"{Colors.ENDC}"
+                )
+                sys.exit(1)
+
         # No command provided - show help
         else:
             # Bare `pg`: in an interactive terminal with questionary, open the

@@ -7,3 +7,4 @@ recursive-include core/capabilities *.md
 recursive-include core/capabilities *.yaml
 recursive-include core/proto_gear_pkg/orchestration *.yaml
 recursive-include core/proto_gear_pkg/orchestration *.md
+recursive-include core/proto_gear_pkg/hooks *

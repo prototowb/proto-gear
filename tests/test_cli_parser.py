@@ -64,6 +64,25 @@ class TestInit:
             parser.parse_args(["init", "--profile", "nonsense"])
 
 
+class TestGuardAndHooks:
+    def test_guard_defaults_to_branch(self, parser):
+        args = parser.parse_args(["guard"])
+        assert args.command == "guard"
+        assert args.aspect == "branch"
+
+    def test_guard_protected_repeatable(self, parser):
+        args = parser.parse_args(
+            ["guard", "branch", "--protected", "main", "--protected", "release"]
+        )
+        assert args.protected == ["main", "release"]
+
+    def test_hooks_install(self, parser):
+        args = parser.parse_args(["hooks", "install", "--force"])
+        assert args.command == "hooks"
+        assert args.hooks_command == "install"
+        assert args.force is True
+
+
 class TestInitSurface:
     def test_defaults(self, parser):
         args = parser.parse_args(["init-surface"])

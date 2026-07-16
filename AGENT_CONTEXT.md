@@ -93,6 +93,8 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - `pg sync-context` — Regenerate Agent Context + host files
 - `pg sync-indexes` — Regenerate capability INDEX.md files
 - `pg doctor [--fix] [--json]` — Audit for sync drift (--fix repairs)
+- `pg guard branch` — Fail if on a protected branch (for hooks/CI)
+- `pg hooks install` — Install the branch-guard pre-commit hook
 - `pg help` — Full CLI help
 
 ## 🌐 Project
@@ -102,6 +104,6 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - **Proto Gear version**: v0.20.0
 - **Last release**: 2026-07-14
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-16 18:45
+- **Generated**: 2026-07-16 19:00
 
 <!-- proto-gear:agent-context end -->

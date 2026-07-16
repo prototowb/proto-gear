@@ -116,6 +116,39 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help="Preview without writing the file",
     )
 
+    # 'guard' — enforce a repo invariant; exit non-zero on violation (hooks/CI).
+    guard_parser = subparsers.add_parser(
+        "guard",
+        help="Enforce a repo invariant; exit non-zero on violation (for hooks/CI)",
+    )
+    guard_parser.add_argument(
+        "aspect",
+        nargs="?",
+        choices=["branch"],
+        default="branch",
+        help="What to guard (default: branch — refuse commits on a protected branch)",
+    )
+    guard_parser.add_argument(
+        "--protected",
+        action="append",
+        metavar="NAME",
+        help="Protected branch name (repeatable). Default: main, master",
+    )
+
+    # 'hooks' — manage git hooks (branch-guard pre-commit).
+    hooks_parser = subparsers.add_parser("hooks", help="Manage git hooks")
+    hooks_subparsers = hooks_parser.add_subparsers(
+        dest="hooks_command", help="Hooks commands"
+    )
+    hooks_install_parser = hooks_subparsers.add_parser(
+        "install", help="Install the branch-guard pre-commit hook"
+    )
+    hooks_install_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing pre-commit hook (backs it up first)",
+    )
+
     # 'capabilities' command group
     capabilities_parser = subparsers.add_parser(
         "capabilities", help="Browse and search available capabilities"

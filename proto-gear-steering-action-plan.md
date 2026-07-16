@@ -183,4 +183,17 @@ Fable 5 prompting guide.*
   for destructive actions / scope changes / user-only decisions. Machinery in
   `module_core/lessons.py`; budget recalibrated to 1800 (fully-loaded project).
 
-- **Phase 5 — TODO.** Move invariants from prose to enforcement (hooks/CI/doctor).
+- **Phase 5 — DONE** (PROTO-089). Moved the one hard invariant from prose to
+  enforcement: **`pg guard branch`** exits non-zero when HEAD is on a protected
+  branch (`main`/`master`), a deterministic check a hook/CI/agent can call
+  (`module_core/guard.py`). **`pg hooks install`** drops a no-clobber branch-guard
+  `pre-commit` hook (bundled `hooks/pre-commit`, calls `pg guard branch`;
+  `module_core/hooks.py`). BRANCHING documents `pg guard` / the hook / CI as the
+  *how*, keeping the NEVER prose as the *why*. Gate checks (the other enforcement
+  axis) already ship via the ADR-002 supervision pipeline. Prose compliance is
+  model-dependent; a non-zero exit code is not.
+
+**All five phases of this plan are shipped.** The steering surface now leans on
+durable state and machine-checked boundaries rather than procedural prose:
+description-routed capabilities, a profile-tiered corpus, an agent-writable
+lessons layer, long-run grounding, and an enforced branch invariant.
