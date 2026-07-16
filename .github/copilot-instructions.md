@@ -102,10 +102,10 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 
 - **Project**: proto-gear
 - **Tech / type**: Python
-- **Proto Gear version**: v0.20.0
-- **Last release**: 2026-07-14
+- **Proto Gear version**: v0.21.0
+- **Last release**: 2026-07-17
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-16 23:45
+- **Generated**: 2026-07-17 01:07
 
 <!-- proto-gear:agent-context end -->
 

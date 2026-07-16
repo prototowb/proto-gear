@@ -5,6 +5,28 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-07-17
+
+**Steering-framework release.** Reworks proto-gear's markdown steering surface against the Claude Fable 5 prompting guidance — *shrink procedural prose, grow durable state and machine-checked boundaries* — then adds the interactive/enforcement follow-ons that make the new surfaces reachable and self-auditing. 1106 tests; `pg doctor` green; full macOS/Linux/Windows × Python 3.8–3.12 CI parity.
+
+### Added — Steering framework (PROTO-086–089)
+
+- **Slimmer generated agent-context (PROTO-086)**: dropped the keyword `Trigger → Capability` table and per-capability trigger suffixes — agents route off descriptions. AGENTS.md "MANDATORY READING" became a conditional per-file table, reserving `NEVER` for the one true invariant. Added a token budget (`AGENT_CONTEXT_TOKEN_BUDGET`) that `pg doctor` warns (never errors) against.
+- **Capability output profiles (PROTO-087)**: `pg init --profile frontier|verbose` (default `frontier`). One canonical corpus rendered at two verbosities — `frontier` ships slim stubs generated from each capability's `metadata.yaml`; `verbose` ships the full playbooks. The chosen profile is recorded in `.proto-gear/PROFILE`.
+- **Lessons layer (PROTO-088)**: `.proto-gear/lessons/` — an agent-writable accumulated-knowledge store (one lesson per file: `# Title` + `> summary` + body), validated by `pg doctor` and indexed by `pg sync-context`. Plus a **Working Agreement** section in the generated context.
+- **Branch-guard enforcement (PROTO-089)**: `pg guard branch` exits non-zero on a protected branch (a primitive for hooks/CI); `pg hooks install` drops a no-clobber branch-guard pre-commit hook. Enforces "never commit to `main`" with an exit code, not just a NEVER-line.
+
+### Added — Interactive & enforcement follow-ons (PROTO-090–092)
+
+- **Init profile wizard prompt (PROTO-090)**: the interactive `pg init` wizard now asks frontier vs verbose whenever capabilities are installed, instead of silently defaulting — reaching the PROTO-087 choice without the `--profile` flag.
+- **`pg lessons` interactive browser (PROTO-092)**: bare `pg lessons` opens a browse/select UI over the lessons layer (§5.7 pattern); `pg lessons list [--json]` and `pg lessons show <name>` for scripted/agent use. Wired into the home menu.
+
+### Changed
+
+- **`pg doctor` audits the branch-guard hook (PROTO-091)**: advisory check (warning, never error — CI's `pg guard branch` is the hard gate) that nudges consumers to `pg hooks install`. Silent outside git and when a non-guard pre-commit hook already exists.
+
+**Full Changelog**: https://github.com/prototowb/proto-gear/compare/v0.20.0...v0.21.0
+
 ## [0.20.0] - 2026-07-14
 
 **Milestone Release**: The version had been stuck at 0.10.0 across 133 commits — this cuts the accumulated work into a release. The minor jumps to `20` to signal the scale of the change (two new architectural platforms), not merely the next increment. Two architectural platforms land (departmental modules, supervision primitives), the human surface becomes UI-first, and agent orchestration becomes dynamic and paradigm-driven. ~20,000 lines changed across 163 files; 997 tests.

@@ -1,10 +1,20 @@
 # Proto Gear - Readiness Assessment
 
-**Current Version**: v0.20.0 (Production Ready)
-**Assessment Date**: 2026-07-14
+**Current Version**: v0.21.0 (Production Ready)
+**Assessment Date**: 2026-07-17
 **Previous Assessment**: v0.10.0 (2026-05-13)
 
-> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system; v0.20.0 added the departmental module platform, supervision primitives, a UI-first surface, and dynamic orchestration — see the *v0.20.0 Update* section below). A full per-category rescore is captured for a future session — none of the earlier scores would *decrease*.
+> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system; v0.20.0 added the departmental module platform, supervision primitives, a UI-first surface, and dynamic orchestration; v0.21.0 reworked the markdown steering surface against the Fable 5 guidance — see the *Update* sections below). A full per-category rescore is captured for a future session — none of the earlier scores would *decrease*.
+
+## v0.21.0 Update (2026-07-17)
+
+**Shipped**: A steering-framework release — reworks proto-gear's markdown steering surface against the Claude Fable 5 prompting guidance (*shrink procedural prose, grow durable state and machine-checked boundaries*), plus the interactive/enforcement follow-ons that make the new surfaces reachable and self-auditing.
+
+**Net change since v0.20.0**:
+- ✅ Test count **997 → 1106 passing**; `pg doctor` green; `black` clean; full macOS/Linux/Windows × Python 3.8–3.12 CI parity held
+- ✅ **Steering surface reworked (PROTO-086–089)** — description-routed agent-context with a token budget; capability output profiles (`frontier`/`verbose`); an agent-writable lessons layer; branch-guard enforcement via `pg guard branch` + `pg hooks install` (exit codes, not just NEVER-lines)
+- ✅ **Interactive/enforcement follow-ons (PROTO-090–092)** — `pg init` wizard prompts for the capability profile; `pg doctor` audits the branch-guard hook (advisory); `pg lessons` interactive browser over the lessons layer
+- ➖ No breaking changes; all additive and backwards-compatible
 
 ## v0.20.0 Update (2026-07-14)
 
