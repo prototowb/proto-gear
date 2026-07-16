@@ -7,6 +7,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
+import proto_gear_pkg.modules.engineering.interactive_wizard as wizard_mod
 from proto_gear_pkg.modules.engineering.interactive_wizard import (
     RichWizard,
     run_enhanced_wizard,
@@ -15,6 +16,10 @@ from proto_gear_pkg.modules.engineering.interactive_wizard import (
     get_safe_chars,
     QUESTIONARY_AVAILABLE,
     RICH_AVAILABLE,
+)
+from proto_gear_pkg.module_core.capability_profile import (
+    CAPABILITY_PROFILES,
+    DEFAULT_PROFILE,
 )
 
 
@@ -141,6 +146,70 @@ class TestWizardEdgeCases:
         """Test wizard starts with empty config"""
         wizard = RichWizard()
         assert wizard.config == {}
+
+
+class TestAskCapabilityProfile:
+    """The init-time frontier/verbose profile prompt (PROTO follow-on)."""
+
+    def test_fallback_empty_input_returns_default(self, monkeypatch):
+        """No questionary + blank answer → the default profile."""
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "")
+        wizard = RichWizard()
+        assert wizard.ask_capability_profile() == DEFAULT_PROFILE
+
+    def test_fallback_empty_input_respects_passed_default(self, monkeypatch):
+        """A blank answer honours the caller's default, not just frontier."""
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "")
+        wizard = RichWizard()
+        assert wizard.ask_capability_profile(default="verbose") == "verbose"
+
+    def test_fallback_selects_verbose(self, monkeypatch):
+        """Typing 'verbose' returns verbose."""
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "verbose")
+        wizard = RichWizard()
+        assert wizard.ask_capability_profile() == "verbose"
+
+    def test_fallback_reprompts_on_invalid(self, monkeypatch):
+        """Invalid input loops until a valid profile is given."""
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        answers = iter(["bogus", "frontier"])
+        monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
+        wizard = RichWizard()
+        assert wizard.ask_capability_profile() == "frontier"
+
+    def test_result_is_always_a_valid_profile(self, monkeypatch):
+        """Whatever the path, the return value is a known profile name."""
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "verbose")
+        wizard = RichWizard()
+        assert wizard.ask_capability_profile() in CAPABILITY_PROFILES
+
+    @pytest.mark.skipif(not QUESTIONARY_AVAILABLE, reason="questionary not installed")
+    def test_questionary_path_returns_selection(self, monkeypatch):
+        """The rich path returns whatever questionary.select yields."""
+        fake_prompt = Mock()
+        fake_prompt.ask.return_value = "verbose"
+        monkeypatch.setattr(
+            wizard_mod.questionary, "select", lambda *a, **k: fake_prompt
+        )
+        wizard = RichWizard()
+        wizard.console = None  # skip the rich panel render
+        assert wizard.ask_capability_profile() == "verbose"
+
+    @pytest.mark.skipif(not QUESTIONARY_AVAILABLE, reason="questionary not installed")
+    def test_questionary_cancel_falls_back_to_default(self, monkeypatch):
+        """Ctrl-C / cancel (ask() → None) yields the default, not None."""
+        fake_prompt = Mock()
+        fake_prompt.ask.return_value = None
+        monkeypatch.setattr(
+            wizard_mod.questionary, "select", lambda *a, **k: fake_prompt
+        )
+        wizard = RichWizard()
+        wizard.console = None
+        assert wizard.ask_capability_profile(default="verbose") == "verbose"
 
 
 if __name__ == "__main__":
