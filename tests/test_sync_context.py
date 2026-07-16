@@ -7,12 +7,15 @@ import pytest
 from pathlib import Path
 
 from proto_gear_pkg.module_core.sync_context import (
+    AGENT_CONTEXT_TOKEN_BUDGET,
     BEGIN_MARKER,
     END_MARKER,
     HOST_FILES,
     _extract_managed_block,
     _update_host_file,
+    estimate_tokens,
     generate_agent_context,
+    managed_block,
     sync_context,
 )
 
@@ -114,7 +117,6 @@ class TestGenerateAgentContext:
             "{{PROJECT_NAME}}",
             "{{REFERENCE_INDEX}}",
             "{{CAPABILITIES_SKIM}}",
-            "{{TRIGGER_MAP}}",
             "{{CRITICAL_RULES}}",
             "{{CLI_COMMANDS}}",
             "{{PROJECT_META}}",
@@ -145,6 +147,63 @@ class TestGenerateAgentContext:
     def test_no_capabilities_section_when_dir_missing(self, project):
         content = generate_agent_context(project)
         assert "No capabilities installed" in content
+
+    def test_no_keyword_trigger_table(self, project):
+        # PROTO-086: keyword-routing table removed — agents route off descriptions.
+        content = generate_agent_context(project)
+        assert "Trigger → Capability" not in content
+        assert "If user says" not in content
+
+    def test_capability_skim_has_no_keyword_triggers(self):
+        # PROTO-086: skim entries carry the description, not a keyword list.
+        from proto_gear_pkg.module_core.sync_context import _build_capabilities_skim
+        from proto_gear_pkg.module_core.capability_metadata import (
+            CapabilityMetadata,
+            CapabilityType,
+            CapabilityStatus,
+            CapabilityDependencies,
+            CapabilityRelevance,
+        )
+
+        cap = CapabilityMetadata(
+            name="testing",
+            type=CapabilityType.SKILL,
+            version="1.0.0",
+            description="TDD methodology",
+            category="test",
+            tags=[],
+            status=CapabilityStatus.STABLE,
+            author="test",
+            last_updated="2026-01-01",
+            dependencies=CapabilityDependencies(required=[], optional=[], suggested=[]),
+            conflicts=[],
+            composable_with=[],
+            agent_roles=[],
+            relevance=CapabilityRelevance(triggers=["write tests", "tdd"], contexts=[]),
+        )
+        skim = _build_capabilities_skim({"skills/testing": cap})
+        assert "TDD methodology" in skim
+        assert "_triggers:_" not in skim
+        assert "write tests" not in skim
+
+
+class TestTokenBudget:
+    def test_estimate_tokens_scales_with_length(self):
+        assert estimate_tokens("") == 0
+        assert estimate_tokens("word " * 100) > estimate_tokens("word " * 10)
+
+    def test_estimate_tokens_floored_at_word_count(self):
+        text = "a b c d e"  # 5 short words, chars//4 == 2
+        assert estimate_tokens(text) >= 5
+
+    def test_managed_block_returns_only_block(self, project):
+        block = managed_block(project)
+        assert block.startswith(BEGIN_MARKER)
+        assert block.rstrip().endswith(END_MARKER)
+
+    def test_generated_block_within_budget(self, project):
+        # The slim generated block must stay under the shipped budget.
+        assert estimate_tokens(managed_block(project)) <= AGENT_CONTEXT_TOKEN_BUDGET
 
 
 class TestSyncContext:

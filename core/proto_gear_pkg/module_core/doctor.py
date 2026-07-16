@@ -8,6 +8,7 @@ Audits the project for sync drift across:
   4. capability metadata validity
   5. departmental module manifests (module.yaml) validity
   6. supervision gates declared in workflow metadata (contract item 5)
+  7. agent-context token budget (the generated block stays a skim, not a manual)
 
 Each check produces a list of Finding records. The dispatcher in proto_gear.py
 turns these into human-readable output or JSON.
@@ -116,6 +117,45 @@ def check_agent_context_sync(project_dir: Path) -> List[Finding]:
             target="AGENT_CONTEXT.md",
             message="AGENT_CONTEXT.md does not match current project state.",
             fix_hint="Run `pg sync-context` to regenerate",
+        )
+    ]
+
+
+def check_agent_context_budget(project_dir: Path) -> List[Finding]:
+    """Warn when the generated agent-context block outgrows its token budget.
+
+    The managed block is mirrored into every host file and re-read on every
+    agent session across every downstream project, so its size is a recurring
+    attention tax. Estimated locally (no network) — see
+    `sync_context.estimate_tokens`.
+    """
+    block = sync_context_module.managed_block(project_dir)
+    if not block:
+        return []  # template breakage is already reported by check_host_files
+    budget = sync_context_module.AGENT_CONTEXT_TOKEN_BUDGET
+    tokens = sync_context_module.estimate_tokens(block)
+    if tokens > budget:
+        return [
+            Finding(
+                id="agent-context-over-budget",
+                severity="warning",
+                target="AGENT_CONTEXT.md",
+                message=(
+                    f"Generated agent-context block is ~{tokens} tokens, over the "
+                    f"{budget}-token budget — every line taxes every agent session."
+                ),
+                fix_hint=(
+                    "Trim capability descriptions/rules, or move detail behind a "
+                    "pointer; the block is meant to be a skim, not a manual."
+                ),
+            )
+        ]
+    return [
+        Finding(
+            id="agent-context-budget",
+            severity="ok",
+            target="AGENT_CONTEXT.md",
+            message=f"~{tokens}/{budget} token budget.",
         )
     ]
 
@@ -646,6 +686,7 @@ def check_supervision_gates(project_dir: Path) -> List[Finding]:
 def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report = DiagnosticsReport()
     report.findings.extend(check_agent_context_sync(project_dir))
+    report.findings.extend(check_agent_context_budget(project_dir))
     report.findings.extend(check_host_files(project_dir))
     report.findings.extend(check_core_doc_headers(project_dir))
     report.findings.extend(check_capabilities(project_dir))
