@@ -6,8 +6,17 @@
 
 ## ▶ Start here (next session)
 
-**Just shipped three steering follow-ons: PROTO-090 (#60), PROTO-091 (#61),
-PROTO-092 (#62).**
+**🚀 Released v0.21.0 (2026-07-17).** Cut `development → main` (PR #63, merge
+commit `82b0770`): version bumped in `pyproject.toml` + `__init__.py`, CHANGELOG
++ readiness-assessment + PROJECT_STATUS (state yaml + Releases table) updated,
+tag `v0.21.0` pushed, GitHub release "v0.21.0 — Steering Framework" published
+(Latest), and `main` merged back into `development`. **`main` and `development`
+are in sync at `82b0770`.** The release bundles the steering-framework arc
+(PROTO-086–089) plus the three follow-ons below (PROTO-090–092). Next release
+will be v0.22.0 (or a patch) off the next `development` work.
+
+**Shipped in this release — three steering follow-ons: PROTO-090 (#60),
+PROTO-091 (#61), PROTO-092 (#62).**
 
 - **PROTO-090 — init profile wizard prompt.** The `--profile frontier|verbose`
   choice (PROTO-087) was previously only reachable via the CLI flag; the
@@ -79,18 +88,19 @@ What changed, phase by phase:
    pre-commit hook. `.gitattributes` pins the hook to LF. BRANCHING documents
    `pg guard` / hook / CI as the *how*, keeping the prose as the *why*.
 
-**No steering work pending.** Natural follow-ons if picking this thread back up:
-a `standard` middle profile if a consumer needs it; a `pg lessons` interactive
-browser (mirrors the §5.7 pattern). (The init-profile wizard prompt shipped as
-PROTO-090; the branch-guard doctor audit as PROTO-091.)
+**No steering work pending.** The only documented follow-on left is a
+`standard` middle output profile — speculative, build only *if a consumer needs
+it*. (The init-profile wizard prompt shipped as PROTO-090; the branch-guard
+doctor audit as PROTO-091; the `pg lessons` browser as PROTO-092 — all in
+v0.21.0.)
 
 Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Current State
 
-- `development` = through **PROTO-092** (PRs #56–#62). **1106 tests pass; `pg
-  doctor` green (32 checks); `black --check` clean.** CI parity: bare
-  `pytest tests/`.
+- **Released as v0.21.0** (2026-07-17). `development` = `main` = `82b0770`,
+  through **PROTO-092** (PRs #56–#63). **1106 tests pass; `pg doctor` green (32
+  checks); `black --check` clean.** CI parity: bare `pytest tests/`.
 - **Generated agent-context block is description-routed** (no keyword table),
   carries a Working Agreement section, and is budgeted (~1600–1650 tokens for
   this repo; warns >1800). The capability skim is the block's growth vector.
@@ -122,8 +132,9 @@ Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
 
 ## Pending / In Progress
 
-- **Nothing in flight.** All steering PRs merged to `development`. No release cut
-  this session (these land in the next `development → main` release).
+- **Nothing in flight.** v0.21.0 was cut this session (`development → main`,
+  PR #63); `main` and `development` are in sync at `82b0770`. No open branches or
+  PRs.
 
 ## Conventions In Force
 
