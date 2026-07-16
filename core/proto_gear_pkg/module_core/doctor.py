@@ -10,6 +10,7 @@ Audits the project for sync drift across:
   6. supervision gates declared in workflow metadata (contract item 5)
   7. agent-context token budget (the generated block stays a skim, not a manual)
   8. lessons layer — malformed lesson files + stale lessons/INDEX.md (Phase 4)
+  9. branch-guard pre-commit hook installed (Phase 5; advisory nudge)
 
 Each check produces a list of Finding records. The dispatcher in proto_gear.py
 turns these into human-readable output or JSON.
@@ -461,6 +462,51 @@ def check_lessons(project_dir: Path) -> List[Finding]:
     return findings
 
 
+def check_branch_guard_hook(project_dir: Path) -> List[Finding]:
+    """Audit local enforcement of the "never commit to `main`" invariant (Phase 5).
+
+    Advisory, never an error — the invariant is also enforced by `pg guard
+    branch` in CI, so a missing local hook is a nudge, not a failure. Silent
+    outside a git repo, and silent when the repo already has *some* pre-commit
+    hook that isn't ours: the user manages their own hooks and `pg hooks
+    install` is deliberately no-clobber, so nagging would be noise. Emits:
+
+      - ``ok``      when the bundled branch-guard hook is installed;
+      - ``warning`` when a git repo has no pre-commit hook at all — nothing
+        stops a local commit to a protected branch.
+    """
+    from . import hooks as hooks_module
+
+    hooks_dir = hooks_module.git_hooks_dir(str(project_dir))
+    if hooks_dir is None:
+        return []  # not a git repo — local hook enforcement is N/A
+
+    pre_commit = hooks_dir / "pre-commit"
+    if pre_commit.exists():
+        existing = pre_commit.read_text(encoding="utf-8", errors="replace")
+        if hooks_module.BRANCH_GUARD_MARKER in existing:
+            return [
+                Finding(
+                    id="branch-guard-hook-ok",
+                    severity="ok",
+                    target=str(pre_commit),
+                    message="Branch-guard pre-commit hook installed.",
+                )
+            ]
+        # A non-guard pre-commit hook exists — the user runs their own hooks.
+        return []
+
+    return [
+        Finding(
+            id="branch-guard-hook-missing",
+            severity="warning",
+            target="pre-commit",
+            message='"never commit to `main`" is not enforced locally — no pre-commit hook.',
+            fix_hint="Run `pg hooks install` to add the branch-guard hook",
+        )
+    ]
+
+
 def check_modules(project_dir: Path) -> List[Finding]:
     """Validate every bundled departmental module manifest (module.yaml).
 
@@ -754,6 +800,7 @@ def run_diagnostics(project_dir: Path) -> DiagnosticsReport:
     report.findings.extend(check_capabilities(project_dir))
     report.findings.extend(check_capability_indexes(project_dir))
     report.findings.extend(check_lessons(project_dir))
+    report.findings.extend(check_branch_guard_hook(project_dir))
     report.findings.extend(check_modules(project_dir))
     report.findings.extend(check_supervision_gates(project_dir))
     return report
