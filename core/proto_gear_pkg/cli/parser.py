@@ -74,6 +74,17 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help="Generate .proto-gear/ capability system (skills, workflows, commands)",
     )
     init_parser.add_argument(
+        "--profile",
+        choices=["frontier", "verbose"],
+        default="frontier",
+        help=(
+            "Capability verbosity: 'frontier' (default) ships slim stubs — the "
+            "methodology is left to the model; 'verbose' ships the full playbooks "
+            "for smaller/older models. Nothing is lost: re-init with --profile "
+            "verbose for the full corpus."
+        ),
+    )
+    init_parser.add_argument(
         "--all",
         action="store_true",
         help="Generate ALL available project templates (TESTING, BRANCHING, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_OF_CONDUCT)",

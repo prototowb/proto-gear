@@ -129,6 +129,9 @@ def main():
                         with_all=wizard_config.get("with_all", False),
                         core_templates=wizard_config.get("core_templates"),
                         project_description=wizard_config.get("project_description"),
+                        profile=wizard_config.get(
+                            "profile", getattr(args, "profile", "frontier")
+                        ),
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -186,6 +189,7 @@ def main():
                     ticket_prefix=ticket_prefix,
                     with_capabilities=args.with_capabilities,
                     with_all=args.all if hasattr(args, "all") else False,
+                    profile=getattr(args, "profile", "frontier"),
                 )
 
             if result["status"] == "success":
