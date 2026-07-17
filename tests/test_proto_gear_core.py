@@ -28,50 +28,47 @@ from proto_gear_pkg.proto_gear import (
 class TestSetupAgentFramework:
     """Test the main setup_agent_framework_only function"""
 
-    def test_setup_minimal_dry_run(self, tmp_path):
+    def test_setup_minimal_dry_run(self, tmp_path, monkeypatch):
         """Test minimal setup in dry-run mode"""
-        with patch("proto_gear_pkg.proto_gear.Path.cwd", return_value=tmp_path):
-            with patch(
-                "proto_gear_pkg.proto_gear.detect_project_structure"
-            ) as mock_detect:
-                mock_detect.return_value = {"detected": False}
+        # setup_agent_framework_only resolves the target from Path("."), so
+        # isolation requires chdir — patching Path.cwd does nothing (the code
+        # never calls it) and previously let real setups write to the repo root.
+        monkeypatch.chdir(tmp_path)
+        with patch("proto_gear_pkg.proto_gear.detect_project_structure") as mock_detect:
+            mock_detect.return_value = {"detected": False}
 
-                result = setup_agent_framework_only(dry_run=True)
+            result = setup_agent_framework_only(dry_run=True)
 
-                # Dry run should not create files
-                assert not (tmp_path / "AGENTS.md").exists()
+            # Dry run should not create files
+            assert not (tmp_path / "AGENTS.md").exists()
 
-    def test_setup_with_core_templates_only(self, tmp_path):
+    def test_setup_with_core_templates_only(self, tmp_path, monkeypatch):
         """Test setup with only core templates"""
-        with patch("proto_gear_pkg.proto_gear.Path.cwd", return_value=tmp_path):
-            with patch(
-                "proto_gear_pkg.proto_gear.detect_project_structure"
-            ) as mock_detect:
-                with patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git:
-                    mock_detect.return_value = {"detected": True, "type": "Python"}
-                    mock_git.return_value = {"is_git_repo": False, "has_remote": False}
+        monkeypatch.chdir(tmp_path)
+        with patch("proto_gear_pkg.proto_gear.detect_project_structure") as mock_detect:
+            with patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git:
+                mock_detect.return_value = {"detected": True, "type": "Python"}
+                mock_git.return_value = {"is_git_repo": False, "has_remote": False}
 
-                    result = setup_agent_framework_only(
-                        dry_run=False, core_templates=["AGENTS", "PROJECT_STATUS"]
-                    )
+                result = setup_agent_framework_only(
+                    dry_run=False, core_templates=["AGENTS", "PROJECT_STATUS"]
+                )
 
-                    # Setup was called successfully
-                    assert (
-                        result is not None or result is None
-                    )  # May return files list or None
+                # Setup was called successfully
+                assert (
+                    result is not None or result is None
+                )  # May return files list or None
 
-    def test_setup_returns_file_list_structure(self, tmp_path):
+    def test_setup_returns_file_list_structure(self, tmp_path, monkeypatch):
         """Test that setup returns proper file list structure"""
-        with patch("proto_gear_pkg.proto_gear.Path.cwd", return_value=tmp_path):
-            with patch(
-                "proto_gear_pkg.proto_gear.detect_project_structure"
-            ) as mock_detect:
-                mock_detect.return_value = {"detected": False}
+        monkeypatch.chdir(tmp_path)
+        with patch("proto_gear_pkg.proto_gear.detect_project_structure") as mock_detect:
+            mock_detect.return_value = {"detected": False}
 
-                result = setup_agent_framework_only(dry_run=True)
+            result = setup_agent_framework_only(dry_run=True)
 
-                # Should return a structure with file info
-                assert isinstance(result, (dict, type(None)))
+            # Should return a structure with file info
+            assert isinstance(result, (dict, type(None)))
 
 
 class TestProjectDetection:
@@ -231,47 +228,45 @@ class TestCapabilityIntegration:
 class TestComplexSetupScenarios:
     """Test complex setup scenarios"""
 
-    def test_setup_with_all_options(self, tmp_path):
+    def test_setup_with_all_options(self, tmp_path, monkeypatch):
         """Test setup with all options enabled"""
-        with patch("proto_gear_pkg.proto_gear.Path.cwd", return_value=tmp_path):
-            with patch(
-                "proto_gear_pkg.proto_gear.detect_project_structure"
-            ) as mock_detect:
-                with patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git:
-                    mock_detect.return_value = {"detected": True, "type": "Python"}
-                    mock_git.return_value = {
-                        "is_git_repo": True,
-                        "has_remote": True,
-                        "remote_name": "origin",
-                        "main_branch": "main",
-                    }
+        monkeypatch.chdir(tmp_path)
+        with patch("proto_gear_pkg.proto_gear.detect_project_structure") as mock_detect:
+            with patch("proto_gear_pkg.proto_gear.detect_git_config") as mock_git:
+                mock_detect.return_value = {"detected": True, "type": "Python"}
+                mock_git.return_value = {
+                    "is_git_repo": True,
+                    "has_remote": True,
+                    "remote_name": "origin",
+                    "main_branch": "main",
+                }
 
-                    result = setup_agent_framework_only(
-                        dry_run=False,
-                        with_all=True,
-                        with_branching=True,
-                        ticket_prefix="PROJ",
-                        with_capabilities=True,
-                    )
+                result = setup_agent_framework_only(
+                    dry_run=False,
+                    with_all=True,
+                    with_branching=True,
+                    ticket_prefix="PROJ",
+                    with_capabilities=True,
+                )
 
-                    # Setup completed without error
-                    assert (
-                        result is not None or result is None
-                    )  # May return file list or None
+                # Setup completed without error
+                assert (
+                    result is not None or result is None
+                )  # May return file list or None
 
-    def test_setup_error_handling(self, tmp_path):
+    def test_setup_error_handling(self, tmp_path, monkeypatch):
         """Test setup handles errors gracefully"""
-        with patch("proto_gear_pkg.proto_gear.Path.cwd", return_value=tmp_path):
-            with patch(
-                "proto_gear_pkg.proto_gear.detect_project_structure",
-                side_effect=Exception("Test error"),
-            ):
-                # Should not crash, may return None or handle error
-                try:
-                    setup_agent_framework_only(dry_run=True)
-                except Exception as e:
-                    # If it raises, should be a specific handled exception
-                    assert "Test error" in str(e) or True  # Expected behavior
+        monkeypatch.chdir(tmp_path)
+        with patch(
+            "proto_gear_pkg.proto_gear.detect_project_structure",
+            side_effect=Exception("Test error"),
+        ):
+            # Should not crash, may return None or handle error
+            try:
+                setup_agent_framework_only(dry_run=True)
+            except Exception as e:
+                # If it raises, should be a specific handled exception
+                assert "Test error" in str(e) or True  # Expected behavior
 
 
 if __name__ == "__main__":
