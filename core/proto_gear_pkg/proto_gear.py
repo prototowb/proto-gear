@@ -53,7 +53,18 @@ from .modules.engineering.templates import (
     copy_capability_templates,
     build_default_replacements,
     humanize_leftover_tokens,
+    NON_SELECTABLE_TEMPLATES,
+    SYNC_GENERATED_FILES,
 )
+
+# Names (with .md stripped) that must never be routed through the generic
+# template renderer: always-written core files and everything sync_context
+# produces (AGENT_CONTEXT.md + the host mirrors, which have no *.template.md).
+# Passing these through generate_project_template emits spurious "template not
+# found" warnings; sync_context handles them at the end of setup instead.
+_NON_TEMPLATE_NAMES = set(NON_SELECTABLE_TEMPLATES) | {
+    f[:-3] if f.endswith(".md") else f for f in SYNC_GENERATED_FILES
+}
 
 # Terminal presentation helpers (logo, splash, help, input) live in
 # presentation.py (PROTO-042, ADR-001 Phase A). Re-exported here so
@@ -340,23 +351,18 @@ def setup_agent_framework_only(
                 if isinstance(core_templates, dict):
                     # Dict format: {template_name: bool}
                     for template_name, should_generate in core_templates.items():
-                        if should_generate and template_name not in [
-                            "AGENTS",
-                            "PROJECT_STATUS",
-                            "SESSION_HANDOFF",
-                        ]:
+                        if should_generate and template_name not in _NON_TEMPLATE_NAMES:
                             # Skip if already created (e.g., BRANCHING from with_branching flag)
                             if f"{template_name}.md" not in files_created:
                                 templates_to_generate.append(template_name)
                 elif isinstance(core_templates, list):
-                    # List format from incremental wizard: ['BRANCHING.md', 'TESTING.md']
+                    # List format from incremental wizard: ['BRANCHING.md', 'TESTING.md'].
+                    # May also carry sync-generated files (AGENT_CONTEXT.md,
+                    # CLAUDE.md, …) when "update all" passes existing_files; those
+                    # are filtered out here — sync_context regenerates them.
                     for template in core_templates:
                         template_name = template.replace(".md", "")
-                        if template_name not in [
-                            "AGENTS",
-                            "PROJECT_STATUS",
-                            "SESSION_HANDOFF",
-                        ]:
+                        if template_name not in _NON_TEMPLATE_NAMES:
                             # Skip if already created
                             if template not in files_created:
                                 templates_to_generate.append(template_name)
