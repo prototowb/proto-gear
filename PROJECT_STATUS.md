@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-097 | Wire Setup actions (init/re-init, sync-context, install hook) into the interactive shell | feature | IN_PROGRESS | feature/proto-097-wire-setup-actions-init-re-init-sync-con |  |
 
 ## 🚀 Releases
 
@@ -849,6 +848,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | 2026-07-17 | | |
 | PROTO-095 | Harden init: existing-install guard, scope pre-commit tests, drop aider | 2026-07-17 | | |
 | PROTO-096 | Interactive navigable UI shell — navigate/pick home menu (multi-level, breadcrumbs, back-nav, actions) | 2026-07-17 | | |
+| PROTO-097 | Wire Setup actions (init/re-init, sync-context, install hook) into the interactive shell | 2026-07-17 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
