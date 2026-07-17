@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | feature | IN_PROGRESS | feature/proto-099-guided-re-init-in-the-shell-install-stat |  |
 
 ## 🚀 Releases
 
