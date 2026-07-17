@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-095 | Harden init: existing-install guard, scope pre-commit tests, drop aider | feature | IN_PROGRESS | feature/proto-095-harden-init-existing-install-guard-scope |  |
 
 _No active tickets — PROTO-066 just shipped._
 
@@ -849,6 +848,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-092 | pg lessons — interactive browser for the accumulated-knowledge layer (§5.7) | 2026-07-16 | | |
 | PROTO-093 | Wizard under-reports scaffolded files (SESSION_HANDOFF, AGENT_CONTEXT, host mirrors) | 2026-07-17 | | |
 | PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | 2026-07-17 | | |
+| PROTO-095 | Harden init: existing-install guard, scope pre-commit tests, drop aider | 2026-07-17 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
