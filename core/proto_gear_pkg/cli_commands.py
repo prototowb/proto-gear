@@ -1093,11 +1093,130 @@ def _run_pg(*pg_args: str) -> None:
         print(f"{Colors.FAIL}Could not run 'pg {joined}': {exc}{Colors.ENDC}")
 
 
+def _expected_scaffold_files():
+    """The full de-duplicated list of files ``pg init`` can scaffold.
+
+    Drawn from the shared template taxonomy so it can't drift from what init
+    actually writes (same source ``detect_existing_environment`` scans)."""
+    from .modules.engineering.templates import (
+        CORE_ALWAYS_FILES,
+        SYNC_GENERATED_FILES,
+        OPTIONAL_TEMPLATE_FILES,
+    )
+
+    return list(
+        dict.fromkeys(
+            CORE_ALWAYS_FILES + SYNC_GENERATED_FILES + OPTIONAL_TEMPLATE_FILES
+        )
+    )
+
+
+def _reinit_summary(existing_env: dict, expected_files, sync_preview: dict) -> dict:
+    """Pure: the guided re-init state summary shown before the choice.
+
+    ``existing_env`` is ``detect_existing_environment`` output; ``expected_files``
+    the scaffold taxonomy; ``sync_preview`` a ``sync-context --dry-run`` result
+    map (path → action), ``{}`` if it couldn't be computed. Returns present/total
+    counts, the missing-file list, whether capabilities are installed, and
+    ``resync`` — the number of files a Refresh (re-sync) would rewrite. (This is
+    not the same as ``pg doctor`` drift: host mirrors always re-sync because they
+    carry a regenerated timestamp, so ``resync`` previews the Refresh action's
+    scope, not project health.)
+    """
+    expected = list(expected_files)
+    present = set(existing_env.get("existing_files", [])) & set(expected)
+    missing = [f for f in expected if f not in present]
+    resync = sum(
+        1
+        for action in sync_preview.values()
+        if action in ("created", "updated", "would_create", "would_update")
+    )
+    return {
+        "present": len(present),
+        "total": len(expected),
+        "missing": missing,
+        "capabilities": bool(existing_env.get("existing_capabilities")),
+        "resync": resync,
+    }
+
+
+def _sync_dry_run_preview() -> dict:
+    """A ``sync-context --dry-run`` result map, or ``{}`` on any failure."""
+    try:
+        from .module_core import sync_context as sync_context_module
+
+        results = sync_context_module.sync_context(Path("."), dry_run=True)
+    except Exception:
+        return {}
+    if isinstance(results, dict) and "error" not in results:
+        return results
+    return {}
+
+
+def _print_reinit_pane(summary: dict) -> None:
+    """Render the install-state pane above the re-init choice."""
+    print(f"\n{Colors.BOLD}This project is already initialised.{Colors.ENDC}")
+    missing = summary["missing"]
+    miss_txt = (
+        ""
+        if not missing
+        else f"  {Colors.YELLOW}(missing: {', '.join(missing)}){Colors.ENDC}"
+    )
+    print(f"  Files    {summary['present']}/{summary['total']} present{miss_txt}")
+    caps = "installed" if summary["capabilities"] else "not installed"
+    print(f"  Caps     .proto-gear/ {caps}")
+    if summary["resync"]:
+        print(
+            f"  Refresh  {Colors.YELLOW}would rewrite {summary['resync']} host "
+            f"file(s){Colors.ENDC}"
+        )
+    else:
+        print(f"  Refresh  {Colors.GREEN}nothing to re-sync{Colors.ENDC}")
+
+
+def _action_init_or_reinit() -> None:
+    """Guided init/re-init entry.
+
+    Fresh project → straight into the ``pg init`` wizard. Already initialised →
+    show the install-state pane (files present/missing, capabilities, drift) then
+    offer: Refresh (re-sync host files, the common case), Full re-init (the
+    existing wizard), or Cancel. The heavy paths reuse the real subcommands via
+    :func:`_run_pg` — no re-implemented init logic.
+    """
+    import questionary
+    from .modules.engineering import detection
+
+    existing_env = detection.detect_existing_environment(Path("."))
+    if not existing_env.get("is_existing"):
+        _run_pg("init")
+        return
+
+    summary = _reinit_summary(
+        existing_env, _expected_scaffold_files(), _sync_dry_run_preview()
+    )
+    _print_reinit_pane(summary)
+
+    choice = questionary.select(
+        "This project is already initialised —",
+        choices=[
+            questionary.Choice("Refresh (re-sync host files)", value="refresh"),
+            questionary.Choice("Full re-init wizard", value="reinit"),
+            questionary.Choice("Cancel", value="cancel"),
+        ],
+    ).ask()
+
+    if choice == "refresh":
+        _run_pg("sync-context")
+    elif choice == "reinit":
+        _run_pg("init")
+
+
 def _setup_screen():
     """Setup sub-screen: init/re-init, sync context, install branch-guard hook.
 
-    Each row shells out to the real subcommand (see :func:`_run_pg`) so behaviour
-    matches ``pg init`` / ``pg sync-context`` / ``pg hooks install`` exactly.
+    ``Init / re-init`` is guided in-shell (see :func:`_action_init_or_reinit`);
+    the other rows shell out to the real subcommand (see :func:`_run_pg`) so
+    behaviour matches ``pg sync-context`` / ``pg hooks install`` exactly.
     """
     from .module_core import nav
 
@@ -1109,7 +1228,7 @@ def _setup_screen():
                 "init",
                 "Init / re-init",
                 "scaffold or refresh this project",
-                action=lambda: _run_pg("init"),
+                action=_action_init_or_reinit,
             ),
             nav.MenuItem(
                 "sync",
