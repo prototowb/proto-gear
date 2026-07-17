@@ -109,6 +109,27 @@ class TestHomeMenu:
         assert cc.cmd_home_menu(_args(command=None)) == 0
         assert rec == [("release", "v0.10.0")]
 
+    def test_setup_sync_shells_out(self, monkeypatch):
+        # Setup is a sub-screen; each row spawns the real subcommand via _run_pg.
+        rec = []
+        calls = []
+        monkeypatch.setattr(cc, "_run_pg", lambda *a: calls.append(a))
+        fake = _FakeQuestionary(selects=["setup", "sync", "__back__", "__quit__"])
+        self._install(monkeypatch, fake, rec)
+        assert cc.cmd_home_menu(_args(command=None)) == 0
+        assert calls == [("sync-context",)]
+
+    def test_setup_init_and_hooks_route(self, monkeypatch):
+        rec = []
+        calls = []
+        monkeypatch.setattr(cc, "_run_pg", lambda *a: calls.append(a))
+        fake = _FakeQuestionary(
+            selects=["setup", "init", "hooks", "__back__", "__quit__"]
+        )
+        self._install(monkeypatch, fake, rec)
+        assert cc.cmd_home_menu(_args(command=None)) == 0
+        assert calls == [("init",), ("hooks", "install")]
+
     def test_release_blank_label_skips(self, monkeypatch):
         rec = []
         fake = _FakeQuestionary(selects=["release", "__quit__"], texts=["   "])

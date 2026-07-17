@@ -1055,6 +1055,58 @@ def _action_release() -> None:
         cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
 
 
+def _run_pg(*pg_args: str) -> None:
+    """Spawn the real ``pg`` subcommand in this terminal, then return.
+
+    Setup actions (the ``init`` wizard, ``sync-context``, ``hooks install``)
+    reuse the exact CLI code path rather than reimplementing its rendering. The
+    child inherits this process's stdio, so the interactive init wizard keeps a
+    real TTY. Invoked via ``python -m proto_gear_pkg`` so it never depends on the
+    ``pg`` script being on ``PATH``.
+    """
+    import subprocess
+
+    try:
+        subprocess.run([sys.executable, "-m", "proto_gear_pkg", *pg_args])
+    except Exception as exc:  # pragma: no cover - defensive
+        joined = " ".join(pg_args)
+        print(f"{Colors.FAIL}Could not run 'pg {joined}': {exc}{Colors.ENDC}")
+
+
+def _setup_screen():
+    """Setup sub-screen: init/re-init, sync context, install branch-guard hook.
+
+    Each row shells out to the real subcommand (see :func:`_run_pg`) so behaviour
+    matches ``pg init`` / ``pg sync-context`` / ``pg hooks install`` exactly.
+    """
+    from .module_core import nav
+
+    return nav.MenuScreen(
+        title="Setup",
+        prompt="Setup —",
+        items=[
+            nav.MenuItem(
+                "init",
+                "Init / re-init",
+                "scaffold or refresh this project",
+                action=lambda: _run_pg("init"),
+            ),
+            nav.MenuItem(
+                "sync",
+                "Sync context",
+                "regenerate AGENT_CONTEXT + host configs",
+                action=lambda: _run_pg("sync-context"),
+            ),
+            nav.MenuItem(
+                "hooks",
+                "Install hook",
+                "branch-guard pre-commit hook",
+                action=lambda: _run_pg("hooks", "install"),
+            ),
+        ],
+    )
+
+
 def _build_home_screen():
     """Assemble the root screen. Badges are computed once, here."""
     from .module_core import nav
@@ -1102,6 +1154,9 @@ def _build_home_screen():
             ),
             nav.MenuItem(
                 "tickets", "Tickets", "list · create · update", submenu=_tickets_screen
+            ),
+            nav.MenuItem(
+                "setup", "Setup", "init · sync context · hooks", submenu=_setup_screen
             ),
             nav.MenuItem(
                 "doctor",
