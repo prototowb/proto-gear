@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | bugfix | IN_PROGRESS | bugfix/proto-094-test-isolation-setup-tests-write-host-fi |  |
 
 _No active tickets — PROTO-066 just shipped._
 
@@ -848,6 +847,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-091 | pg doctor audit — advisory check that the branch-guard pre-commit hook is installed | 2026-07-16 | | |
 | PROTO-092 | pg lessons — interactive browser for the accumulated-knowledge layer (§5.7) | 2026-07-16 | | |
 | PROTO-093 | Wizard under-reports scaffolded files (SESSION_HANDOFF, AGENT_CONTEXT, host mirrors) | 2026-07-17 | | |
+| PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | 2026-07-17 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
