@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | bugfix | IN_PROGRESS | bugfix/proto-094-test-isolation-setup-tests-write-host-fi |  |
 
 _No active tickets — PROTO-066 just shipped._
 
