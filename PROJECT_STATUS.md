@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-093 | Wizard under-reports scaffolded files (SESSION_HANDOFF, AGENT_CONTEXT, host mirrors) | bugfix | IN_PROGRESS | bugfix/proto-093-wizard-under-reports-scaffolded-files-se |  |
 
 _No active tickets — PROTO-066 just shipped._
 
