@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-097 | Wire Setup actions (init/re-init, sync-context, install hook) into the interactive shell | feature | IN_PROGRESS | feature/proto-097-wire-setup-actions-init-re-init-sync-con |  |
 
 ## 🚀 Releases
 
