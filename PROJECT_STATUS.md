@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-098 | Single-page shell mode: clear-and-redraw each screen, pause after actions | feature | IN_PROGRESS | feature/proto-098-single-page-shell-mode-clear-and-redraw- |  |
 
 ## 🚀 Releases
 

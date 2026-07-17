@@ -138,3 +138,54 @@ class TestRunMenu:
         assert headers[0] == "Home"
         assert headers[1] == "Home › Tickets"
         assert headers[2] == "Home"
+
+
+class TestSinglePage:
+    """Optional clear-before-render / pause-after-action behaviour."""
+
+    def _run(self, monkeypatch, root, selects, *, clear=None, pause=None):
+        monkeypatch.setitem(sys.modules, "questionary", _FakeQuestionary(selects))
+        return nav.run_menu(root, clear=clear, pause=pause)
+
+    def test_clear_called_before_each_render(self, monkeypatch):
+        clears = []
+        child = nav.MenuScreen("Sub", items=[nav.MenuItem("x", "X")])
+        root = nav.MenuScreen(
+            "Home", items=[nav.MenuItem("s", "S", submenu=lambda: child)]
+        )
+        # root render, child render, root render again after Back = 3 clears.
+        self._run(
+            monkeypatch,
+            root,
+            ["s", "__back__", "__quit__"],
+            clear=lambda: clears.append(1),
+        )
+        assert len(clears) == 3
+
+    def test_pause_only_after_leaf_action(self, monkeypatch):
+        pauses = []
+        hits = []
+        child = nav.MenuScreen(
+            "Sub", items=[nav.MenuItem("x", "X", action=lambda: hits.append("x"))]
+        )
+        root = nav.MenuScreen(
+            "Home", items=[nav.MenuItem("s", "S", submenu=lambda: child)]
+        )
+        # Enter sub (no pause), run X (pause once), Back (no pause), quit.
+        self._run(
+            monkeypatch,
+            root,
+            ["s", "x", "__back__", "__quit__"],
+            pause=lambda: pauses.append(1),
+        )
+        assert hits == ["x"]
+        assert len(pauses) == 1
+
+    def test_no_clear_or_pause_by_default(self, monkeypatch):
+        # Omitting both keeps the plain scrolling behaviour (no crash, runs action).
+        hits = []
+        root = nav.MenuScreen(
+            "Home", items=[nav.MenuItem("a", "A", action=lambda: hits.append("a"))]
+        )
+        assert self._run(monkeypatch, root, ["a", "__quit__"]) == 0
+        assert hits == ["a"]

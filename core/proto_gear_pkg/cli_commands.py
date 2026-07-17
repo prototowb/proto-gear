@@ -891,12 +891,32 @@ def _rich_console_or_none():
         return None
 
 
-def _render_home_header(console, crumb: str) -> None:
-    """Persistent frame drawn above each menu: version, project, breadcrumb.
+def _clear_screen(console) -> None:
+    """Clear the terminal for the single-page shell. Guarded — a clear that
+    can't run (unusual terminal) degrades to no-op rather than crashing."""
+    try:
+        if console is not None:
+            console.clear()
+        else:
+            import os
 
-    Non-destructive by design — it does not clear the screen, so the output of
-    the action you just ran stays visible above when you land back on the menu.
-    """
+            os.system("cls" if os.name == "nt" else "clear")
+    except Exception:
+        pass
+
+
+def _pause() -> None:
+    """Hold an action's output on screen until the user acknowledges, so the
+    next clear-and-redraw doesn't wipe it unread. EOF/interrupt just continue."""
+    try:
+        input(f"\n{Colors.GRAY}  ↵  Enter to return to the menu…{Colors.ENDC}")
+    except (EOFError, KeyboardInterrupt, OSError):
+        # EOF/interrupt, or a non-interactive stdin (e.g. captured under tests).
+        pass
+
+
+def _render_home_header(console, crumb: str) -> None:
+    """Persistent frame drawn above each menu: version, project, breadcrumb."""
     version = _pg_version()
     project = Path.cwd().name
     tag = f"v{version}" if version else ""
@@ -1176,7 +1196,8 @@ def cmd_home_menu(args):
     """Top-level interactive home menu (§5.7) — bare ``pg`` in a TTY.
 
     The UI-first entry point to the whole tool: a navigable *navigate-and-pick*
-    shell (persistent header, breadcrumbs, back-nav) over project state, the
+    shell (single-page: clear-and-redraw each screen, persistent header,
+    breadcrumbs, back-nav) over project state, the
     capability/agent/orchestration/lessons browsers, ticket actions, a drift
     audit, and release readiness — instead of a static command list. The caller
     (``cli.app``) only routes here when interactive and ``questionary`` is
@@ -1189,6 +1210,8 @@ def cmd_home_menu(args):
     return nav.run_menu(
         _build_home_screen(),
         render_header=lambda crumb: _render_home_header(console, crumb),
+        clear=lambda: _clear_screen(console),
+        pause=_pause,
     )
 
 
