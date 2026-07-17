@@ -867,56 +867,274 @@ def cmd_agent_list(args):
     return 0
 
 
+def _pg_version() -> str:
+    """Installed Proto Gear version, or ``""`` if it can't be read."""
+    try:
+        from proto_gear_pkg import __version__
+
+        return __version__
+    except Exception:
+        return ""
+
+
+def _rich_console_or_none():
+    """A ``rich`` Console if the library is importable, else ``None``.
+
+    The shell degrades to plain ``print`` without rich — the header is chrome,
+    never load-bearing.
+    """
+    try:
+        from rich.console import Console
+
+        return Console()
+    except Exception:
+        return None
+
+
+def _render_home_header(console, crumb: str) -> None:
+    """Persistent frame drawn above each menu: version, project, breadcrumb.
+
+    Non-destructive by design — it does not clear the screen, so the output of
+    the action you just ran stays visible above when you land back on the menu.
+    """
+    version = _pg_version()
+    project = Path.cwd().name
+    tag = f"v{version}" if version else ""
+    if console is not None:
+        try:
+            from rich.rule import Rule
+
+            console.print()
+            console.print(
+                f"[bold cyan]Proto Gear[/bold cyan] [dim]{tag}[/dim]"
+                f"[dim]{'   ' + project if project else ''}[/dim]"
+            )
+            if crumb:
+                console.print(f"[dim]{crumb}[/dim]")
+            console.print(Rule(style="dim"))
+            return
+        except Exception:
+            # Chrome must never crash the menu (e.g. a legacy Windows console
+            # that can't encode box-drawing). Fall through to plain ASCII.
+            pass
+    print(f"\nProto Gear {tag}   {project}".rstrip())
+    if crumb:
+        print(crumb)
+    print("-" * 50)
+
+
+def _doctor_badge() -> str:
+    """A short drift-status badge for the Doctor row (``2 warnings`` / ``ok``).
+
+    Runs the same diagnostics as ``pg doctor`` once, when the home screen is
+    built. Fully guarded: any failure (e.g. run outside an initialised project)
+    yields no badge rather than breaking the menu.
+    """
+    try:
+        from .module_core import doctor
+
+        report = doctor.run_diagnostics(Path("."))
+    except Exception:
+        return ""
+    if report.errors:
+        return f"{report.errors} error{'s' if report.errors != 1 else ''}"
+    if report.warnings:
+        return f"{report.warnings} warning{'s' if report.warnings != 1 else ''}"
+    return "ok"
+
+
+def _action_doctor() -> None:
+    """Run the drift audit and print a concise, coloured summary."""
+    try:
+        from .module_core import doctor
+
+        report = doctor.run_diagnostics(Path("."))
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"{Colors.FAIL}Doctor could not run: {exc}{Colors.ENDC}")
+        return
+
+    icon = {
+        "ok": f"{Colors.GREEN}✓{Colors.ENDC}",
+        "warning": f"{Colors.YELLOW}!{Colors.ENDC}",
+        "error": f"{Colors.FAIL}✗{Colors.ENDC}",
+    }
+    print(
+        f"\n{Colors.BOLD}Doctor{Colors.ENDC}  "
+        f"{Colors.GREEN}{report.ok} ok{Colors.ENDC}  "
+        f"{Colors.YELLOW}{report.warnings} warn{Colors.ENDC}  "
+        f"{Colors.FAIL}{report.errors} error{Colors.ENDC}"
+    )
+    for finding in report.findings:
+        if finding.severity == "ok":
+            continue
+        mark = icon.get(finding.severity, "-")
+        print(
+            f"  {mark} {finding.target}{Colors.GRAY} — {finding.message}{Colors.ENDC}"
+        )
+        if finding.fix_hint:
+            print(f"      {Colors.GRAY}fix: {finding.fix_hint}{Colors.ENDC}")
+    if report.warnings == 0 and report.errors == 0:
+        print(f"  {Colors.GREEN}No drift — everything in sync.{Colors.ENDC}")
+
+
+def _action_ticket_create() -> None:
+    """Pick-and-fill a new ticket, then dispatch to ``cmd_ticket_create``."""
+    import questionary
+    from .modules.engineering import status_commands as sc
+
+    title = questionary.text("Ticket title:").ask()
+    if not title or not title.strip():
+        return
+    ticket_type = questionary.select(
+        "Type:", choices=sorted(sc.VALID_TYPES), default="task"
+    ).ask()
+    if ticket_type is None:
+        return
+    sc.cmd_ticket_create(_args_ns(title=title.strip(), type=ticket_type, assignee=None))
+
+
+def _action_ticket_update() -> None:
+    """Pick an active ticket and a new status, then dispatch the update."""
+    import questionary
+    from .modules.engineering import status_commands as sc
+
+    path = sc._find_status_file()
+    active = sc.ProjectState(path).active if path else []
+    if not active:
+        print(f"{Colors.GRAY}No active tickets to update.{Colors.ENDC}")
+        return
+
+    ticket = questionary.select(
+        "Which ticket?",
+        choices=[
+            questionary.Choice(
+                f"{t.get('ID', '?')} — {t.get('Title', '')}", value=t.get("ID")
+            )
+            for t in active
+        ],
+    ).ask()
+    if not ticket:
+        return
+    status = questionary.select("New status:", choices=sorted(sc.VALID_STATUSES)).ask()
+    if not status:
+        return
+    sc.cmd_ticket_update(_args_ns(ticket_id=ticket, status=status))
+
+
+def _tickets_screen():
+    """Tickets sub-screen: list / create / update (the multi-level example)."""
+    from .module_core import nav
+    from .modules.engineering import status_commands as sc
+
+    return nav.MenuScreen(
+        title="Tickets",
+        prompt="Tickets —",
+        items=[
+            nav.MenuItem(
+                "list",
+                "List",
+                "active + blocked",
+                action=lambda: sc.cmd_ticket_list(_args_ns(status="", json=False)),
+            ),
+            nav.MenuItem(
+                "create", "Create", "new ticket", action=_action_ticket_create
+            ),
+            nav.MenuItem(
+                "update", "Update", "change status", action=_action_ticket_update
+            ),
+        ],
+    )
+
+
+def _action_release() -> None:
+    """Prompt for a release label and show its readiness verdict."""
+    import questionary
+
+    label = questionary.text("Release label (e.g. v0.10.0):").ask()
+    if label and label.strip():
+        cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
+
+
+def _build_home_screen():
+    """Assemble the root screen. Badges are computed once, here."""
+    from .module_core import nav
+    from .modules.engineering import status_commands as sc
+
+    return nav.MenuScreen(
+        title="Home",
+        prompt="Proto Gear — where to?",
+        items=[
+            nav.MenuItem(
+                "status",
+                "Status",
+                "current project state",
+                action=lambda: sc.cmd_status(_args_ns(json=False)),
+            ),
+            nav.MenuItem(
+                "capabilities",
+                "Capabilities",
+                "skills / workflows / commands",
+                action=lambda: cmd_capabilities_browse(
+                    _args_ns(capabilities_command=None)
+                ),
+            ),
+            nav.MenuItem(
+                "agents",
+                "Agents",
+                "installed + available",
+                action=lambda: cmd_agent_browse(_args_ns(agent_command=None)),
+            ),
+            nav.MenuItem(
+                "paradigms",
+                "Orchestration",
+                "how sub-agents are distributed",
+                action=lambda: cmd_orchestration_browse(
+                    _args_ns(orchestration_command=None)
+                ),
+            ),
+            nav.MenuItem(
+                "lessons",
+                "Lessons",
+                "accumulated knowledge",
+                action=lambda: cmd_lessons_browse(
+                    _args_ns(lessons_command=None, json=False)
+                ),
+            ),
+            nav.MenuItem(
+                "tickets", "Tickets", "list · create · update", submenu=_tickets_screen
+            ),
+            nav.MenuItem(
+                "doctor",
+                "Doctor",
+                "drift audit",
+                badge=_doctor_badge(),
+                action=_action_doctor,
+            ),
+            nav.MenuItem(
+                "release", "Release", "readiness for a label", action=_action_release
+            ),
+        ],
+    )
+
+
 def cmd_home_menu(args):
     """Top-level interactive home menu (§5.7) — bare ``pg`` in a TTY.
 
-    The UI-first entry point to the whole tool: navigate to project status,
-    the capability/agent browsers, tickets, or a release readiness check,
-    instead of reading a static command list. The caller (``cli.app``) only
-    routes here when interactive and ``questionary`` is importable; without a
-    TTY it keeps the classic splash/command list, so scripts/CI are unaffected.
+    The UI-first entry point to the whole tool: a navigable *navigate-and-pick*
+    shell (persistent header, breadcrumbs, back-nav) over project state, the
+    capability/agent/orchestration/lessons browsers, ticket actions, a drift
+    audit, and release readiness — instead of a static command list. The caller
+    (``cli.app``) only routes here when interactive and ``questionary`` is
+    importable; without a TTY it keeps the classic splash, so scripts/CI are
+    unaffected.
     """
-    from .modules.engineering import status_commands
+    from .module_core import nav
 
-    import questionary  # caller guarantees this import succeeds
-
-    routes = [
-        ("Status — current project state", "status"),
-        ("Capabilities — browse skills / workflows / commands", "capabilities"),
-        ("Agents — browse installed + available", "agents"),
-        (
-            "Orchestration — browse paradigms (how sub-agents are distributed)",
-            "paradigms",
-        ),
-        ("Tickets — list active", "tickets"),
-        ("Lessons — browse accumulated knowledge", "lessons"),
-        ("Release — readiness for a label", "release"),
-    ]
-
-    while True:
-        choices = [questionary.Choice(label, value=key) for label, key in routes]
-        choices.append(questionary.Choice("Quit", value="__quit__"))
-        selection = questionary.select("Proto Gear — where to?", choices=choices).ask()
-
-        if selection is None or selection == "__quit__":
-            return 0
-
-        if selection == "status":
-            status_commands.cmd_status(_args_ns(json=False))
-        elif selection == "capabilities":
-            cmd_capabilities_browse(_args_ns(capabilities_command=None))
-        elif selection == "agents":
-            cmd_agent_browse(_args_ns(agent_command=None))
-        elif selection == "tickets":
-            status_commands.cmd_ticket_list(_args_ns(status="", json=False))
-        elif selection == "paradigms":
-            cmd_orchestration_browse(_args_ns(orchestration_command=None))
-        elif selection == "release":
-            label = questionary.text("Release label (e.g. v0.10.0):").ask()
-            if label and label.strip():
-                cmd_release(_args_ns(release_id=label.strip(), json=False, notes=False))
-        elif selection == "lessons":
-            cmd_lessons_browse(_args_ns(lessons_command=None, json=False))
+    console = _rich_console_or_none()
+    return nav.run_menu(
+        _build_home_screen(),
+        render_header=lambda crumb: _render_home_header(console, crumb),
+    )
 
 
 # ============================================================================

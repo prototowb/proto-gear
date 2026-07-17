@@ -34,8 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-
-_No active tickets — PROTO-066 just shipped._
+| PROTO-096 | Interactive navigable UI shell — navigate/pick home menu (multi-level, breadcrumbs, back-nav, actions) | feature | IN_PROGRESS | feature/proto-096-interactive-ui-shell |  |
 
 ## 🚀 Releases
 

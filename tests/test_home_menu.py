@@ -77,12 +77,30 @@ class TestHomeMenu:
 
     def test_routes_each_destination(self, monkeypatch):
         rec = []
+        # Capabilities/Agents stay top-level; Tickets is now a sub-screen, so
+        # reaching the list means: tickets → list → Back → quit.
         fake = _FakeQuestionary(
-            selects=["status", "capabilities", "agents", "tickets", "__quit__"]
+            selects=[
+                "status",
+                "capabilities",
+                "agents",
+                "tickets",
+                "list",
+                "__back__",
+                "__quit__",
+            ]
         )
         self._install(monkeypatch, fake, rec)
         assert cc.cmd_home_menu(_args(command=None)) == 0
         assert rec == ["status", "caps", "agents", "tickets"]
+
+    def test_back_from_submenu_returns_to_root(self, monkeypatch):
+        # Enter Tickets, go Back without acting, then quit from the root.
+        rec = []
+        fake = _FakeQuestionary(selects=["tickets", "__back__", "__quit__"])
+        self._install(monkeypatch, fake, rec)
+        assert cc.cmd_home_menu(_args(command=None)) == 0
+        assert rec == []
 
     def test_release_prompts_for_label(self, monkeypatch):
         rec = []
