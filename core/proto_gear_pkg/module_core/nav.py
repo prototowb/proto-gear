@@ -105,6 +105,8 @@ def run_menu(
     root: MenuScreen,
     *,
     render_header: Optional[Callable[[str], None]] = None,
+    clear: Optional[Callable[[], None]] = None,
+    pause: Optional[Callable[[], None]] = None,
 ) -> int:
     """Drive a stack of screens until the user quits. Returns ``0``.
 
@@ -113,12 +115,20 @@ def run_menu(
     dispatch — a branch pushes its child, a leaf runs its action, ``Back`` pops,
     ``Quit`` (or an aborted prompt) exits. ``Back`` is only offered off the root,
     so the stack never underflows.
+
+    Optional single-page behaviour: ``clear`` (called before each render) wipes
+    the screen so every menu is drawn fresh; ``pause`` (called after a leaf
+    action) holds the action's output on screen until the user acknowledges,
+    before the next ``clear`` redraws. Both default to ``None`` — omit them and
+    the menu simply scrolls. Navigation itself (push/pop) never pauses.
     """
     import questionary  # caller guarantees this import succeeds
 
     stack: List[MenuScreen] = [root]
     while stack:
         screen = stack[-1]
+        if clear is not None:
+            clear()
         if render_header is not None:
             render_header(format_breadcrumb([s.title for s in stack]))
 
@@ -143,4 +153,6 @@ def run_menu(
                 stack.append(child)
         elif item.action is not None:
             item.action()
+            if pause is not None:
+                pause()
     return 0
