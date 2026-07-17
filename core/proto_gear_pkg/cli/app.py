@@ -132,6 +132,9 @@ def main():
                         profile=wizard_config.get(
                             "profile", getattr(args, "profile", "frontier")
                         ),
+                        # `pg init` is a deliberate human action — opt in to
+                        # updating an existing install (see setup guard).
+                        allow_reinit=True,
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -190,6 +193,8 @@ def main():
                     with_capabilities=args.with_capabilities,
                     with_all=args.all if hasattr(args, "all") else False,
                     profile=getattr(args, "profile", "frontier"),
+                    # Explicit `pg init` invocation — opt in to reinit.
+                    allow_reinit=True,
                 )
 
             if result["status"] == "success":

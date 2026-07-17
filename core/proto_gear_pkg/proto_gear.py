@@ -93,14 +93,41 @@ def setup_agent_framework_only(
     core_templates=None,
     project_description=None,
     profile="frontier",
+    allow_reinit=False,
 ):
-    """Set up ProtoGear agent framework in existing project"""
+    """Set up ProtoGear agent framework in existing project.
+
+    Safety: a real (non-dry-run) setup rewrites managed files — notably
+    sync_context force-overwrites AGENT_CONTEXT.md and the host mirrors. To keep
+    a stray programmatic call (a test with leaked cwd, library misuse) from
+    silently clobbering an already-initialised project, this refuses to run
+    against an existing install unless the caller opts in via ``force`` or
+    ``allow_reinit``. The CLI sets ``allow_reinit`` because ``pg init`` is a
+    deliberate human action; direct callers must be explicit.
+    """
     from datetime import datetime
 
     print(f"\n{Colors.CYAN}Agent Framework Setup{Colors.ENDC}")
     print("-" * 30)
 
     current_dir = Path(".")
+
+    # Existing-install guard (see docstring). dry-run writes nothing, so it is
+    # always safe; force / allow_reinit are the explicit opt-ins.
+    if not dry_run and not force and not allow_reinit:
+        existing = detect_existing_environment(current_dir)
+        if existing.get("is_existing"):
+            print(
+                f"{Colors.YELLOW}! Refusing to reinitialise an existing Proto Gear "
+                f"install at {current_dir.resolve()} without an explicit opt-in.\n"
+                f"  Re-run `pg init` (interactive) to update it, or pass --force to "
+                f"overwrite.{Colors.ENDC}"
+            )
+            return {
+                "status": "error",
+                "error": "existing install; pass force=True or allow_reinit=True to proceed",
+                "existing_install": True,
+            }
     # Path(".").name is "" — resolve so the project name is real everywhere.
     project_name = current_dir.resolve().name
     print(f"Current directory: {current_dir.absolute()}")
@@ -744,6 +771,7 @@ def run_simple_protogear_init(
     core_templates=None,
     project_description=None,
     profile="frontier",
+    allow_reinit=False,
 ):
     """
     Initialize ProtoGear AI Agent Framework in current project
@@ -757,6 +785,8 @@ def run_simple_protogear_init(
         capabilities_config: Configuration for capabilities
         with_all: Generate all available templates
         core_templates: List of specific core templates to generate
+        allow_reinit: If True, permit running against an existing install
+            (the CLI sets this — see setup_agent_framework_only)
     """
     from datetime import datetime
 
@@ -780,6 +810,7 @@ def run_simple_protogear_init(
             core_templates=core_templates,
             project_description=project_description,
             profile=profile,
+            allow_reinit=allow_reinit,
         )
     except KeyboardInterrupt:
         return {"status": "cancelled"}

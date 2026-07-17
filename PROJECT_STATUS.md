@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-095 | Harden init: existing-install guard, scope pre-commit tests, drop aider | feature | IN_PROGRESS | feature/proto-095-harden-init-existing-install-guard-scope |  |
 
 _No active tickets — PROTO-066 just shipped._
 
