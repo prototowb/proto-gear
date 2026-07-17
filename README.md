@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/python-3.8%2B-green)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-purple)](LICENSE)
 
-Proto Gear generates a small set of markdown files that give any AI agent — Claude, GPT-4, Cursor, Copilot, Aider, or anything that can read files — a shared understanding of your project's state, workflow conventions, and available tools. Once initialized, a `pg` CLI lets agents (and humans) manipulate that state reliably via shell commands.
+Proto Gear generates a small set of markdown files that give any AI agent — Claude, GPT-4, Cursor, Copilot, or anything that can read files — a shared understanding of your project's state, workflow conventions, and available tools. Once initialized, a `pg` CLI lets agents (and humans) manipulate that state reliably via shell commands.
 
 **What it is**: A template generator + a thin state-management CLI.
 **What it is not**: A workflow execution engine, an agent runtime, or a code generator.
@@ -83,7 +83,7 @@ The commands parse and write `PROJECT_STATUS.md` directly — no separate databa
 5. **Agent calls** `pg ticket update PROJ-XXX --status COMPLETED` → file updated
 6. **Any other agent or human** runs `pg status` → sees current state
 
-Because the protocol is markdown + shell commands, it works identically across Claude Code, Cursor, GitHub Copilot, Aider, and plain terminal sessions.
+Because the protocol is markdown + shell commands, it works identically across Claude Code, Cursor, GitHub Copilot, and plain terminal sessions.
 
 ---
 
