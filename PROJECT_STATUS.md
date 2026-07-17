@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-096 | Interactive navigable UI shell — navigate/pick home menu (multi-level, breadcrumbs, back-nav, actions) | feature | IN_PROGRESS | feature/proto-096-interactive-ui-shell |  |
 
 ## 🚀 Releases
 
@@ -848,6 +847,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-093 | Wizard under-reports scaffolded files (SESSION_HANDOFF, AGENT_CONTEXT, host mirrors) | 2026-07-17 | | |
 | PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | 2026-07-17 | | |
 | PROTO-095 | Harden init: existing-install guard, scope pre-commit tests, drop aider | 2026-07-17 | | |
+| PROTO-096 | Interactive navigable UI shell — navigate/pick home menu (multi-level, breadcrumbs, back-nav, actions) | 2026-07-17 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
