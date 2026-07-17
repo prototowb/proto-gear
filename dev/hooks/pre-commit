@@ -10,6 +10,18 @@
 
 echo "🔍 Running pre-commit checks..."
 
+# Only the Python sources these checks act on are worth gating a commit. If the
+# commit stages no core/ or tests/ *.py files (a docs / PROJECT_STATUS / config
+# commit), skip the format/lint/test block entirely — black and flake8 have
+# nothing to catch and the full test run would just add ~a minute of latency to
+# every documentation commit.
+CODE_STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(core|tests)/.*\.py$' || true)
+if [ -z "$CODE_STAGED" ]; then
+    echo "  ⏭ No core/ or tests/ Python staged — skipping format/lint/test checks."
+    echo "✅ Pre-commit checks passed!"
+    exit 0
+fi
+
 # --- Formatting gate (black) -------------------------------------------------
 if command -v black >/dev/null 2>&1; then
     echo "  🎨 Checking formatting (black)..."

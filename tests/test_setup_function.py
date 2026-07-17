@@ -64,6 +64,56 @@ class TestSetupWithCoreTemplates:
         assert "TESTING" in captured.out or "Dry run" in captured.out
 
 
+class TestExistingInstallGuard:
+    """A non-dry-run setup must refuse to clobber an existing install unless the
+    caller explicitly opts in (force/allow_reinit). Guards against a stray
+    programmatic call (e.g. a test with leaked cwd) rewriting a real project."""
+
+    def test_reinit_refused_without_optin(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        # First install (fresh dir → allowed).
+        first = setup_agent_framework_only(ticket_prefix="TEST", with_all=True)
+        assert first["status"] == "success"
+
+        # Capture AGENT_CONTEXT.md so we can prove it is NOT touched on refusal.
+        ctx = tmp_path / "AGENT_CONTEXT.md"
+        before = ctx.read_text(encoding="utf-8")
+
+        # Second call, no force / no allow_reinit → refused.
+        result = setup_agent_framework_only(ticket_prefix="TEST", with_all=True)
+        assert result["status"] == "error"
+        assert result.get("existing_install") is True
+        assert ctx.read_text(encoding="utf-8") == before  # untouched
+
+    def test_reinit_allowed_with_allow_reinit(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        setup_agent_framework_only(ticket_prefix="TEST", with_all=True)
+        # allow_reinit bypasses the guard (rather than returning the
+        # existing-install refusal). Per-file overwrite prompting is separate;
+        # answer "2" (skip) so the non-interactive test does not EOF on it.
+        with patch("builtins.input", return_value="2"):
+            result = setup_agent_framework_only(
+                ticket_prefix="TEST", with_all=True, allow_reinit=True
+            )
+        assert result.get("existing_install") is not True  # guard did not fire
+        assert result["status"] == "success"
+
+    def test_reinit_allowed_with_force(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        setup_agent_framework_only(ticket_prefix="TEST", with_all=True)
+        result = setup_agent_framework_only(
+            ticket_prefix="TEST", with_all=True, force=True
+        )
+        assert result["status"] == "success"
+
+    def test_dry_run_never_guarded(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        setup_agent_framework_only(ticket_prefix="TEST", with_all=True)
+        # dry-run writes nothing, so it is always permitted even on an install.
+        result = setup_agent_framework_only(dry_run=True)
+        assert result["status"] == "success"
+
+
 class TestScaffoldCompleteness:
     """Regression: init must scaffold (and the wizard must track) the files
     that used to be silently created — SESSION_HANDOFF.md, AGENT_CONTEXT.md and
