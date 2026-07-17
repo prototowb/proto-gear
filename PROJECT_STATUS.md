@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | feature | IN_PROGRESS | feature/proto-099-guided-re-init-in-the-shell-install-stat |  |
 
 ## 🚀 Releases
 
@@ -851,6 +850,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-096 | Interactive navigable UI shell — navigate/pick home menu (multi-level, breadcrumbs, back-nav, actions) | 2026-07-17 | | |
 | PROTO-097 | Wire Setup actions (init/re-init, sync-context, install hook) into the interactive shell | 2026-07-17 | | |
 | PROTO-098 | Single-page shell mode: clear-and-redraw each screen, pause after actions | 2026-07-17 | | |
+| PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | 2026-07-17 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
