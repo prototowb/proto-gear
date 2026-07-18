@@ -65,6 +65,10 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - Run `pg status` before starting work to see active tickets and current sprint
 - Use `pg ticket create "title" --type feature` to register new work
 - Use `pg ticket update ID --status IN_PROGRESS` when starting a ticket
+- Engineering scope only — content/marketing, sales, and finance are separate products (honk), not proto-gear modules.
+- Respect the layering `cli/` → `module_core/` → `modules/<dept>/`; lower never imports higher.
+- A new discipline ships as a `modules/<dept>/` module with zero edits to the core — compose it, don't fork it.
+- UI-first — every feature is reachable through the navigate/pick shell before it becomes a command.
 
 ## 🧭 Working Agreement
 
@@ -105,6 +109,6 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - **Proto Gear version**: v0.22.0
 - **Last release**: 2026-07-18
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-18 03:19
+- **Generated**: 2026-07-18 15:10
 
 <!-- proto-gear:agent-context end -->

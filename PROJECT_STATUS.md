@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-101 | Dogfood frontier-era init: repo Boundaries & Invariants → Critical Rules | feature | PENDING | feature/proto-101-dogfood-frontier-era-init-repo-boundarie |  |
 
 ## 🚀 Releases
 

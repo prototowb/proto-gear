@@ -246,5 +246,22 @@ tiers are declarations the host honours; the core audits, it does not execute
 - Not a replacement for the tools engineers already use (GitHub, CI providers,
   cloud consoles) — modules *wrap* engineering practice, integrations stay thin.
 
+## Boundaries & Invariants
+
+> Durable invariants for **this** repository — the principles and non-goals above
+> distilled into the hard boundaries an agent could otherwise cross. Each
+> top-level bullet here is folded verbatim into the generated **Critical Rules**
+> (`sync_context._build_critical_rules`) and mirrored into every host config on
+> `pg sync-context`, so it taxes every session — edit deliberately and keep the
+> set small, flat, and terse. Promote only invariants an agent doing real work
+> could violate; lower-risk boundaries stay documented in the Principles and
+> Non-Goals above (e.g. `pg` executes nothing from bundles; AGENTS.md is the
+> single entry point) without paying the per-session cost here.
+
+- Engineering scope only — content/marketing, sales, and finance are separate products (honk), not proto-gear modules.
+- Respect the layering `cli/` → `module_core/` → `modules/<dept>/`; lower never imports higher.
+- A new discipline ships as a `modules/<dept>/` module with zero edits to the core — compose it, don't fork it.
+- UI-first — every feature is reachable through the navigate/pick shell before it becomes a command.
+
 ---
 *Owner: towb · Drafted 2026-07-07 (PROTO-039) · Reframed 2026-07-10 (PROTO-053: agency OS → software-engineering OS) · Living document — revise at each phase boundary.*
