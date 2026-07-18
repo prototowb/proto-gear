@@ -85,20 +85,21 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - `pg capabilities list [--type ...] [--json]` — List capabilities (--json for agents)
 - `pg capabilities show <name>` — Show a capability's details
 - `pg capabilities tree <name>` — Show a capability's dependency tree
-- `pg lessons [list|show <name>]` — Browse accumulated lessons (.proto-gear/lessons/)
+- `pg lessons [list|show <name>]` — Browse accumulated lessons
 - `pg agent list [--available]` — List configured + installable agents
 - `pg agent install <name>` — Install a bundled agent
 - `pg orchestration list [--json]` — Browse orchestration paradigms
 - `pg orchestration show <id>` — Show a paradigm's roles + model tiers
 - `pg module list/show [<name>]` — List/inspect department modules
 - `pg --module <name> init-surface` — Render a module's state surface
-- `pg pipeline [--json]` — Show the supervision pipeline to production
-- `pg trace <ticket-id> [--json]` — Trace a ticket across disciplines to production
+- `pg pipeline [--json]` — Show the supervision pipeline
+- `pg trace <ticket-id> [--json]` — Trace a ticket across disciplines
 - `pg release <label> [--json]` — Aggregate a release's readiness verdict
+- `pg inbox [--json]` — Cross-discipline pending sign-offs
 - `pg sync-context` — Regenerate Agent Context + host files
 - `pg sync-indexes` — Regenerate capability INDEX.md files
 - `pg doctor [--fix] [--json]` — Audit for sync drift (--fix repairs)
-- `pg guard branch` — Fail if on a protected branch (for hooks/CI)
+- `pg guard branch` — Fail on a protected branch (hooks/CI)
 - `pg hooks install` — Install the branch-guard pre-commit hook
 - `pg help` — Full CLI help
 
@@ -109,7 +110,7 @@ judgment, not keyword match. Each is optional; skip any that doesn't earn its pl
 - **Proto Gear version**: v0.22.0
 - **Last release**: 2026-07-18
 - **Capabilities installed**: 7 skills, 13 workflows, 4 commands
-- **Generated**: 2026-07-18 15:10
+- **Generated**: 2026-07-18 22:19
 
 <!-- proto-gear:agent-context end -->
 

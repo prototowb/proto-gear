@@ -580,4 +580,12 @@ For more information, visit: https://github.com/proto-gear/proto-gear
         help="Generate release notes from the cleared gate checklist",
     )
 
+    inbox_parser = subparsers.add_parser(
+        "inbox",
+        help="Supervision inbox — changes awaiting a human sign-off, cross-discipline",
+    )
+    inbox_parser.add_argument(
+        "--json", action="store_true", help="Emit JSON (for AI agent consumption)"
+    )
+
     return parser

@@ -325,6 +325,9 @@ def main():
         elif args.command == "release":
             sys.exit(cli_commands.cmd_release(args))
 
+        elif args.command == "inbox":
+            sys.exit(cli_commands.cmd_inbox(args))
+
         # Handle 'update' command
         elif args.command == "update":
             sys.exit(cli_commands.cmd_template_update(args))
