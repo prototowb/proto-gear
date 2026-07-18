@@ -11,12 +11,11 @@ import proto_gear_pkg.modules.engineering.interactive_wizard as wizard_mod
 from proto_gear_pkg.modules.engineering.interactive_wizard import (
     RichWizard,
     run_enhanced_wizard,
-    _apply_preset_config,
-    PRESETS,
     get_safe_chars,
     QUESTIONARY_AVAILABLE,
     RICH_AVAILABLE,
 )
+from proto_gear_pkg.modules.engineering.init_planning import build_detected_plan
 from proto_gear_pkg.module_core.capability_profile import (
     CAPABILITY_PROFILES,
     DEFAULT_PROFILE,
@@ -62,42 +61,32 @@ class TestWizardCoreFlow:
         )  # Should not raise error
 
 
-class TestPresetApplication:
-    """Test preset configuration application"""
+class TestDetectedPlanApplication:
+    """The detection-driven plan that replaced the presets (ADR-004)."""
 
-    def test_apply_full_preset_with_git(self, tmp_path):
-        """Test full preset with git"""
-        config = _apply_preset_config(
-            PRESETS["full"]["config"], git_detected=True, current_dir=tmp_path
-        )
-        assert config["with_all"] is True
-        assert config["with_branching"] is True
-        assert config["with_capabilities"] is True
+    def test_git_repo_plans_branching_and_prefix(self, tmp_path):
+        plan = build_detected_plan({}, {"is_git_repo": True}, tmp_path)
+        assert plan["with_branching"] is True
+        assert plan["ticket_prefix"]
+        assert plan["with_capabilities"] is True
+        assert plan["profile"] == "frontier"
 
-    def test_apply_quick_preset_without_git(self, tmp_path):
-        """Test quick preset without git"""
-        config = _apply_preset_config(
-            PRESETS["quick"]["config"], git_detected=False, current_dir=tmp_path
-        )
-        assert config["with_branching"] is False  # auto becomes False
+    def test_no_git_plans_no_branching(self, tmp_path):
+        plan = build_detected_plan({}, {"is_git_repo": False}, tmp_path)
+        assert plan["with_branching"] is False
+        assert plan["ticket_prefix"] is None
 
-    def test_apply_minimal_preset_always_no_branching(self, tmp_path):
-        """Test minimal preset never has branching"""
-        config = _apply_preset_config(
-            PRESETS["minimal"]["config"],
-            git_detected=True,  # Even with git
-            current_dir=tmp_path,
-        )
-        assert config["with_branching"] is False
+    def test_tests_dir_plans_testing_template(self, tmp_path):
+        (tmp_path / "tests").mkdir()
+        plan = build_detected_plan({}, {}, tmp_path)
+        assert plan["core_templates"].get("TESTING") is True
+        assert "TESTING" in plan["reasons"]
 
-    def test_preset_core_templates(self, tmp_path):
-        """Test preset includes core templates"""
-        config = _apply_preset_config(
-            PRESETS["quick"]["config"], git_detected=True, current_dir=tmp_path
+    def test_remote_plans_contributing(self, tmp_path):
+        plan = build_detected_plan(
+            {}, {"is_git_repo": True, "has_remote": True}, tmp_path
         )
-        assert "core_templates" in config
-        assert "AGENTS" in config["core_templates"]
-        assert "PROJECT_STATUS" in config["core_templates"]
+        assert plan["core_templates"].get("CONTRIBUTING") is True
 
 
 class TestWizardCustomFlow:
@@ -118,29 +107,6 @@ class TestWizardEdgeCases:
         wizard = RichWizard()
         wizard.config["test"] = "value"
         assert wizard.config["test"] == "value"
-
-    def test_all_presets_have_required_config(self):
-        """Test all presets have valid config"""
-        for preset_key, preset in PRESETS.items():
-            assert "config" in preset
-            config = preset["config"]
-            # Check that config exists and is a dictionary (or None for custom preset)
-            if config is not None:
-                assert isinstance(config, dict)
-                assert len(config) >= 0
-
-    def test_preset_config_full_has_with_all(self):
-        """Test full preset has with_all"""
-        assert PRESETS["full"]["config"].get("with_all") is True
-
-    def test_preset_config_minimal_no_capabilities(self):
-        """Test minimal preset has no capabilities"""
-        minimal_config = PRESETS["minimal"]["config"]
-        # Check for capabilities configuration (can be 'capabilities' or 'with_capabilities')
-        has_capabilities = minimal_config.get(
-            "with_capabilities", minimal_config.get("capabilities", False)
-        )
-        assert has_capabilities is False
 
     def test_wizard_initialization_creates_empty_config(self):
         """Test wizard starts with empty config"""
@@ -210,6 +176,111 @@ class TestAskCapabilityProfile:
         wizard = RichWizard()
         wizard.console = None
         assert wizard.ask_capability_profile(default="verbose") == "verbose"
+
+
+class TestIntentCapture:
+    """The planning-intake prompts (ADR-004 move 2) via the input fallback."""
+
+    def _wizard_without_questionary(self, monkeypatch):
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        wizard = RichWizard()
+        wizard.console = None  # plain-print path, no rich panels
+        return wizard
+
+    def test_all_skipped_returns_empty_intent(self, monkeypatch, tmp_path):
+        wizard = self._wizard_without_questionary(monkeypatch)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "")
+        assert wizard.ask_intent_capture(tmp_path) == {}
+
+    def test_captures_description_boundaries_conventions(self, monkeypatch, tmp_path):
+        wizard = self._wizard_without_questionary(monkeypatch)
+        answers = iter(
+            [
+                "A CLI for widgets.",  # description
+                "NEVER push to main",  # boundary 1
+                "",  # end boundaries
+                "All times are UTC",  # convention 1
+                "Use uv, not pip",  # convention 2
+                "",  # end conventions
+            ]
+        )
+        monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
+        intent = wizard.ask_intent_capture(tmp_path)
+        assert intent["project_description"] == "A CLI for widgets."
+        assert intent["boundaries"] == ["NEVER push to main"]
+        assert intent["conventions"] == ["All times are UTC", "Use uv, not pip"]
+
+    def test_existing_specs_skips_description_prompt(self, monkeypatch, tmp_path):
+        """With PROJECT_SPECIFICATIONS.md present the description prompt is silent."""
+        (tmp_path / "PROJECT_SPECIFICATIONS.md").write_text("# specs", encoding="utf-8")
+        wizard = self._wizard_without_questionary(monkeypatch)
+        answers = iter(["NEVER a", "", ""])  # boundaries then conventions
+        monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
+        intent = wizard.ask_intent_capture(tmp_path)
+        assert "project_description" not in intent
+        assert intent["boundaries"] == ["NEVER a"]
+
+
+class TestPlanChoiceFallback:
+    """ask_plan_choice input fallback."""
+
+    def _wizard(self, monkeypatch):
+        monkeypatch.setattr(wizard_mod, "QUESTIONARY_AVAILABLE", False)
+        wizard = RichWizard()
+        wizard.console = None
+        return wizard
+
+    def test_enter_accepts(self, monkeypatch):
+        wizard = self._wizard(monkeypatch)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "")
+        assert wizard.ask_plan_choice(offer_prefix=True) == "accept"
+
+    def test_customize_and_cancel(self, monkeypatch):
+        wizard = self._wizard(monkeypatch)
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "c")
+        assert wizard.ask_plan_choice(offer_prefix=False) == "customize"
+        monkeypatch.setattr("builtins.input", lambda *a, **k: "n")
+        assert wizard.ask_plan_choice(offer_prefix=False) is None
+
+    def test_prefix_only_offered_when_branching(self, monkeypatch):
+        wizard = self._wizard(monkeypatch)
+        answers = iter(["p", "y"])  # 'p' invalid without prefix on offer → reprompt
+        monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
+        assert wizard.ask_plan_choice(offer_prefix=False) == "accept"
+
+
+class TestEnhancedWizardFlow:
+    """run_enhanced_wizard wiring: intake → plan → accept/cancel."""
+
+    def _run(self, monkeypatch, tmp_path, *, intent, choice):
+        monkeypatch.setattr(RichWizard, "clear_screen", lambda self: None)
+        monkeypatch.setattr(
+            RichWizard, "ask_intent_capture", lambda self, d: dict(intent)
+        )
+        monkeypatch.setattr(RichWizard, "show_detected_plan", lambda self, p: None)
+        monkeypatch.setattr(RichWizard, "ask_plan_choice", lambda self, **k: choice)
+        return run_enhanced_wizard(
+            {"detected": True, "type": "Python"},
+            {"is_git_repo": True, "has_remote": False},
+            tmp_path,
+        )
+
+    def test_accept_returns_confirmed_plan_with_intent(self, monkeypatch, tmp_path):
+        config = self._run(
+            monkeypatch,
+            tmp_path,
+            intent={"project_description": "X.", "boundaries": ["NEVER y"]},
+            choice="accept",
+        )
+        assert config["confirmed"] is True
+        assert config["with_branching"] is True
+        assert config["with_capabilities"] is True
+        assert config["profile"] == "frontier"
+        assert config["project_description"] == "X."
+        assert config["boundaries"] == ["NEVER y"]
+
+    def test_cancel_returns_none(self, monkeypatch, tmp_path):
+        assert self._run(monkeypatch, tmp_path, intent={}, choice=None) is None
 
 
 if __name__ == "__main__":

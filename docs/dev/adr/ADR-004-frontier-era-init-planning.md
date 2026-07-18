@@ -1,6 +1,6 @@
 # ADR-004: Frontier-Era Init Planning — From Template Configurator to State Elicitation
 
-**Status:** Proposed (2026-07-18) — implementation deferred to a later session
+**Status:** Accepted (2026-07-18) — implemented in PROTO-100
 **Date:** 2026-07-18
 **Deciders:** towb
 **Ticket:** PROTO-100 (implementation)
@@ -119,17 +119,37 @@ scriptable path.
   genuinely skippable so init never becomes *heavier* than today.
 - **Neutral:** re-init is unchanged; only fresh init's planning model changes.
 
-## Open questions (for the implementing session)
+## Open questions — resolved by the implementing session (PROTO-100)
 
-1. **How much intent to elicit by default** — just the one-liner + boundaries, or
-   the fuller goals/constraints/conventions set? (Lean minimal + progressive.)
-2. **Seed a lesson on init?** Whether captured conventions become a first
-   `.proto-gear/lessons/` entry, or live only in specs.
-3. **Native nav-shell screens vs. reusing the questionary wizard** for the intake
-   (parallels the PROTO-099 "guided preview vs native rebuild" fork).
-4. **Migration/telemetry** — do we keep the old preset flow reachable for a
-   release as a fallback, or replace outright?
+1. **How much intent to elicit by default** — minimal + progressive: three
+   prompts (one-liner description → boundaries loop → conventions loop), every
+   one skippable with a plain Enter. No goals/constraints interview; the specs
+   stub carries placeholder sections for the agent to expand.
+2. **Seed a lesson on init?** — **Yes.** Captured boundaries/conventions become
+   `.proto-gear/lessons/house-conventions.md` (well-formed lesson, indexed),
+   when capabilities are installed. Boundaries additionally flow into the
+   generated Critical Rules: the stub's `## Boundaries & Invariants` bullets
+   are parsed by `sync_context` into every host mirror on each sync.
+3. **Native nav screens vs. questionary wizard** — **reuse the questionary
+   wizard.** The shell's Setup → Init already fronts the real `pg init`
+   subprocess (PROTO-099), so the new intake lands in the UI shell with zero
+   shell changes, and the wizard keeps its TTY.
+4. **Migration** — **replace outright.** The Quick/Full/Minimal preset front is
+   gone; the granular Custom path survives as the `Customize (advanced)` escape
+   hatch, and the non-interactive `--flags` path is untouched.
 
-*Prepared 2026-07-18. Phase 3/3 of the interactive-frontier effort; the steering
-arc (PROTO-086–092) migrated the content, the shell arc (PROTO-096–099) built the
-surface, and this migrates the init planning model itself.*
+**Implementation notes:** pure planning helpers live in
+`modules/engineering/init_planning.py` (detected plan, specs stub, seed lesson,
+handoff task); `run_enhanced_wizard` is the intake (intent capture → detected
+plan → accept / adjust prefix / customize / cancel); `setup_agent_framework_only`
+gained `boundaries`/`conventions` and treats an explicitly-passed empty template
+selection as "none" (the accepted plan is a contract — no legacy fall-through).
+An existing PROJECT_SPECIFICATIONS.md is never clobbered; intent then lands in
+the seed lesson and the handoff task only. A fresh SESSION_HANDOFF.md carries a
+"First agent task" pointing at the captured intent (hand off, don't pretend
+completeness). Re-init (`run_incremental_wizard`) is unchanged.
+
+*Prepared 2026-07-18; implemented the same day (PROTO-100). Phase 3/3 of the
+interactive-frontier effort; the steering arc (PROTO-086–092) migrated the
+content, the shell arc (PROTO-096–099) built the surface, and this migrated the
+init planning model itself.*

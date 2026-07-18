@@ -34,7 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | feature | PENDING | feature/proto-100-frontier-era-init-planning-reframe-pg-in |  |
+| PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | feature | IN_PROGRESS | feature/proto-100-frontier-era-init-planning-reframe-pg-in |  |
 
 ## 🚀 Releases
 

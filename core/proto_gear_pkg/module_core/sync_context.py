@@ -73,6 +73,13 @@ CORE_FILES: List[Tuple[str, str, str]] = [
     ),
 ]
 
+# Heading in PROJECT_SPECIFICATIONS.md whose bullets are project-specific
+# boundaries. `pg init`'s planning intake writes them (see
+# modules/engineering/init_planning.py) and _build_critical_rules folds them
+# into the generated Critical Rules — so a boundary stated once at init (or
+# added by hand later) steers every future session via the host mirrors.
+BOUNDARIES_HEADING = "## Boundaries & Invariants"
+
 CRITICAL_RULES = [
     "NEVER commit directly to `main` — it lands only via a reviewed PR",
     "`development` is open: commit to it directly when it helps; feature branch + PR is still the norm for substantial or shared work, not a requirement",
@@ -188,8 +195,43 @@ def _build_capabilities_skim(capabilities: dict) -> str:
     return "\n".join(sections).strip() or "_No capabilities loaded._"
 
 
-def _build_critical_rules() -> str:
-    return "\n".join(f"- {r}" for r in CRITICAL_RULES)
+def read_project_boundaries(project_dir: Path) -> List[str]:
+    """Bullets under :data:`BOUNDARIES_HEADING` in PROJECT_SPECIFICATIONS.md.
+
+    Returns the boundary lines (bullet markers stripped), or ``[]`` when the
+    file, the section, or any bullets are absent. HTML-comment placeholder
+    lines are not bullets and never match.
+    """
+    specs = project_dir / "PROJECT_SPECIFICATIONS.md"
+    if not specs.exists():
+        return []
+    try:
+        text = specs.read_text(encoding="utf-8")
+    except Exception:
+        return []
+
+    boundaries: List[str] = []
+    in_section = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            in_section = stripped.lower() == BOUNDARIES_HEADING.lower()
+            continue
+        if in_section and stripped.startswith(("- ", "* ")):
+            item = stripped[2:].strip()
+            if item:
+                boundaries.append(item)
+    return boundaries
+
+
+def _build_critical_rules(project_dir: Path) -> str:
+    rules = list(CRITICAL_RULES)
+    seen = {r.lower() for r in rules}
+    for boundary in read_project_boundaries(project_dir):
+        if boundary.lower() not in seen:
+            rules.append(boundary)
+            seen.add(boundary.lower())
+    return "\n".join(f"- {r}" for r in rules)
 
 
 def _build_working_agreement() -> str:
@@ -265,7 +307,7 @@ def generate_agent_context(project_dir: Path) -> str:
         "{{PROJECT_NAME}}": project_name,
         "{{REFERENCE_INDEX}}": _build_reference_index(project_dir),
         "{{CAPABILITIES_SKIM}}": _build_capabilities_skim(capabilities),
-        "{{CRITICAL_RULES}}": _build_critical_rules(),
+        "{{CRITICAL_RULES}}": _build_critical_rules(project_dir),
         "{{WORKING_AGREEMENT}}": _build_working_agreement(),
         "{{CLI_COMMANDS}}": _build_cli_commands(),
         "{{PROJECT_META}}": _build_project_meta(project_dir, capabilities),
