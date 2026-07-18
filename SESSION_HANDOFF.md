@@ -6,146 +6,85 @@
 
 ## ▶ Start here (next session)
 
-**Just shipped three steering follow-ons: PROTO-090 (#60), PROTO-091 (#61),
-PROTO-092 (#62).**
+**The interactive-frontier effort is complete (3/3 phases).** PROTO-100 shipped
+(PR #71, squash `fdf97f0`); ADR-004 is **Accepted** with all four open
+questions decided in the ADR itself. There is **no teed-up next thrust** — the
+natural candidates, in rough priority order:
 
-- **PROTO-090 — init profile wizard prompt.** The `--profile frontier|verbose`
-  choice (PROTO-087) was previously only reachable via the CLI flag; the
-  interactive `pg init` wizard always fell through to the `frontier` default.
-  Added `RichWizard.ask_capability_profile()` (questionary + plain-`input`
-  fallback) and wired it into every wizard path that installs capabilities —
-  enhanced preset + custom flows, and the incremental add-capabilities/custom
-  flows. The pick rides `config["profile"]`, which `cli/app.py` already read, so
-  no app.py change. Surfaced in the config summary; only asked when capabilities
-  are actually being generated; always returns a valid `CAPABILITY_PROFILES`
-  name.
-- **PROTO-091 — doctor audits the branch-guard hook.** PROTO-089 shipped `pg
-  hooks install` but nothing verified it. `doctor.check_branch_guard_hook` is an
-  advisory audit (**warning, never error** — CI's `pg guard branch` is the hard
-  gate): `ok` when the bundled guard hook is installed, `warning` only when a git
-  repo has *no* pre-commit hook at all, and **silent** both outside a git repo
-  and when a non-guard pre-commit hook already exists (no-clobber territory — the
-  user runs their own hooks). That last branch is why this repo's own
-  test-running `dev/hooks/pre-commit` keeps `pg doctor` green. Not sync-fixable
-  (fix is `pg hooks install`), so it's out of `_SYNC_FIXABLE_IDS`.
-- **PROTO-092 — `pg lessons` interactive browser.** The lessons layer
-  (PROTO-088) had no reader surface. Added `pg lessons` mirroring the §5.7
-  browsers: bare `pg lessons` → questionary browse/select (pick → read full
-  body), `pg lessons list [--json]`, `pg lessons show <name>` (resolve by
-  filename ±`.md` or exact title). Degrades to the static list without a
-  TTY/questionary. Wired into the home menu ("Lessons" route) and the canonical
-  CLI-command list in `sync_context` (host files carry the real line). Pure data
-  helpers unit-tested; 20 tests mirror `test_orchestration_browse.py`.
+1. **Cut the next release** (v0.22.0): `development` is ahead of `main` by the
+   whole PROTO-096–100 arc (PRs #67–#71). Follow `docs/dev/release-workflow.md`
+   when ready.
+2. Dogfood the new intake: proto-gear's own `PROJECT_SPECIFICATIONS.md` has no
+   `## Boundaries & Invariants` section yet — adding one would push repo-specific
+   boundaries into every host mirror via the new sync bridge (do this
+   deliberately; it changes AGENT_CONTEXT.md for every agent).
+3. Speculative-only backlog: a `standard` middle output profile — build only if
+   a consumer needs it.
 
-**Remaining follow-on (optional):** a `standard` middle output profile *if a
-consumer needs it* (speculative — the only documented steering follow-on left).
+## Shipped this session — PROTO-100: frontier-era init planning (PR #71)
 
-**The steering-framework action plan is fully shipped** (all 5 phases, PRs
-#56–#59, on `development`). This reworked proto-gear's markdown steering surface
-against the Claude Fable 5 prompting guidance — the thesis being *shrink
-procedural prose, grow durable state and machine-checked boundaries*. Source of
-truth for the arc: `proto-gear-steering-action-plan.md` (each phase checked off
-in its Implementation Log).
+Fresh `pg init` reframed from **template configurator** (Quick/Full/Minimal
+presets + "which .md files?") to **state-elicitation planning intake** per
+ADR-004. What exists now:
 
-What changed, phase by phase:
-
-1. **PROTO-086 (#56) — slim generated context block.** Dropped the keyword
-   `Trigger → Capability` table and the per-capability `_triggers:_` suffix from
-   `AGENT_CONTEXT`; agents route off descriptions now. Rewrote the AGENTS.md
-   "MANDATORY READING" wall as a conditional per-file table, reserving `NEVER`
-   for the one true invariant. Added a token budget: `sync_context.estimate_tokens`
-   + `AGENT_CONTEXT_TOKEN_BUDGET` (now **1800**), enforced by
-   `doctor.check_agent_context_budget` (warns, never errors; offline estimate).
-2. **PROTO-087 (#57) — capability output profiles.** `pg init --profile
-   frontier|verbose`, **default frontier**. One canonical corpus (the verbose
-   `*.template.md` bodies) rendered at two verbosities: `frontier` ships a slim
-   stub generated from each capability's `metadata.yaml` (the 379-line TDD skill
-   → 7-line stub); `verbose` ships the full playbooks. Chosen profile recorded in
-   `.proto-gear/PROFILE`. Machinery: `module_core/capability_profile.py`; honored
-   by both `copy_capability_templates` (defaults **verbose** at the library layer)
-   and `module_host.install_module_capabilities`.
-3. **PROTO-088 (#58) — lessons layer + grounding lines.** `.proto-gear/lessons/`
-   agent-writable accumulated knowledge (bundled README + INDEX scaffold; one
-   lesson per file: `# Title` + `> summary` + body). `module_core/lessons.py`
-   parses/validates/indexes; `sync_lessons_index` wired into `pg sync-context` +
-   `pg doctor --fix`; `doctor.check_lessons` flags malformed lessons / stale
-   index. Plus a **Working Agreement** section in the generated context (audit
-   progress claims; report-and-stop when the user describes a problem; pause only
-   for destructive/scope/user-only decisions).
-4. **PROTO-089 (#59) — enforce "never commit to `main`".** `pg guard branch`
-   (`module_core/guard.py`) exits non-zero on a protected branch — a primitive
-   for hooks/CI/agents; never rewrites history. `pg hooks install` (bundled
-   `hooks/pre-commit`, `module_core/hooks.py`) drops a **no-clobber** branch-guard
-   pre-commit hook. `.gitattributes` pins the hook to LF. BRANCHING documents
-   `pg guard` / hook / CI as the *how*, keeping the prose as the *why*.
-
-**No steering work pending.** Natural follow-ons if picking this thread back up:
-a `standard` middle profile if a consumer needs it; a `pg lessons` interactive
-browser (mirrors the §5.7 pattern). (The init-profile wizard prompt shipped as
-PROTO-090; the branch-guard doctor audit as PROTO-091.)
-
-Branch off `development`, PR back. Run `pg status` / `pg ticket list` first.
+- **`modules/engineering/init_planning.py`** (new, pure): detection-driven plan
+  (git → BRANCHING, tests → TESTING, remote → CONTRIBUTING, capabilities always,
+  `frontier` profile, derived prefix), `plan_files` display rows, specs-stub /
+  seed-lesson / handoff-pending builders. All unit-tested directly.
+- **`run_enhanced_wizard` is the intake**: skippable intent capture (one-liner →
+  boundaries loop → conventions loop) → one confirmable detected-plan summary →
+  Accept / Change prefix / Customize (advanced) / Cancel. The Quick/Full/Minimal
+  preset front and `PRESETS`/`_apply_preset_config` are **deleted**; the
+  granular Custom path survives as Customize. Non-interactive `--flags` and
+  guided re-init (`run_incremental_wizard`, PROTO-099) untouched.
+- **Where intent lands**: description → specs stub; boundaries → specs
+  `## Boundaries & Invariants` (**parsed by `sync_context.read_project_boundaries`
+  into the generated Critical Rules on every sync** — the heading constant
+  `BOUNDARIES_HEADING` lives in sync_context, imported by init_planning so
+  writer/reader can't drift); conventions → specs + seed lesson
+  `.proto-gear/lessons/house-conventions.md` (indexed). Fresh SESSION_HANDOFF
+  gets a "First agent task" line pointing at the intake.
+- **Engine contract fix**: an explicitly-passed *empty* `core_templates`
+  selection no longer falls through to the legacy branching→TESTING branch
+  (`if core_templates is not None:`), so init writes exactly what the accepted
+  plan showed. Existing PROJECT_SPECIFICATIONS.md is never clobbered.
 
 ## Current State
 
-- `development` = through **PROTO-092** (PRs #56–#62). **1106 tests pass; `pg
-  doctor` green (32 checks); `black --check` clean.** CI parity: bare
-  `pytest tests/`.
-- **Generated agent-context block is description-routed** (no keyword table),
-  carries a Working Agreement section, and is budgeted (~1600–1650 tokens for
-  this repo; warns >1800). The capability skim is the block's growth vector.
-- **Capabilities are profile-tiered.** New `pg init` defaults to `frontier`
-  (slim stubs); `verbose` ships the full corpus. `.proto-gear/PROFILE` records it.
-- **Lessons layer is live** (`.proto-gear/lessons/`), doctor-validated,
-  sync-indexed. Distinct from this file: SESSION_HANDOFF = current state; lessons
-  = accumulated knowledge.
-- **Branch invariant is enforced**, not just documented: `pg guard branch` +
-  `pg hooks install`. This repo's own `.git/hooks/pre-commit` still runs tests;
-  the guard installer correctly declines to clobber it (no-clobber path).
-- **Five disciplines** ship (engineering, qa, devops, security, release) on the
-  unmodified core; ADR-002 supervision primitives (actor/evidence/authority) are
-  complete. (Unchanged this session — see git history / PROJECT_STATUS.)
-
-## Shipped this cycle (recent)
-
-- **PROTO-092** (#62) — `pg lessons` interactive browser over the
-  accumulated-knowledge layer (§5.7 pattern), merge-on-green.
-- **PROTO-091** (#61) — `pg doctor` advisory audit that the branch-guard
-  pre-commit hook is installed (closes the PROTO-089 loop), merge-on-green.
-- **PROTO-090** (#60) — init profile wizard prompt (frontier vs verbose),
-  merge-on-green. Reaches the PROTO-087 profile choice from the interactive
-  `pg init`, not just the `--profile` flag.
-- **PROTO-086–089** — the five-phase steering-framework rework (above), PRs
-  #56–#59. Each phase its own reviewed, merge-on-green PR.
-- (Earlier: ADR-002 arc PROTO-071–075, the 5th discipline PROTO-077, the §5.7
-  interactive surfaces PROTO-080–082. See git history / PROJECT_STATUS.)
+- **On `development`, unreleased.** Ahead of `main` by PROTO-096–100 (PRs
+  #67–#71) + status commits. Last release **v0.21.0** (2026-07-17); next will be
+  **v0.22.0**, cut when you decide. **1164 tests pass** (bare `pytest tests/`,
+  CI parity); full 14-job matrix + coverage green on #71; `black --check` clean;
+  `pg doctor` green.
+- **The UI shell is the home surface** (PROTO-096–099): bare `pg` in a TTY →
+  navigate/pick shell; Setup → Init fronts the real `pg init` subprocess, so the
+  new intake is reachable UI-first with zero shell changes.
+- **Fable-5 steering surface fully migrated**: v0.21.0 did the content
+  (description-routed capabilities, profile tiering, lessons layer, working
+  agreement, branch guard); PROTO-100 did the last surface — the init planning
+  model itself. Nothing pre-Fable-5 remains on the markdown/init surface.
+- **Five disciplines** ship on the unmodified core; ADR-002 supervision
+  primitives complete. (Unchanged this session.)
 
 ## Pending / In Progress
 
-- **Nothing in flight.** All steering PRs merged to `development`. No release cut
-  this session (these land in the next `development → main` release).
+- Nothing in flight (no open branches/PRs). Release cut is the next decision.
 
 ## Conventions In Force
 
-- **Scope discipline:** engineering-only. Flag, don't build, anything else.
-- **New discipline = zero core edits.** Drop `modules/<name>/`. If it needs a
-  `module_core/`/`cli/` change, the abstraction is wrong — stop.
+- **UI-first:** every feature reachable via the navigate/pick shell first;
+  commands are secondary shortcuts.
+- **Merge-on-green autonomy:** one PR per thrust; branch → PR → CI →
+  merge-on-green; confirm only at genuine forks. `development` is open for
+  small/local commits; only `main` is PR-protected.
+- **Steering philosophy (Fable-5):** conditions over keyword triggers;
+  boundaries over behavioral micro-tuning; durable state over procedural prose;
+  enforce invariants with exit codes. Project boundaries now have a durable
+  home: specs `## Boundaries & Invariants` → Critical Rules via sync.
+- **Scope discipline:** engineering-only. New discipline = zero core edits.
 - **Layering:** `cli/` → `module_core/` (generic) → `modules/<dept>/`. Lower
-  never imports higher. Branch guard / profiles / lessons all live in
-  `module_core/` (generic); engineering's installer calls them.
-- **Steering philosophy (new this cycle):** conditions over keyword triggers;
-  boundaries over behavioral micro-tuning; durable state (handoff, lessons,
-  tickets, gates) over procedural prose; enforce invariants with exit codes
-  (hooks/CI), not just NEVER-lines. Model-specific scaffolding belongs in the
-  `verbose` profile, not the default.
-- **Testing:** argparse.Namespace + capsys + tmp dirs; wizards out of scope.
-  **Verify CI parity with bare `pytest tests/`** (not `python -m pytest`).
-- **Git:** never commit to `main`/`development`; branch from `development`, PR
-  back; **black is a hard CI gate**. Mark a ticket COMPLETED **in its own branch**
-  so the status rides the PR.
-- **Regen noise:** `AGENT_CONTEXT.md`/host configs carry a `Generated:` timestamp
-  (and can pick up CRLF churn) — `git restore` when the diff is timestamp/EOL-only.
-- SESSION_HANDOFF.md is agent-owned; replace entirely at session end.
-
----
-*Agent-maintained. Replace entirely at session end.*
+  never imports higher (init_planning imports sync_context's heading constant —
+  higher importing lower, correct direction).
+- **Testing:** pure helpers unit-tested; interactive flows driven by scripted
+  fakes/monkeypatched prompts (see `test_init_planning.py`,
+  `test_wizard_focused.py`). Verify CI parity with bare `pytest tests/`.

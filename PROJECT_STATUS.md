@@ -20,12 +20,12 @@ links:
 ```yaml
 project_phase: "Production"
 protogear_enabled: true
-protogear_version: "v0.21.0"
+protogear_version: "v0.22.0"
 framework: "Unknown"
 project_type: "Python"
 initialization_date: "2025-11-21"
-last_release: "v0.21.0"
-release_date: "2026-07-17"
+last_release: "v0.22.0"
+release_date: "2026-07-18"
 current_sprint: null
 current_branch: "main"
 ```
@@ -35,8 +35,6 @@ current_branch: "main"
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
 
-_No active tickets — PROTO-066 just shipped._
-
 ## 🚀 Releases
 
 <!-- Release-scoped supervision gates (release-approval, announcement-approval)
@@ -45,6 +43,7 @@ _No active tickets — PROTO-066 just shipped._
 
 | ID | Date | Release approved by | Announced by |
 |----|------|---------------------|--------------|
+| v0.22.0 | 2026-07-18 | prototowb | prototowb |
 | v0.21.0 | 2026-07-17 | prototowb | prototowb |
 | v0.20.0 | 2026-07-14 | prototowb | prototowb |
 | v0.10.0 | 2026-05-13 | prototowb | prototowb |
@@ -846,6 +845,14 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-090 | Init profile wizard prompt — pg init asks frontier vs verbose interactively | 2026-07-16 | | |
 | PROTO-091 | pg doctor audit — advisory check that the branch-guard pre-commit hook is installed | 2026-07-16 | | |
 | PROTO-092 | pg lessons — interactive browser for the accumulated-knowledge layer (§5.7) | 2026-07-16 | | |
+| PROTO-093 | Wizard under-reports scaffolded files (SESSION_HANDOFF, AGENT_CONTEXT, host mirrors) | 2026-07-17 | | |
+| PROTO-094 | Test isolation: setup tests write host files to repo root (dead Path.cwd patch) | 2026-07-17 | | |
+| PROTO-095 | Harden init: existing-install guard, scope pre-commit tests, drop aider | 2026-07-17 | | |
+| PROTO-096 | Interactive navigable UI shell — navigate/pick home menu (multi-level, breadcrumbs, back-nav, actions) | 2026-07-17 | | |
+| PROTO-097 | Wire Setup actions (init/re-init, sync-context, install hook) into the interactive shell | 2026-07-17 | | |
+| PROTO-098 | Single-page shell mode: clear-and-redraw each screen, pause after actions | 2026-07-17 | | |
+| PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | 2026-07-17 | | |
+| PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | 2026-07-18 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

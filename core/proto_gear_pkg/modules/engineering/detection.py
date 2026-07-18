@@ -18,17 +18,23 @@ def detect_existing_environment(project_dir: Path) -> dict:
     - existing_files: list - List of existing Proto Gear files
     - existing_capabilities: bool - True if .proto-gear/ directory exists
     """
-    proto_gear_files = [
-        "AGENTS.md",
-        "SESSION_HANDOFF.md",
-        "PROJECT_STATUS.md",
-        "BRANCHING.md",
-        "TESTING.md",
-        "CONTRIBUTING.md",
-        "SECURITY.md",
-        "ARCHITECTURE.md",
-        "CODE_OF_CONDUCT.md",
-    ]
+    # Draw the scanned set from the shared scaffold taxonomy so detection can
+    # never drift from what init actually writes (SESSION_HANDOFF.md,
+    # AGENT_CONTEXT.md and the host-config mirrors were previously created but
+    # not detected, so the update wizard reported them as absent/untracked).
+    from .templates import (
+        CORE_ALWAYS_FILES,
+        SYNC_GENERATED_FILES,
+        OPTIONAL_TEMPLATE_FILES,
+    )
+
+    # De-duplicate while preserving order (BRANCHING.md lives in the optional
+    # list; nothing else overlaps).
+    proto_gear_files = list(
+        dict.fromkeys(
+            CORE_ALWAYS_FILES + SYNC_GENERATED_FILES + OPTIONAL_TEMPLATE_FILES
+        )
+    )
 
     existing_files = []
     for filename in proto_gear_files:

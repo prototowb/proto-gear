@@ -129,9 +129,14 @@ def main():
                         with_all=wizard_config.get("with_all", False),
                         core_templates=wizard_config.get("core_templates"),
                         project_description=wizard_config.get("project_description"),
+                        boundaries=wizard_config.get("boundaries"),
+                        conventions=wizard_config.get("conventions"),
                         profile=wizard_config.get(
                             "profile", getattr(args, "profile", "frontier")
                         ),
+                        # `pg init` is a deliberate human action — opt in to
+                        # updating an existing install (see setup guard).
+                        allow_reinit=True,
                     )
                 except KeyboardInterrupt:
                     print(f"\n{Colors.YELLOW}Setup cancelled by user.{Colors.ENDC}")
@@ -190,6 +195,8 @@ def main():
                     with_capabilities=args.with_capabilities,
                     with_all=args.all if hasattr(args, "all") else False,
                     profile=getattr(args, "profile", "frontier"),
+                    # Explicit `pg init` invocation — opt in to reinit.
+                    allow_reinit=True,
                 )
 
             if result["status"] == "success":

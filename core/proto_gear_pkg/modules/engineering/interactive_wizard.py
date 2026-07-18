@@ -10,10 +10,35 @@ from typing import Dict, Any, Optional
 
 # Import template discovery from proto_gear module
 try:
-    from .templates import discover_available_templates
+    from .templates import (
+        discover_available_templates,
+        CORE_ALWAYS_FILES,
+        SYNC_GENERATED_FILES,
+        OPTIONAL_TEMPLATE_FILES,
+        NON_SELECTABLE_TEMPLATES,
+    )
 except ImportError:
     # Fallback if running standalone
     discover_available_templates = None
+    CORE_ALWAYS_FILES = ["AGENTS.md", "SESSION_HANDOFF.md", "PROJECT_STATUS.md"]
+    SYNC_GENERATED_FILES = [
+        "AGENT_CONTEXT.md",
+        "CLAUDE.md",
+        ".cursorrules",
+        ".windsurfrules",
+        ".github/copilot-instructions.md",
+    ]
+    OPTIONAL_TEMPLATE_FILES = [
+        "TESTING.md",
+        "BRANCHING.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "ARCHITECTURE.md",
+        "CODE_OF_CONDUCT.md",
+    ]
+    NON_SELECTABLE_TEMPLATES = frozenset(
+        {"AGENTS", "PROJECT_STATUS", "SESSION_HANDOFF", "AGENT_CONTEXT"}
+    )
 
 try:
     import questionary
@@ -34,83 +59,6 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-
-
-# Preset Configurations for v0.5.2+
-PRESETS = {
-    "quick": {
-        "name": "Quick Start",
-        "emoji": "⚡",
-        "ascii": "[QUICK]",
-        "description": "Recommended for most projects - Core templates + capabilities",
-        "details": [
-            "AGENTS.md - AI agent collaboration",
-            "PROJECT_STATUS.md - State tracking",
-            "TESTING.md - TDD patterns",
-            "BRANCHING.md - If git detected",
-            ".proto-gear/ - Full capability system",
-        ],
-        "config": {
-            "core": ["AGENTS", "PROJECT_STATUS", "TESTING"],
-            "branching": "auto",  # Only if git detected
-            "with_all": False,  # Individual templates
-            "capabilities": True,
-        },
-    },
-    "full": {
-        "name": "Full Setup (All Templates)",
-        "emoji": "📦",
-        "ascii": "[FULL]",
-        "description": "Everything - All 8 templates + full capabilities",
-        "details": [
-            "AGENTS.md + PROJECT_STATUS.md (always included)",
-            "TESTING.md - TDD patterns",
-            "BRANCHING.md - Git workflow conventions",
-            "CONTRIBUTING.md - Contribution guidelines",
-            "SECURITY.md - Security policy",
-            "ARCHITECTURE.md - System design docs",
-            "CODE_OF_CONDUCT.md - Community guidelines",
-            ".proto-gear/ - Full capability system",
-        ],
-        "config": {
-            "core": ["AGENTS", "PROJECT_STATUS"],
-            "branching": True,
-            "with_all": True,  # Generate ALL templates
-            "capabilities": True,
-        },
-    },
-    "minimal": {
-        "name": "Minimal",
-        "emoji": "🎯",
-        "ascii": "[MINIMAL]",
-        "description": "Just the essentials - Core templates only",
-        "details": [
-            "AGENTS.md - AI agent collaboration",
-            "PROJECT_STATUS.md - State tracking",
-            "No additional templates",
-            "No capabilities",
-        ],
-        "config": {
-            "core": ["AGENTS", "PROJECT_STATUS"],
-            "branching": False,
-            "with_all": False,
-            "capabilities": False,
-        },
-    },
-    "custom": {
-        "name": "Custom",
-        "emoji": "🔧",
-        "ascii": "[CUSTOM]",
-        "description": "Full control - Choose exactly what you want",
-        "details": [
-            "Step-by-step configuration",
-            "Select individual templates",
-            "Control all options",
-            "Maximum flexibility",
-        ],
-        "config": None,  # Triggers custom wizard flow
-    },
-}
 
 
 # Capability metadata - what's actually available
@@ -376,158 +324,159 @@ class RichWizard:
 
         return table
 
-    def ask_preset_selection(self, git_detected: bool) -> str:
+    def show_detected_plan(self, plan: Dict) -> None:
+        """Show the detection-driven init plan as a confirmable summary.
+
+        Everything the harness can infer is *shown*, not asked (ADR-004):
+        detected template set with per-file reasons, capabilities, profile,
+        ticket prefix. The operator accepts or drops into Customize.
         """
-        Ask user to select a preset configuration
-        Returns: preset key ('quick', 'full', 'minimal', 'custom')
-        """
-        if not QUESTIONARY_AVAILABLE:
-            # Fallback to simple selection
-            print(f"\n{CHARS['wrench']} Setup Configuration")
-            print("-" * 60)
-            print("\nChoose a preset:")
-            print(
-                f"1. {PRESETS['quick']['ascii']} {PRESETS['quick']['name']} (Recommended)"
+        from .init_planning import plan_files
+
+        rows = plan_files(plan)
+
+        if not RICH_AVAILABLE or not self.console:
+            print(f"\n{CHARS['memo']} Detected Plan")
+            print("=" * 60)
+            for filename, reason in rows:
+                print(f"  {CHARS['check']} {filename}  ({reason})")
+            if plan.get("ticket_prefix"):
+                print(f"\nTicket prefix: {plan['ticket_prefix']}")
+            return
+
+        table = Table(
+            show_header=True,
+            box=box.ROUNDED,
+            title="Detected Plan",
+            title_style="bold cyan",
+        )
+        table.add_column("Will create", style="bold green", no_wrap=True)
+        table.add_column("Why", style="dim")
+        for filename, reason in rows:
+            table.add_row(filename, reason)
+        self.console.print(table)
+        if plan.get("ticket_prefix"):
+            self.console.print(
+                f"[dim]Ticket prefix:[/dim] [bold]{plan['ticket_prefix']}[/bold]"
+                "  [dim](adjustable below)[/dim]"
             )
-            print(f"   {PRESETS['quick']['description']}")
-            print(f"\n2. {PRESETS['full']['ascii']} {PRESETS['full']['name']}")
-            print(f"   {PRESETS['full']['description']}")
-            print(f"\n3. {PRESETS['minimal']['ascii']} {PRESETS['minimal']['name']}")
-            print(f"   {PRESETS['minimal']['description']}")
-            print(f"\n4. {PRESETS['custom']['ascii']} {PRESETS['custom']['name']}")
-            print(f"   {PRESETS['custom']['description']}")
+        self.console.print()
 
+    def ask_plan_choice(self, *, offer_prefix: bool) -> Optional[str]:
+        """Accept the detected plan, adjust the prefix, customize, or cancel."""
+        if not QUESTIONARY_AVAILABLE:
+            options = "y = accept, c = customize, n = cancel" + (
+                ", p = change ticket prefix" if offer_prefix else ""
+            )
             while True:
-                response = input("\nSelect preset (1-4, default=1): ").strip()
-                if not response:
-                    return "quick"
-                if response in ["1", "quick"]:
-                    return "quick"
-                elif response in ["2", "full"]:
-                    return "full"
-                elif response in ["3", "minimal", "min"]:
-                    return "minimal"
-                elif response in ["4", "custom"]:
-                    return "custom"
-                else:
-                    print("Invalid choice. Please enter 1-4.")
+                response = input(f"Proceed with this plan? ({options}): ").lower()
+                if response in ["y", "yes", ""]:
+                    return "accept"
+                if response in ["c", "custom", "customize"]:
+                    return "customize"
+                if offer_prefix and response in ["p", "prefix"]:
+                    return "prefix"
+                if response in ["n", "no", "q"]:
+                    return None
+                print(f"Please enter one of: {options}")
 
-        # Enhanced questionary version
-        description = [
-            "",
-            "Proto Gear can be configured in multiple ways.",
-            "Choose a preset or customize your setup:",
-            "",
+        choices = [
+            questionary.Choice(
+                f"{CHARS['check']} Looks right — scaffold it", value="accept"
+            )
         ]
+        if offer_prefix:
+            choices.append(
+                questionary.Choice(
+                    f"{CHARS['ticket']} Change the ticket prefix", value="prefix"
+                )
+            )
+        choices.append(
+            questionary.Choice(
+                f"{CHARS['wrench']} Customize (advanced — pick files and toggles)",
+                value="customize",
+            )
+        )
+        choices.append(questionary.Choice(f"{CHARS['cross']} Cancel", value=None))
 
+        return questionary.select(
+            "Proceed with this plan?",
+            choices=choices,
+            style=PROTO_GEAR_STYLE,
+        ).ask()
+
+    def _ask_intent_list(self, prompt: str, instruction: str) -> list:
+        """Collect short free-text items until the operator submits a blank line."""
+        items = []
+        while True:
+            if QUESTIONARY_AVAILABLE:
+                answer = questionary.text(
+                    prompt if not items else f"{prompt} (another?)",
+                    style=PROTO_GEAR_STYLE,
+                    instruction=instruction if not items else "Enter to finish",
+                ).ask()
+            else:
+                answer = input(f"{prompt} (Enter to finish): ")
+            if answer is None:  # cancelled prompt — treat as done, not as abort
+                break
+            answer = answer.strip()
+            if not answer:
+                break
+            items.append(answer)
+        return items
+
+    def ask_intent_capture(self, current_dir: Path) -> Dict:
+        """The planning intake: capture the durable, non-derivable facts.
+
+        Three progressive prompts — what the project *is*, what an agent must
+        *never* do, and the non-obvious house conventions. Every prompt is
+        skippable (plain Enter) so init never gets heavier than the old flow;
+        whatever is captured seeds PROJECT_SPECIFICATIONS.md, the Critical
+        Rules, and a first lesson (ADR-004).
+        """
         if self.console:
             self.print_panel(
-                "\n".join(description),
-                title=f"{CHARS['wrench']} Setup Configuration",
+                "\n".join(
+                    [
+                        "",
+                        "The mechanical choices are detected — the next few prompts",
+                        "capture what an agent [bold]cannot derive[/bold] from the code.",
+                        "",
+                        "[dim]Every prompt is optional: press Enter to skip.[/dim]",
+                        "",
+                    ]
+                ),
+                title=f"{CHARS['memo']} Planning Intake",
                 border_style="cyan",
             )
-
-        # Build choices with details
-        choices = []
-        for key in ["quick", "full", "minimal", "custom"]:
-            preset = PRESETS[key]
-            # Use emoji or ASCII fallback
-            icon = (
-                preset["emoji"]
-                if sys.stdout.encoding and "UTF" in sys.stdout.encoding.upper()
-                else preset["ascii"]
+        else:
+            print(f"\n{CHARS['memo']} Planning Intake")
+            print("-" * 50)
+            print(
+                "Capture what an agent cannot derive. Press Enter to skip any prompt."
             )
-            choice_text = f"{icon} {preset['name']} - {preset['description']}"
-            choices.append(questionary.Choice(choice_text, value=key))
 
-        answer = questionary.select(
-            "Select configuration preset:",
-            choices=choices,
-            default=choices[0],  # Quick Start is default
-            style=PROTO_GEAR_STYLE if QUESTIONARY_AVAILABLE else None,
-        ).ask()
+        intent: Dict = {}
 
-        return answer if answer is not None else "quick"
+        description = self.ask_project_specifications(current_dir)
+        if description:
+            intent["project_description"] = description
 
-    def show_preset_preview(self, preset_key: str, git_detected: bool) -> bool:
-        """
-        Show what the preset will create and ask for confirmation
-        Returns: True to continue, False to go back
-        """
-        preset = PRESETS[preset_key]
-
-        if not RICH_AVAILABLE:
-            # Fallback display
-            print(f"\n{CHARS['memo']} Preset: {preset['name']}")
-            print("=" * 60)
-            print(f"\n{preset['description']}\n")
-            print("What will be created:")
-            for detail in preset["details"]:
-                print(f"  {CHARS['bullet']} {detail}")
-            print()
-
-            while True:
-                response = input(
-                    "Continue with this preset? (y/n, or 'b' to go back): "
-                ).lower()
-                if response in ["y", "yes", ""]:
-                    return True
-                elif response in ["n", "no"]:
-                    return False
-                elif response == "b":
-                    return False
-                else:
-                    print("Please enter 'y', 'n', or 'b'")
-
-        # Rich version
-        icon = (
-            preset["emoji"]
-            if sys.stdout.encoding and "UTF" in sys.stdout.encoding.upper()
-            else preset["ascii"]
+        boundaries = self._ask_intent_list(
+            "Boundary / invariant — what must an agent NEVER do here?",
+            "e.g. 'NEVER commit generated fixtures' — becomes a Critical Rule",
         )
+        if boundaries:
+            intent["boundaries"] = boundaries
 
-        # Build preview content
-        content_lines = [
-            f"[bold]{preset['description']}[/bold]",
-            "",
-            "[bold cyan]What will be created:[/bold cyan]",
-            "",
-        ]
-
-        for detail in preset["details"]:
-            # Handle git-conditional branching
-            if "If git detected" in detail:
-                if git_detected:
-                    content_lines.append(
-                        f"  {CHARS['check']} {detail.replace('If git detected', 'Git detected')}"
-                    )
-                else:
-                    content_lines.append(
-                        f"  [dim]{CHARS['cross']} {detail.replace('If git detected', 'No git repo')}"
-                    )
-            else:
-                content_lines.append(f"  {CHARS['bullet']} {detail}")
-
-        self.print_panel(
-            "\n".join(content_lines),
-            title=f"{icon} {preset['name']}",
-            border_style="cyan",
+        conventions = self._ask_intent_list(
+            "House convention — a non-obvious rule of this codebase?",
+            "e.g. 'all timestamps are UTC ints' — seeds specs + a first lesson",
         )
+        if conventions:
+            intent["conventions"] = conventions
 
-        answer = questionary.select(
-            "What would you like to do?",
-            choices=[
-                questionary.Choice(
-                    f"{CHARS['check']} Continue with this preset", value="continue"
-                ),
-                questionary.Choice(
-                    f"{CHARS['cross']} Go back to preset selection", value="back"
-                ),
-            ],
-            style=PROTO_GEAR_STYLE if QUESTIONARY_AVAILABLE else None,
-        ).ask()
-
-        return answer == "continue"
+        return intent
 
     def ask_capabilities_system(self) -> bool:
         """Ask user if they want Universal Capabilities System"""
@@ -681,11 +630,12 @@ class RichWizard:
         available_templates = {}
         if discover_available_templates:
             discovered = discover_available_templates()
-            # Filter out core files (always included — not optional)
+            # Filter out files that are always written or regenerated by
+            # sync_context (AGENTS, PROJECT_STATUS, SESSION_HANDOFF,
+            # AGENT_CONTEXT) — offering them as optional templates was wrong;
+            # the user cannot opt out and sync_context overwrites them anyway.
             available_templates = {
-                k: v
-                for k, v in discovered.items()
-                if k not in ["AGENTS", "PROJECT_STATUS", "SESSION_HANDOFF"]
+                k: v for k, v in discovered.items() if k not in NON_SELECTABLE_TEMPLATES
             }
         else:
             # Fallback to hardcoded list
@@ -1364,17 +1314,15 @@ class RichWizard:
         self, config: Dict, project_info: Dict, current_dir: Path
     ) -> bool:
         """Display configuration summary and ask for confirmation"""
+        # Only the custom path reaches this summary since ADR-004 (the
+        # detected-plan path confirms on the plan itself); "custom" governs
+        # whether unselected templates are shown as dimmed rows.
         preset = config.get("preset", "custom")
 
         if not RICH_AVAILABLE:
             # Fallback
             print(f"\n{CHARS['memo']} Configuration Summary")
             print("=" * 60)
-            if preset != "custom":
-                preset_info = PRESETS.get(preset, {})
-                print(
-                    f"Preset: {preset_info.get('ascii', '')} {preset_info.get('name', preset)}"
-                )
             print(f"Project: {current_dir.name}")
             print(f"Type: {project_info.get('type', 'Generic')}")
             if project_info.get("framework"):
@@ -1417,14 +1365,6 @@ class RichWizard:
         table.add_column("Setting", style="bold cyan", no_wrap=True)
         table.add_column("Value", style="green")
 
-        # Show preset if not custom
-        if preset != "custom":
-            preset_info = PRESETS.get(preset, {})
-            preset_display = (
-                f"{preset_info.get('emoji', '')} {preset_info.get('name', preset)}"
-            )
-            table.add_row("Preset", preset_display)
-
         table.add_row("Project", current_dir.name)
         table.add_row("Type", project_info.get("type", "Generic"))
         if project_info.get("framework"):
@@ -1450,8 +1390,10 @@ class RichWizard:
         if config.get("with_capabilities") and config.get("profile"):
             table.add_row("Profile", config["profile"])
 
+        # Always-written core files (created regardless of template selection).
         files_list = [
             f"{CHARS['check']} AGENTS.md (AI agent integration guide)",
+            f"{CHARS['check']} SESSION_HANDOFF.md (rolling session handoff)",
             f"{CHARS['check']} PROJECT_STATUS.md (Project state tracking)",
         ]
 
@@ -1525,6 +1467,16 @@ class RichWizard:
                 files_list.append(
                     f"[dim]{CHARS['cross']} CODE_OF_CONDUCT.md (not selected)[/dim]"
                 )
+
+        # Agent context + host-config mirrors are always generated by
+        # sync_context. Surface them so the summary matches what init writes.
+        files_list.append(f"{CHARS['check']} AGENT_CONTEXT.md (auto-loaded agent skim)")
+        host_mirrors = ", ".join(
+            f for f in SYNC_GENERATED_FILES if f != "AGENT_CONTEXT.md"
+        )
+        files_list.append(
+            f"{CHARS['check']} Host configs synced ([dim]{host_mirrors}[/dim])"
+        )
 
         # Handle granular capabilities
         capabilities_config = config.get("capabilities_config", {})
@@ -1636,10 +1588,17 @@ class RichWizard:
 def run_enhanced_wizard(
     project_info: Dict, git_config: Dict, current_dir: Path
 ) -> Optional[Dict]:
+    """Fresh-init planning intake (ADR-004 / PROTO-100).
+
+    The interaction is inverted from the old preset configurator: the
+    mechanical choices (which files, which toggles) are *detected* and shown
+    as one confirmable plan, while the prompts capture the durable,
+    non-derivable facts — what the project is, its boundaries/invariants, and
+    house conventions. ``Customize`` keeps the old granular wizard as the
+    advanced escape hatch. Returns a configuration dict or None if cancelled.
     """
-    Run the enhanced interactive wizard with rich UI (v0.4.1 with presets)
-    Returns configuration dict or None if cancelled
-    """
+    from .init_planning import build_detected_plan
+
     wizard = RichWizard()
 
     # Clear screen for single-page app experience
@@ -1647,17 +1606,15 @@ def run_enhanced_wizard(
 
     # Print header
     if wizard.console:
-        wizard.console.print(
-            "\n[bold cyan]ProtoGear Interactive Setup Wizard[/bold cyan]"
-        )
+        wizard.console.print("\n[bold cyan]ProtoGear Planning Intake[/bold cyan]")
         wizard.console.print("[dim]" + "=" * 60 + "[/dim]\n")
         wizard.console.print(
-            "[dim]Let's configure AI-powered development workflow for your project[/dim]\n"
+            "[dim]Detect the mechanical setup, capture the durable intent[/dim]\n"
         )
     else:
-        print("\nProtoGear Interactive Setup Wizard")
+        print("\nProtoGear Planning Intake")
         print("=" * 60)
-        print("Let's configure AI-powered development workflow for your project\n")
+        print("Detect the mechanical setup, capture the durable intent\n")
 
     # Show project detection
     project_panel = wizard.create_project_info_panel(
@@ -1667,78 +1624,58 @@ def run_enhanced_wizard(
         project_panel, title=f"{CHARS['chart']} Project Detection", border_style="cyan"
     )
 
-    git_detected = git_config.get("is_git_repo", False)
-
-    # Ask about project specifications document (before preset selection)
-    config = {}
-    wizard.clear_screen()
+    # The intake spine: durable, non-derivable facts first (ADR-004 move 2).
+    config: Dict = {}
     try:
-        specs_source = wizard.ask_project_specifications(current_dir)
-        if specs_source:
-            config["project_description"] = specs_source
+        config.update(wizard.ask_intent_capture(current_dir))
     except KeyboardInterrupt:
         return None
 
-    # NEW: Ask for preset selection
+    # Detection-driven plan, presented as one confirmable summary (move 1).
+    plan = build_detected_plan(project_info, git_config, current_dir)
     while True:
+        wizard.clear_screen()
+        wizard.show_detected_plan(plan)
         try:
-            preset_key = wizard.ask_preset_selection(git_detected)
+            choice = wizard.ask_plan_choice(
+                offer_prefix=bool(plan.get("with_branching"))
+            )
         except KeyboardInterrupt:
             return None
 
-        # If custom, skip preview and go to detailed wizard
-        if preset_key == "custom":
+        if choice is None:
+            return None
+        if choice == "prefix":
+            try:
+                plan["ticket_prefix"] = wizard.ask_ticket_prefix(
+                    plan.get("ticket_prefix") or "PROJ"
+                )
+            except KeyboardInterrupt:
+                return None
+            continue  # redraw the plan with the new prefix
+        if choice == "accept":
+            config.update(
+                {
+                    "with_branching": plan["with_branching"],
+                    "ticket_prefix": plan["ticket_prefix"],
+                    "with_capabilities": plan["with_capabilities"],
+                    "profile": plan["profile"],
+                    "core_templates": dict(plan["core_templates"]),
+                    "confirmed": True,
+                }
+            )
+            return config
+        if choice == "customize":
             break
 
-        # Show preset preview and get confirmation
-        try:
-            continue_with_preset = wizard.show_preset_preview(preset_key, git_detected)
-            if continue_with_preset:
-                # User confirmed preset, apply configuration
-                preset_config = PRESETS[preset_key]["config"]
-                preset_result = _apply_preset_config(
-                    preset_config, git_detected, current_dir
-                )
-                preset_result["preset"] = preset_key
-                preset_result.update(
-                    {k: v for k, v in config.items() if k not in preset_result}
-                )
-                config = preset_result
-
-                # If branching is enabled, ask for ticket prefix
-                if config.get("with_branching"):
-                    wizard.clear_screen()
-                    wizard.show_step_header(
-                        1, 1, "Git Configuration", project_info, current_dir
-                    )
-                    try:
-                        ticket_prefix = wizard.ask_ticket_prefix(
-                            config.get("ticket_prefix", "PROJ")
-                        )
-                        config["ticket_prefix"] = ticket_prefix
-                    except KeyboardInterrupt:
-                        return None
-
-                # If capabilities are enabled, ask for the output profile
-                if config.get("with_capabilities"):
-                    wizard.clear_screen()
-                    try:
-                        config["profile"] = wizard.ask_capability_profile()
-                    except KeyboardInterrupt:
-                        return None
-
-                config["confirmed"] = True
-                return config
-            else:
-                # User wants to go back, loop to preset selection again
-                continue
-        except KeyboardInterrupt:
-            return None
-
-    # CUSTOM PATH: Granular selection wizard
+    # CUSTOM PATH: Granular selection wizard (the advanced escape hatch).
     config = {
         "preset": "custom",
-        **{k: v for k, v in config.items() if k == "project_description"},
+        **{
+            k: v
+            for k, v in config.items()
+            if k in ("project_description", "boundaries", "conventions")
+        },
     }
 
     # Stage 1: Core Templates Selection
@@ -1808,46 +1745,6 @@ def run_enhanced_wizard(
     return config
 
 
-def _apply_preset_config(
-    preset_config: Dict, git_detected: bool, current_dir: Path
-) -> Dict:
-    """
-    Convert preset configuration to actual config dict
-    """
-    config = {}
-
-    # Handle branching
-    if preset_config["branching"] == "auto":
-        config["with_branching"] = git_detected
-    else:
-        config["with_branching"] = preset_config["branching"]
-
-    # Set ticket prefix if branching enabled
-    if config["with_branching"]:
-        suggested_prefix = (
-            current_dir.name.upper().replace("-", "").replace("_", "")[:6]
-        )
-        if not suggested_prefix or len(suggested_prefix) < 2:
-            suggested_prefix = "PROJ"
-        config["ticket_prefix"] = suggested_prefix
-    else:
-        config["ticket_prefix"] = None
-
-    # Capabilities
-    config["with_capabilities"] = preset_config["capabilities"]
-
-    # All templates flag (v0.5.2+)
-    config["with_all"] = preset_config.get("with_all", False)
-
-    # Core templates (for custom path compatibility)
-    # When with_all is True, leave core_templates unset so the with_all branch
-    # in setup_agent_framework_only fires instead of being short-circuited.
-    if not config["with_all"]:
-        config["core_templates"] = preset_config.get("core", {})
-
-    return config
-
-
 def run_incremental_wizard(
     existing_env: Dict, project_info: Dict, git_config: Dict, current_dir: Path
 ) -> Optional[Dict]:
@@ -1887,8 +1784,18 @@ def run_incremental_wizard(
         table.add_column("Component", style="cyan")
         table.add_column("Status", style="green")
 
-        # Core templates
-        for template in ["AGENTS.md", "PROJECT_STATUS.md"]:
+        # Core files (always written by init; missing == red, they should exist)
+        for template in CORE_ALWAYS_FILES + ["AGENT_CONTEXT.md"]:
+            status = (
+                "✓ Installed"
+                if template in existing_env["existing_files"]
+                else "✗ Missing"
+            )
+            style = "green" if template in existing_env["existing_files"] else "red"
+            table.add_row(template, f"[{style}]{status}[/{style}]")
+
+        # Host-config mirrors (generated/refreshed by sync_context)
+        for template in [f for f in SYNC_GENERATED_FILES if f != "AGENT_CONTEXT.md"]:
             status = (
                 "✓ Installed"
                 if template in existing_env["existing_files"]
@@ -1898,15 +1805,7 @@ def run_incremental_wizard(
             table.add_row(template, f"[{style}]{status}[/{style}]")
 
         # Optional templates
-        optional = [
-            "TESTING.md",
-            "BRANCHING.md",
-            "CONTRIBUTING.md",
-            "SECURITY.md",
-            "ARCHITECTURE.md",
-            "CODE_OF_CONDUCT.md",
-        ]
-        for template in optional:
+        for template in OPTIONAL_TEMPLATE_FILES:
             status = (
                 "✓ Installed"
                 if template in existing_env["existing_files"]
@@ -1932,16 +1831,7 @@ def run_incremental_wizard(
         # Fallback text output with encoding-safe characters
         print("Current Installation:")
         print("-" * 60)
-        for f in [
-            "AGENTS.md",
-            "PROJECT_STATUS.md",
-            "TESTING.md",
-            "BRANCHING.md",
-            "CONTRIBUTING.md",
-            "SECURITY.md",
-            "ARCHITECTURE.md",
-            "CODE_OF_CONDUCT.md",
-        ]:
+        for f in CORE_ALWAYS_FILES + SYNC_GENERATED_FILES + OPTIONAL_TEMPLATE_FILES:
             try:
                 status = "✓" if f in existing_env["existing_files"] else "✗"
                 print(f"  {status} {f}")
@@ -1970,23 +1860,27 @@ def run_incremental_wizard(
     if QUESTIONARY_AVAILABLE:
         action_choices = []
 
-        # Find missing templates
-        all_templates = [
-            "TESTING.md",
-            "BRANCHING.md",
-            "CONTRIBUTING.md",
-            "SECURITY.md",
-            "ARCHITECTURE.md",
-            "CODE_OF_CONDUCT.md",
-        ]
+        # Find missing files. Only optional templates are passed to setup as
+        # template *selections*; the always-written core files and the
+        # sync_context-generated mirrors (AGENT_CONTEXT.md, CLAUDE.md, …) are
+        # self-healed by setup_agent_framework_only regardless of selection, so
+        # they only need to count toward the "something is missing" trigger.
         missing_templates = [
-            t for t in all_templates if t not in existing_env["existing_files"]
+            t
+            for t in OPTIONAL_TEMPLATE_FILES
+            if t not in existing_env["existing_files"]
         ]
+        missing_core = [
+            t
+            for t in (CORE_ALWAYS_FILES + SYNC_GENERATED_FILES)
+            if t not in existing_env["existing_files"]
+        ]
+        total_missing = len(missing_templates) + len(missing_core)
 
-        if missing_templates:
+        if total_missing:
             action_choices.append(
                 {
-                    "name": f"{CHARS['plus']} Add missing templates ({len(missing_templates)} available)",
+                    "name": f"{CHARS['plus']} Add missing files ({total_missing} missing)",
                     "value": "add_missing",
                 }
             )
@@ -2079,9 +1973,10 @@ def run_incremental_wizard(
             # Keep existing capabilities setting
 
         elif action == "custom":
-            # Let user choose specific templates
+            # Let user choose specific templates (optional templates only; core
+            # and sync-generated files are always managed by init/sync_context).
             template_choices = []
-            for t in all_templates:
+            for t in OPTIONAL_TEMPLATE_FILES:
                 if t in existing_env["existing_files"]:
                     template_choices.append(
                         {"name": f"{t} (update existing)", "value": t, "checked": False}
@@ -2178,16 +2073,12 @@ def run_incremental_wizard(
         }
 
         if choice == "1":
-            all_templates = [
-                "TESTING.md",
-                "BRANCHING.md",
-                "CONTRIBUTING.md",
-                "SECURITY.md",
-                "ARCHITECTURE.md",
-                "CODE_OF_CONDUCT.md",
-            ]
+            # Only optional templates are passed as selections; core and
+            # sync-generated files are self-healed by setup regardless.
             missing_templates = [
-                t for t in all_templates if t not in existing_env["existing_files"]
+                t
+                for t in OPTIONAL_TEMPLATE_FILES
+                if t not in existing_env["existing_files"]
             ]
             config["core_templates"] = missing_templates
 
