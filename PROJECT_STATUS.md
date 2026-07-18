@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-101 | Dogfood frontier-era init: repo Boundaries & Invariants → Critical Rules | feature | PENDING | feature/proto-101-dogfood-frontier-era-init-repo-boundarie |  |
 
 ## 🚀 Releases
 
@@ -854,6 +853,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-098 | Single-page shell mode: clear-and-redraw each screen, pause after actions | 2026-07-17 | | |
 | PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | 2026-07-17 | | |
 | PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | 2026-07-18 | | |
+| PROTO-101 | Dogfood frontier-era init: repo Boundaries & Invariants → Critical Rules | 2026-07-18 | #73 | prototowb |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**

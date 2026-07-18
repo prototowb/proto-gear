@@ -6,21 +6,35 @@
 
 ## ▶ Start here (next session)
 
-**v0.22.0 is shipped.** The release is cut, tagged, and live on GitHub; `main`
-and `development` are **in sync** (0/0). There is **no teed-up next thrust**. The
-natural candidates, in rough priority order:
+**v0.22.0 is shipped and PROTO-101 (dogfood) has landed on `development`.** The
+release is live on GitHub; `development` is **3 commits ahead of `main`**
+(post-release feature accumulation — handoff + PROTO-101). There is **no teed-up
+next thrust**. The natural candidates, in rough priority order:
 
-1. **Dogfood the frontier-era init intake** (the standout): proto-gear's own
-   `PROJECT_SPECIFICATIONS.md` still has no `## Boundaries & Invariants` section.
-   Adding one pushes repo-specific boundaries into the generated Critical Rules
-   of every host mirror via the sync bridge (`sync_context.read_project_boundaries`,
-   heading constant `BOUNDARIES_HEADING`). Do this deliberately — it changes
-   AGENT_CONTEXT.md for every agent. This is the first real consumer of the
-   PROTO-100 machinery.
-2. **A new capability thrust** — open a fresh PROTO ticket. No specific gap is
+1. **A new capability thrust** — open a fresh PROTO ticket. No specific gap is
    pending; pick from product judgment.
+2. **Cut v0.23.0 eventually** — once enough post-v0.22.0 work accumulates on
+   `development`. PROTO-101 alone doesn't warrant a release.
 3. Speculative-only backlog: a `standard` middle output profile between
    `frontier` and `verbose` — build only if a consumer needs it.
+
+## Just shipped — PROTO-101: dogfood the Boundaries & Invariants bridge (PR #73)
+
+First real consumer of the PROTO-100 sync bridge. Added a curated
+`## Boundaries & Invariants` section to proto-gear's own
+`PROJECT_SPECIFICATIONS.md`; its **four** top-level bullets now fold into the
+generated **Critical Rules** (`sync_context._build_critical_rules`) and mirror
+into every host config on `pg sync-context`. Promoted set (kept deliberately
+small): engineering-scope-only, layering, zero-core-edits, UI-first.
+
+**Design note worth keeping**: promoting all six candidate boundaries pushed the
+generated block ~128 tokens over `AGENT_CONTEXT_TOKEN_BUDGET` (1800). The
+disciplined resolution — dogfooding the block's own "keep the skim a skim"
+philosophy — was to promote only invariants an agent doing real work could
+*cross*, and leave lower-risk ones (`pg` executes nothing from bundles; AGENTS.md
+single entry point) documented in Principles/Non-Goals. Block now sits at exactly
+**1800/1800**; `pg doctor` green (32 checks, 0 warnings). The section intro
+records this rationale so a future editor doesn't naively re-expand it.
 
 ## Shipped this session — v0.22.0 release (PR #72)
 
