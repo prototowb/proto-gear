@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | feature | IN_PROGRESS | feature/proto-100-frontier-era-init-planning-reframe-pg-in |  |
 
 ## 🚀 Releases
 
@@ -852,6 +851,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-097 | Wire Setup actions (init/re-init, sync-context, install hook) into the interactive shell | 2026-07-17 | | |
 | PROTO-098 | Single-page shell mode: clear-and-redraw each screen, pause after actions | 2026-07-17 | | |
 | PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | 2026-07-17 | | |
+| PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | 2026-07-18 | | |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
