@@ -34,7 +34,6 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
-| PROTO-102 | Supervision inbox — cross-discipline pending-approvals queue (pg inbox + Home) | feature | PENDING | feature/proto-102-supervision-inbox-cross-discipline-pendi |  |
 
 ## 🚀 Releases
 
@@ -855,6 +854,7 @@ pg agent delete testing-agent # Deletes agent (with confirmation)
 | PROTO-099 | Guided re-init in the shell: install-state pane + dry-run preview, then Refresh / Full re-init / Cancel | 2026-07-17 | | |
 | PROTO-100 | Frontier-era init planning: reframe pg init from template configurator to state-elicitation (ADR-004) | 2026-07-18 | | |
 | PROTO-101 | Dogfood frontier-era init: repo Boundaries & Invariants → Critical Rules | 2026-07-18 | #73 | prototowb |
+| PROTO-102 | Supervision inbox — cross-discipline pending-approvals queue (pg inbox + Home) | 2026-07-18 | #74 | prototowb |
 
 ### PROTO-024 Details (v0.7.3)
 **Comprehensive Template Improvements**
