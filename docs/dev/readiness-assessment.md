@@ -1,10 +1,21 @@
 # Proto Gear - Readiness Assessment
 
-**Current Version**: v0.21.0 (Production Ready)
-**Assessment Date**: 2026-07-17
+**Current Version**: v0.22.0 (Production Ready)
+**Assessment Date**: 2026-07-18
 **Previous Assessment**: v0.10.0 (2026-05-13)
 
-> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system; v0.20.0 added the departmental module platform, supervision primitives, a UI-first surface, and dynamic orchestration; v0.21.0 reworked the markdown steering surface against the Fable 5 guidance — see the *Update* sections below). A full per-category rescore is captured for a future session — none of the earlier scores would *decrease*.
+> **Note**: The detailed scoring below reflects v0.8.0 metrics. The capabilities and quality bar have only grown since (v0.9.0 added the agent-agnostic self-config protocol; v0.10.0 added the indexing & discovery system; v0.20.0 added the departmental module platform, supervision primitives, a UI-first surface, and dynamic orchestration; v0.21.0 reworked the markdown steering surface against the Fable 5 guidance; v0.22.0 made the human surface UI-first and reframed init as a planning intake — see the *Update* sections below). A full per-category rescore is captured for a future session — none of the earlier scores would *decrease*.
+
+## v0.22.0 Update (2026-07-18)
+
+**Shipped**: An interactive-shell & frontier-era-init release — a navigate/pick home shell makes proto-gear UI-first (every action reachable by selection), and fresh `pg init` is reframed from a template configurator into a state-elicitation planning intake (ADR-004, accepted). Builds directly on the v0.21.0 steering framework.
+
+**Net change since v0.21.0**:
+- ✅ Test count **1106 → 1164 passing**; `pg doctor` green (32 checks); `black` clean; full macOS/Linux/Windows × Python 3.8–3.12 CI parity held
+- ✅ **UI-first interactive shell (PROTO-096–099)** — bare `pg` opens a navigate/pick home menu (`module_core/nav.py`); Setup fronts the real `pg init`/re-init; single-page clear-and-redraw rendering; guided init/re-init in the shell
+- ✅ **Frontier-era init planning (PROTO-100, ADR-004)** — state-elicitation intake (intent → boundaries → conventions) over one confirmable detected plan; intent lands in durable state (specs stub, `## Boundaries & Invariants` → Critical Rules via sync, seed lesson); Quick/Full/Minimal presets deleted
+- ✅ **Existing-install guard + housekeeping (PROTO-093–095)** — init/update track SESSION_HANDOFF/AGENT_CONTEXT + host mirrors; existing-install guard + scoped pre-commit hook; aider host config dropped; setup-test isolation
+- ➖ No breaking changes; all additive and backwards-compatible (non-interactive `pg init --flags` and all CLI commands unchanged)
 
 ## v0.21.0 Update (2026-07-17)
 

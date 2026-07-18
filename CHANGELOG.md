@@ -5,6 +5,58 @@ All notable changes to Proto Gear will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-07-18
+
+**Interactive-shell & frontier-era init release.** Makes proto-gear UI-first — a
+navigate/pick home shell fronts every action — and reframes fresh `pg init` from a
+template configurator into a state-elicitation planning intake (ADR-004). Builds on
+the v0.21.0 steering framework; additive and backwards-compatible (non-interactive
+`pg init --flags` and all CLI commands unchanged). 1164 tests; `pg doctor` green;
+full macOS/Linux/Windows × Python 3.8–3.12 CI parity.
+
+### Added — Interactive UI shell (PROTO-096–099)
+
+- **Navigable home shell (PROTO-096)**: bare `pg` in a TTY opens a navigate/pick
+  home menu (questionary + rich, in `module_core/nav.py`) instead of printing help —
+  every feature reachable by selection, commands are secondary shortcuts.
+- **Setup actions wired in (PROTO-097)**: the shell's Setup section fronts the real
+  `pg init` / re-init subprocess, so setup is reachable UI-first with no shell rewrite.
+- **Single-page shell mode (PROTO-098)**: clear-and-redraw rendering with a pause
+  after actions, so the shell reads as one stable surface rather than scrolling output.
+- **Guided init/re-init in the shell (PROTO-099)**: Setup → Init runs the guided
+  wizard, including the incremental re-init path for existing installs.
+
+### Added — Frontier-era init planning (PROTO-100, ADR-004)
+
+- **State-elicitation intake** replaces the Quick/Full/Minimal preset configurator.
+  Fresh `pg init` runs a skippable intent capture (one-liner → boundaries loop →
+  conventions loop), then presents one confirmable detection-driven plan
+  (Accept / Change prefix / Customize / Cancel). New pure module
+  `modules/engineering/init_planning.py`, unit-tested directly.
+- **Intent lands in durable state**: description → specs stub; boundaries → specs
+  `## Boundaries & Invariants` (parsed by `sync_context` into the generated Critical
+  Rules on every sync); conventions → specs + a seed lesson
+  `.proto-gear/lessons/house-conventions.md`. ADR-004 accepted.
+- **Existing-install guard (PROTO-095)**: `pg init` guards against clobbering an
+  existing install (force / allow-reinit flags) and installs a scoped branch-guard
+  pre-commit hook.
+
+### Changed
+
+- **init/update track more state files (PROTO-093)**: `pg init` and the update wizard
+  now track `SESSION_HANDOFF.md`, `AGENT_CONTEXT.md`, and the host mirrors so they no
+  longer drift out of the managed set.
+- **Dropped the aider host config**: aider-specific config generation removed
+  (PROTO-095) — the supported host set is CLAUDE.md, .cursorrules, .windsurfrules,
+  and GitHub Copilot instructions.
+
+### Fixed
+
+- **Test isolation (PROTO-094)**: setup tests no longer rewrite the repo's own host
+  files when run, removing a source of spurious working-tree churn.
+
+**Full Changelog**: https://github.com/prototowb/proto-gear/compare/v0.21.0...v0.22.0
+
 ## [0.21.0] - 2026-07-17
 
 **Steering-framework release.** Reworks proto-gear's markdown steering surface against the Claude Fable 5 prompting guidance — *shrink procedural prose, grow durable state and machine-checked boundaries* — then adds the interactive/enforcement follow-ons that make the new surfaces reachable and self-auditing. 1106 tests; `pg doctor` green; full macOS/Linux/Windows × Python 3.8–3.12 CI parity.
