@@ -17,9 +17,8 @@ from proto_gear_pkg.proto_gear import (
 from proto_gear_pkg.modules.engineering.interactive_wizard import (
     RichWizard,
     run_enhanced_wizard,
-    _apply_preset_config,
-    PRESETS,
 )
+from proto_gear_pkg.modules.engineering.init_planning import build_detected_plan
 
 # ============================================================================
 # Wizard Essential Tests (10 tests)
@@ -35,37 +34,18 @@ class TestWizardEssentials:
         assert wizard is not None
         assert hasattr(wizard, "config")
 
-    def test_preset_definitions_exist(self):
-        """Test all presets are defined"""
-        assert "quick" in PRESETS
-        assert "full" in PRESETS
-        assert "minimal" in PRESETS
-        assert "custom" in PRESETS
+    def test_detected_plan_with_git(self, tmp_path):
+        """Detection-driven plan enables branching + capabilities on a git repo"""
+        plan = build_detected_plan({}, {"is_git_repo": True}, tmp_path)
+        assert plan["with_branching"] is True
+        assert plan["with_capabilities"] is True
+        assert "core_templates" in plan
 
-    def test_apply_quick_preset_with_git(self, tmp_path):
-        """Test applying quick preset with git"""
-        config = _apply_preset_config(
-            PRESETS["quick"]["config"], git_detected=True, current_dir=tmp_path
-        )
-        assert "core_templates" in config
-        assert config["with_branching"] is True
-
-    def test_apply_minimal_preset(self, tmp_path):
-        """Test applying minimal preset"""
-        config = _apply_preset_config(
-            PRESETS["minimal"]["config"], git_detected=False, current_dir=tmp_path
-        )
-        assert config["with_branching"] is False
-        assert config["with_capabilities"] is False
-
-    def test_presets_properly_structured(self):
-        """Test that all presets have proper structure"""
-        from proto_gear_pkg.modules.engineering.interactive_wizard import PRESETS
-
-        for preset_name, preset_data in PRESETS.items():
-            assert "name" in preset_data
-            assert "description" in preset_data
-            assert "config" in preset_data
+    def test_detected_plan_without_git(self, tmp_path):
+        """No git → no branching, but capabilities stay on"""
+        plan = build_detected_plan({}, {"is_git_repo": False}, tmp_path)
+        assert plan["with_branching"] is False
+        assert plan["with_capabilities"] is True
 
     def test_wizard_has_ui_methods(self):
         """Test wizard has essential UI methods"""
@@ -74,12 +54,12 @@ class TestWizardEssentials:
         assert hasattr(wizard, "print_panel")
         assert hasattr(wizard, "create_project_info_panel")
 
-    def test_wizard_preset_config_structure(self):
-        """Test preset configs have required fields"""
-        for preset_key, preset in PRESETS.items():
-            assert "name" in preset
-            assert "config" in preset
-            assert "description" in preset
+    def test_wizard_has_intake_methods(self):
+        """The planning-intake surface exists (ADR-004)"""
+        wizard = RichWizard()
+        assert hasattr(wizard, "ask_intent_capture")
+        assert hasattr(wizard, "show_detected_plan")
+        assert hasattr(wizard, "ask_plan_choice")
 
 
 # ============================================================================
@@ -175,10 +155,12 @@ class TestPackageIntegration:
 
     def test_constants_available(self):
         """Test important constants are available"""
-        from proto_gear_pkg.modules.engineering.interactive_wizard import PRESETS
+        from proto_gear_pkg.modules.engineering.interactive_wizard import (
+            CAPABILITIES_METADATA,
+        )
 
-        assert PRESETS is not None
-        assert len(PRESETS) > 0
+        assert CAPABILITIES_METADATA is not None
+        assert len(CAPABILITIES_METADATA) > 0
 
 
 if __name__ == "__main__":

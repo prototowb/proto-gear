@@ -129,6 +129,8 @@ def main():
                         with_all=wizard_config.get("with_all", False),
                         core_templates=wizard_config.get("core_templates"),
                         project_description=wizard_config.get("project_description"),
+                        boundaries=wizard_config.get("boundaries"),
+                        conventions=wizard_config.get("conventions"),
                         profile=wizard_config.get(
                             "profile", getattr(args, "profile", "frontier")
                         ),
