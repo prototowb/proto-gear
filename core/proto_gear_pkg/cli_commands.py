@@ -963,6 +963,27 @@ def _doctor_badge() -> str:
     return "ok"
 
 
+def _inbox_badge() -> str:
+    """A short pending-approvals badge for the Inbox row (``3 pending`` / ``clear``).
+
+    Reads the supervision inbox once, when the home screen is built. Fully
+    guarded: any failure (e.g. run outside an initialised project) yields no
+    badge rather than breaking the menu.
+    """
+    try:
+        from .module_core import inbox
+
+        items = inbox.collect_inbox(Path("."))
+    except Exception:
+        return ""
+    return f"{len(items)} pending" if items else "clear"
+
+
+def _action_inbox() -> None:
+    """Show the supervision inbox (reuses the CLI renderer)."""
+    cmd_inbox(_args_ns(json=False))
+
+
 def _action_doctor() -> None:
     """Run the drift audit and print a concise, coloured summary."""
     try:
@@ -1296,6 +1317,13 @@ def _build_home_screen():
             ),
             nav.MenuItem(
                 "setup", "Setup", "init · sync context · hooks", submenu=_setup_screen
+            ),
+            nav.MenuItem(
+                "inbox",
+                "Inbox",
+                "changes awaiting a human sign-off",
+                badge=_inbox_badge(),
+                action=_action_inbox,
             ),
             nav.MenuItem(
                 "doctor",
@@ -2891,6 +2919,66 @@ def cmd_release(args):
             f"required){Colors.ENDC}"
         )
     print(f"\n{Colors.BOLD}Release {release_id}:{Colors.ENDC} {head}")
+    return 0
+
+
+def cmd_inbox(args):
+    """Supervision inbox — every change awaiting a human sign-off right now.
+
+    The complement to `pg pipeline` (declared gates) and `pg trace`/`pg release`
+    (one change / one release): a single cross-discipline queue of the required,
+    human supervision gates currently *pending*, read from each discipline's
+    state surface. Read-only — it shows what needs a human; it signs nothing.
+    """
+    from .module_core import inbox
+
+    try:
+        items = inbox.collect_inbox(Path("."))
+    except Exception as e:
+        print(f"{Colors.FAIL}Error building inbox: {e}{Colors.ENDC}")
+        return 1
+
+    if getattr(args, "json", False):
+        import json
+
+        print(json.dumps({"count": len(items), "items": items}, indent=2))
+        return 0
+
+    if not items:
+        print(
+            f"{Colors.BOLD}{Colors.GREEN}Inbox clear{Colors.ENDC} "
+            f"{Colors.GRAY}— nothing awaiting a human sign-off.{Colors.ENDC}"
+        )
+        return 0
+
+    disciplines = sorted({it["discipline"] for it in items})
+    print(
+        f"{Colors.BOLD}{Colors.CYAN}Supervision inbox{Colors.ENDC} "
+        f"{Colors.GRAY}— {len(items)} pending across {len(disciplines)} "
+        f"discipline(s) ({', '.join(disciplines)}){Colors.ENDC}\n"
+    )
+    for it in items:
+        ref = (
+            f" {Colors.GRAY}(ref {it['ref']}){Colors.ENDC}"
+            if it["ref"] and it["ref"] != it["change"]
+            else ""
+        )
+        title = f" — {it['title']}" if it["title"] else ""
+        scope = (
+            f" {Colors.YELLOW}[release-scoped]{Colors.ENDC}"
+            if it["scope"] == "release"
+            else ""
+        )
+        stage = f", stage {it['stage']}" if it["stage"] else ""
+        print(
+            f"  {Colors.YELLOW}[~]{Colors.ENDC} {Colors.BOLD}{it['change']}{Colors.ENDC}"
+            f"{ref}{title}{scope}"
+        )
+        print(
+            f"      {Colors.GREEN}{it['gate']}{Colors.ENDC} "
+            f"{Colors.GRAY}[{it['discipline']}, before {it['action']}{stage}]"
+            f" — awaits {it['authority']} sign-off ({it['workflow']}){Colors.ENDC}"
+        )
     return 0
 
 

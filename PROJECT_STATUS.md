@@ -34,6 +34,7 @@ current_branch: "main"
 
 | ID | Title | Type | Status | Branch | Assignee |
 |----|-------|------|--------|--------|----------|
+| PROTO-102 | Supervision inbox — cross-discipline pending-approvals queue (pg inbox + Home) | feature | PENDING | feature/proto-102-supervision-inbox-cross-discipline-pendi |  |
 
 ## 🚀 Releases
 
